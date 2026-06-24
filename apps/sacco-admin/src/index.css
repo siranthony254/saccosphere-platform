@@ -1,0 +1,42 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom composite utilities */
+@layer utilities {
+  /* Violet brand utilities */
+  .btn-primary {
+    @apply bg-violet-500 hover:bg-violet-600 active:bg-violet-700 text-white font-semibold rounded-lg;
+  }
+
+  .btn-secondary {
+    @apply bg-violet-100 hover:bg-violet-200 text-violet-700 font-semibold rounded-lg;
+  }
+
+  /* Mint success utilities */
+  .text-positive {
+    @apply text-mint-500;
+  }
+
+  .bg-positive-light {
+    @apply bg-mint-50;
+  }
+
+  /* Navy background utilities */
+  .bg-app {
+    @apply bg-navy-900;
+  }
+
+  .bg-card {
+    @apply bg-navy-800;
+  }
+
+  /* Surface utilities */
+  .surface {
+    @apply bg-surface text-ink;
+  }
+
+  .surface-subtle {
+    @apply bg-surface-2;
+  }
+}

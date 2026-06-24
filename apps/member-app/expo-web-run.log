@@ -1,0 +1,22 @@
+env: load .env.development
+env: export EXPO_PUBLIC_API_URL
+Starting project at C:\Users\pc\Downloads\saccosphere-platform\apps\member-app
+Starting Metro Bundler
+warning: Bundler cache is empty, rebuilding (this may take a minute)
+Waiting on http://localhost:8082
+Logs for your project will appear below.
+Web node_modules\.pnpm\expo-router@6.0.23_79557991f944a0a5efcb9ff3a2e78d47\node_modules\expo-router\entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web node_modules\.pnpm\expo-router@6.0.23_79557991f944a0a5efcb9ff3a2e78d47\node_modules\expo-router\entry.js ░░░░░░░░░░░░░░░░  1.0% (1/1)
+Web node_modules\.pnpm\expo-router@6.0.23_79557991f944a0a5efcb9ff3a2e78d47\node_modules\expo-router\entry.js ▓▓▓▓▓▓▓▓▓▓░░░░░░ 64.0% (20/30)
+Web node_modules\.pnpm\expo-router@6.0.23_79557991f944a0a5efcb9ff3a2e78d47\node_modules\expo-router\entry.js ▓▓▓▓▓▓▓▓▓▓░░░░░░ 64.0% (40/94)
+Web node_modules\.pnpm\expo-router@6.0.23_79557991f944a0a5efcb9ff3a2e78d47\node_modules\expo-router\entry.js ▓▓▓▓▓▓▓▓▓▓░░░░░░ 64.0% ( 79/257)
+Web node_modules\.pnpm\expo-router@6.0.23_79557991f944a0a5efcb9ff3a2e78d47\node_modules\expo-router\entry.js ▓▓▓▓▓▓▓▓▓▓░░░░░░ 64.0% (106/297)
+Web node_modules\.pnpm\expo-router@6.0.23_79557991f944a0a5efcb9ff3a2e78d47\node_modules\expo-router\entry.js ▓▓▓▓▓▓▓▓▓▓░░░░░░ 64.0% (158/343)
+Web node_modules\.pnpm\expo-router@6.0.23_79557991f944a0a5efcb9ff3a2e78d47\node_modules\expo-router\entry.js ▓▓▓▓▓▓▓▓▓▓░░░░░░ 64.0% (195/364)
+Web node_modules\.pnpm\expo-router@6.0.23_79557991f944a0a5efcb9ff3a2e78d47\node_modules\expo-router\entry.js ▓▓▓▓▓▓▓▓▓▓░░░░░░ 64.0% (333/498)
+Web node_modules\.pnpm\expo-router@6.0.23_79557991f944a0a5efcb9ff3a2e78d47\node_modules\expo-router\entry.js ▓▓▓▓▓▓▓▓▓▓░░░░░░ 64.0% (440/610)
+Web node_modules\.pnpm\expo-router@6.0.23_79557991f944a0a5efcb9ff3a2e78d47\node_modules\expo-router\entry.js ▓▓▓▓▓▓▓▓▓▓▓░░░░░ 74.4% (633/734)
+Web node_modules\.pnpm\expo-router@6.0.23_79557991f944a0a5efcb9ff3a2e78d47\node_modules\expo-router\entry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░ 88.4% (758/806)
+Web Bundled 44654ms node_modules\.pnpm\expo-router@6.0.23_79557991f944a0a5efcb9ff3a2e78d47\node_modules\expo-router\entry.js (953 modules)
+Web node_modules\.pnpm\expo-router@6.0.23_79557991f944a0a5efcb9ff3a2e78d47\node_modules\expo-router\entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundled 73ms node_modules\.pnpm\expo-router@6.0.23_79557991f944a0a5efcb9ff3a2e78d47\node_modules\expo-router\entry.js (1 module)

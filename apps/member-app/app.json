@@ -1,0 +1,54 @@
+{
+  "expo": {
+    "name": "Saccosphere",
+    "slug": "saccosphere-member",
+    "sdkVersion": "54.0.0",
+    "version": "1.0.0",
+    "platforms": [
+      "ios",
+      "android",
+      "web"
+    ],
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0d7a4e"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "co.ke.saccosphere.member",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0d7a4e"
+      },
+      "package": "co.ke.saccosphere.member"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      "expo-secure-store"
+    ],
+    "scheme": "saccosphere",
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "8b636f5b-f8ba-4717-addf-8b9849f1b0bd"
+      }
+    }
+  }
+}

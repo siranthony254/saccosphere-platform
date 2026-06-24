@@ -1,0 +1,23 @@
+{
+  "name": "@saccosphere/config",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./src/web.ts",
+  "react-native": "./src/native.ts",
+  "types": "./src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "react-native": "./src/native.ts",
+      "browser": "./src/web.ts",
+      "import": "./src/web.ts",
+      "default": "./src/web.ts"
+    }
+  },
+  "scripts": {
+    "type-check": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5"
+  }
+}
