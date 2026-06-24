@@ -4,19 +4,27 @@ import { useLocalSearchParams, router } from 'expo-router'
 import { useState } from 'react'
 import { useLoanApplicationStore } from '../../../../../store/useLoanApplicationStore'
 import { useSubmitLoanApplication } from '../../../../../hooks/useLoanApplication'
+import { useSaccoConfig } from '../../../../../hooks/useSaccoConfig'
 
 export default function LoanReview() {
   const { slug } = useLocalSearchParams<{ slug: string }>()
   const { step1, getFullInput, reset } = useLoanApplicationStore()
   const { mutate: submit, isPending } = useSubmitLoanApplication()
+  const { data: config } = useSaccoConfig(slug)
   const [submitted, setSubmitted] = useState(false)
   const [loanRef, setLoanRef] = useState('')
 
   if (!step1) { router.back(); return null }
 
-  const monthlyRate = 12 / 100 / 12
+  const selectedProduct = config?.loan_products.find(p => p.key === step1.loan_product_key)
+  const interestRate = selectedProduct?.interest_rate_pct ?? 12
+  const monthlyRate = interestRate / 100 / 12
   const n = step1.period_months
-  const instalment = (step1.amount_requested * monthlyRate * Math.pow(1 + monthlyRate, n)) / (Math.pow(1 + monthlyRate, n) - 1)
+  const instalment = monthlyRate > 0
+    ? (step1.amount_requested * monthlyRate * Math.pow(1 + monthlyRate, n)) / (Math.pow(1 + monthlyRate, n) - 1)
+    : step1.amount_requested / n
+  const processingFee = selectedProduct?.processing_fee_pct ?? 0
+  const processingFeeAmount = (step1.amount_requested * processingFee) / 100
 
   const handleSubmit = () => {
     const input = getFullInput()
@@ -66,12 +74,14 @@ export default function LoanReview() {
 
       <View className="bg-surface2 rounded-xl p-3.5 mb-3">
         <Text className="text-ink text-xs font-semibold mb-2.5">Loan summary</Text>
-        {[
-          { label: 'Loan type', value: step1.loan_product_key },
+        {[  
+          { label: 'Loan type', value: selectedProduct?.label ?? step1.loan_product_key },
           { label: 'Amount', value: `KES ${step1.amount_requested.toLocaleString()}` },
           { label: 'Period', value: `${step1.period_months} months` },
+          { label: `Interest rate`, value: `${interestRate}% p.a.` },
           { label: 'Monthly payment', value: `KES ${instalment.toLocaleString('en-KE', { maximumFractionDigits: 0 })}`, highlight: true },
           { label: 'Total repayable', value: `KES ${(instalment * n).toLocaleString('en-KE', { maximumFractionDigits: 0 })}` },
+          { label: 'Processing fee', value: processingFee > 0 ? `KES ${processingFeeAmount.toLocaleString('en-KE', { maximumFractionDigits: 0 })} (${processingFee}%)` : 'Waived' },
           { label: 'Disbursement to', value: step1.disbursement_method === 'mpesa' ? '📱 M-Pesa' : step1.disbursement_method },
         ].map(row => (
           <View key={row.label} className="flex-row justify-between items-center py-2 border-b border-border">

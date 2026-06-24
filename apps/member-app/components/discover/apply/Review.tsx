@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Dimensions } from 'react-native'
 import { useMembershipApplicationStore } from '../../../store/useMembershipApplicationStore'
 import { useSubmitMembershipApplication } from '../../../hooks/useMembershipApplication'
+import { useSaccoConfig } from '../../../hooks/useSaccoConfig'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 const PADDING_H = Math.max(16, Math.min(24, SCREEN_WIDTH * 0.05))
@@ -14,12 +15,24 @@ export default function SaccoApplicationReview() {
   const insets = useSafeAreaInsets()
   const { formData, monthlyContribution, saccoSlug } = useMembershipApplicationStore()
   const { mutateAsync: submitApplication } = useSubmitMembershipApplication()
+  const { data: config, isLoading: isLoadingConfig } = useSaccoConfig(slug ?? '')
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  if (isLoadingConfig) {
+    return (
+      <View className="flex-1 bg-surface items-center justify-center">
+        <ActivityIndicator size="small" color="#8B5CF6" />
+        <Text className="text-ink-muted text-xs mt-2">Loading application details...</Text>
+      </View>
+    )
+  }
 
   const applicantName = `${formData.firstName ?? ''} ${formData.lastName ?? ''}`.trim() || 'Applicant'
   const employment = `${formData.employer ?? 'Employer'} · ${formData.employmentType ?? 'Employment'}`
   const contributionString = `KES ${monthlyContribution.toLocaleString()}`
   const saccoName = saccoSlug ? saccoSlug.toUpperCase() : slug?.toUpperCase() ?? 'SACCO'
+  const registrationFee = config?.membership.registration_fee_kes ?? 1000
+  const shareCapital = config?.membership.min_share_capital_kes ?? 5000
 
   const canSubmit = Boolean(saccoSlug && formData.firstName && formData.lastName && monthlyContribution >= 1000)
 
@@ -71,13 +84,13 @@ export default function SaccoApplicationReview() {
       {/* Application Summary */}
       <View className="bg-surface border border-border rounded-xl p-3.5 mb-2.5">
         <Text className="text-ink text-xs font-semibold mb-2">Application summary</Text>
-        {[
+        {[  
           { label: 'SACCO', value: saccoName },
           { label: 'Applicant', value: applicantName },
           { label: 'Employment', value: employment },
           { label: 'Monthly contribution', value: contributionString },
-          { label: 'Registration fee', value: 'KES 1,000 · Paid via M-Pesa' },
-          { label: 'Share capital to pay', value: 'KES 5,000' },
+          { label: 'Registration fee', value: `KES ${registrationFee.toLocaleString()} · Paid via M-Pesa` },
+          { label: 'Share capital to pay', value: `KES ${shareCapital.toLocaleString()}` },
         ].map((row) => (
           <View
             key={row.label}
@@ -92,19 +105,16 @@ export default function SaccoApplicationReview() {
       {/* Documents */}
       <View className="bg-surface border border-border rounded-xl p-3.5 mb-2.5">
         <Text className="text-ink text-xs font-semibold mb-2">Documents</Text>
-        {[
-          { label: 'National ID', status: '✓ Verified' },
-          { label: 'Passport photo', status: '✓ Verified' },
-          { label: 'Payslip', status: '✓ Uploaded' },
-          { label: 'Bank statement', status: '✓ Uploaded' },
-        ].map((row) => (
+        {config?.membership.required_documents.map((doc) => (
           <View
-            key={row.label}
+            key={doc.key}
             className="flex-row justify-between py-2 border-b border-border last:border-b-0"
           >
-            <Text className="text-ink-muted text-xs">{row.label}</Text>
-            <View className="bg-mint-100 px-2 py-0.5 rounded-md">
-              <Text className="text-mint-700 text-xs font-semibold">{row.status}</Text>
+            <Text className="text-ink-muted text-xs">{doc.label}</Text>
+            <View className={`px-2 py-0.5 rounded-md ${doc.already_verified_from_kyc ? 'bg-mint-100' : 'bg-blue-50'}`}>
+              <Text className={`text-xs font-semibold ${doc.already_verified_from_kyc ? 'text-mint-700' : 'text-blue-700'}`}>
+                {doc.already_verified_from_kyc ? '✓ Verified' : '✓ Uploaded'}
+              </Text>
             </View>
           </View>
         ))}

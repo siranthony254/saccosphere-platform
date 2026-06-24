@@ -6,20 +6,42 @@ import { View, Text, ScrollView, TouchableOpacity } from 'react-native'
 import { router } from 'expo-router'
 import { useCurrentUser } from '../../store/useAuthStore'
 import { useLogout } from '../../hooks/useAuth'
+import { useMemberships } from '../../hooks/useMembership'
+import { getActiveMemberships } from '../../lib/membership'
+import { api } from '@saccosphere/api-client'
 
 export default function ProfileScreen() {
   const user = useCurrentUser()
   const { mutate: logout } = useLogout()
+  const { data: memberships = [] } = useMemberships()
+  const activeMemberships = getActiveMemberships(memberships)
 
   const initials = user ? `${user.first_name[0]}${user.last_name[0]}` : 'JK'
+
+  const handleDownloadStatements = async () => {
+    try {
+      // Download statements for all active SACCOs
+      for (const membership of activeMemberships) {
+        const { blob, filename } = await api.ledger.downloadStatementPdf({
+          sacco_id: membership.sacco_id,
+          from_date: '2024-01-01', // Default to current year
+          to_date: new Date().toISOString().split('T')[0],
+        })
+        // Handle blob download - this would need platform-specific implementation
+        console.log(`Downloaded ${filename} for ${membership.sacco_name}`)
+      }
+    } catch (error) {
+      console.error('Failed to download statements:', error)
+    }
+  }
 
   const settings = [
     { icon: '📱', label: 'M-Pesa number', value: user?.phone ?? '+254 712 ···', action: () => {} },
     { icon: '🏦', label: 'Linked bank account', value: 'None', action: () => {} },
-    { icon: '👆', label: 'Biometric login', toggle: true },
-    { icon: '🔔', label: 'Push notifications', toggle: true },
-    { icon: '🔒', label: 'Change password', action: () => {} },
-    { icon: '📄', label: 'Download all statements', action: () => {} },
+    { icon: '👆', label: 'Biometric login', toggle: true, action: () => console.log('Biometric - backend endpoint to be implemented') },
+    { icon: '🔔', label: 'Push notifications', toggle: true, action: () => {} },
+    { icon: '🔒', label: 'Change password', action: () => router.push('/(auth)/forgot-password') },
+    { icon: '📄', label: 'Download all statements', action: handleDownloadStatements },
   ]
 
   return (
@@ -45,8 +67,18 @@ export default function ProfileScreen() {
       {/* SACCO memberships summary */}
       <View className="bg-surface mx-3.5 my-3.5 rounded-xl p-4 border border-border">
         <Text className="text-ink-faint text-xs font-semibold tracking-widest mb-3">MY SACCOS</Text>
-        <View className="flex-row justify-between items-center py-2 border-b border-border"><Text className="text-ink-muted text-xs">Stima SACCO</Text><View className="bg-mint-50 px-2 py-0.5 rounded-lg"><Text className="text-mint-700 text-xs font-semibold">Active</Text></View></View>
-        <View className="flex-row justify-between items-center py-2 border-b border-border"><Text className="text-ink-muted text-xs">Teachers SACCO</Text><View className="bg-mint-50 px-2 py-0.5 rounded-lg"><Text className="text-mint-700 text-xs font-semibold">Active</Text></View></View>
+        {activeMemberships.length > 0 ? (
+          activeMemberships.map((membership) => (
+            <View key={membership.id} className="flex-row justify-between items-center py-2 border-b border-border last:border-b-0">
+              <Text className="text-ink-muted text-xs">{membership.sacco_name}</Text>
+              <View className="bg-mint-50 px-2 py-0.5 rounded-lg">
+                <Text className="text-mint-700 text-xs font-semibold capitalize">{membership.status}</Text>
+              </View>
+            </View>
+          ))
+        ) : (
+          <Text className="text-ink-muted text-xs mb-3">No active SACCOs linked yet.</Text>
+        )}
         <TouchableOpacity onPress={() => router.push('/(member)/discover')}>
           <Text className="text-violet-500 text-xs font-semibold mt-3">+ Link another SACCO</Text>
         </TouchableOpacity>

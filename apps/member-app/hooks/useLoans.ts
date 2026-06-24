@@ -6,7 +6,8 @@ export function useLoans(params?: { sacco?: string; status?: string }) {
   return useQuery({
     queryKey: QueryKeys.loans(params),
     queryFn: () => api.loans.list(params),
-    refetchInterval: 30_000,
+    staleTime: 60_000, // 1 minute
+    gcTime: 300_000, // Keep in cache for 5 minutes
   })
 }
 
@@ -14,6 +15,8 @@ export function useLoan(id: string) {
   return useQuery({
     queryKey: QueryKeys.loanDetail(id),
     queryFn: () => api.loans.get(id),
+    staleTime: 60_000,
+    gcTime: 300_000,
   })
 }
 
@@ -21,6 +24,8 @@ export function useLoanComparison(amount: number, months: number) {
   return useQuery({
     queryKey: QueryKeys.loanComparison(amount, months),
     queryFn: () => api.loans.compare({ amount, months }),
+    staleTime: 300_000, // 5 minutes - loan products don't change frequently
+    gcTime: 600_000,
   })
 }
 

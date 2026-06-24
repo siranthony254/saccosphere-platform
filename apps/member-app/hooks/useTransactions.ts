@@ -15,6 +15,6 @@ export function useTransactions(filters?: TransactionFilters) {
     queryKey: QueryKeys.transactions(filters),
     queryFn: () => api.member.getTransactions(filters).then((r) => r.results),
     staleTime: STALE_TIMES.transactions,
-    refetchInterval: 30_000,
+    gcTime: 300_000, // Keep in cache for 5 minutes
   })
 }

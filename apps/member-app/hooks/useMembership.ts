@@ -6,7 +6,8 @@ export function useMemberships() {
   return useQuery({
     queryKey: QueryKeys.memberships(),
     queryFn: api.member.getMemberships,
-    refetchInterval: 30_000,
+    staleTime: 60_000, // 1 minute
+    gcTime: 300_000, // Keep in cache for 5 minutes
   })
 }
 
@@ -15,7 +16,7 @@ export function useMembership(id: string) {
     queryKey: QueryKeys.membership(id),
     queryFn: () => api.member.getMembership(id),
     staleTime: STALE_TIMES.dashboard,
-    refetchInterval: 30_000,
+    gcTime: 300_000,
   })
 }
 
@@ -27,6 +28,6 @@ export function useMembershipBySacco(saccoSlug: string) {
       return list.find((m) => m.sacco_slug === saccoSlug) ?? null
     },
     staleTime: STALE_TIMES.dashboard,
-    refetchInterval: 30_000,
+    gcTime: 300_000,
   })
 }

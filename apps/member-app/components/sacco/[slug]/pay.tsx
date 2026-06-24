@@ -6,6 +6,7 @@ import { api } from '@saccosphere/api-client'
 import { useLoans } from '../../../hooks/useLoans'
 import { useInitiatePayment } from '../../../hooks/usePayment'
 import { useMembershipBySacco } from '../../../hooks/useMembership'
+import { useSaccoConfig } from '../../../hooks/useSaccoConfig'
 import { useCurrentUser } from '../../../store/useAuthStore'
 import MpesaStkPushModal from '../../payments/MpesaStkPushModal'
 import PaymentMethodSelector from '../../payments/PaymentMethodSelector'
@@ -22,12 +23,14 @@ export default function PayScreen() {
   const { slug, type, loanId } = useLocalSearchParams<{ slug: string; type?: string; loanId?: string }>()
   const isRepayment = type === 'repayment'
   const { data: membership, isLoading: membershipLoading } = useMembershipBySacco(slug)
+  const { data: config } = useSaccoConfig(slug)
   const { data: loans = [] } = useLoans({ sacco: slug })
   const savingsQuery = useQuery({
     queryKey: ['savings', slug, membership?.sacco_id],
     queryFn: () => api.savings.list({ sacco: membership?.sacco_id ?? slug, status: 'active' }),
     enabled: Boolean(membership?.sacco_id || slug),
-    refetchInterval: 30_000,
+    staleTime: 60_000, // 1 minute
+    gcTime: 300_000, // Keep in cache for 5 minutes
   })
   const { mutate: initiatePayment, isPending } = useInitiatePayment()
   const user = useCurrentUser()
@@ -41,10 +44,13 @@ export default function PayScreen() {
   const [receipt, setReceipt] = useState<{ checkout: string; transaction: string } | null>(null)
 
   const numericAmount = Number(String(amount || defaultAmount || 0).replace(/[^0-9.]/g, ''))
+  // Calculate platform fee - could be enhanced to use backend config in future
   const platformFee = Math.max(25, Math.round(numericAmount * 0.005))
+  const bankFee = 0 // Bank transfers typically have no platform fee
   const saccoName = membership?.sacco_name ?? selectedLoan?.sacco_name ?? slug
   const phoneNumber = user?.phone_number ?? user?.phone ?? ''
   const primarySaving = savingsQuery.data?.[0]
+  const acceptedMethods = config?.payments.accepted_methods ?? ['mpesa', 'bank_transfer']
 
   const title = isRepayment ? 'Pay loan' : 'Contribute'
   const subtitle = isRepayment
@@ -132,6 +138,8 @@ export default function PayScreen() {
           subtitle={subtitle}
           saccoName={saccoName}
           amount={String(numericAmount)}
+          mpesaFee={platformFee}
+          bankFee={bankFee}
           onSelectMpesa={handleMpesa}
           onSelectBank={() => setMethodStep('bank')}
           onCancel={() => setMethodStep('amount')}
@@ -188,6 +196,7 @@ export default function PayScreen() {
         <BankRow label="SACCO" value={saccoName} />
         <BankRow label="Payment type" value={isRepayment ? 'Loan repayment' : 'Contribution'} />
         <BankRow label="Platform fee on M-Pesa" value={`KES ${platformFee.toLocaleString()}`} />
+        <BankRow label="Accepted methods" value={acceptedMethods.map(m => m === 'mpesa' ? 'M-Pesa' : m === 'bank_transfer' ? 'Bank' : m).join(', ')} />
       </View>
       <TouchableOpacity
         style={{ backgroundColor: VIOLET, borderRadius: 12, paddingVertical: 14, alignItems: 'center', opacity: numericAmount ? 1 : 0.5 }}

@@ -1,5 +1,5 @@
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { View, Text, ScrollView, TouchableOpacity, TextInput, ActivityIndicator } from 'react-native'
 import { router } from 'expo-router'
 import { useSaccos } from '../../hooks/useSaccos'
@@ -9,9 +9,19 @@ const SECTORS = ['All', 'Community', 'Education', 'Energy', 'Government', 'Healt
 
 export default function DiscoverScreen() {
   const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [sector, setSector] = useState('All')
+  
+  // Debounce search to reduce API calls
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search)
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [search])
+  
   const { data: saccos, isLoading, isError, refetch } = useSaccos({
-    search: search || undefined,
+    search: debouncedSearch || undefined,
     sector: sector === 'All' ? undefined : sector,
   })
 

@@ -3,6 +3,7 @@ import { useLocalSearchParams, router } from 'expo-router'
 import { useMembershipBySacco } from '../../hooks/useMembership'
 import { useLoans } from '../../hooks/useLoans'
 
+
 export default function SaccoDetailScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>()
   const { data: membership, isLoading, refetch, isRefetching } = useMembershipBySacco(slug)

@@ -24,7 +24,8 @@ export function useDashboard() {
       }
     },
     staleTime: STALE_TIMES.dashboard,
-    refetchInterval: 30_000, // Refresh every 30 seconds for real-time
+    gcTime: 300_000, // Keep in cache for 5 minutes
+    refetchInterval: 60_000, // Refresh every minute instead of 30 seconds
     retry: 2, // Retry twice before giving up
   })
 }

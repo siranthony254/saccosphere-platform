@@ -85,6 +85,60 @@ const resolveUserRole = (basicUser: any, roles: any[]): User['role'] => {
   return 'member'
 }
 
+type ExpectedAdminRole = 'superadmin' | 'sacco_admin' | 'admin'
+
+const probeSuperAdminAccess = async (): Promise<boolean> => {
+  try {
+    await apiCall<any>('GET', '/management/audit-logs/', undefined, {
+      params: { page: 1 },
+    })
+    return true
+  } catch {
+    return false
+  }
+}
+
+const probeSaccoAdminAccess = async (): Promise<boolean> => {
+  try {
+    await apiCall<any>('GET', '/management/stats/')
+    return true
+  } catch {
+    return false
+  }
+}
+
+const resolveUserRoleForPortal = async (
+  basicUser: any,
+  userId?: string,
+  expectedRole?: ExpectedAdminRole
+): Promise<{ role: User['role']; roles: any[] }> => {
+  const explicitRole = resolveUserRole(basicUser, [])
+  if (explicitRole !== 'member') {
+    return { role: explicitRole, roles: [] }
+  }
+
+  if (expectedRole === 'superadmin') {
+    if (await probeSuperAdminAccess()) return { role: 'superadmin', roles: [] }
+    const roles = await fetchUserRoles(userId)
+    return { role: resolveUserRole(basicUser, roles), roles }
+  }
+
+  if (expectedRole === 'sacco_admin') {
+    if (await probeSaccoAdminAccess()) return { role: 'sacco_admin', roles: [] }
+    if (await probeSuperAdminAccess()) return { role: 'superadmin', roles: [] }
+    const roles = await fetchUserRoles(userId)
+    return { role: resolveUserRole(basicUser, roles), roles }
+  }
+
+  if (expectedRole === 'admin') {
+    if (await probeSuperAdminAccess()) return { role: 'superadmin', roles: [] }
+    if (await probeSaccoAdminAccess()) return { role: 'sacco_admin', roles: [] }
+  }
+
+  const roles = await fetchUserRoles(userId)
+  return { role: resolveUserRole(basicUser, roles), roles }
+}
+
 // Extract sacco context for SACCO_ADMIN users from roles response
 const saccoContextFromRoles = (roles: any[]): { sacco_id: string | null; sacco_slug: string | null } => {
   const adminRole = roles.find(
@@ -496,7 +550,7 @@ export interface PaginatedResponse<T> {
 
 export const api = {
   auth: {
-    login: async (data: LoginInput) => {
+    login: async (data: LoginInput, options?: { expectedRole?: ExpectedAdminRole }) => {
       // Step 1: authenticate and get tokens + basic user profile
       const payload = await apiCall<any>('POST', '/accounts/login/', {
         email: data.email,
@@ -509,9 +563,14 @@ export const api = {
       // Step 2: set token so the roles call is authenticated
       setAccessToken(payload.access)
 
-      // Step 3: fetch roles from management API to determine admin level
-      const roles = await fetchUserRoles(userId ? String(userId) : undefined)
-      const role = resolveUserRole(basicUser, roles)
+      // Step 3: determine role using portal-specific backend endpoints first.
+      // /management/roles/ is itself protected, so a 403 there is not a reliable
+      // signal that the user is not an admin.
+      const { role, roles } = await resolveUserRoleForPortal(
+        basicUser,
+        userId ? String(userId) : undefined,
+        options?.expectedRole
+      )
       const saccoCtx = saccoContextFromRoles(roles)
 
       return AuthTokensSchema.parse({

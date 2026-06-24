@@ -4,21 +4,32 @@ import { useLocalSearchParams, router } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useMembershipApplicationStore } from '../../../../../store/useMembershipApplicationStore'
 import { useSubmitMembershipApplication } from '../../../../../hooks/useMembershipApplication'
-import { useSacco } from '../../../../../hooks/useSaccos'
+import { useSaccoConfig } from '../../../../../hooks/useSaccoConfig'
 
 export default function ApplyReviewScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>()
   const insets = useSafeAreaInsets()
   const { formData, monthlyContribution, saccoSlug, reset } = useMembershipApplicationStore()
-  const { data: sacco } = useSacco(slug)
+  const { data: config, isLoading: isLoadingConfig } = useSaccoConfig(slug ?? '')
   const { mutateAsync: submitApplication } = useSubmitMembershipApplication()
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const saccoName = sacco?.name ?? slug?.toUpperCase() ?? 'SACCO'
+  if (isLoadingConfig) {
+    return (
+      <View className="flex-1 bg-surface items-center justify-center px-8">
+        <ActivityIndicator color="#6D28D9" />
+        <Text className="text-ink-muted text-xs mt-3">Loading application details...</Text>
+      </View>
+    )
+  }
+
+  const saccoName = slug?.toUpperCase() ?? 'SACCO'
   const applicantName =
     `${formData.firstName ?? ''} ${formData.lastName ?? ''}`.trim() || 'Applicant'
   const employment = `${formData.employer ?? 'Employer'} · ${formData.employmentType ?? 'Employment'}`
   const contributionString = `KES ${monthlyContribution.toLocaleString()}`
+  const registrationFee = config?.membership.registration_fee_kes ?? 1000
+  const shareCapital = config?.membership.min_share_capital_kes ?? 5000
   const canSubmit = Boolean(
     saccoSlug && formData.firstName && formData.lastName && monthlyContribution >= 1000
   )
@@ -73,13 +84,13 @@ export default function ApplyReviewScreen() {
       {/* Application summary */}
       <View className="mx-4 bg-surface border border-border rounded-xl p-3.5 mb-2.5">
         <Text className="text-ink text-xs font-semibold mb-2">Application summary</Text>
-        {[
+        {[  
           { label: 'SACCO', value: saccoName },
           { label: 'Applicant', value: applicantName },
           { label: 'Employment', value: employment },
           { label: 'Monthly contribution', value: contributionString },
-          { label: 'Registration fee', value: 'KES 1,000 · Paid via M-Pesa' },
-          { label: 'Share capital to pay', value: 'KES 5,000' },
+          { label: 'Registration fee', value: `KES ${registrationFee.toLocaleString()} · Paid via M-Pesa` },
+          { label: 'Share capital to pay', value: `KES ${shareCapital.toLocaleString()}` },
         ].map((row) => (
           <View
             key={row.label}
@@ -94,20 +105,15 @@ export default function ApplyReviewScreen() {
       {/* Documents */}
       <View className="mx-4 bg-surface border border-border rounded-xl p-3.5 mb-2.5">
         <Text className="text-ink text-xs font-semibold mb-2">Documents</Text>
-        {[
-          { label: 'National ID', status: '✓ Verified' },
-          { label: 'Passport photo', status: '✓ Verified' },
-          { label: 'Payslip', status: '✓ Uploaded' },
-          { label: 'Bank statement', status: '✓ Uploaded' },
-        ].map((row) => (
+        {config?.membership.required_documents.map((doc) => (
           <View
-            key={row.label}
+            key={doc.key}
             className="flex-row justify-between py-2 border-b border-border last:border-b-0"
           >
-            <Text className="text-ink-muted text-xs">{row.label}</Text>
-            <View className="px-2 py-0.5 rounded-md" style={{ backgroundColor: '#EDE9FE' }}>
-              <Text className="text-xs font-semibold" style={{ color: '#6D28D9' }}>
-                {row.status}
+            <Text className="text-ink-muted text-xs">{doc.label}</Text>
+            <View className={`px-2 py-0.5 rounded-md ${doc.already_verified_from_kyc ? 'bg-mint-100' : 'bg-blue-50'}`}>
+              <Text className={`text-xs font-semibold ${doc.already_verified_from_kyc ? 'text-mint-700' : 'text-blue-700'}`}>
+                {doc.already_verified_from_kyc ? '✓ Verified' : '✓ Uploaded'}
               </Text>
             </View>
           </View>

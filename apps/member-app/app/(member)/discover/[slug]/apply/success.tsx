@@ -2,14 +2,17 @@ import { View, Text, TouchableOpacity, ScrollView } from 'react-native'
 import { useLocalSearchParams, router } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useSacco } from '../../../../../hooks/useSaccos'
+import { useSaccoConfig } from '../../../../../hooks/useSaccoConfig'
 
 export default function ApplySuccessScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>()
   const insets = useSafeAreaInsets()
   const { data: sacco } = useSacco(slug)
+  const { data: config } = useSaccoConfig(slug ?? '')
 
   const saccoName = sacco?.name ?? slug?.toUpperCase() ?? 'SACCO'
   const appRef = `${saccoName}-APP-${String(Date.now()).slice(-5)}`
+  const registrationFee = config?.membership.registration_fee_kes ?? 1000
 
   return (
     <ScrollView
@@ -38,11 +41,11 @@ export default function ApplySuccessScreen() {
 
       {/* Receipt card */}
       <View className="mx-4 bg-surface2 rounded-xl p-3.5 mb-4">
-        {[
+        {[  
           { label: 'SACCO', value: saccoName },
           { label: 'Status', value: 'Under review' },
           { label: 'Expected decision', value: '5–7 business days' },
-          { label: 'Registration fee', value: 'KES 1,000 paid' },
+          { label: 'Registration fee', value: `KES ${registrationFee.toLocaleString()} paid` },
         ].map((row) => (
           <View
             key={row.label}

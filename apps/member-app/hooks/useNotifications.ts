@@ -7,7 +7,8 @@ export function useNotifications() {
     queryKey: QueryKeys.notifications(),
     queryFn: api.member.getNotifications,
     staleTime: 0,
-    refetchInterval: 30_000,
+    gcTime: 300_000, // Keep in cache for 5 minutes
+    refetchInterval: 60_000, // Refresh every minute instead of 30 seconds
   })
 }
 

@@ -102,7 +102,7 @@ export default function HomeScreen() {
   const name = getDisplayName(user?.first_name, user?.last_name)
   const initials = getInitials(user?.first_name, user?.last_name)
   const isMorning = new Date().getHours() < 12
-  const greeting = isMorning ? 'Good morning' : 'Good afternoon'
+  const greeting = isMorning ? 'Good morning' : 'Good afternoon' 
 
   return (
     <>

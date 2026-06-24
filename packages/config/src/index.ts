@@ -101,6 +101,7 @@ export const SUPPORT_EMAIL = 'support@saccosphere.co.ke'
 export const STALE_TIMES = {
   dashboard: 60_000,       // 1 minute
   saccoConfig: 300_000,    // 5 minutes — changes only when super admin edits
+  saccos: 300_000,         // 5 minutes — SACCO list doesn't change frequently
   transactions: 30_000,    // 30 seconds
   adminDashboard: 30_000,
   platformOverview: 60_000,

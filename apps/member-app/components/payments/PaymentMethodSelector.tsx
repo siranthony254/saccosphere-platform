@@ -16,6 +16,8 @@ interface PaymentMethodSelectorProps {
   subtitle: string
   saccoName: string
   amount?: string
+  mpesaFee?: number
+  bankFee?: number
   onSelectMpesa: () => void
   onSelectBank: () => void
   onCancel: () => void
@@ -26,6 +28,8 @@ export default function PaymentMethodSelector({
   subtitle,
   saccoName,
   amount,
+  mpesaFee = 25,
+  bankFee = 0,
   onSelectMpesa,
   onSelectBank,
   onCancel,
@@ -164,7 +168,7 @@ export default function PaymentMethodSelector({
                   Instant
                 </Text>
               </View>
-              <Text style={{ fontSize: 9, color: INK_FAINT }}>+ KES 25 fee</Text>
+              <Text style={{ fontSize: 9, color: INK_FAINT }}>+ KES {mpesaFee} fee</Text>
             </View>
           </View>
           <Text style={{ color: INK_FAINT, fontSize: 18 }}>{'>'}</Text>
@@ -223,7 +227,7 @@ export default function PaymentMethodSelector({
                   1–3 days
                 </Text>
               </View>
-              <Text style={{ fontSize: 9, color: INK_FAINT }}>No additional fee</Text>
+              <Text style={{ fontSize: 9, color: INK_FAINT }}>{bankFee > 0 ? `+ KES ${bankFee} fee` : 'No additional fee'}</Text>
             </View>
           </View>
           <Text style={{ color: INK_FAINT, fontSize: 18 }}>{'>'}</Text>
