@@ -1,9 +1,51 @@
 import { useEffect } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { api, clearTokens, setAccessToken, setRefreshToken } from '@saccosphere/api-client'
+import { api, clearTokens, setAccessToken, setRefreshToken, apiCall } from '@saccosphere/api-client'
 import { useAuthStore } from '../store/useAuthStore'
+import type { User } from '@saccosphere/schemas'
 
 const REFRESH_TOKEN_STORAGE_KEY = 'sacco-admin-refresh-token'
+
+// ─── Role helpers ──────────────────────────────────────────────────────────────
+
+function deriveRoleFromRoles(roles: any[]): User['role'] {
+  const names = roles.map((r: any) => String(r.name ?? '').toUpperCase())
+  if (names.includes('SUPER_ADMIN')) return 'superadmin'
+  if (names.includes('SACCO_ADMIN')) return 'sacco_admin'
+  return 'member'
+}
+
+function saccoContextFromRoles(roles: any[]): { sacco_id: string | null; sacco_slug: string | null } {
+  const adminRole = roles.find(
+    (r: any) => String(r.name).toUpperCase() === 'SACCO_ADMIN' && r.sacco != null
+  )
+  if (!adminRole) return { sacco_id: null, sacco_slug: null }
+  const saccoId = typeof adminRole.sacco === 'object' ? adminRole.sacco?.id : adminRole.sacco
+  const saccoSlug = typeof adminRole.sacco === 'object' ? adminRole.sacco?.slug ?? null : null
+  return {
+    sacco_id: saccoId ? String(saccoId) : null,
+    sacco_slug: saccoSlug,
+  }
+}
+
+async function fetchRolesForUser(userId: string): Promise<any[]> {
+  try {
+    const response = await apiCall<any>('GET', '/management/roles/', undefined, {
+      params: { user_id: userId },
+    })
+    const results = Array.isArray(response)
+      ? response
+      : Array.isArray(response?.results)
+        ? response.results
+        : []
+    return results
+  } catch {
+    // 403 means not an admin — return empty
+    return []
+  }
+}
+
+// ─── Auth Bootstrap ────────────────────────────────────────────────────────────
 
 export function useAuthBootstrap() {
   const setAuth = useAuthStore((state) => state.setAuth)
@@ -22,17 +64,29 @@ export function useAuthBootstrap() {
 
       try {
         setRefreshToken(refreshToken)
+
+        // Refresh the access token
         const { access } = await api.auth.refresh(refreshToken)
         setAccessToken(access)
-        const user = await api.member.getProfile()
 
-        if (user.role !== 'sacco_admin' && user.role !== 'superadmin') {
-          throw new Error('Only SACCO or platform admins may use this portal.')
+        // Fetch basic profile
+        const basicUser = await api.member.getProfile()
+
+        // Determine role via management API
+        const roles = await fetchRolesForUser(String(basicUser.id))
+        const role = deriveRoleFromRoles(roles)
+        const saccoCtx = saccoContextFromRoles(roles)
+
+        // SACCO admin portal allows sacco_admin OR superadmin accounts
+        if (role !== 'sacco_admin' && role !== 'superadmin') {
+          throw new Error('Only SACCO admin accounts may use this portal.')
         }
+
+        const user: User = { ...basicUser, role, ...saccoCtx }
 
         if (!isMounted) return
         setAuth({ token: access, user })
-      } catch (error) {
+      } catch {
         clearTokens()
         window.localStorage.removeItem(REFRESH_TOKEN_STORAGE_KEY)
         clearAuth()
@@ -57,22 +111,29 @@ export function useAuthBootstrap() {
   }, [setAuth, clearAuth, setAuthReady])
 }
 
+// ─── Login Mutation ────────────────────────────────────────────────────────────
+
 export function useLogin() {
   const queryClient = useQueryClient()
   const setAuth = useAuthStore((state) => state.setAuth)
 
   return useMutation({
     mutationFn: async (data: { email: string; password: string }) => {
+      // api.auth.login now handles the role fetch internally
       const tokens = await api.auth.login(data)
+
       if (tokens.user.role !== 'sacco_admin' && tokens.user.role !== 'superadmin') {
         clearTokens()
-        throw new Error('Only SACCO or platform admins may sign in to this portal.')
+        throw new Error(
+          'Only SACCO admin accounts may sign in to this portal. ' +
+          'Regular members should use the Saccosphere member app.'
+        )
       }
       return tokens
     },
     onSuccess: (tokens) => {
       setAccessToken(tokens.access)
-      setRefreshToken(tokens.refresh ?? null)
+      setRefreshToken(tokens.refresh ?? '')
       if (tokens.refresh) {
         window.localStorage.setItem(REFRESH_TOKEN_STORAGE_KEY, tokens.refresh)
       }
@@ -81,6 +142,31 @@ export function useLogin() {
     },
   })
 }
+
+// ─── Logout ────────────────────────────────────────────────────────────────────
+
+export function useLogout() {
+  const clearAuth = useAuthStore((state) => state.clearAuth)
+  const queryClient = useQueryClient()
+
+  return async () => {
+    const refreshToken = window.localStorage.getItem(REFRESH_TOKEN_STORAGE_KEY)
+    try {
+      if (refreshToken) {
+        await apiCall<void>('POST', '/accounts/logout/', { refresh: refreshToken })
+      }
+    } catch {
+      // Ignore errors — always clear local state regardless
+    } finally {
+      clearTokens()
+      window.localStorage.removeItem(REFRESH_TOKEN_STORAGE_KEY)
+      clearAuth()
+      queryClient.clear()
+    }
+  }
+}
+
+// ─── Register (optional — sacco-admins are typically set up by super admin) ───
 
 export function useRegister() {
   const queryClient = useQueryClient()
@@ -104,7 +190,7 @@ export function useRegister() {
     },
     onSuccess: (tokens) => {
       setAccessToken(tokens.access)
-      setRefreshToken(tokens.refresh ?? null)
+      setRefreshToken(tokens.refresh ?? '')
       if (tokens.refresh) {
         window.localStorage.setItem(REFRESH_TOKEN_STORAGE_KEY, tokens.refresh)
       }

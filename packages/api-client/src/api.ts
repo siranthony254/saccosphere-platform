@@ -64,35 +64,59 @@ const normalizeStkPushResponse = (payload: any): STKPushResponse => ({
   message: String(payload.message ?? 'Check your phone to enter your M-Pesa PIN.'),
 })
 
-const normalizeUserRole = (user: any): User['role'] => {
-  // First, try the explicit 'role' field returned by the backend serializer.
-  // The backend returns 'SUPER_ADMIN', 'SACCO_ADMIN', or 'MEMBER'.
-  const rawRole = String(user.role ?? '').trim().toUpperCase()
-  if (rawRole === 'SUPERADMIN' || rawRole === 'SUPER_ADMIN') return 'superadmin'
-  if (rawRole === 'SACCO_ADMIN' || rawRole === 'SACCOADMIN') return 'sacco_admin'
-  if (rawRole === 'MEMBER') return 'member'
-
-  // Fallback: if role is absent, derive it from is_staff (Django staff = super admin)
-  if (user.is_staff === true) return 'superadmin'
-
-  // Last resort: return member
+const normalizeUserRole = (roleNames: string[]): User['role'] => {
+  const upper = roleNames.map((r) => String(r).toUpperCase())
+  if (upper.includes('SUPER_ADMIN')) return 'superadmin'
+  if (upper.includes('SACCO_ADMIN')) return 'sacco_admin'
   return 'member'
 }
 
-const normalizeUser = (user: any): User => {
+// Extract sacco context for SACCO_ADMIN users from roles response
+const saccoContextFromRoles = (roles: any[]): { sacco_id: string | null; sacco_slug: string | null } => {
+  const adminRole = roles.find(
+    (r: any) => String(r.name).toUpperCase() === 'SACCO_ADMIN' && r.sacco != null
+  )
+  if (!adminRole) return { sacco_id: null, sacco_slug: null }
+  const saccoId = typeof adminRole.sacco === 'object' ? adminRole.sacco?.id : adminRole.sacco
+  const saccoSlug = typeof adminRole.sacco === 'object' ? adminRole.sacco?.slug ?? null : null
+  return { sacco_id: saccoId ? String(saccoId) : null, sacco_slug: saccoSlug }
+}
+
+const normalizeUser = (user: any, roleOverrides?: { role?: User['role']; sacco_id?: string | null; sacco_slug?: string | null }): User => {
   const createdAt = user.created_at ?? user.date_joined ?? new Date().toISOString()
   const kycStatus = String(user.kyc_status ?? user.status ?? 'not_started').toLowerCase()
   return UserSchema.parse({
     ...user,
     phone: user.phone ?? user.phone_number ?? '',
     phone_number: user.phone_number ?? user.phone ?? '',
-    role: normalizeUserRole(user),
+    role: roleOverrides?.role ?? 'member',
     kyc_status: kycStatus === 'approved' ? 'verified' : kycStatus,
     national_id: user.national_id ?? null,
-    sacco_id: user.sacco_id ?? null,
-    sacco_slug: user.sacco_slug ?? null,
+    sacco_id: roleOverrides?.sacco_id ?? user.sacco_id ?? null,
+    sacco_slug: roleOverrides?.sacco_slug ?? user.sacco_slug ?? null,
     created_at: createdAt,
   })
+}
+
+/**
+ * Fetch the authenticated user's platform roles from the management API.
+ * Returns role names array. Returns [] if the user is not an admin.
+ */
+const fetchUserRoles = async (userId: string): Promise<any[]> => {
+  try {
+    const response = await apiCall<any>('GET', '/management/roles/', undefined, {
+      params: { user_id: userId },
+    })
+    const results = Array.isArray(response)
+      ? response
+      : Array.isArray(response?.results)
+        ? response.results
+        : []
+    return results
+  } catch {
+    // 403 = not an admin, empty roles
+    return []
+  }
 }
 
 const normalizeKenyanPhoneNumber = (phone: string) => {
@@ -381,14 +405,28 @@ export interface PaginatedResponse<T> {
 export const api = {
   auth: {
     login: async (data: LoginInput) => {
+      // Step 1: authenticate and get tokens + basic user profile
       const payload = await apiCall<any>('POST', '/accounts/login/', {
         email: data.email,
         password: data.password,
       })
+
+      const basicUser = payload.user
+      const userId = basicUser?.id ?? basicUser?.uuid ?? ''
+
+      // Step 2: set token so the roles call is authenticated
+      setAccessToken(payload.access)
+
+      // Step 3: fetch roles from management API to determine admin level
+      const roles = userId ? await fetchUserRoles(userId) : []
+      const roleNames = roles.map((r: any) => String(r.name ?? '').toUpperCase())
+      const role = normalizeUserRole(roleNames)
+      const saccoCtx = saccoContextFromRoles(roles)
+
       return AuthTokensSchema.parse({
         access: payload.access,
         refresh: payload.refresh,
-        user: normalizeUser(payload.user),
+        user: normalizeUser(basicUser, { role, ...saccoCtx }),
       })
     },
 

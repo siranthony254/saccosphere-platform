@@ -12,8 +12,12 @@ export function Login() {
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    await loginMutation.mutateAsync({ email, password })
-    navigate(from, { replace: true })
+    try {
+      await loginMutation.mutateAsync({ email, password })
+      navigate(from, { replace: true })
+    } catch {
+      // Error is already tracked in loginMutation.error
+    }
   }
 
   return (
@@ -45,7 +49,11 @@ export function Login() {
 
           {loginMutation.isError && (
             <div className="rounded-xl bg-red-500/10 px-3 py-2 text-sm text-red-400">
-              {loginMutation.error instanceof Error ? loginMutation.error.message : 'Unable to sign in. Check your credentials.'}
+              {loginMutation.error && typeof loginMutation.error === 'object' && 'message' in loginMutation.error
+                ? String((loginMutation.error as { message: string }).message)
+                : loginMutation.error instanceof Error
+                  ? loginMutation.error.message
+                  : 'Unable to sign in. Check your credentials.'}
             </div>
           )}
 
