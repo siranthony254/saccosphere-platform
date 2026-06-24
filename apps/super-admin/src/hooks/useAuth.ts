@@ -50,7 +50,8 @@ export function useAuthBootstrap() {
 
         if (!isMounted) return
         setAuth({ token: access, user })
-      } catch {
+      } catch (error) {
+        // Clear tokens on any error (401, network, etc.)
         clearTokens()
         await clearStoredRefreshToken()
         clearAuth()
@@ -61,7 +62,7 @@ export function useAuthBootstrap() {
 
     const handleLogout = () => {
       clearTokens()
-      window.localStorage.removeItem(REFRESH_TOKEN_STORAGE_KEY)
+      clearStoredRefreshToken()
       clearAuth()
     }
 

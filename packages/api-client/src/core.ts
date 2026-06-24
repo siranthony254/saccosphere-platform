@@ -121,10 +121,11 @@ axiosInstance.interceptors.response.use(
         clearTokens()
         refreshQueue = []
 
-        // In a real app, emit an event here that the auth store listens to
-        // to redirect to login without coupling this module to navigation
+        // Dispatch event with reason so auth stores can clear localStorage
         if (typeof window !== 'undefined') {
-          window.dispatchEvent(new CustomEvent('saccosphere:logout'))
+          window.dispatchEvent(new CustomEvent('saccosphere:logout', {
+            detail: { reason: 'token_refresh_failed' }
+          }))
         }
 
         return Promise.reject(refreshError)
