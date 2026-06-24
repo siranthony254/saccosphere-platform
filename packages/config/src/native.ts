@@ -5,7 +5,7 @@
 
 export * from './shared'
 
-const DEFAULT_API_URL = 'http://127.0.0.1:8000'
+const DEFAULT_API_URL = 'https://saccosphere-production.up.railway.app'
 
 export const getApiUrl = (): string => {
   const env = (globalThis as any).process?.env

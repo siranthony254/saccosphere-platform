@@ -201,7 +201,7 @@ export type Notification = z.infer<typeof NotificationSchema>
 export const STKPushInputSchema = z.object({
   phone_number: z.string().min(10),
   amount: z.number().positive(),
-  purpose: z.enum(['SAVING_DEPOSIT', 'LOAN_REPAYMENT', 'REGISTRATION_FEE']),
+  purpose: z.enum(['SAVING_DEPOSIT', 'LOAN_REPAYMENT']),
   sacco_id: z.string().uuid().optional(),
   saving_id: z.string().uuid().optional(),
   loan_id: z.string().uuid().optional(),
@@ -211,7 +211,8 @@ export type STKPushInput = z.infer<typeof STKPushInputSchema>
 
 export const STKPushResponseSchema = z.object({
   checkout_request_id: z.string(),
-  transaction_id: z.string().uuid(),
+  merchant_request_id: z.string().optional(),
+  transaction_id: z.string().uuid().optional(),
   message: z.string(),
 })
 export type STKPushResponse = z.infer<typeof STKPushResponseSchema>

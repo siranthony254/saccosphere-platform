@@ -1,6 +1,6 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../store/useAuthStore'
-import { clearTokens } from '@saccosphere/api-client'
+import { useLogout } from '../../hooks/useAuth'
 
 const NAV = [
   { path: '/overview',     label: 'System overview',    icon: '🌐', badge: null },
@@ -12,13 +12,12 @@ const NAV = [
 ]
 
 export function AppShell() {
-  const { user, clearAuth } = useAuthStore()
+  const { user } = useAuthStore()
   const navigate = useNavigate()
+  const logout = useLogout()
 
-  const handleLogout = () => {
-    clearAuth()
-    clearTokens()
-    window.localStorage.removeItem('super-admin-refresh-token')
+  const handleLogout = async () => {
+    await logout()
     navigate('/login')
   }
 

@@ -7,13 +7,13 @@ import {
   TextInput,
   ActivityIndicator,
   Dimensions,
+  Alert,
 } from 'react-native'
 import { router } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { api } from '@saccosphere/api-client'
 import { useRegistrationStore } from '../../../store/useRegistrationStore'
 import { useSaccos } from '../../../hooks/useSaccos'
-import { useRegister } from '../../../hooks/useAuth'
 import { useIsAuthenticated } from '../../../store/useAuthStore'
 import { useLinkMembership } from '../../../hooks/useLinkMembership'
 import { useMemberships } from '../../../hooks/useMembership'
@@ -49,7 +49,6 @@ export default function LinkSaccos() {
   const { data: saccos = [], isLoading: saccosLoading } = useSaccos({
     search: search || undefined,
   })
-  const { mutate: register, isPending: isRegisterPending } = useRegister()
   const { mutate: linkMembership, isPending: isLinkPending } = useLinkMembership()
   const isAuthenticated = useIsAuthenticated()
   const { data: memberships = [] } = useMemberships()
@@ -91,6 +90,12 @@ export default function LinkSaccos() {
     if (!step1) return
     setLinkedSaccos(selected)
 
+    if (!isAuthenticated) {
+      Alert.alert('Session not ready', 'Please sign in, then continue linking your SACCO.')
+      router.replace('/(auth)/login')
+      return
+    }
+
     if (selected.length > 0 && selected[0]) {
       // Try linking membership for the selected SACCO
       linkMembership(
@@ -103,14 +108,7 @@ export default function LinkSaccos() {
       return
     }
 
-    if (isAuthenticated) {
-      routeAfterRegister()
-      return
-    }
-
-    register(step1, {
-      onSuccess: () => routeAfterRegister(),
-    })
+    routeAfterRegister()
   }
 
   const handleContinueWithoutSacco = () => {
@@ -118,18 +116,16 @@ export default function LinkSaccos() {
     setSelectedSaccoSlug(null)
     setLinkedSaccos([])
 
-    if (isAuthenticated) {
-      router.replace('/(member)')
+    if (!isAuthenticated) {
+      Alert.alert('Session not ready', 'Please sign in, then continue.')
+      router.replace('/(auth)/login')
       return
     }
 
-    if (!step1) return
-    register(step1, {
-      onSuccess: () => router.replace('/(member)'),
-    })
+    router.replace('/(member)')
   }
 
-  const pending = isRegisterPending || isLinkPending
+  const pending = isLinkPending
 
   return (
     <ScrollView

@@ -91,7 +91,7 @@ export default function PayScreen() {
         onSuccess: (response) => {
           setReceipt({
             checkout: response.checkout_request_id,
-            transaction: response.transaction_id,
+            transaction: response.transaction_id ?? response.merchant_request_id ?? response.checkout_request_id,
           })
           setShowMpesa(false)
           setMethodStep('success')

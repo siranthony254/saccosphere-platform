@@ -14,11 +14,10 @@
  */
 
 const read = (key: string): boolean => {
+  const env = (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env
+
   // Try Expo prefix first (member app)
-  const expoVal =
-    typeof process !== 'undefined'
-      ? (process.env as Record<string, string | undefined>)[`EXPO_PUBLIC_${key}`]
-      : undefined
+  const expoVal = env?.[`EXPO_PUBLIC_${key}`]
 
   // Try Vite prefix (admin portals)
   const viteVal =

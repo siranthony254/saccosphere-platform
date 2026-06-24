@@ -56,13 +56,6 @@ export function Login() {
           >
             {loginMutation.isLoading ? 'Signing in…' : 'Sign in'}
           </button>
-
-          { (import.meta.env.VITE_ENABLE_REGISTRATION ?? 'true') !== 'false' && (
-            <div className="text-center mt-3 text-sm">
-              <span className="text-slate-400 mr-1">Don't have an account yet?</span>
-              <Link to="/register" className="text-mint-400 font-semibold hover:underline">Sign up</Link>
-            </div>
-          ) }
         </form>
       </div>
     </div>

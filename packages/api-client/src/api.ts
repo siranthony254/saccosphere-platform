@@ -57,10 +57,25 @@ const requiredString = (value: string) => z.string().min(1).parse(value)
 const unwrapResults = <T>(value: T[] | PaginatedResponse<T>): T[] =>
   Array.isArray(value) ? value : value.results
 
-const normalizeUserRole = (role: unknown): User['role'] => {
-  const normalized = String(role ?? 'member').trim().toUpperCase()
-  if (normalized === 'SUPERADMIN' || normalized === 'SUPER_ADMIN') return 'superadmin'
-  if (normalized === 'SACCO_ADMIN' || normalized === 'SACCOADMIN') return 'sacco_admin'
+const normalizeStkPushResponse = (payload: any): STKPushResponse => ({
+  checkout_request_id: String(payload.checkout_request_id ?? ''),
+  merchant_request_id: payload.merchant_request_id ?? undefined,
+  transaction_id: payload.transaction_id ?? undefined,
+  message: String(payload.message ?? 'Check your phone to enter your M-Pesa PIN.'),
+})
+
+const normalizeUserRole = (user: any): User['role'] => {
+  // First, try the explicit 'role' field returned by the backend serializer.
+  // The backend returns 'SUPER_ADMIN', 'SACCO_ADMIN', or 'MEMBER'.
+  const rawRole = String(user.role ?? '').trim().toUpperCase()
+  if (rawRole === 'SUPERADMIN' || rawRole === 'SUPER_ADMIN') return 'superadmin'
+  if (rawRole === 'SACCO_ADMIN' || rawRole === 'SACCOADMIN') return 'sacco_admin'
+  if (rawRole === 'MEMBER') return 'member'
+
+  // Fallback: if role is absent, derive it from is_staff (Django staff = super admin)
+  if (user.is_staff === true) return 'superadmin'
+
+  // Last resort: return member
   return 'member'
 }
 
@@ -71,7 +86,7 @@ const normalizeUser = (user: any): User => {
     ...user,
     phone: user.phone ?? user.phone_number ?? '',
     phone_number: user.phone_number ?? user.phone ?? '',
-    role: normalizeUserRole(user.role),
+    role: normalizeUserRole(user),
     kyc_status: kycStatus === 'approved' ? 'verified' : kycStatus,
     national_id: user.national_id ?? null,
     sacco_id: user.sacco_id ?? null,
@@ -98,6 +113,7 @@ const normalizeKenyanPhoneNumber = (phone: string) => {
 }
 
 const normalizeSacco = (sacco: any): Sacco => {
+  const membershipType = String(sacco.membership_type ?? (sacco.membership_open === false ? 'closed' : 'open')).toLowerCase()
   const slug =
     sacco.slug ??
     String(sacco.name ?? sacco.id)
@@ -117,9 +133,11 @@ const normalizeSacco = (sacco: any): Sacco => {
         .slice(0, 3)
         .toUpperCase(),
     color: sacco.color ?? '#6D28D9',
-    membership_type: String(sacco.membership_type ?? 'open').toLowerCase(),
+    membership_type: membershipType === 'closed' ? 'invitation_only' : membershipType,
     status: sacco.status ?? (sacco.is_active === false ? 'suspended' : 'active'),
     sasra_reg_no: sacco.sasra_reg_no ?? '',
+    sector: sacco.sector ?? 'SACCO',
+    county: sacco.county ?? '',
     logo_url: sacco.logo_url ?? sacco.logo ?? undefined,
     member_count: Number(sacco.member_count ?? 0),
     loan_rate_pct: Number(sacco.loan_rate_pct ?? sacco.default_interest_rate ?? 0),
@@ -552,9 +570,11 @@ export const api = {
     getConfig: async (slug: string) => {
       const sacco = await api.saccos.get(slug)
       const [fields, loanTypes] = await Promise.all([
-        apiCall<any[]>('GET', `/members/saccos/${sacco.id}/fields/`).catch(() => []),
-        apiCall<any[]>('GET', '/services/loan-types/', undefined, { params: { sacco_id: sacco.id } }).catch(() => []),
+        apiCall<any[] | PaginatedResponse<any>>('GET', `/members/saccos/${sacco.id}/fields/`).catch(() => []),
+        apiCall<any[] | PaginatedResponse<any>>('GET', '/services/loan-types/', undefined, { params: { sacco_id: sacco.id } }).catch(() => []),
       ])
+      const fieldItems = unwrapResults(fields)
+      const loanTypeItems = unwrapResults(loanTypes)
 
       return SaccoConfigSchema.parse({
         membership: {
@@ -566,7 +586,7 @@ export const api = {
             { key: 'id_front', label: 'National ID front', required: true },
             { key: 'id_back', label: 'National ID back', required: true },
           ],
-          additional_fields: fields.map((field) => ({
+          additional_fields: fieldItems.map((field) => ({
             key: field.id,
             label: field.label,
             type: field.field_type === 'decimal' ? 'number' : field.field_type === 'choice' ? 'select' : field.field_type ?? 'text',
@@ -574,7 +594,7 @@ export const api = {
             options: field.options ?? undefined,
           })),
         },
-        loan_products: loanTypes.map((loanType) => ({
+        loan_products: loanTypeItems.map((loanType) => ({
           key: loanType.id,
           label: loanType.name,
           description: loanType.description ?? undefined,
@@ -626,6 +646,8 @@ export const api = {
       const membership = await apiCall<any>('POST', '/members/memberships/', {
         sacco: sacco.id,
         custom_fields: customFields,
+        employment_status: String(data.form_data?.employment_status ?? ''),
+        employer_name: String(data.form_data?.employer_name ?? ''),
         monthly_income: data.monthly_contribution,
       })
       return {
@@ -671,10 +693,8 @@ export const api = {
         document_ids: documentIds,
       }),
 
-    payRegistrationFee: (id: string) =>
-      apiCall<STKPushResponse>('POST', '/payments/mpesa/stk-push/', { membership_id: id, purpose: 'REGISTRATION_FEE' }, {
-        idempotent: true,
-      }),
+    payRegistrationFee: (_id: string) =>
+      Promise.reject(new Error('Registration-fee STK push is not supported by the current backend contract.')),
   },
 
   savings: {
@@ -748,35 +768,40 @@ export const api = {
     get: (id: string) =>
       api.loans.list().then((loans) => loans.find((loan) => loan.id === id) as LoanApplication),
 
-    apply: (data: LoanApplicationInput) =>
-      apiCall<any>('POST', '/services/loans/apply/', {
+    apply: async (data: LoanApplicationInput) => {
+      const membership = await api.member.getMembership(data.membership_id).catch(() => null)
+      const loan = await apiCall<any>('POST', '/services/loans/apply/', {
         loan_type: data.loan_product_key,
         amount: data.amount_requested,
         term_months: data.period_months,
         application_notes: data.purpose,
-      }).then((loan) => LoanApplicationSchema.parse({
+      })
+
+      return LoanApplicationSchema.parse({
         id: loan.id,
         ref: loan.reference ?? loan.id,
-        sacco_name: loan.membership?.sacco_name ?? '',
-        sacco_slug: '',
+        sacco_name: loan.membership?.sacco_name ?? membership?.sacco_name ?? '',
+        sacco_slug: membership?.sacco_slug ?? '',
         loan_product_key: loan.loan_type?.name ?? data.loan_product_key,
         loan_product_label: loan.loan_type?.name ?? data.loan_product_key,
         amount_requested: Number(loan.amount ?? data.amount_requested),
         period_months: Number(loan.term_months ?? data.period_months),
         interest_rate: Number(loan.interest_rate ?? 0),
-        monthly_instalment: 0,
-        total_repayable: Number(loan.amount ?? data.amount_requested),
+        monthly_instalment: Number(loan.monthly_instalment ?? 0),
+        total_repayable: Number(loan.total_repayable ?? loan.amount ?? data.amount_requested),
         purpose: loan.application_notes ?? data.purpose,
         disbursement_method: data.disbursement_method,
         disbursement_account: data.disbursement_account,
-        status: 'submitted',
+        status: normalizeLoanStatus(loan.status),
         submitted_at: loan.created_at ?? new Date().toISOString(),
         approved_at: null,
         disbursed_at: null,
-      })),
+        balance_remaining: Number(loan.outstanding_balance ?? loan.amount ?? data.amount_requested),
+      })
+    },
 
     repay: (id: string, amount: number, data: { sacco_id: string; phone_number: string; instalment_number?: number }) =>
-      apiCall<STKPushResponse>('POST', '/payments/mpesa/stk-push/', {
+      apiCall<any>('POST', '/payments/mpesa/stk-push/', {
         loan_id: uuid(id),
         sacco_id: uuid(data.sacco_id),
         amount,
@@ -785,7 +810,7 @@ export const api = {
         instalment_number: data?.instalment_number ?? 1,
       }, {
         idempotent: true,
-      }),
+      }).then(normalizeStkPushResponse),
 
     compare: async (params: { amount: number; months: number }) => {
       const [items, memberships] = await Promise.all([
@@ -871,9 +896,9 @@ export const api = {
 
   payments: {
     stkPush: (data: STKPushInput) =>
-      apiCall<STKPushResponse>('POST', '/payments/mpesa/stk-push/', parseInput(STKPushInputSchema, data), {
+      apiCall<any>('POST', '/payments/mpesa/stk-push/', parseInput(STKPushInputSchema, data), {
         idempotent: true, 
-      }),
+      }).then(normalizeStkPushResponse),
 
     checkStatus: (ref: string) =>
       apiCall<{ status: string; completed_at: string | null }>(

@@ -6,11 +6,10 @@
 // ─── API URL ─────────────────────────────────────────────────────────────────
 
 export const getApiUrl = (): string => {
+  const env = (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env
+
   // Expo
-  const expo =
-    typeof process !== 'undefined'
-      ? (process.env as Record<string, string | undefined>).EXPO_PUBLIC_API_URL
-      : undefined
+  const expo = env?.EXPO_PUBLIC_API_URL
 
   // Vite
   const vite =
@@ -19,7 +18,7 @@ export const getApiUrl = (): string => {
       ? (import.meta as { env: Record<string, string> }).env.VITE_API_URL
       : undefined
 
-  return expo ?? vite ?? 'http://localhost:8000/api/v1'
+  return expo ?? vite ?? env?.API_URL ?? 'https://saccosphere-production.up.railway.app'
 }
 
 // ─── APP ERROR CODES ─────────────────────────────────────────────────────────

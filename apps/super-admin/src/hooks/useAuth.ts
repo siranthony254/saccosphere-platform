@@ -66,16 +66,39 @@ export function useLogin() {
       const tokens = await api.auth.login(data)
       if (tokens.user.role !== 'superadmin') {
         clearTokens()
-        throw new Error('Only platform admin accounts may sign in to this portal.')
+        throw new Error('Only platform admin accounts may sign in to this portal. Please use the correct app.')
       }
       return tokens
     },
     onSuccess: (tokens) => {
       setAccessToken(tokens.access)
-      setRefreshToken(tokens.refresh)
-      window.localStorage.setItem(REFRESH_TOKEN_STORAGE_KEY, tokens.refresh)
+      setRefreshToken(tokens.refresh ?? '')
+      if (tokens.refresh) {
+        window.localStorage.setItem(REFRESH_TOKEN_STORAGE_KEY, tokens.refresh)
+      }
       setAuth({ token: tokens.access, user: tokens.user })
       queryClient.clear()
     },
   })
+}
+
+export function useLogout() {
+  const clearAuth = useAuthStore((state) => state.clearAuth)
+  const queryClient = useQueryClient()
+
+  return async () => {
+    const refreshToken = window.localStorage.getItem(REFRESH_TOKEN_STORAGE_KEY)
+    try {
+      if (refreshToken) {
+        await api.auth.logout()
+      }
+    } catch {
+      // Ignore logout errors — always clear local state
+    } finally {
+      clearTokens()
+      window.localStorage.removeItem(REFRESH_TOKEN_STORAGE_KEY)
+      clearAuth()
+      queryClient.clear()
+    }
+  }
 }
