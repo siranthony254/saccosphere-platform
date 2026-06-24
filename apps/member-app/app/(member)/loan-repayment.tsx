@@ -57,7 +57,7 @@ export default function LoanRepaymentRoute() {
               activeOpacity={0.75}
               onPress={() =>
                 router.push({
-                  pathname: '/(member)/sacco/[slug]/pay',
+                  pathname: '/sacco/[slug]/pay',
                   params: {
                     slug: loan.sacco_slug || membership?.sacco_slug || '',
                     type: 'repayment',

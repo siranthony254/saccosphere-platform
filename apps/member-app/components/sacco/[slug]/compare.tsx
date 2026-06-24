@@ -72,7 +72,7 @@ export default function LoanCompareScreen() {
             </View>
             <TouchableOpacity
               className={`rounded-lg p-2.5 items-center ${item === best ? 'bg-violet-500' : 'border border-violet-500'}`}
-              onPress={() => router.push({ pathname: '/(member)/sacco/[slug]/loans/apply', params: { slug: item.sacco_slug } })}
+              onPress={() => router.push({ pathname: '/sacco/[slug]/loans/apply', params: { slug: item.sacco_slug } })}
             >
               <Text className={`text-xs font-semibold ${item === best ? 'text-white' : 'text-violet-500'}`}>
                 Apply at {item.sacco_name} →

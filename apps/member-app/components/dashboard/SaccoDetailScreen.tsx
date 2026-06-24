@@ -39,13 +39,13 @@ export default function SaccoDetailScreen() {
       <View className="flex-row gap-2.5 px-3.5 py-3.5">
         <TouchableOpacity
           className="flex-1 bg-violet-500 rounded-xl p-3 items-center"
-          onPress={() => router.push({ pathname: '/(member)/sacco/[slug]/pay', params: { slug } })}
+          onPress={() => router.push({ pathname: '/sacco/[slug]/pay', params: { slug } })}
         >
           <Text className="text-white text-xs font-semibold">Contribute</Text>
         </TouchableOpacity>
         <TouchableOpacity
           className="flex-1 border-2 border-violet-500 rounded-xl p-3 items-center"
-          onPress={() => router.push({ pathname: '/(member)/sacco/[slug]/loans/apply', params: { slug } })}
+          onPress={() => router.push({ pathname: '/sacco/[slug]/loans/apply', params: { slug } })}
         >
           <Text className="text-violet-500 text-xs font-semibold">Apply for loan</Text>
         </TouchableOpacity>
@@ -95,7 +95,7 @@ export default function SaccoDetailScreen() {
 
           <TouchableOpacity
             className="bg-violet-500 rounded-xl p-3 items-center mt-2"
-            onPress={() => router.push({ pathname: '/(member)/sacco/[slug]/pay', params: { slug, type: 'repayment', loanId: activeLoan.id } })}
+            onPress={() => router.push({ pathname: '/sacco/[slug]/pay', params: { slug, type: 'repayment', loanId: activeLoan.id } })}
           >
             <Text className="text-white text-xs font-semibold">Pay instalment via M-Pesa</Text>
           </TouchableOpacity>
@@ -104,10 +104,10 @@ export default function SaccoDetailScreen() {
 
       {/* Quick links */}
       <View className="flex-row gap-2.5 px-3.5 py-3.5 pt-0">
-        <TouchableOpacity className="flex-1 bg-surface rounded-xl p-3 items-center border border-border" onPress={() => router.push({ pathname: '/(member)/sacco/[slug]/statement', params: { slug } })}>
+        <TouchableOpacity className="flex-1 bg-surface rounded-xl p-3 items-center border border-border" onPress={() => router.push({ pathname: '/sacco/[slug]/statement', params: { slug } })}>
           <Text className="text-ink-soft text-xs font-medium">📄  View statement</Text>
         </TouchableOpacity>
-        <TouchableOpacity className="flex-1 bg-surface rounded-xl p-3 items-center border border-border" onPress={() => router.push({ pathname: '/(member)/sacco/[slug]/compare', params: { slug } })}>
+        <TouchableOpacity className="flex-1 bg-surface rounded-xl p-3 items-center border border-border" onPress={() => router.push({ pathname: '/sacco/[slug]/compare', params: { slug } })}>
           <Text className="text-ink-soft text-xs font-medium">⚖️  Compare loans</Text>
         </TouchableOpacity>
       </View>

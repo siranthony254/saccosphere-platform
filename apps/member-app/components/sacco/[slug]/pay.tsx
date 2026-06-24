@@ -119,7 +119,7 @@ export default function PayScreen() {
         mpesaRef={receipt.checkout}
         saccosphereRef={receipt.transaction}
         onBackToDashboard={() => router.replace('/(member)')}
-        onViewReceipt={() => router.push({ pathname: '/(member)/sacco/[slug]/statement', params: { slug } })}
+        onViewReceipt={() => router.push({ pathname: '/sacco/[slug]/statement', params: { slug } })}
       />
     )
   }

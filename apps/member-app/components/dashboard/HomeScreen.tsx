@@ -74,7 +74,7 @@ export default function HomeScreen() {
       return
     }
     if (action === 'loan') {
-      router.push({ pathname: '/(member)/sacco/[slug]/loans', params: { slug: activeMemberships[0].sacco_slug } })
+      router.push({ pathname: '/sacco/[slug]/loans', params: { slug: activeMemberships[0].sacco_slug } })
       return
     }
     if (activeMemberships.length === 1) {
@@ -87,7 +87,7 @@ export default function HomeScreen() {
 
   const handleSaccoSelect = (slug: string) => {
     setActiveSacco(slug)
-    router.push({ pathname: '/(member)/sacco/[slug]', params: { slug } })
+    router.push({ pathname: '/sacco/[slug]', params: { slug } })
   }
 
   if (isLoading) {
@@ -592,7 +592,7 @@ function SingleSaccoDashboard({
           <TouchableOpacity
             onPress={() =>
               router.push({
-                pathname: '/(member)/sacco/[slug]/pay',
+                pathname: '/sacco/[slug]/pay',
                 params: { slug: membership.sacco_slug, type: 'repayment', loanId: activeLoan.id },
               })
             }
@@ -980,7 +980,7 @@ function TrackerStep({ label, active }: { label: string; active?: boolean }) {
 //  HELPERS
 function navigateToSaccoAction(action: QuickAction, slug: string) {
   if (action === 'contribute') {
-    router.push({ pathname: '/(member)/sacco/[slug]/pay', params: { slug } })
+    router.push({ pathname: '/sacco/[slug]/pay', params: { slug } })
     return
   }
   if (action === 'repay') {
@@ -988,10 +988,10 @@ function navigateToSaccoAction(action: QuickAction, slug: string) {
     return
   }
   if (action === 'loan') {
-    router.push({ pathname: '/(member)/sacco/[slug]/loans', params: { slug } })
+    router.push({ pathname: '/sacco/[slug]/loans', params: { slug } })
     return
   }
-  router.push({ pathname: '/(member)/sacco/[slug]/statement', params: { slug } })
+  router.push({ pathname: '/sacco/[slug]/statement', params: { slug } })
 }
 
 function buildDashboard(

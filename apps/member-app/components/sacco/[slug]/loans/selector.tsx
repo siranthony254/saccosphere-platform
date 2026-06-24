@@ -40,11 +40,11 @@ export default function SaccoLoanSelectorScreen() {
   const canCompare = activeMemberships.length > 1
 
   const handleApply = (slug: string) => {
-    router.push({ pathname: '/(member)/sacco/[slug]/loans/apply', params: { slug } })
+    router.push({ pathname: '/sacco/[slug]/loans/apply', params: { slug } })
   }
 
   const handleCompare = () => {
-    router.push({ pathname: '/(member)/sacco/[slug]/compare', params: { slug: activeMemberships[0].sacco_slug } })
+    router.push({ pathname: '/sacco/[slug]/compare', params: { slug: activeMemberships[0].sacco_slug } })
   }
 
   if (isLoading) {

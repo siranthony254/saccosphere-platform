@@ -148,14 +148,14 @@ function LockedServicesState({ hasPending }: { hasPending: boolean }) {
 
 function navigateToServiceAction(action: ServiceAction, slug: string) {
   if (action === 'contribute') {
-    router.push({ pathname: '/(member)/sacco/[slug]/pay', params: { slug } })
+    router.push({ pathname: '/sacco/[slug]/pay', params: { slug } })
     return
   }
 
   if (action === 'loan') {
-    router.push({ pathname: '/(member)/sacco/[slug]/loans', params: { slug } })
+    router.push({ pathname: '/sacco/[slug]/loans', params: { slug } })
     return
   }
 
-  router.push({ pathname: '/(member)/sacco/[slug]/statement', params: { slug } })
+  router.push({ pathname: '/sacco/[slug]/statement', params: { slug } })
 }

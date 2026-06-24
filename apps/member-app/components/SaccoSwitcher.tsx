@@ -33,7 +33,7 @@ export default function SaccoSwitcher({ visible, onClose, currentSacco }: SaccoS
   const activeMemberships = getActiveMemberships(memberships ?? [])
 
   const handleSaccoSelect = (saccoSlug: string) => {
-    router.replace(`/(member)/sacco/${saccoSlug}`)
+    router.replace(`/sacco/${saccoSlug}`)
     onClose()
   }
 

@@ -1,4 +1,4 @@
-import LoanCompareScreen from '../../../../components/sacco/[slug]/compare'
+import LoanCompareScreen from '../../components/screens/LoanCompareScreen'
 export default function CompareRoute() {
   return <LoanCompareScreen />
 }

@@ -18,7 +18,7 @@ export const getApiUrl = (): string => {
       ? (import.meta as { env: Record<string, string> }).env.VITE_API_URL
       : undefined
 
-  return expo ?? vite ?? env?.API_URL ?? 'https://saccosphere-production.up.railway.app'
+  return expo ?? vite ?? env?.VITE_API_URL ?? env?.API_URL ?? 'https://saccosphere-production.up.railway.app'
 }
 
 // ─── APP ERROR CODES ─────────────────────────────────────────────────────────

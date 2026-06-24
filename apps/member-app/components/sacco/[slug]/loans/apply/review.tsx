@@ -49,7 +49,7 @@ export default function LoanReview() {
           </View>
         ))}
       </View>
-      <TouchableOpacity className="bg-violet-500 rounded-xl p-3.5 items-center" onPress={() => router.replace(`/(member)/sacco/${slug}`)}>
+      <TouchableOpacity className="bg-violet-500 rounded-xl p-3.5 items-center" onPress={() => router.replace(`/sacco/${slug}`)}>
         <Text className="text-white text-xs font-semibold">Back to dashboard</Text>
       </TouchableOpacity>
     </View>

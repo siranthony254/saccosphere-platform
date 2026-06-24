@@ -9,6 +9,11 @@ const DEFAULT_API_URL = 'https://saccosphere-production.up.railway.app'
 
 export const getApiUrl = (): string => {
   const env = (globalThis as any).process?.env
-  const url = env?.EXPO_PUBLIC_API_URL || env?.API_URL || env?.NEXT_PUBLIC_API_URL || DEFAULT_API_URL
+  const url =
+    env?.EXPO_PUBLIC_API_URL ||
+    env?.VITE_API_URL ||
+    env?.API_URL ||
+    env?.NEXT_PUBLIC_API_URL ||
+    DEFAULT_API_URL
   return url
 }

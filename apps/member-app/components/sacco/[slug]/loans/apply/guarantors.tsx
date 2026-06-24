@@ -14,7 +14,7 @@ export default function LoanGuarantors() {
 
       <TouchableOpacity
         className="bg-violet-500 rounded-xl p-3.5 items-center"
-        onPress={() => router.replace({ pathname: '/(member)/sacco/[slug]/loans/apply/review', params: { slug } })}
+        onPress={() => router.replace({ pathname: '/sacco/[slug]/loans/apply/review', params: { slug } })}
       >
         <Text className="text-white text-xs font-semibold">Review loan</Text>
       </TouchableOpacity>

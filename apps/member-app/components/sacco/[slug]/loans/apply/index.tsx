@@ -36,7 +36,7 @@ export default function LoanStep1() {
       disbursement_method: disburse,
       disbursement_account: '+254712345678',
     })
-    router.push({ pathname: '/(member)/sacco/[slug]/loans/apply/review', params: { slug } })
+    router.push({ pathname: '/sacco/[slug]/loans/apply/review', params: { slug } })
   }
 
   if (!config) return <View className="flex-1 bg-surface"><Text className="px-8 py-8 text-center text-ink-muted text-xs">Loading loan products...</Text></View>

@@ -90,7 +90,7 @@ export default function DiscoverScreen() {
               className={`rounded-lg p-2.5 items-center ${sacco.membership_type === 'open' ? 'bg-violet-500' : 'bg-surface3'}`}
               onPress={() =>
                 sacco.membership_type === 'open' &&
-                router.push({ pathname: '/(member)/discover/[slug]', params: { slug: sacco.slug } })
+                router.push({ pathname: '/(member)/discover/[slug]/apply', params: { slug: sacco.slug } })
               }
               disabled={sacco.membership_type !== 'open'}
             >

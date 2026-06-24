@@ -1,5 +1,5 @@
 
-import { apiCall, setAccessToken } from './core'
+import { apiCall, axiosInstance, setAccessToken } from './core'
 import type {
   LoginInput,
   RegisterInput,
@@ -661,6 +661,34 @@ export const api = {
       return {
         ...response,
         results: unwrapResults(response).map(normalizeTransaction),
+      }
+    },
+
+    getStatement: async (params: { sacco_id: string; from_date: string; to_date: string }) =>
+      apiCall<{
+        member_name: string
+        member_number: string
+        sacco_name: string
+        from_date: string
+        to_date: string
+        opening_balance: number
+        closing_balance: number
+        total_credits: number
+        total_debits: number
+        entries: any[]
+        currency: string
+      }>('GET', '/ledger/statement/', undefined, { params }),
+
+    downloadStatementPdf: async (params: { sacco_id: string; from_date: string; to_date: string }) => {
+      const response = await axiosInstance.get('/ledger/statement/pdf/', {
+        params,
+        responseType: 'blob',
+      })
+      const disposition = String(response.headers?.['content-disposition'] ?? '')
+      const filenameMatch = disposition.match(/filename="?([^";]+)"?/i)
+      return {
+        blob: response.data as Blob,
+        filename: filenameMatch?.[1] ?? `statement_${params.from_date}_${params.to_date}.pdf`,
       }
     },
 

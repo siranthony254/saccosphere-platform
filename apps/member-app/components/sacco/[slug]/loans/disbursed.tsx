@@ -73,7 +73,7 @@ export default function LoanDisbursed() {
       {/* CTA Button */}
       <TouchableOpacity 
         className="w-full bg-violet-500 py-3 rounded-xl items-center mb-3"
-        onPress={() => router.replace(`/(member)/sacco/${slug}`)}
+        onPress={() => router.replace(`/sacco/${slug}`)}
       >
         <Text className="text-white text-xs font-semibold">Back to dashboard</Text>
       </TouchableOpacity>

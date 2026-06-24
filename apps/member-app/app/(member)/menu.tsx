@@ -52,7 +52,7 @@ export default function MenuScreen() {
         if (activeMemberships.length === 0) {
           Alert.alert('No SACCOs linked', 'Link a SACCO first to compare loans.')
         } else if (activeMemberships.length === 1) {
-          router.push({ pathname: '/(member)/sacco/[slug]/compare', params: { slug: activeMemberships[0].sacco_slug } })
+          router.push({ pathname: '/sacco/[slug]/compare', params: { slug: activeMemberships[0].sacco_slug } })
         } else {
           setComparePickerVisible(true)
         }
@@ -146,19 +146,19 @@ export default function MenuScreen() {
                 <View className="flex-row flex-wrap gap-2">
                   <TouchableOpacity
                     className="bg-surface2 border border-border rounded-lg px-3 py-1.5"
-                    onPress={() => router.push({ pathname: '/(member)/sacco/[slug]', params: { slug: membership.sacco_slug } })}
+                    onPress={() => router.push({ pathname: '/sacco/[slug]', params: { slug: membership.sacco_slug } })}
                   >
                     <Text className="text-ink-soft text-xs font-semibold">Dashboard</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     className="bg-surface2 border border-border rounded-lg px-3 py-1.5"
-                    onPress={() => router.push({ pathname: '/(member)/sacco/[slug]/pay', params: { slug: membership.sacco_slug } })}
+                    onPress={() => router.push({ pathname: '/sacco/[slug]/pay', params: { slug: membership.sacco_slug } })}
                   >
                     <Text className="text-ink-soft text-xs font-semibold">Pay</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     className="bg-surface2 border border-border rounded-lg px-3 py-1.5"
-                    onPress={() => router.push({ pathname: '/(member)/sacco/[slug]/statement', params: { slug: membership.sacco_slug } })}
+                    onPress={() => router.push({ pathname: '/sacco/[slug]/statement', params: { slug: membership.sacco_slug } })}
                   >
                     <Text className="text-ink-soft text-xs font-semibold">Statement</Text>
                   </TouchableOpacity>
@@ -192,7 +192,7 @@ export default function MenuScreen() {
         onClose={() => setComparePickerVisible(false)}
         onSelect={(slug) => {
           setComparePickerVisible(false)
-          router.push({ pathname: '/(member)/sacco/[slug]/compare', params: { slug } })
+          router.push({ pathname: '/sacco/[slug]/compare', params: { slug } })
         }}
         title="Compare Loans"
         subtitle="Select a SACCO to view interest rates and multipliers"
