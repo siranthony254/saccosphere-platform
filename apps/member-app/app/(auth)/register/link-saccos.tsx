@@ -137,12 +137,12 @@ export default function LinkSaccos() {
       className="bg-surface"
     >
       {/* Step progress bar */}
-      <View className="flex-row gap-1 mb-1.5 mt-5">
+      <View className="flex-row gap-1 mb-1.5">
         {[0, 1, 2, 3].map((i) => (
           <View
             key={i}
             className="flex-1 h-0.5 rounded"
-            style={{ backgroundColor: i < 3 ? VIOLET : BORDER }}
+            style={{ backgroundColor: i < 4 ? VIOLET : BORDER }}
           />
         ))}
       </View>

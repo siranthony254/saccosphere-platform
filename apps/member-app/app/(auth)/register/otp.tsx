@@ -37,6 +37,10 @@ export default function RegisterOTP() {
   const [loading, setLoading] = useState(false)
   const [otpError, setOtpError] = useState<string | null>(null)
   const [otpSent, setOtpSent] = useState(false)
+  const [countdown, setCountdown] = useState(60) // 60 seconds countdown
+  const [canResend, setCanResend] = useState(false)
+  const [otpExpirySeconds, setOtpExpirySeconds] = useState(300) // Default 5 minutes
+  const [expiryCountdown, setExpiryCountdown] = useState(300)
   const { step1, setOtpVerified } = useRegistrationStore()
   const isAuthenticated = useIsAuthenticated()
 
@@ -52,13 +56,60 @@ export default function RegisterOTP() {
 
     api.auth
       .sendOTP(step1.phone_number)
-      .then(() => setOtpSent(true))
+      .then((response) => {
+        setOtpSent(true)
+        // Read OTP expiry from backend response if available
+        if (response && (response as any).expires_in) {
+          const expiry = (response as any).expires_in
+          setOtpExpirySeconds(expiry)
+          setExpiryCountdown(expiry)
+        }
+        // Start countdown
+        setCountdown(60)
+        setCanResend(false)
+      })
       .catch((error) => {
         const message = getApiErrorMessage(error, 'Unable to send OTP.')
         setOtpError(message)
         Alert.alert('OTP failed', message)
       })
   }, [step1, isAuthenticated, otpSent, otpError])
+
+  // Countdown timer for resend
+  useEffect(() => {
+    if (!otpSent || countdown <= 0) {
+      if (countdown === 0) setCanResend(true)
+      return
+    }
+    const timer = setInterval(() => {
+      setCountdown((prev) => prev - 1)
+    }, 1000)
+    return () => clearInterval(timer)
+  }, [otpSent, countdown])
+
+  // Countdown timer for OTP expiry
+  useEffect(() => {
+    if (!otpSent || expiryCountdown <= 0) return
+    const timer = setInterval(() => {
+      setExpiryCountdown((prev) => prev - 1)
+    }, 1000)
+    return () => clearInterval(timer)
+  }, [otpSent, expiryCountdown])
+
+  const handleResend = async () => {
+    if (!step1?.phone_number || !canResend) return
+    try {
+      await api.auth.sendOTP(step1.phone_number)
+      setCountdown(60)
+      setCanResend(false)
+      setOtpError(null)
+      setExpiryCountdown(otpExpirySeconds)
+      Alert.alert('OTP Resent', 'A new code has been sent to your phone.')
+    } catch (error) {
+      const message = getApiErrorMessage(error, 'Unable to resend OTP.')
+      Alert.alert('Resend failed', message)
+    }
+  }
 
   const handleVerify = async () => {
     if (!step1?.phone_number) return
@@ -182,9 +233,17 @@ export default function RegisterOTP() {
       />
 
       {/* Resend */}
-      <Text className="text-xs font-semibold text-center mb-5" style={{ color: VIOLET }}>
-        Resend in 0:42
-      </Text>
+      {canResend ? (
+        <TouchableOpacity onPress={handleResend} className="mb-5">
+          <Text className="text-xs font-semibold text-center" style={{ color: VIOLET }}>
+            Resend code
+          </Text>
+        </TouchableOpacity>
+      ) : (
+        <Text className="text-xs font-semibold text-center mb-5" style={{ color: INK_MUTED }}>
+          Resend in {Math.floor(countdown / 60)}:{(countdown % 60).toString().padStart(2, '0')}
+        </Text>
+      )}
 
       {/* Alert */}
       <View
@@ -196,8 +255,9 @@ export default function RegisterOTP() {
         }}
       >
         <Text className="text-xs leading-5" style={{ color: '#084D32' }}>
-          Code expires in <Text style={{ fontWeight: '600' }}>4 minutes 42 seconds</Text>. Check
-          your SMS or M-Pesa notification.
+          Code expires in <Text style={{ fontWeight: '600' }}>
+            {Math.floor(expiryCountdown / 60)} minutes {expiryCountdown % 60} seconds
+          </Text>. Check your SMS or M-Pesa notification.
         </Text>
       </View>
 

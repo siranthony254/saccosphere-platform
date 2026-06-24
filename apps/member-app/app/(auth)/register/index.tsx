@@ -48,10 +48,27 @@ export default function RegisterStep1() {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
-  const { control, handleSubmit, formState: { errors } } = useForm<FormData>({
+  const { control, handleSubmit, formState: { errors }, watch } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: step1 ?? { email: '', first_name: '', last_name: '', phone_number: '254', password: '', password2: '' },
   })
+
+  const password = watch('password')
+
+  // Calculate password strength
+  const getPasswordStrength = (pwd: string) => {
+    let strength = 0
+    if (pwd.length >= 8) strength++
+    if (/[A-Z]/.test(pwd)) strength++
+    if (/[a-z]/.test(pwd)) strength++
+    if (/[0-9]/.test(pwd)) strength++
+    if (/[^A-Za-z0-9]/.test(pwd)) strength++
+    return strength
+  }
+
+  const passwordStrength = getPasswordStrength(password)
+  const strengthColors = ['#EF4444', '#F59E0B', '#F59E0B', '#10B981', '#10B981']
+  const strengthLabels = ['Weak', 'Fair', 'Good', 'Strong', 'Very Strong']
 
   const onNext = handleSubmit((data) => {
     setStep1(data)
@@ -259,12 +276,17 @@ export default function RegisterStep1() {
 
       {/* Password strength indicator */}
       <View className="flex-row gap-1 mb-2">
-        <View className="flex-1 h-0.5 rounded" style={{ backgroundColor: MINT }} />
-        <View className="flex-1 h-0.5 rounded" style={{ backgroundColor: MINT }} />
-        <View className="flex-1 h-0.5 rounded" style={{ backgroundColor: MINT }} />
-        <View className="flex-1 h-0.5 rounded" style={{ backgroundColor: BORDER }} />
+        {[0, 1, 2, 3, 4].map(i => (
+          <View
+            key={i}
+            className="flex-1 h-0.5 rounded"
+            style={{ backgroundColor: i < passwordStrength ? strengthColors[passwordStrength - 1] : BORDER }}
+          />
+        ))}
       </View>
-      <Text className="text-xs mb-3" style={{ color: MINT }}>Strong password</Text>
+      <Text className="text-xs mb-3" style={{ color: passwordStrength > 0 ? strengthColors[passwordStrength - 1] : INK_MUTED }}>
+        {passwordStrength > 0 ? strengthLabels[passwordStrength - 1] : 'Password strength'}
+      </Text>
 
       {/* Confirm password */}
       <Text className="text-xs font-medium mb-1" style={{ color: INK_SOFT }}>
