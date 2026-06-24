@@ -61,10 +61,10 @@ export function Login() {
 
           <button
             type="submit"
-            disabled={loginMutation.isLoading}
+            disabled={loginMutation.isPending}
             className="w-full rounded-xl bg-indigo-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-indigo-600 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {loginMutation.isLoading ? 'Signing in…' : 'Sign in'}
+            {loginMutation.isPending ? 'Signing in…' : 'Sign in'}
           </button>
         </form>
       </div>

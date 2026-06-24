@@ -16,7 +16,6 @@ export function Login() {
       await loginMutation.mutateAsync({ email, password })
       navigate(from, { replace: true })
     } catch {
-      // Error is already tracked in loginMutation.error
     }
   }
 
@@ -59,10 +58,10 @@ export function Login() {
 
           <button
             type="submit"
-            disabled={loginMutation.isLoading}
+            disabled={loginMutation.isPending}
             className="w-full rounded-xl bg-mint-600 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-mint-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {loginMutation.isLoading ? 'Signing in…' : 'Sign in'}
+            {loginMutation.isPending ? 'Signing in…' : 'Sign in'}
           </button>
         </form>
       </div>

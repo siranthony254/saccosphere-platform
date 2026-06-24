@@ -8,10 +8,15 @@ const REFRESH_TOKEN_STORAGE_KEY = 'sacco-admin-refresh-token'
 
 // ─── Role helpers ──────────────────────────────────────────────────────────────
 
-function deriveRoleFromRoles(roles: any[]): User['role'] {
-  const names = roles.map((r: any) => String(r.name ?? '').toUpperCase())
-  if (names.includes('SUPER_ADMIN')) return 'superadmin'
-  if (names.includes('SACCO_ADMIN')) return 'sacco_admin'
+function deriveRoleFromRoles(roles: any[], basicUser?: Partial<User>): User['role'] {
+  const names = roles.map((r: any) => String(r.name ?? r.role ?? '').toUpperCase())
+  if (names.includes('SUPER_ADMIN') || names.includes('SUPERADMIN')) return 'superadmin'
+  if (names.includes('SACCO_ADMIN') || names.includes('SACCOADMIN')) return 'sacco_admin'
+
+  const explicitRole = String(basicUser?.role ?? '').toLowerCase()
+  if (explicitRole === 'superadmin' || explicitRole === 'super_admin') return 'superadmin'
+  if (explicitRole === 'sacco_admin') return 'sacco_admin'
+
   return 'member'
 }
 
@@ -29,20 +34,25 @@ function saccoContextFromRoles(roles: any[]): { sacco_id: string | null; sacco_s
 }
 
 async function fetchRolesForUser(userId: string): Promise<any[]> {
-  try {
-    const response = await apiCall<any>('GET', '/management/roles/', undefined, {
-      params: { user_id: userId },
-    })
-    const results = Array.isArray(response)
-      ? response
-      : Array.isArray(response?.results)
-        ? response.results
-        : []
-    return results
-  } catch {
-    // 403 means not an admin — return empty
-    return []
+  for (const params of [{ user_id: userId }, undefined] as const) {
+    try {
+      const response = await apiCall<any>(
+        'GET',
+        '/management/roles/',
+        undefined,
+        params ? { params } : undefined
+      )
+      const results = Array.isArray(response)
+        ? response
+        : Array.isArray(response?.results)
+          ? response.results
+          : []
+      if (results.length > 0) return results
+    } catch {
+      // try next strategy
+    }
   }
+  return []
 }
 
 // ─── Auth Bootstrap ────────────────────────────────────────────────────────────
@@ -74,7 +84,7 @@ export function useAuthBootstrap() {
 
         // Determine role via management API
         const roles = await fetchRolesForUser(String(basicUser.id))
-        const role = deriveRoleFromRoles(roles)
+        const role = deriveRoleFromRoles(roles, basicUser)
         const saccoCtx = saccoContextFromRoles(roles)
 
         // SACCO admin portal allows sacco_admin OR superadmin accounts
@@ -119,7 +129,6 @@ export function useLogin() {
 
   return useMutation({
     mutationFn: async (data: { email: string; password: string }) => {
-      // api.auth.login now handles the role fetch internally
       const tokens = await api.auth.login(data)
 
       if (tokens.user.role !== 'sacco_admin' && tokens.user.role !== 'superadmin') {

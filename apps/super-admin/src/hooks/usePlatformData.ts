@@ -38,7 +38,7 @@ const toRevenueData = (data: Record<string, unknown>): RevenueData => ({
 const toLiveTransaction = (txn: {
   id: string
   date: string
-  member_name: string
+  member_name?: string
   sacco_name: string
   txn_type: string
   amount: number
@@ -54,7 +54,7 @@ const toLiveTransaction = (txn: {
     second: '2-digit',
     hour12: false,
   }),
-  member: txn.member_name,
+  member: txn.member_name ?? '—',
   sacco: txn.sacco_name,
   type: txn.txn_type.replace(/_/g, ' '),
   amount: txn.amount,
@@ -102,6 +102,13 @@ export function useAMLFlags() {
   })
 }
 
+export function useKycQueue() {
+  return useQuery({
+    queryKey: ['kyc-queue'],
+    queryFn: api.superAdmin.getKycQueue,
+  })
+}
+
 export function useRevenueData() {
   return useQuery({
     queryKey: QueryKeys.revenue(),
@@ -112,8 +119,24 @@ export function useRevenueData() {
 export function usePlatformLiveFeed() {
   const { data, isLoading } = useQuery({
     queryKey: QueryKeys.platformTransactions(),
-    queryFn: () => api.superAdmin.getTransactions().then((r) => r.results ? r.results.map(toLiveTransaction) : (Array.isArray(r) ? r.map(toLiveTransaction) : [])),
+    queryFn: () =>
+      api.superAdmin.getTransactions().then((r) =>
+        r.results.map((txn) =>
+          toLiveTransaction({
+            id: txn.id,
+            date: txn.date,
+            member_name: (txn as { member_name?: string }).member_name,
+            sacco_name: txn.sacco_name,
+            txn_type: txn.txn_type,
+            amount: txn.amount,
+            direction: txn.direction,
+            payment_method: txn.payment_method,
+            platform_fee: txn.platform_fee,
+            status: txn.status,
+          })
+        )
+      ),
     refetchInterval: 10_000,
   })
-  return { feed: data || [], connected: !isLoading }
+  return { feed: data ?? [], connected: !isLoading }
 }

@@ -27,7 +27,7 @@ export function Revenue() {
           { label: 'Total MRR', value: fmt(overview?.platform_revenue_mtd_kes ?? 1820000), delta: '▲ +22% vs March', accent: true },
           { label: 'SaaS fees (45 SACCOs)', value: fmt(overview?.saas_revenue_mtd_kes ?? 940000), delta: 'KES 20K avg / SACCO' },
           { label: 'Transaction fees (1%)', value: fmt(overview?.transaction_fees_mtd_kes ?? 880000), delta: 'KES 182M txn volume' },
-          { label: 'Overdue fees', value: 'KES 32K', delta: 'Kenya Police SACCO', deltaColor: 'text-red-700' },
+          { label: 'Overdue fees', value: revenue?.saas_fees?.some(r => r.status !== 'paid') ? 'See table' : 'KES 0', delta: 'From SACCO fee data', deltaColor: 'text-ink-muted' },
         ].map(m => (
           <div key={m.label} className={`rounded-[10px] py-[14px] px-4 ${m.accent ? 'bg-gradient-to-br from-indigo-500 to-violet-500 border-none' : 'bg-surface border border-mid'}`}>
             <div className={`text-[10px] mb-1.5 uppercase tracking-[0.04em] font-medium ${m.accent ? 'text-white/60' : 'text-ink-muted'}`}>{m.label}</div>
@@ -50,7 +50,14 @@ export function Revenue() {
               </tr>
             </thead>
             <tbody>
-              {(revenue?.saas_fees ?? []).map((row: any, i: number) => (
+              {(revenue?.saas_fees ?? []).length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="py-6 px-3 text-center text-ink-muted text-xs">
+                    No per-SACCO revenue breakdown returned by the backend. Platform totals are shown above when available.
+                  </td>
+                </tr>
+              ) : (
+                (revenue?.saas_fees ?? []).map((row: any, i: number) => (
                 <tr key={row.sacco} className={`border-b border-surface-2 ${i % 2 === 0 ? 'bg-surface' : 'bg-surface-2'}`}>
                   <td className="py-2 px-3 font-medium">{row.sacco}</td>
                   <td className="py-2 px-3 text-ink-muted">KES {row.fee.toLocaleString()}</td>
@@ -62,25 +69,22 @@ export function Revenue() {
                     </span>
                   </td>
                 </tr>
-              ))}
+              ))
+              )}
             </tbody>
           </table>
         </div>
 
         {/* ARR / growth */}
         <div className="bg-surface border border-mid rounded-[10px] p-4">
-          <div className="font-semibold text-[13px] text-ink mb-4">Revenue growth (KES K)</div>
-          {/* Bar chart */}
-          <div className="flex items-end gap-1 h-[90px] mb-2">
-            {[20,26,34,42,48,55,62,70,78,84,91,100].map((h, i) => (
-              <div key={i} className="flex-1 flex flex-col items-center justify-end h-full">
-                <div className={`w-full rounded-t-sm h-full ${i === 11 ? 'bg-indigo-200' : 'bg-violet-500'}`} style={{ height: `${h}%` }} />
-              </div>
-            ))}
-          </div>
-          <div className="flex justify-between text-[9px] text-ink-faint mb-4">
-            {['M','J','J','A','S','O','N','D','J','F','M','A'].map((m, i) => <span key={i}>{m}</span>)}
-          </div>
+          <div className="font-semibold text-[13px] text-ink mb-4">Revenue growth</div>
+          {(revenue?.arr_kes ?? 0) > 0 ? (
+            <div className="text-sm text-ink-muted mb-4">
+              Historical monthly growth chart requires a dedicated backend analytics endpoint.
+            </div>
+          ) : (
+            <div className="text-sm text-ink-muted mb-4">No historical revenue series available from the backend yet.</div>
+          )}
 
           <div className="border-t border-surface-2 pt-3.5 grid grid-cols-3 gap-2.5">
             {[

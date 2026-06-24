@@ -30,7 +30,7 @@ export function SaccosList() {
       <div className="flex justify-between items-center mb-5">
         <div>
           <div className="text-lg font-semibold text-ink">SACCO directory</div>
-          <div className="text-xs text-ink-muted">{data?.count ?? 0} SACCOs · 2 onboarding in progress</div>
+          <div className="text-xs text-ink-muted">{data?.count ?? 0} SACCOs on platform</div>
         </div>
         <div className="flex gap-2">
           <button className="py-1.5 px-3.5 rounded-lg border border-mid bg-surface text-[13px] cursor-pointer hover:bg-surface-2 transition-colors">Export CSV</button>

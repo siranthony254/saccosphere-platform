@@ -47,10 +47,10 @@ export function Overview() {
 
       {/* KPIs */}
       <div className="grid grid-cols-4 gap-3 mb-5">
-        <Metric label="Platform transaction volume" value={fmt(d.transaction_volume_mtd_kes)} delta="▲ +22% vs last month" accent />
-        <Metric label="Active SACCOs" value={d.active_saccos.toString()} delta="▲ +3 this month" />
-        <Metric label="Total members on app" value={d.total_members_on_app.toLocaleString()} delta="▲ +1,840 this month" />
-        <Metric label="Platform revenue (MTD)" value={fmt(d.platform_revenue_mtd_kes)} delta="SaaS + transaction fees" />
+        <Metric label="Platform transaction volume" value={fmt(d.transaction_volume_mtd_kes)} />
+        <Metric label="Active SACCOs" value={d.active_saccos.toString()} />
+        <Metric label="Total members on app" value={d.total_members_on_app.toLocaleString()} />
+        <Metric label="Platform revenue (MTD)" value={fmt(d.platform_revenue_mtd_kes)} />
       </div>
 
       <div className="grid grid-cols-2 gap-4">
@@ -74,9 +74,9 @@ export function Overview() {
             ))}
             <div className="grid grid-cols-3 gap-2.5 mt-3.5 pt-3 border-t border-surface-2">
               {[
-                { label:'ARR', value:'KES 21.8M' },
-                { label:'Projected 12mo', value:'KES 28M' },
-                { label:'Per SACCO avg', value:'KES 38.7K' },
+                { label: 'Total SACCOs', value: d.total_saccos.toString() },
+                { label: 'Open compliance items', value: (d.aml_flags_open ?? 0).toString() },
+                { label: 'System alerts', value: (d.system_alerts ?? 0).toString() },
               ].map(s => (
                 <div key={s.label} className="text-center">
                   <div className="text-[10px] text-ink-muted mb-0.5">{s.label}</div>
@@ -89,16 +89,22 @@ export function Overview() {
           {/* System alerts */}
           <div className="bg-surface border border-mid rounded-[10px] p-4">
             <div className="font-semibold text-[13px] text-ink mb-3">Platform alerts</div>
-            {[
-              { color:'border-amber-600', bg:'bg-amber-50', text:'Unaitas SACCO: 18 membership applications pending SACCO review for 5+ days', textClass:'text-amber-700' },
-              { color:'border-red-700', bg:'bg-red-50', text:'Kenya Police SACCO: M-Pesa API callback timeout — 3 failed disbursements', textClass:'text-red-800' },
-              { color:'border-amber-600', bg:'bg-amber-50', text:'Stima SACCO: CBK AML report due in 3 days — not yet submitted', textClass:'text-amber-700' },
-              { color:'border-violet-800', bg:'bg-violet-50', text:'2 new SACCO onboarding requests — pending super admin approval', textClass:'text-violet-800' },
-            ].map((a,i) => (
-              <div key={i} className={`${a.bg} border-l-[3px] ${a.color} rounded-r-lg py-2 px-3 mb-2 text-xs ${a.textClass}`}>
-                {a.text}
-              </div>
-            ))}
+            {(d.system_alerts ?? 0) > 0 || (d.aml_flags_open ?? 0) > 0 ? (
+              <>
+                {(d.system_alerts ?? 0) > 0 && (
+                  <div className="bg-amber-50 border-l-[3px] border-amber-600 rounded-r-lg py-2 px-3 mb-2 text-xs text-amber-700">
+                    {d.system_alerts} pending application(s) across the platform.
+                  </div>
+                )}
+                {(d.aml_flags_open ?? 0) > 0 && (
+                  <div className="bg-red-50 border-l-[3px] border-red-700 rounded-r-lg py-2 px-3 mb-2 text-xs text-red-800">
+                    {d.aml_flags_open} KYC/compliance item(s) require review.
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="text-xs text-ink-muted">No platform alerts reported by the backend.</div>
+            )}
           </div>
         </div>
 
@@ -120,7 +126,12 @@ export function Overview() {
               </tr>
             </thead>
             <tbody>
-              {feed.map((t: any, i: number) => (
+              {feed.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="p-6 text-center text-ink-muted text-xs">No transactions returned from the backend yet.</td>
+                </tr>
+              ) : (
+                feed.map((t: any, i: number) => (
                 <tr key={t.id} className={`border-b border-surface-2 ${i === 0 ? 'bg-violet-25' : i % 2 === 0 ? 'bg-surface' : 'bg-surface-2'}`}>
                   <td className="p-2 text-ink-faint text-[10px] font-mono">{t.time}</td>
                   <td className="p-2 font-medium">{t.member}</td>
@@ -136,7 +147,8 @@ export function Overview() {
                     </span>
                   </td>
                 </tr>
-              ))}
+              ))
+              )}
             </tbody>
           </table>
         </div>

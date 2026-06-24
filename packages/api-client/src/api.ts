@@ -1,5 +1,5 @@
 
-import { apiCall } from './core'
+import { apiCall, setAccessToken } from './core'
 import type {
   LoginInput,
   RegisterInput,
@@ -32,6 +32,8 @@ import {
   SaccoSchema,
   STKPushInputSchema,
   AdminMemberSchema,
+  AdminLoanSchema,
+  AMLFlagSchema,
   SuperAdminSaccoSchema,
   TransactionSchema,
   UserSchema,
@@ -66,8 +68,20 @@ const normalizeStkPushResponse = (payload: any): STKPushResponse => ({
 
 const normalizeUserRole = (roleNames: string[]): User['role'] => {
   const upper = roleNames.map((r) => String(r).toUpperCase())
-  if (upper.includes('SUPER_ADMIN')) return 'superadmin'
-  if (upper.includes('SACCO_ADMIN')) return 'sacco_admin'
+  if (upper.includes('SUPER_ADMIN') || upper.includes('SUPERADMIN')) return 'superadmin'
+  if (upper.includes('SACCO_ADMIN') || upper.includes('SACCOADMIN')) return 'sacco_admin'
+  return 'member'
+}
+
+const resolveUserRole = (basicUser: any, roles: any[]): User['role'] => {
+  const fromRoles = normalizeUserRole(roles.map((r: any) => String(r.name ?? r.role ?? '')))
+  if (fromRoles !== 'member') return fromRoles
+
+  const explicitRole = String(basicUser.role ?? basicUser.user_type ?? '').toLowerCase()
+  if (explicitRole === 'superadmin' || explicitRole === 'super_admin') return 'superadmin'
+  if (explicitRole === 'sacco_admin' || explicitRole === 'saccoadmin') return 'sacco_admin'
+  if (basicUser.is_superuser === true) return 'superadmin'
+  if (basicUser.is_sacco_admin === true || basicUser.is_staff === true) return 'sacco_admin'
   return 'member'
 }
 
@@ -102,21 +116,35 @@ const normalizeUser = (user: any, roleOverrides?: { role?: User['role']; sacco_i
  * Fetch the authenticated user's platform roles from the management API.
  * Returns role names array. Returns [] if the user is not an admin.
  */
-const fetchUserRoles = async (userId: string): Promise<any[]> => {
-  try {
-    const response = await apiCall<any>('GET', '/management/roles/', undefined, {
-      params: { user_id: userId },
-    })
-    const results = Array.isArray(response)
-      ? response
-      : Array.isArray(response?.results)
-        ? response.results
-        : []
-    return results
-  } catch {
-    // 403 = not an admin, empty roles
-    return []
+const parseRolesResponse = (response: any): any[] =>
+  Array.isArray(response)
+    ? response
+    : Array.isArray(response?.results)
+      ? response.results
+      : []
+
+const fetchUserRoles = async (userId?: string): Promise<any[]> => {
+  const paramSets: Array<Record<string, string> | undefined> = [
+    userId ? { user_id: userId } : undefined,
+    undefined,
+  ]
+
+  for (const params of paramSets) {
+    try {
+      const response = await apiCall<any>(
+        'GET',
+        '/management/roles/',
+        undefined,
+        params ? { params } : undefined
+      )
+      const results = parseRolesResponse(response)
+      if (results.length > 0) return results
+    } catch {
+      // 403 = not an admin for this query — try next strategy
+    }
   }
+
+  return []
 }
 
 const normalizeKenyanPhoneNumber = (phone: string) => {
@@ -329,6 +357,70 @@ const normalizeAdminApplication = (member: any): MembershipApplication => {
   }
 }
 
+const normalizeAdminLoan = (loan: any): AdminLoan => {
+  const membership = loan.membership ?? {}
+  const user = membership.user ?? loan.user ?? {}
+  const fullName = String(user.full_name ?? `${user.first_name ?? ''} ${user.last_name ?? ''}`.trim())
+  const statusMap: Record<string, AdminLoan['status']> = {
+    pending: 'submitted',
+    submitted: 'submitted',
+    guarantors_pending: 'guarantors_pending',
+    under_review: 'under_review',
+    board_review: 'under_review',
+    approved: 'approved',
+    rejected: 'rejected',
+    disbursed: 'disbursed',
+    active: 'disbursed',
+    closed: 'closed',
+    completed: 'closed',
+  }
+  const rawStatus = String(loan.status ?? 'pending').toLowerCase()
+
+  return AdminLoanSchema.parse({
+    id: loan.id,
+    ref: loan.reference ?? loan.id,
+    member_name: fullName || 'Unknown member',
+    member_number: membership.member_number ?? '',
+    member_id: membership.id ?? membership.user_id ?? user.id ?? loan.id,
+    loan_product_label: loan.loan_type?.name ?? loan.loan_type ?? 'Loan',
+    amount_requested: Number(loan.amount ?? 0),
+    period_months: Number(loan.term_months ?? 0),
+    interest_rate: Number(loan.interest_rate ?? 0),
+    monthly_instalment: Number(loan.monthly_instalment ?? 0),
+    status: statusMap[rawStatus] ?? 'submitted',
+    guarantors_confirmed: Number(loan.guarantors_confirmed ?? loan.confirmed_guarantors ?? 0),
+    guarantors_required: Number(loan.guarantors_required ?? loan.min_guarantors ?? 0),
+    disbursement_method: 'mpesa',
+    disbursement_account: loan.disbursement_account ?? '',
+    submitted_at: loan.created_at ?? new Date().toISOString(),
+    approved_at: loan.approved_at ?? null,
+    disbursed_at: loan.disbursement_date ?? null,
+  })
+}
+
+const normalizePlatformOverview = (stats: any, saccos: Sacco[], publicStats?: { total_saccos?: number; total_members_on_app?: number }) => {
+  const activeSaccos = saccos.filter((s) => s.status === 'active')
+  const totalMembersFromSaccos = saccos.reduce((sum, s) => sum + (s.member_count ?? 0), 0)
+
+  return PlatformOverviewSchema.parse({
+    total_saccos: Number(publicStats?.total_saccos ?? stats.total_saccos ?? saccos.length),
+    active_saccos: Number(stats.active_saccos ?? activeSaccos.length),
+    total_members: Number(stats.total_members ?? totalMembersFromSaccos),
+    total_members_on_app: Number(
+      publicStats?.total_members_on_app ?? stats.total_members_on_app ?? stats.total_members ?? totalMembersFromSaccos
+    ),
+    transaction_volume_mtd_kes: Number(
+      stats.transaction_volume_mtd_kes ?? stats.transaction_volume_mtd ?? stats.monthly_contributions ?? 0
+    ),
+    platform_revenue_mtd_kes: Number(stats.platform_revenue_mtd_kes ?? stats.platform_revenue_mtd ?? 0),
+    saas_revenue_mtd_kes: Number(stats.saas_revenue_mtd_kes ?? stats.saas_revenue_mtd ?? 0),
+    transaction_fees_mtd_kes: Number(stats.transaction_fees_mtd_kes ?? stats.transaction_fees_mtd ?? 0),
+    kyc_verified_pct: Number(stats.kyc_verified_pct ?? stats.kyc_verification_rate ?? 0),
+    aml_flags_open: Number(stats.aml_flags_open ?? stats.pending_kyc_reviews ?? 0),
+    system_alerts: Number(stats.system_alerts ?? stats.pending_applications ?? 0),
+  })
+}
+
 const normalizeTransaction = (item: any): Transaction => {
   const rawType = String(item.txn_type ?? item.transaction_type ?? item.type ?? 'contribution').toLowerCase()
   const txnType =
@@ -418,9 +510,8 @@ export const api = {
       setAccessToken(payload.access)
 
       // Step 3: fetch roles from management API to determine admin level
-      const roles = userId ? await fetchUserRoles(userId) : []
-      const roleNames = roles.map((r: any) => String(r.name ?? '').toUpperCase())
-      const role = normalizeUserRole(roleNames)
+      const roles = await fetchUserRoles(userId ? String(userId) : undefined)
+      const role = resolveUserRole(basicUser, roles)
       const saccoCtx = saccoContextFromRoles(roles)
 
       return AuthTokensSchema.parse({
@@ -1029,12 +1120,23 @@ export const api = {
         review_notes: data.notes,
       }),
 
-    getLoans: async (_params?: { status?: string; cursor?: string }): Promise<PaginatedResponse<AdminLoan>> => ({
-      count: 0,
-      next: null,
-      previous: null,
-      results: [],
-    }),
+    getLoans: async (params?: { status?: string; cursor?: string }) => {
+      const requestParams: Record<string, string> = {}
+      if (params?.status) requestParams.status = params.status.toUpperCase()
+      if (params?.cursor) requestParams.cursor = params.cursor
+
+      const response = await apiCall<any>('GET', '/services/loans/list/', undefined, {
+        params: requestParams,
+      })
+      const items = unwrapResults(response)
+
+      return {
+        count: Number(response.count ?? items.length),
+        next: response.next ?? null,
+        previous: response.previous ?? null,
+        results: items.map(normalizeAdminLoan),
+      }
+    },
 
     reviewLoan: (id: string, data: { action: 'approve' | 'reject'; notes?: string }) =>
       apiCall<void>('PATCH', `/management/loans/${uuid(id)}/status/`, {
@@ -1093,20 +1195,12 @@ export const api = {
 
   superAdmin: {
     getDashboard: async () => {
-      const saccos = await api.saccos.list()
-      return PlatformOverviewSchema.parse({
-        total_saccos: saccos.length,
-        active_saccos: saccos.filter((s) => s.status === 'active').length,
-        total_members: saccos.reduce((sum, s) => sum + (s.member_count ?? 0), 0),
-        total_members_on_app: saccos.reduce((sum, s) => sum + (s.member_count ?? 0), 0),
-        transaction_volume_mtd_kes: 0,
-        platform_revenue_mtd_kes: 0,
-        saas_revenue_mtd_kes: 0,
-        transaction_fees_mtd_kes: 0,
-        kyc_verified_pct: 0,
-        aml_flags_open: 0,
-        system_alerts: 0,
-      })
+      const [stats, saccos, publicStats] = await Promise.all([
+        apiCall<any>('GET', '/management/stats/').catch(() => ({})),
+        api.saccos.list().catch(() => [] as Sacco[]),
+        api.saccos.getPublicStats().catch(() => ({ total_saccos: 0, total_members_on_app: 0 })),
+      ])
+      return normalizePlatformOverview(stats, saccos, publicStats)
     },
 
     getSaccos: (params?: { status?: string; sector?: string; search?: string }) =>
@@ -1121,9 +1215,16 @@ export const api = {
       }),
 
     getSacco: async (id: string) => {
-      const sacco = await api.saccos.get(id)
+      const [sacco, stats] = await Promise.all([
+        api.saccos.get(id),
+        apiCall<any>('GET', '/management/stats/', undefined, { params: { sacco: id } }).catch(() => null),
+      ])
       return {
-        ...normalizeSuperAdminSacco(sacco),
+        ...normalizeSuperAdminSacco({
+          ...sacco,
+          transaction_volume_mtd_kes: stats?.transaction_volume_mtd_kes ?? stats?.monthly_contributions ?? 0,
+          platform_fee_kes: stats?.platform_fee_kes ?? 0,
+        }),
         admin_team: [],
       }
     },
@@ -1140,22 +1241,104 @@ export const api = {
     unsuspendSacco: (id: string) =>
       apiCall<void>('PATCH', `/super-admin/saccos/${id}/unsuspend/`),
 
-    getAllMembers: (_params?: { sacco?: string; kyc_status?: string; search?: string }) =>
-      Promise.resolve({ count: 0, next: null, previous: null, results: [] }),
+    getAllMembers: (params?: { sacco?: string; kyc_status?: string; search?: string; cursor?: string }) =>
+      api.saccoAdmin.getMembers(params),
 
-    getTransactions: (_params?: { cursor?: string }) =>
-      Promise.resolve({ count: 0, next: null, previous: null, results: [] }),
+    getTransactions: async (params?: { cursor?: string; sacco?: string }) => {
+      const response = await apiCall<any>('GET', '/payments/transactions/', undefined, { params })
+      const items = unwrapResults(response)
+      return {
+        count: Number(response.count ?? items.length),
+        next: response.next ?? null,
+        previous: response.previous ?? null,
+        results: items.map((item: any) => ({
+          ...normalizeTransaction(item),
+          member_name:
+            item.member_name ??
+            item.user?.full_name ??
+            item.membership?.user?.full_name ??
+            item.description ??
+            '—',
+        })),
+      }
+    },
 
-    getRevenue: (_params?: { period?: string }) =>
-      Promise.resolve({}),
+    getRevenue: async () => {
+      const [stats, saccos] = await Promise.all([
+        apiCall<any>('GET', '/management/stats/').catch(() => ({})),
+        api.saccos.list().catch(() => [] as Sacco[]),
+      ])
 
-    getAMLFlags: () =>
-      Promise.resolve([]),
+      const saasFees = saccos.map((sacco) => {
+        const normalized = normalizeSuperAdminSacco(sacco)
+        return {
+          sacco: normalized.name,
+          fee: normalized.platform_fee_kes,
+          txn_fees: 0,
+          total: normalized.platform_fee_kes,
+          status: normalized.fee_status,
+        }
+      })
+
+      return {
+        saas_fees: saasFees,
+        arr_kes: Number(stats.arr_kes ?? stats.platform_revenue_mtd_kes ?? 0) * 12,
+        projected_12mo_kes: Number(stats.projected_12mo_kes ?? 0),
+        avg_per_sacco_kes:
+          saasFees.length > 0
+            ? saasFees.reduce((sum, row) => sum + row.total, 0) / saasFees.length
+            : 0,
+      }
+    },
+
+    getKycQueue: async () => {
+      const response = await apiCall<any>('GET', '/management/kyc/queue/')
+      return unwrapResults(response)
+    },
+
+    getAMLFlags: async () => {
+      try {
+        const queue = await api.superAdmin.getKycQueue()
+        const normalizeRisk = (value: unknown): 'low' | 'medium' | 'high' => {
+          const level = String(value ?? 'medium').toLowerCase()
+          if (level === 'low' || level === 'high') return level
+          return 'medium'
+        }
+        const normalizeStatus = (value: unknown): 'open' | 'under_review' | 'resolved' | 'escalated' => {
+          const status = String(value ?? 'open').toLowerCase()
+          if (status === 'under_review' || status === 'resolved' || status === 'escalated') return status
+          return 'open'
+        }
+
+        return queue.map((item: any) =>
+          AMLFlagSchema.parse({
+            id: item.id,
+            member_name:
+              item.user?.full_name ??
+              `${item.user?.first_name ?? ''} ${item.user?.last_name ?? ''}`.trim(),
+            sacco_name: item.sacco?.name ?? item.membership?.sacco_name ?? '',
+            transaction_ref: item.reference ?? '',
+            flag_reason: item.review_notes ?? item.status ?? 'KYC review required',
+            amount: Number(item.amount ?? 0),
+            risk_level: normalizeRisk(item.risk_level),
+            status: normalizeStatus(item.status),
+            flagged_at: item.created_at ?? item.flagged_at ?? new Date().toISOString(),
+          })
+        )
+      } catch {
+        return []
+      }
+    },
 
     resolveAMLFlag: (_id: string, _notes: string) =>
-      Promise.reject(new Error('Resolve AML flags is not supported by the current backend contract.')),
+      apiCall<void>('PATCH', `/management/kyc/${uuid(_id)}/review/`, {
+        status: 'APPROVED',
+        review_notes: _notes,
+      }),
 
     getSystemHealth: () =>
-      Promise.resolve({ services: [] }),
+      apiCall<Record<string, unknown>>('GET', '/management/stats/').then((stats) => ({
+        services: Array.isArray(stats.services) ? stats.services : [],
+      })),
   },
 }

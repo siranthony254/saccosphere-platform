@@ -57,7 +57,12 @@ export function TransactionsFeed() {
             </tr>
           </thead>
           <tbody>
-            {(feed as any[]).map((t, i) => (
+            {(feed as any[]).length === 0 ? (
+              <tr>
+                <td colSpan={8} className="px-3 py-6 text-center text-ink-muted">No transactions returned from the backend.</td>
+              </tr>
+            ) : (
+              (feed as any[]).map((t, i) => (
               <tr key={t.id} className={`border-b border-neutral-200 ${i === 0 ? 'bg-violet-25' : i % 2 === 0 ? 'bg-white' : 'bg-neutral-50'}`}>
                 <td className="px-3 py-2 text-ink-muted font-mono text-xs">{t.time}</td>
                 <td className="px-3 py-2 font-medium">{t.member}</td>
@@ -74,7 +79,8 @@ export function TransactionsFeed() {
                   </span>
                 </td>
               </tr>
-            ))}
+            ))
+            )}
           </tbody>
         </table>
       </div>

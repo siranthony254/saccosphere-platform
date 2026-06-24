@@ -2,7 +2,6 @@ import { createBrowserRouter, Navigate } from 'react-router-dom'
 import { AppShell } from './components/layout/AppShell'
 import { RequireAuth } from './components/auth/RequireAuth'
 import { Login } from './pages/Auth/Login'
-import { Register } from './pages/Auth/Register'
 
 // Feature flags (controlled via Vite env)
 const ENABLE_REGISTRATION = (import.meta.env.VITE_ENABLE_REGISTRATION ?? 'true') !== 'false'
@@ -20,14 +19,6 @@ export const router = createBrowserRouter([
     path: '/login',
     element: <Login />,
   },
-  ...(ENABLE_REGISTRATION
-    ? [
-        {
-          path: '/register',
-          element: <Register />,
-        },
-      ]
-    : []),
   {
     path: '/',
     element: (

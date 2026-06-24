@@ -8,28 +8,38 @@ const REFRESH_TOKEN_STORAGE_KEY = 'super-admin-refresh-token'
 
 // ─── Role helpers (mirrors api-client logic, works on management/roles response) ─
 
-function deriveRoleFromRoles(roles: any[]): User['role'] {
-  const names = roles.map((r: any) => String(r.name ?? '').toUpperCase())
-  if (names.includes('SUPER_ADMIN')) return 'superadmin'
-  if (names.includes('SACCO_ADMIN')) return 'sacco_admin'
+function deriveRoleFromRoles(roles: any[], basicUser?: Partial<User>): User['role'] {
+  const names = roles.map((r: any) => String(r.name ?? r.role ?? '').toUpperCase())
+  if (names.includes('SUPER_ADMIN') || names.includes('SUPERADMIN')) return 'superadmin'
+  if (names.includes('SACCO_ADMIN') || names.includes('SACCOADMIN')) return 'sacco_admin'
+
+  const explicitRole = String(basicUser?.role ?? '').toLowerCase()
+  if (explicitRole === 'superadmin' || explicitRole === 'super_admin') return 'superadmin'
+  if (explicitRole === 'sacco_admin') return 'sacco_admin'
+
   return 'member'
 }
 
 async function fetchRolesForUser(userId: string): Promise<any[]> {
-  try {
-    const response = await apiCall<any>('GET', '/management/roles/', undefined, {
-      params: { user_id: userId },
-    })
-    const results = Array.isArray(response)
-      ? response
-      : Array.isArray(response?.results)
-        ? response.results
-        : []
-    return results
-  } catch {
-    // 403 means the user is not an admin — return empty
-    return []
+  for (const params of [{ user_id: userId }, undefined] as const) {
+    try {
+      const response = await apiCall<any>(
+        'GET',
+        '/management/roles/',
+        undefined,
+        params ? { params } : undefined
+      )
+      const results = Array.isArray(response)
+        ? response
+        : Array.isArray(response?.results)
+          ? response.results
+          : []
+      if (results.length > 0) return results
+    } catch {
+      // try next strategy
+    }
   }
+  return []
 }
 
 // ─── Auth Bootstrap ────────────────────────────────────────────────────────────
@@ -61,7 +71,7 @@ export function useAuthBootstrap() {
 
         // Fetch roles from management API to determine admin level
         const roles = await fetchRolesForUser(String(basicUser.id))
-        const role = deriveRoleFromRoles(roles)
+        const role = deriveRoleFromRoles(roles, basicUser)
 
         // Super admin portal only allows superadmin accounts
         if (role !== 'superadmin') {
