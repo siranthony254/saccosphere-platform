@@ -74,80 +74,18 @@ const normalizeUserRole = (roleNames: string[]): User['role'] => {
 }
 
 const resolveUserRole = (basicUser: any, roles: any[]): User['role'] => {
-  const fromRoles = normalizeUserRole(roles.map((r: any) => String(r.name ?? r.role ?? '')))
-  if (fromRoles !== 'member') return fromRoles
-
+  // First check if role is provided in the backend response
   const explicitRole = String(basicUser.role ?? basicUser.user_type ?? '').toLowerCase()
   if (explicitRole === 'superadmin' || explicitRole === 'super_admin') return 'superadmin'
   if (explicitRole === 'sacco_admin' || explicitRole === 'saccoadmin') return 'sacco_admin'
   if (basicUser.is_superuser === true) return 'superadmin'
   if (basicUser.is_sacco_admin === true || basicUser.is_staff === true) return 'sacco_admin'
+  
+  // Fallback to roles array if provided
+  const fromRoles = normalizeUserRole(roles.map((r: any) => String(r.name ?? r.role ?? '')))
+  if (fromRoles !== 'member') return fromRoles
+  
   return 'member'
-}
-
-type ExpectedAdminRole = 'superadmin' | 'sacco_admin' | 'admin'
-
-const probeSuperAdminAccess = async (): Promise<boolean> => {
-  try {
-    await apiCall<any>('GET', '/management/audit-logs/', undefined, {
-      params: { page: 1 },
-    })
-    return true
-  } catch {
-    return false
-  }
-}
-
-const probeSaccoAdminAccess = async (): Promise<boolean> => {
-  try {
-    await apiCall<any>('GET', '/management/stats/')
-    return true
-  } catch {
-    return false
-  }
-}
-
-const resolveUserRoleForPortal = async (
-  basicUser: any,
-  userId?: string,
-  expectedRole?: ExpectedAdminRole
-): Promise<{ role: User['role']; roles: any[] }> => {
-  const explicitRole = resolveUserRole(basicUser, [])
-  if (explicitRole !== 'member') {
-    return { role: explicitRole, roles: [] }
-  }
-
-  if (expectedRole === 'superadmin') {
-    if (await probeSuperAdminAccess()) return { role: 'superadmin', roles: [] }
-    const roles = await fetchUserRoles(userId)
-    return { role: resolveUserRole(basicUser, roles), roles }
-  }
-
-  if (expectedRole === 'sacco_admin') {
-    if (await probeSaccoAdminAccess()) return { role: 'sacco_admin', roles: [] }
-    if (await probeSuperAdminAccess()) return { role: 'superadmin', roles: [] }
-    const roles = await fetchUserRoles(userId)
-    return { role: resolveUserRole(basicUser, roles), roles }
-  }
-
-  if (expectedRole === 'admin') {
-    if (await probeSuperAdminAccess()) return { role: 'superadmin', roles: [] }
-    if (await probeSaccoAdminAccess()) return { role: 'sacco_admin', roles: [] }
-  }
-
-  const roles = await fetchUserRoles(userId)
-  return { role: resolveUserRole(basicUser, roles), roles }
-}
-
-// Extract sacco context for SACCO_ADMIN users from roles response
-const saccoContextFromRoles = (roles: any[]): { sacco_id: string | null; sacco_slug: string | null } => {
-  const adminRole = roles.find(
-    (r: any) => String(r.name).toUpperCase() === 'SACCO_ADMIN' && r.sacco != null
-  )
-  if (!adminRole) return { sacco_id: null, sacco_slug: null }
-  const saccoId = typeof adminRole.sacco === 'object' ? adminRole.sacco?.id : adminRole.sacco
-  const saccoSlug = typeof adminRole.sacco === 'object' ? adminRole.sacco?.slug ?? null : null
-  return { sacco_id: saccoId ? String(saccoId) : null, sacco_slug: saccoSlug }
 }
 
 const normalizeUser = (user: any, roleOverrides?: { role?: User['role']; sacco_id?: string | null; sacco_slug?: string | null }): User => {
@@ -166,40 +104,6 @@ const normalizeUser = (user: any, roleOverrides?: { role?: User['role']; sacco_i
   })
 }
 
-/**
- * Fetch the authenticated user's platform roles from the management API.
- * Returns role names array. Returns [] if the user is not an admin.
- */
-const parseRolesResponse = (response: any): any[] =>
-  Array.isArray(response)
-    ? response
-    : Array.isArray(response?.results)
-      ? response.results
-      : []
-
-const fetchUserRoles = async (userId?: string): Promise<any[]> => {
-  const paramSets: Array<Record<string, string> | undefined> = [
-    userId ? { user_id: userId } : undefined,
-    undefined,
-  ]
-
-  for (const params of paramSets) {
-    try {
-      const response = await apiCall<any>(
-        'GET',
-        '/management/roles/',
-        undefined,
-        params ? { params } : undefined
-      )
-      const results = parseRolesResponse(response)
-      if (results.length > 0) return results
-    } catch {
-      // 403 = not an admin for this query — try next strategy
-    }
-  }
-
-  return []
-}
 
 const normalizeKenyanPhoneNumber = (phone: string) => {
   const cleaned = String(phone).trim().replace(/[\s-()]+/g, '')
@@ -550,33 +454,18 @@ export interface PaginatedResponse<T> {
 
 export const api = {
   auth: {
-    login: async (data: LoginInput, options?: { expectedRole?: ExpectedAdminRole }) => {
-      // Step 1: authenticate and get tokens + basic user profile
+    login: async (data: LoginInput) => {
       const payload = await apiCall<any>('POST', '/accounts/login/', {
         email: data.email,
         password: data.password,
       })
 
-      const basicUser = payload.user
-      const userId = basicUser?.id ?? basicUser?.uuid ?? ''
-
-      // Step 2: set token so the roles call is authenticated
       setAccessToken(payload.access)
-
-      // Step 3: determine role using portal-specific backend endpoints first.
-      // /management/roles/ is itself protected, so a 403 there is not a reliable
-      // signal that the user is not an admin.
-      const { role, roles } = await resolveUserRoleForPortal(
-        basicUser,
-        userId ? String(userId) : undefined,
-        options?.expectedRole
-      )
-      const saccoCtx = saccoContextFromRoles(roles)
 
       return AuthTokensSchema.parse({
         access: payload.access,
         refresh: payload.refresh,
-        user: normalizeUser(basicUser, { role, ...saccoCtx }),
+        user: normalizeUser(payload.user),
       })
     },
 
@@ -595,6 +484,7 @@ export const api = {
         email: input.email,
         password: input.password,
       })
+      setAccessToken(tokens.access)
       return AuthTokensSchema.parse({
         access: tokens.access,
         refresh: tokens.refresh,

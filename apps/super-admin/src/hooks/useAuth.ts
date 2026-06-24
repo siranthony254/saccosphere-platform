@@ -1,45 +1,26 @@
 import { useEffect } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { api, clearTokens, setAccessToken, setRefreshToken, apiCall } from '@saccosphere/api-client'
+import { api, clearTokens, setAccessToken, setRefreshToken } from '@saccosphere/api-client'
 import { useAuthStore } from '../store/useAuthStore'
-import type { User } from '@saccosphere/schemas'
+import type { LoginInput } from '@saccosphere/schemas'
 
 const REFRESH_TOKEN_STORAGE_KEY = 'super-admin-refresh-token'
 
-// ─── Role helpers (mirrors api-client logic, works on management/roles response) ─
-
-function deriveRoleFromRoles(roles: any[], basicUser?: Partial<User>): User['role'] {
-  const names = roles.map((r: any) => String(r.name ?? r.role ?? '').toUpperCase())
-  if (names.includes('SUPER_ADMIN') || names.includes('SUPERADMIN')) return 'superadmin'
-  if (names.includes('SACCO_ADMIN') || names.includes('SACCOADMIN')) return 'sacco_admin'
-
-  const explicitRole = String(basicUser?.role ?? '').toLowerCase()
-  if (explicitRole === 'superadmin' || explicitRole === 'super_admin') return 'superadmin'
-  if (explicitRole === 'sacco_admin') return 'sacco_admin'
-
-  return 'member'
+export async function saveRefreshToken(token?: string | null) {
+  setRefreshToken(token ?? null)
+  if (!token) return clearStoredRefreshToken()
+  window.localStorage.setItem(REFRESH_TOKEN_STORAGE_KEY, token)
 }
 
-async function fetchRolesForUser(userId: string): Promise<any[]> {
-  for (const params of [{ user_id: userId }, undefined] as const) {
-    try {
-      const response = await apiCall<any>(
-        'GET',
-        '/management/roles/',
-        undefined,
-        params ? { params } : undefined
-      )
-      const results = Array.isArray(response)
-        ? response
-        : Array.isArray(response?.results)
-          ? response.results
-          : []
-      if (results.length > 0) return results
-    } catch {
-      // try next strategy
-    }
-  }
-  return []
+export async function loadRefreshToken() {
+  const token = window.localStorage.getItem(REFRESH_TOKEN_STORAGE_KEY)
+  setRefreshToken(token)
+  return token
+}
+
+export async function clearStoredRefreshToken() {
+  setRefreshToken(null)
+  window.localStorage.removeItem(REFRESH_TOKEN_STORAGE_KEY)
 }
 
 // ─── Auth Bootstrap ────────────────────────────────────────────────────────────
@@ -53,38 +34,25 @@ export function useAuthBootstrap() {
     let isMounted = true
 
     const bootstrap = async () => {
-      const refreshToken = window.localStorage.getItem(REFRESH_TOKEN_STORAGE_KEY)
+      const refreshToken = await loadRefreshToken()
       if (!refreshToken) {
         setAuthReady(true)
         return
       }
 
       try {
-        setRefreshToken(refreshToken)
-
         // Refresh the access token
         const { access } = await api.auth.refresh(refreshToken)
         setAccessToken(access)
 
-        // Fetch basic profile (no role field in backend response)
-        const basicUser = await api.member.getProfile()
-
-        // Fetch roles from management API to determine admin level
-        const roles = await fetchRolesForUser(String(basicUser.id))
-        const role = deriveRoleFromRoles(roles, basicUser)
-
-        // Super admin portal only allows superadmin accounts
-        if (role !== 'superadmin') {
-          throw new Error('Only platform admin accounts may use this portal.')
-        }
-
-        const user: User = { ...basicUser, role }
+        // Fetch user profile
+        const user = await api.member.getProfile()
 
         if (!isMounted) return
         setAuth({ token: access, user })
       } catch {
         clearTokens()
-        window.localStorage.removeItem(REFRESH_TOKEN_STORAGE_KEY)
+        await clearStoredRefreshToken()
         clearAuth()
       } finally {
         if (isMounted) setAuthReady(true)
@@ -114,56 +82,36 @@ export function useLogin() {
   const setAuth = useAuthStore((state) => state.setAuth)
 
   return useMutation({
-    mutationFn: async (data: { email: string; password: string }) => {
-      // api.auth.login now:
-      //  1. POSTs to /accounts/login/ → gets tokens + basic user
-      //  2. Sets access token in memory
-      //  3. Calls /management/roles/ to determine role
-      //  4. Returns AuthTokens with role-enriched user
+    mutationFn: async (data: LoginInput) => {
       const tokens = await api.auth.login(data)
-
-      if (tokens.user.role !== 'superadmin') {
-        clearTokens()
-        throw new Error(
-          'Only platform super-admin accounts may sign in here. ' +
-          'If you are a SACCO admin, please use the SACCO admin portal.'
-        )
-      }
+      setAccessToken(tokens.access)
+      await saveRefreshToken(tokens.refresh)
+      setAuth({ token: tokens.access, user: tokens.user })
       return tokens
     },
-    onSuccess: (tokens) => {
-      // Token is already set in api.auth.login, but set it again to be safe
-      setAccessToken(tokens.access)
-      setRefreshToken(tokens.refresh ?? '')
-      if (tokens.refresh) {
-        window.localStorage.setItem(REFRESH_TOKEN_STORAGE_KEY, tokens.refresh)
-      }
-      setAuth({ token: tokens.access, user: tokens.user })
+    onSuccess: () => {
       queryClient.clear()
     },
   })
 }
 
-// ─── Logout ────────────────────────────────────────────────────────────────────
+// ─── Logout ───────────────────────────────────────────────────────────────────
 
 export function useLogout() {
   const clearAuth = useAuthStore((state) => state.clearAuth)
   const queryClient = useQueryClient()
 
   return async () => {
-    const refreshToken = window.localStorage.getItem(REFRESH_TOKEN_STORAGE_KEY)
     try {
-      if (refreshToken) {
-        // Tell backend to blacklist the refresh token
-        await apiCall<void>('POST', '/accounts/logout/', { refresh: refreshToken })
-      }
-    } catch {
-      // Ignore errors — always clear local state regardless
-    } finally {
-      clearTokens()
-      window.localStorage.removeItem(REFRESH_TOKEN_STORAGE_KEY)
-      clearAuth()
-      queryClient.clear()
+      await api.auth.logout()
+    } catch (error) {
+      // Ignore 401 errors - token may already be expired
+      // Still proceed to clear local state
+      console.log('Logout API call failed, clearing local state anyway')
     }
+    clearTokens()
+    await clearStoredRefreshToken()
+    clearAuth()
+    queryClient.clear()
   }
 }
