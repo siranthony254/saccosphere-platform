@@ -10,6 +10,7 @@ import { MembersList } from './pages/Members/MembersList'
 import { MemberDetail } from './pages/Members/MemberDetail'
 import { ApplicationsList } from './pages/Applications/ApplicationsList'
 import { LoansList } from './pages/Loans/LoansList'
+import { DisbursementsList } from './pages/Disbursements/DisbursementsList'
 import { ContributionsFeed } from './pages/Contributions/ContributionsFeed'
 import { Reports } from './pages/Reports/Reports'
 import { Settings } from './pages/Settings/Settings'
@@ -33,6 +34,7 @@ export const router = createBrowserRouter([
       { path: 'members/:id', element: <MemberDetail /> },
       { path: 'applications', element: <ApplicationsList /> },
       { path: 'loans', element: <LoansList /> },
+      { path: 'disbursements', element: <DisbursementsList /> },
       { path: 'contributions', element: <ContributionsFeed /> },
       { path: 'reports', element: <Reports /> },
       { path: 'settings', element: <Settings /> },

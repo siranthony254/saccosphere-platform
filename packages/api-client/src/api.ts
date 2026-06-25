@@ -1077,6 +1077,9 @@ export const api = {
       apiCall<void>('PATCH', `/management/members/${id}/status/`, { status }),
 
     getApplications: async () => {
+      // Note: Backend doesn't have a dedicated applications list endpoint yet
+      // Using members with PENDING status as a workaround
+      // TODO: Backend should add GET /api/v1/management/applications/ endpoint
       const response = await apiCall<any>('GET', '/management/members/', undefined, {
         params: { status: 'PENDING' },
       })

@@ -6,7 +6,9 @@ import { router } from './router'
 import { useAuthBootstrap } from './hooks/useAuth'
 import './index.css'
 
-const queryClient = new QueryClient({ defaultOptions: { queries: { retry: 1 } } })
+const queryClient = new QueryClient({ 
+  defaultOptions: { queries: { retry: 1, staleTime: 0, refetchOnWindowFocus: true } } 
+})
 
 function App() {
   useAuthBootstrap()

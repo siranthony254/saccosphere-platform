@@ -1,5 +1,6 @@
 import { useSaccoAdminDashboard } from '../hooks/useSaccoAdminDashboard'
-import {useMembers} from '../hooks/useMembers'
+import { useAuthStore } from '../store/useAuthStore'
+import { useSacco } from '../hooks/useSacco'
 
 function MetricCard({ label, value, delta, deltaColor = 'text-mint-600' }: { label: string; value: string; delta?: string; deltaColor?: string }) {
   return (
@@ -13,6 +14,8 @@ function MetricCard({ label, value, delta, deltaColor = 'text-mint-600' }: { lab
 
 export function Dashboard() {
   const { data, isLoading, error } = useSaccoAdminDashboard()
+  const { user } = useAuthStore()
+  const { data: sacco } = useSacco()
 
   if (isLoading) return (
     <div className="p-5">
@@ -51,7 +54,7 @@ export function Dashboard() {
       {/* Top bar */}
       <div className="flex justify-between items-center mb-5">
         <div>
-          <div className="text-lg font-semibold text-ink">{ Overview }</div>
+          <div className="text-lg font-semibold text-ink">{user?.sacco_name || 'Dashboard'}</div>
           <div className="text-xs text-ink-muted">{ new Date().toLocaleDateString('en-KE', { day: 'numeric', month: 'long', year: 'numeric' })} · Live data · {new Date().toLocaleDateString('en-KE', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
         </div>
         <div className="flex gap-2">

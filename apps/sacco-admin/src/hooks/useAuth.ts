@@ -29,6 +29,7 @@ export function useAuthBootstrap() {
   const setAuth = useAuthStore((state) => state.setAuth)
   const clearAuth = useAuthStore((state) => state.clearAuth)
   const setAuthReady = useAuthStore((state) => state.setAuthReady)
+  const queryClient = useQueryClient()
 
   useEffect(() => {
     let isMounted = true
@@ -50,6 +51,9 @@ export function useAuthBootstrap() {
 
         if (!isMounted) return
         setAuth({ token: access, user })
+        
+        // Invalidate all queries to ensure fresh data on page load
+        queryClient.invalidateQueries()
       } catch (error) {
         // Clear tokens on any error (401, network, etc.)
         clearTokens()
@@ -73,7 +77,7 @@ export function useAuthBootstrap() {
       isMounted = false
       window.removeEventListener('saccosphere:logout', handleLogout)
     }
-  }, [setAuth, clearAuth, setAuthReady])
+  }, [setAuth, clearAuth, setAuthReady, queryClient])
 }
 
 // ─── Login Mutation ────────────────────────────────────────────────────────────

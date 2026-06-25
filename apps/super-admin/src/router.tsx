@@ -5,6 +5,7 @@ import { Login } from './pages/Auth/Login'
 import { Overview } from './pages/Overview'
 import { SaccosList } from './pages/Saccos/SaccosList'
 import { SaccoDetail } from './pages/Saccos/SaccoDetail'
+import { MembersList } from './pages/Members/MembersList'
 import { TransactionsFeed } from './pages/Transactions/TransactionsFeed'
 import { Revenue } from './pages/Revenue/Revenue'
 import { Compliance } from './pages/Compliance/Compliance'
@@ -28,6 +29,7 @@ export const router = createBrowserRouter([
       { path: 'overview', element: <Overview /> },
       { path: 'saccos', element: <SaccosList /> },
       { path: 'saccos/:id', element: <SaccoDetail /> },
+      { path: 'members', element: <MembersList /> },
       { path: 'transactions', element: <TransactionsFeed /> },
       { path: 'revenue', element: <Revenue /> },
       { path: 'compliance', element: <Compliance /> },
