@@ -1,4 +1,5 @@
 import { useSaccoAdminDashboard } from '../hooks/useSaccoAdminDashboard'
+import {useMembers} from '../hooks/useMembers'
 
 function MetricCard({ label, value, delta, deltaColor = 'text-mint-600' }: { label: string; value: string; delta?: string; deltaColor?: string }) {
   return (
@@ -50,8 +51,8 @@ export function Dashboard() {
       {/* Top bar */}
       <div className="flex justify-between items-center mb-5">
         <div>
-          <div className="text-lg font-semibold text-ink">Overview</div>
-          <div className="text-xs text-ink-muted">Stima SACCO · Live data · {new Date().toLocaleDateString('en-KE', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
+          <div className="text-lg font-semibold text-ink">{ Overview }</div>
+          <div className="text-xs text-ink-muted">{ new Date().toLocaleDateString('en-KE', { day: 'numeric', month: 'long', year: 'numeric' })} · Live data · {new Date().toLocaleDateString('en-KE', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
         </div>
         <div className="flex gap-2">
           <div className="flex items-center gap-1.5 text-xs text-mint-600 bg-mint-50 px-2.5 py-1 rounded-md">
@@ -66,10 +67,10 @@ export function Dashboard() {
 
       {/* Metrics */}
       <div className="grid grid-cols-4 gap-3 mb-5">
-        <MetricCard label="Total members" value={d.total_members.toLocaleString()} delta={`▲ +38 this month`} />
-        <MetricCard label="Total savings" value={fmt(d.total_savings_kes)} delta={`▲ +KES 18M vs last month`} />
+        <MetricCard label="Total members" value={d.total_members.toLocaleString()} />
+        <MetricCard label="Total savings" value={fmt(d.total_savings_kes)} delta={``} />
         <MetricCard label="Active loans" value={d.active_loans_count.toLocaleString()} delta={`${fmt(d.active_loans_kes)} outstanding`} deltaColor="text-amber-600" />
-        <MetricCard label="Default rate" value={`${d.default_rate_pct}%`} delta={`▲ +0.3% vs last month`} deltaColor="text-red-700" />
+        <MetricCard label="Default rate" value={`${d.default_rate_pct}%`} delta={``} deltaColor="text-red-700" />
       </div>
 
       {/* Pending actions */}

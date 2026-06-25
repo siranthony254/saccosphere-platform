@@ -34,7 +34,12 @@ export function SaccosList() {
         </div>
         <div className="flex gap-2">
           <button className="py-1.5 px-3.5 rounded-lg border border-mid bg-surface text-[13px] cursor-pointer hover:bg-surface-2 transition-colors">Export CSV</button>
-          <button className="py-1.5 px-3.5 rounded-lg bg-violet-500 hover:bg-violet-600 text-white text-[13px] font-semibold cursor-pointer transition-colors">+ Onboard SACCO</button>
+          <button 
+            className="py-1.5 px-3.5 rounded-lg bg-violet-500 hover:bg-violet-600 text-white text-[13px] font-semibold cursor-pointer transition-colors"
+            onClick={() => alert('SACCO onboarding form requires backend endpoint: POST /api/v1/accounts/saccos/create/')}
+          >
+            + Onboard SACCO
+          </button>
         </div>
       </div>
 

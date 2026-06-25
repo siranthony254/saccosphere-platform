@@ -356,17 +356,12 @@ const normalizeAdminLoan = (loan: any): AdminLoan => {
   })
 }
 
-const normalizePlatformOverview = (stats: any, saccos: Sacco[], publicStats?: { total_saccos?: number; total_members_on_app?: number }) => {
-  const activeSaccos = saccos.filter((s) => s.status === 'active')
-  const totalMembersFromSaccos = saccos.reduce((sum, s) => sum + (s.member_count ?? 0), 0)
-
+const normalizePlatformOverview = (stats: any) => {
   return PlatformOverviewSchema.parse({
-    total_saccos: Number(publicStats?.total_saccos ?? stats.total_saccos ?? saccos.length),
-    active_saccos: Number(stats.active_saccos ?? activeSaccos.length),
-    total_members: Number(stats.total_members ?? totalMembersFromSaccos),
-    total_members_on_app: Number(
-      publicStats?.total_members_on_app ?? stats.total_members_on_app ?? stats.total_members ?? totalMembersFromSaccos
-    ),
+    total_saccos: Number(stats.total_saccos ?? 0),
+    active_saccos: Number(stats.active_saccos ?? 0),
+    total_members: Number(stats.total_members ?? 0),
+    total_members_on_app: Number(stats.total_members_on_app ?? 0),
     transaction_volume_mtd_kes: Number(
       stats.transaction_volume_mtd_kes ?? stats.transaction_volume_mtd ?? stats.monthly_contributions ?? 0
     ),
@@ -1172,12 +1167,8 @@ export const api = {
 
   superAdmin: {
     getDashboard: async () => {
-      const [stats, saccos, publicStats] = await Promise.all([
-        apiCall<any>('GET', '/management/stats/').catch(() => ({})),
-        api.saccos.list().catch(() => [] as Sacco[]),
-        api.saccos.getPublicStats().catch(() => ({ total_saccos: 0, total_members_on_app: 0 })),
-      ])
-      return normalizePlatformOverview(stats, saccos, publicStats)
+      const platformStats = await apiCall<any>('GET', '/management/platform-stats/').catch(() => null)
+      return normalizePlatformOverview(platformStats ?? {})
     },
 
     getSaccos: (params?: { status?: string; sector?: string; search?: string }) =>

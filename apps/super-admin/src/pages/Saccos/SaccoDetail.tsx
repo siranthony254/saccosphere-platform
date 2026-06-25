@@ -23,12 +23,25 @@ export function SaccoDetail() {
           </div>
         </div>
         <div className="flex gap-2">
-          <button className={`py-1.5 px-3.5 rounded-lg border-none bg-red-50 text-red-800 text-[13px] font-semibold cursor-pointer transition-opacity ${isPending ? 'opacity-60' : 'hover:bg-red-100'}`}
-            onClick={() => suspend(sacco.id)} disabled={isPending}>
+          <button 
+            className={`py-1.5 px-3.5 rounded-lg border-none bg-red-50 text-red-800 text-[13px] font-semibold cursor-pointer transition-opacity ${isPending ? 'opacity-60' : 'hover:bg-red-100'}`}
+            onClick={() => suspend(sacco.id)} 
+            disabled={isPending}
+          >
             {isPending ? 'Suspending...' : 'Suspend SACCO'}
           </button>
-          <button className="py-1.5 px-3.5 rounded-lg border border-mid bg-surface text-[13px] cursor-pointer hover:bg-surface-2 transition-colors">Contact admin</button>
-          <button className="py-1.5 px-3.5 rounded-lg bg-violet-500 hover:bg-violet-600 text-white text-[13px] font-semibold cursor-pointer transition-colors">Edit settings</button>
+          <button 
+            className="py-1.5 px-3.5 rounded-lg border border-mid bg-surface text-[13px] cursor-pointer hover:bg-surface-2 transition-colors"
+            onClick={() => alert('Contact admin requires backend endpoint')}
+          >
+            Contact admin
+          </button>
+          <button 
+            className="py-1.5 px-3.5 rounded-lg bg-violet-500 hover:bg-violet-600 text-white text-[13px] font-semibold cursor-pointer transition-colors"
+            onClick={() => alert('Edit settings requires backend endpoint: PATCH /api/v1/super-admin/saccos/{id}/configuration/')}
+          >
+            Edit settings
+          </button>
         </div>
       </div>
 

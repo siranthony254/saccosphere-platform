@@ -88,9 +88,9 @@ export function Revenue() {
 
           <div className="border-t border-surface-2 pt-3.5 grid grid-cols-3 gap-2.5">
             {[
-              { label: 'ARR', value: fmt(revenue?.arr_kes ?? 21840000) },
-              { label: 'Projected (12mo)', value: fmt(revenue?.projected_12mo_kes ?? 28000000) },
-              { label: 'Per SACCO avg', value: `KES ${(revenue?.avg_per_sacco_kes ?? 38700).toLocaleString()}` },
+              { label: 'ARR', value: fmt(revenue?.arr_kes ?? {}) },
+              { label: 'Projected (12mo)', value: fmt(revenue?.projected_12mo_kes ?? {}) },
+              { label: 'Per SACCO avg', value: `KES ${(revenue?.avg_per_sacco_kes ?? {}).toLocaleString()}` },
             ].map(s => (
               <div key={s.label} className="text-center">
                 <div className="text-[10px] text-ink-muted mb-1">{s.label}</div>

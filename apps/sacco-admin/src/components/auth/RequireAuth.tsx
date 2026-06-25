@@ -21,6 +21,6 @@ export function RequireAuth({ children }: { children: ReactNode }) {
   }
 
   // Backend handles permission checks via API responses
-  // If user is authenticated, let them access - backend will deny unauthorized requests
+  // If user is authenticated, let them access 
   return <>{children}</>
 }
