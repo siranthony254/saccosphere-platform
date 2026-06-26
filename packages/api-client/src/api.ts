@@ -262,6 +262,7 @@ const normalizeAdminMember = (member: any): AdminMember => {
 
   return AdminMemberSchema.parse({
     id: member.id,
+    user_id: user.id ?? null,
     saccosphere_id: member.member_number ? `SS-${member.member_number}` : member.id,
     member_number: member.member_number ?? '',
     first_name: first_name ?? '',
@@ -290,25 +291,25 @@ const normalizeAdminMember = (member: any): AdminMember => {
   })
 }
 
-const normalizeAdminApplication = (member: any): MembershipApplication => {
-  const status = String(member.status ?? 'PENDING').toUpperCase()
+const normalizeAdminApplication = (app: any): MembershipApplication => {
+  const status = String(app.status ?? 'SUBMITTED').toUpperCase()
   return {
-    id: member.id,
+    id: app.id,
     sacco_slug:
-      member.sacco?.slug ??
-      String(member.sacco?.name ?? 'unknown-sacco')
+      app.sacco?.slug ??
+      String(app.sacco_name ?? 'unknown-sacco')
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/^-|-$/g, ''),
-    sacco_name: member.sacco?.name ?? 'Unknown SACCO',
-    ref: member.member_number ?? member.id,
-    status: status === 'PENDING' ? 'submitted' : 'under_review',
-    submitted_at: member.application_date ?? member.created_at ?? new Date().toISOString(),
-    reviewed_at: member.reviewed_at ?? null,
+    sacco_name: app.sacco_name ?? 'Unknown SACCO',
+    ref: app.id,
+    status: status === 'SUBMITTED' ? 'submitted' : status === 'UNDER_REVIEW' ? 'under_review' : status.toLowerCase(),
+    submitted_at: app.submitted_at ?? app.created_at ?? new Date().toISOString(),
+    reviewed_at: app.reviewed_at ?? null,
     form_data: {
-      sacco_name: member.sacco?.name ?? 'Unknown SACCO',
-      applicant_name: member.user?.full_name ?? `${member.user?.first_name ?? ''} ${member.user?.last_name ?? ''}`.trim(),
-      applicant_email: member.user?.email ?? '',
+      sacco_name: app.sacco_name ?? 'Unknown SACCO',
+      applicant_name: app.user_name ?? 'Unknown Applicant',
+      applicant_email: app.user_email ?? '',
     },
     registration_fee_paid: false,
     registration_fee_txn_ref: null,
@@ -1164,13 +1165,12 @@ export const api = {
       const response = await apiCall<any>('GET', '/management/members/', undefined, {
         params,
       })
+      const items = unwrapResults(response)
       return {
-        count: Number(response.count ?? 0),
+        count: Number(response.count ?? response.total_members ?? response.total ?? items.length),
         next: response.next ?? null,
         previous: response.previous ?? null,
-        results: Array.isArray(response.results ? response.results : [])
-          ? response.results.map(normalizeAdminMember)
-          : [],
+        results: items.map(normalizeAdminMember),
       }
     },
 
@@ -1179,17 +1179,24 @@ export const api = {
     createMember: async (data: { first_name: string; last_name: string; email: string; phone_number: string; national_id: string }) =>
       apiCall<any>('POST', '/management/members/', data),
 
+    // Role management
+    getRoles: async (userId: string) => apiCall<any>('GET', '/management/roles/', undefined, {
+      params: { user_id: userId }
+    }),
+
+    assignRole: async (data: { user_id: string; role_name: string; sacco_id?: string }) =>
+      apiCall<any>('POST', '/management/roles/assign/', data),
+
+    revokeRole: async (roleId: string) =>
+      apiCall<any>('DELETE', `/management/roles/${uuid(roleId)}/`),
+
     updateMemberStatus: (id: string, status: 'active' | 'suspended') =>
       apiCall<void>('PATCH', `/management/members/${id}/status/`, { status }),
 
     getApplications: async () => {
-      const response = await apiCall<any>('GET', '/management/members/', undefined, {
-        params: { status: 'PENDING' },
-      })
-      const members = Array.isArray(response.results ? response.results : [])
-        ? response.results
-        : []
-      return members.map(normalizeAdminApplication)
+      const response = await apiCall<any>('GET', '/management/applications/')
+      const items = unwrapResults(response)
+      return items.map(normalizeAdminApplication)
     },
 
     reviewApplication: (id: string, data: { action: 'approve' | 'reject'; notes?: string }) =>

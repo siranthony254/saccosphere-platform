@@ -4,7 +4,7 @@ import { api } from '@saccosphere/api-client'
 export function useUserRoles(userId: string) {
   return useQuery({
     queryKey: ['user-roles', userId],
-    queryFn: () => api.saccoAdmin.getUserRoles(userId),
+    queryFn: () => api.saccoAdmin.getRoles(userId),
     enabled: !!userId,
   })
 }

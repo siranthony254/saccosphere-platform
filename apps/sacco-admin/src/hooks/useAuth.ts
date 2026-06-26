@@ -46,22 +46,33 @@ export function useAuthBootstrap() {
         // Clear in-memory refresh token temporarily to prevent interceptor retry loop
         const { setRefreshToken, axiosInstance } = await import('@saccosphere/api-client')
         setRefreshToken(null)
-        
+
         const response = await axiosInstance.post('/accounts/token/refresh/', { refresh: refreshToken })
-        
+
         const newToken = response.data.data?.access || response.data.access
         if (!newToken) throw new Error('No access token in refresh response')
-        
+
         setAccessToken(newToken)
         setRefreshToken(refreshToken) // Restore it if refresh succeeded
 
         // Fetch user profile
         const user = await api.member.getProfile()
 
-        if (!isMounted) return
-        setAuth({ token: newToken, user })
+        // Fetch user roles to determine SACCO ID for SACCO admins
+        let saccoId = null
+        try {
+          const roles = await api.saccoAdmin.getRoles(user.id)
+          const saccoAdminRole = roles?.find((r: any) => r.name === 'SACCO_ADMIN' && r.sacco)
+          if (saccoAdminRole) {
+            saccoId = saccoAdminRole.sacco.id
+          }
+        } catch (e) {
+          console.log('Could not fetch roles:', e)
+        }
 
-        
+        if (!isMounted) return
+        setAuth({ token: newToken, user: { ...user, sacco_id: saccoId } })
+
         // Invalidate all queries to ensure fresh data on page load
         queryClient.invalidateQueries()
       } catch (error) {
@@ -103,7 +114,20 @@ export function useLogin() {
       const tokens = await api.auth.login(data)
       setAccessToken(tokens.access)
       await saveRefreshToken(tokens.refresh)
-      setAuth({ token: tokens.access, user: tokens.user })
+
+      // Fetch user roles to determine SACCO ID for SACCO admins
+      let saccoId = null
+      try {
+        const roles = await api.saccoAdmin.getRoles(tokens.user.id)
+        const saccoAdminRole = roles?.find((r: any) => r.name === 'SACCO_ADMIN' && r.sacco)
+        if (saccoAdminRole) {
+          saccoId = saccoAdminRole.sacco.id
+        }
+      } catch (e) {
+        console.log('Could not fetch roles:', e)
+      }
+
+      setAuth({ token: tokens.access, user: { ...tokens.user, sacco_id: saccoId } })
       return tokens
     },
     onSuccess: () => {

@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useMembers } from '../../hooks/useMembers'
+import { useSaccoAdminDashboard } from '../../hooks/useSaccoAdminDashboard'
+import type { AdminMember } from '@saccosphere/schemas'
 
 
 const statusColors: Record<string, { bg: string; color: string }> = {
@@ -52,7 +54,7 @@ export function MembersList() {
       <div className="flex justify-between items-center mb-5">
         <div>
           <div className="text-lg font-semibold text-ink">Member directory</div>
-          <div className="text-xs text-ink-muted">{data?.count ?? 0} total members</div>
+          <div className="text-xs text-ink-muted">{isLoading ? 'Loading...' : (data?.count ?? 0)} total members</div>
         </div>
         <div className="flex gap-2">
           <button onClick={handleExportCSV} className="px-3.5 py-1.5 rounded-lg border border-ink-faint bg-white text-sm cursor-pointer hover:bg-surface-2 transition-colors">Export CSV</button>

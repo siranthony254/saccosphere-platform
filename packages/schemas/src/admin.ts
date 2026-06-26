@@ -20,6 +20,7 @@ export type SaccoAdminDashboard = z.infer<typeof SaccoAdminDashboardSchema>
 
 export const AdminMemberSchema = z.object({
   id: z.string().uuid(),
+  user_id: z.string().uuid().nullable().optional(), // backend user UUID — used for roles lookup
   saccosphere_id: z.string(), // SS-2024-00891
   member_number: z.string(),
   first_name: z.string(),

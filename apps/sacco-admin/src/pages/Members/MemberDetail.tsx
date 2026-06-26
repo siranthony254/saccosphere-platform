@@ -1,23 +1,42 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { useMemberDetail } from '../../hooks/useMembers'
-import { usePublicStats } from '../hooks/usePublicStats'
+import { useUserRoles } from '../../hooks/useRoles'
 
 export function MemberDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { data: member, isLoading } = useMemberDetail(id!)
+  const { data: member, isLoading, error } = useMemberDetail(id!)
 
-  if (isLoading) return <div className="p-5 text-ink-muted">Loading member...</div>
-  if (!member) return <div className="p-5">Member not found.</div>
+  // Fetch all roles for this user (they may be both a member AND a SACCO admin)
+  // user_id is populated from the backend member.user.id field
+  const { data: roles } = useUserRoles(member?.user_id ?? '')
+
+  if (isLoading) return <div className="p-5 text-ink-muted text-sm">Loading member...</div>
+  if (error) return <div className="p-5 text-red-600 text-sm">Failed to load member. Please try again.</div>
+  if (!member) return <div className="p-5 text-ink-muted text-sm">Member not found.</div>
+
+  const roleColors: Record<string, { bg: string; color: string }> = {
+    SACCO_ADMIN:   { bg: 'bg-violet-50', color: 'text-violet-700' },
+    MEMBER:        { bg: 'bg-mint-50',   color: 'text-mint-700' },
+    SUPER_ADMIN:   { bg: 'bg-red-50',    color: 'text-red-700' },
+  }
 
   return (
     <div className="p-5">
+      {/* Breadcrumb */}
       <div className="flex items-center gap-2.5 mb-5">
-        <button onClick={() => navigate(-1)} className="bg-transparent border-none cursor-pointer text-ink-muted text-sm hover:text-ink transition-colors">← Members</button>
+        <button
+          onClick={() => navigate(-1)}
+          className="bg-transparent border-none cursor-pointer text-ink-muted text-sm hover:text-ink transition-colors"
+        >
+          ← Members
+        </button>
         <span className="text-ink-faint">|</span>
         <div>
           <div className="text-lg font-semibold text-ink">{member.first_name} {member.last_name}</div>
-          <div className="text-xs text-ink-muted">{member.member_number} · Active since {member.joined_at ? new Date(member.joined_at).getFullYear() : '—'}</div>
+          <div className="text-xs text-ink-muted">
+            {member.member_number} · Active since {member.joined_at ? new Date(member.joined_at).getFullYear() : '—'}
+          </div>
         </div>
       </div>
 
@@ -28,15 +47,27 @@ export function MemberDetail() {
         </div>
         <div className="flex-1">
           <div className="text-base font-semibold text-mint-800">{member.first_name} {member.last_name}</div>
-          <div className="text-[11px] text-mint-700">{member.email} · {member.phone} · ID: {member.national_id}</div>
-          <div className="flex gap-1.5 mt-1.5">
+          <div className="text-[11px] text-mint-700">{member.email} · {member.phone} · ID: {member.national_id ?? '—'}</div>
+          <div className="flex flex-wrap gap-1.5 mt-1.5">
+            {/* Membership / KYC / SACCO ID badges */}
             {[
-              { text: member.membership_status, bg: 'bg-mint-50', color: 'text-mint-700' },
-              { text: `KYC ${member.kyc_status}`, bg: 'bg-blue-50', color: 'text-blue-700' },
-              { text: member.saccosphere_id, bg: 'bg-violet-50', color: 'text-violet-700' },
+              { text: member.membership_status,       bg: 'bg-mint-50',   color: 'text-mint-700' },
+              { text: `KYC ${member.kyc_status}`,     bg: 'bg-blue-50',   color: 'text-blue-700' },
+              { text: member.saccosphere_id,           bg: 'bg-violet-50', color: 'text-violet-700' },
             ].map((b, i) => (
-              <span key={i} className={`${b.bg} ${b.color} px-2 py-0.5 rounded-full text-[10px] font-semibold`}>{b.text}</span>
+              <span key={i} className={`${b.bg} ${b.color} px-2 py-0.5 rounded-full text-[10px] font-semibold`}>
+                {b.text}
+              </span>
             ))}
+            {/* All roles this user holds (e.g. MEMBER + SACCO_ADMIN of same SACCO) */}
+            {roles && roles.length > 0 && roles.map((role: any) => {
+              const rc = roleColors[role.name] ?? { bg: 'bg-gray-100', color: 'text-gray-600' }
+              return (
+                <span key={role.id} className={`${rc.bg} ${rc.color} px-2 py-0.5 rounded-full text-[10px] font-semibold`}>
+                  {role.name.replace(/_/g, ' ')}
+                </span>
+              )
+            })}
           </div>
         </div>
       </div>
@@ -45,19 +76,19 @@ export function MemberDetail() {
       <div className="grid grid-cols-3 gap-3.5 mb-4">
         {[
           { title: 'Savings', stats: [
-            { label: 'BOSA savings', val: `KES ${member.bosa_balance.toLocaleString()}` },
-            { label: 'FOSA savings', val: `KES ${member.fosa_balance.toLocaleString()}` },
+            { label: 'BOSA savings',  val: `KES ${member.bosa_balance.toLocaleString()}` },
+            { label: 'FOSA savings',  val: `KES ${member.fosa_balance.toLocaleString()}` },
             { label: 'Share capital', val: `KES ${member.share_capital.toLocaleString()}` },
           ]},
           { title: 'Loans', stats: [
-            { label: 'Active loans', val: member.active_loans_count.toString() },
-            { label: 'Outstanding', val: `KES ${member.active_loans_kes.toLocaleString()}` },
+            { label: 'Active loans',   val: member.active_loans_count.toString() },
+            { label: 'Outstanding',    val: `KES ${member.active_loans_kes.toLocaleString()}` },
             { label: 'Repayment rate', val: `${member.repayment_rate_pct}%` },
           ]},
           { title: 'Contributions', stats: [
             { label: 'Monthly amount', val: `KES ${member.monthly_contribution.toLocaleString()}` },
-            { label: 'KYC status', val: member.kyc_status },
-            { label: 'Last active', val: member.last_active ? new Date(member.last_active).toLocaleDateString() : '—' },
+            { label: 'KYC status',     val: member.kyc_status },
+            { label: 'Last active',    val: member.last_active ? new Date(member.last_active).toLocaleDateString() : '—' },
           ]},
         ].map(card => (
           <div key={card.title} className="bg-white border border-[#e5ede9] rounded-[10px] p-4">
@@ -71,6 +102,33 @@ export function MemberDetail() {
           </div>
         ))}
       </div>
+
+      {/* Roles section — lists every role this user holds (member AND admin of same SACCO, etc.) */}
+      {roles && roles.length > 0 && (
+        <div className="bg-white border border-[#e5ede9] rounded-[10px] p-4">
+          <div className="font-semibold text-sm text-ink mb-3">Platform roles</div>
+          <div className="flex flex-col gap-2">
+            {roles.map((role: any) => {
+              const rc = roleColors[role.name] ?? { bg: 'bg-gray-100', color: 'text-gray-600' }
+              return (
+                <div key={role.id} className="flex items-center justify-between px-3 py-2 bg-surface-2 rounded-lg">
+                  <div>
+                    <span className={`${rc.bg} ${rc.color} text-[11px] font-semibold px-2 py-0.5 rounded-full`}>
+                      {role.name.replace(/_/g, ' ')}
+                    </span>
+                    {role.sacco && (
+                      <span className="ml-2 text-xs text-ink-muted">{role.sacco.name}</span>
+                    )}
+                  </div>
+                  <span className="text-[10px] text-ink-muted">
+                    {role.assigned_at ? new Date(role.assigned_at).toLocaleDateString() : ''}
+                  </span>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
