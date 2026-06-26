@@ -8,6 +8,7 @@ const ENABLE_REGISTRATION = (import.meta.env.VITE_ENABLE_REGISTRATION ?? 'true')
 import { Dashboard } from './pages/Dashboard'
 import { MembersList } from './pages/Members/MembersList'
 import { MemberDetail } from './pages/Members/MemberDetail'
+import { AddMember } from './pages/Members/AddMember'
 import { ApplicationsList } from './pages/Applications/ApplicationsList'
 import { LoansList } from './pages/Loans/LoansList'
 import { DisbursementsList } from './pages/Disbursements/DisbursementsList'
@@ -34,6 +35,7 @@ export const router = createBrowserRouter([
       { index: true, element: <Navigate to="/dashboard" replace /> },
       { path: 'dashboard', element: <Dashboard /> },
       { path: 'members', element: <MembersList /> },
+      { path: 'members/add', element: <AddMember /> },
       { path: 'members/:id', element: <MemberDetail /> },
       { path: 'applications', element: <ApplicationsList /> },
       { path: 'loans', element: <LoansList /> },

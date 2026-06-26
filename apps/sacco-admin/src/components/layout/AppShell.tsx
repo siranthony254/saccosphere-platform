@@ -2,22 +2,16 @@ import React from 'react'
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { useLayoutStore } from '../../store/useLayoutStore'
 import { useAuthStore } from '../../store/useAuthStore'
+import { useSacco } from '../../hooks/useSacco'
+import { useSaccoAdminDashboard } from '../../hooks/useSaccoAdminDashboard'
 import { clearTokens } from '@saccosphere/api-client'
-
-const NAV_ITEMS = [
-  { path: '/dashboard', label: 'Dashboard', icon: '📊', badge: null },
-  { path: '/members', label: 'Members', icon: '👥', badge: null },
-  { path: '/applications', label: 'Applications', icon: '📋', badge: '3' },
-  { path: '/loans', label: 'Loan approvals', icon: '💰', badge: '7' },
-  { path: '/contributions', label: 'Contributions', icon: '📥', badge: null },
-  { path: '/reports', label: 'Reports', icon: '📈', badge: null },
-  { path: '/settings', label: 'Settings', icon: '⚙️', badge: null },
-]
 
 export function AppShell() {
   const { sidebarCollapsed } = useLayoutStore()
   const { user, clearAuth } = useAuthStore()
   const navigate = useNavigate()
+  const { data: sacco } = useSacco()
+  const { data: dashboard } = useSaccoAdminDashboard()
 
   const handleLogout = () => {
     clearAuth()
@@ -25,6 +19,19 @@ export function AppShell() {
     window.localStorage.removeItem('sacco-admin-refresh-token')
     navigate('/login')
   }
+
+  const NAV_ITEMS = [
+    { path: '/dashboard', label: 'Dashboard', icon: '📊', badge: null },
+    { path: '/members', label: 'Members', icon: '👥', badge: null },
+    { path: '/applications', label: 'Applications', icon: '📋', badge: dashboard?.pending_applications > 0 ? String(dashboard.pending_applications) : null },
+    { path: '/loans', label: 'Loan approvals', icon: '💰', badge: dashboard?.pending_loan_approvals > 0 ? String(dashboard.pending_loan_approvals) : null },
+    { path: '/contributions', label: 'Contributions', icon: '📥', badge: null },
+    { path: '/reports', label: 'Reports', icon: '📈', badge: null },
+    { path: '/kyc', label: 'KYC Review', icon: '🔍', badge: dashboard?.pending_kyc_reviews > 0 ? String(dashboard.pending_kyc_reviews) : null },
+    { path: '/roles', label: 'Roles', icon: '👤', badge: null },
+    { path: '/import', label: 'Import', icon: '📤', badge: null },
+    { path: '/settings', label: 'Settings', icon: '⚙️', badge: null },
+  ]
 
   return (
     <div className="flex h-screen font-sans bg-surface-2 text-ink">
@@ -44,7 +51,7 @@ export function AppShell() {
         {/* SACCO chip */}
         {!sidebarCollapsed && (
           <div className="mx-2.5 my-3 bg-mint-700/25 border border-mint-700/35 rounded-lg py-2 px-2.5">
-            <div className="text-[13px] font-semibold text-mint-400">{(user as any)?.sacco_slug ? String((user as any).sacco_slug).toUpperCase() : 'SACCO'}</div>
+            <div className="text-[13px] font-semibold text-mint-400">{sacco?.name ? String(sacco.name).toUpperCase() : 'SACCO'}</div>
             <div className="text-[10px] text-white/35">{user?.first_name} {user?.last_name} · Admin</div>
           </div>
         )}

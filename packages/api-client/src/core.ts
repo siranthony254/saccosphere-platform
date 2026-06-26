@@ -17,6 +17,7 @@ import type { ZodType } from 'zod'
 
 let _accessToken: string | null = null
 let _refreshToken: string | null = null
+let _saccoId: string | null = null
 
 export const setAccessToken = (token: string | null): void => {
   _accessToken = token
@@ -30,6 +31,12 @@ export const setRefreshToken = (token: string | null): void => {
 
 export const getRefreshToken = (): string | null => _refreshToken
 
+export const setSaccoId = (saccoId: string | null): void => {
+  _saccoId = saccoId
+}
+
+export const getSaccoId = (): string | null => _saccoId
+
 export const clearAccessToken = (): void => {
   _accessToken = null
 }
@@ -37,6 +44,7 @@ export const clearAccessToken = (): void => {
 export const clearTokens = (): void => {
   _accessToken = null
   _refreshToken = null
+  _saccoId = null
 }
 
 // ─── AXIOS INSTANCE ───────────────────────────────────────────────────────────
@@ -62,6 +70,10 @@ axiosInstance.interceptors.request.use(
   (config) => {
     if (_accessToken) {
       config.headers.Authorization = `Bearer ${_accessToken}`
+    }
+    // Add X-Sacco-ID header for SACCO admin multi-tenancy
+    if (_saccoId) {
+      config.headers['X-Sacco-ID'] = _saccoId
     }
     // Add a unique request ID for tracing (helpful in Sentry)
     config.headers['X-Request-ID'] = generateRequestId()
@@ -216,7 +228,6 @@ export async function apiCall<T>(
 }
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
-
 function generateRequestId(): string {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) {
     return crypto.randomUUID()

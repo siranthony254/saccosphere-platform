@@ -1176,6 +1176,9 @@ export const api = {
 
     getMember: async (id: string) => normalizeAdminMember(await apiCall<any>('GET', `/management/members/${uuid(id)}/`)),
 
+    createMember: async (data: { first_name: string; last_name: string; email: string; phone_number: string; national_id: string }) =>
+      apiCall<any>('POST', '/management/members/', data),
+
     updateMemberStatus: (id: string, status: 'active' | 'suspended') =>
       apiCall<void>('PATCH', `/management/members/${id}/status/`, { status }),
 
@@ -1274,7 +1277,33 @@ export const api = {
       }
     },
 
+    getB2CStatus: async (conversationId: string) => {
+      const response = await apiCall<any>('GET', `/payments/mpesa/b2c/${conversationId}/status/`)
+      return {
+        conversation_id: response.conversation_id,
+        status: String(response.status ?? 'pending').toLowerCase(),
+        amount: Number(response.amount ?? 0),
+        phone_number: response.phone_number ?? '',
+        result_code: response.result_code,
+        result_desc: response.result_desc,
+        transaction_date: response.transaction_date,
+      }
+    },
+
     getReports: async () => apiCall<Record<string, unknown>>('GET', '/management/stats/'),
+
+    downloadReport: async (format: 'csv' | 'pdf' = 'pdf') => {
+      const response = await axiosInstance.get('/management/stats/', {
+        params: { format },
+        responseType: 'blob',
+      })
+      const disposition = String(response.headers?.['content-disposition'] ?? '')
+      const filenameMatch = disposition.match(/filename="?([^";]+)"?/i)
+      return {
+        blob: response.data as Blob,
+        filename: filenameMatch?.[1] ?? `sacco_report.${format}`,
+      }
+    },
 
     // Roles management
     assignRole: (data: { user_id: string; role_name: string; sacco_id: string }) =>

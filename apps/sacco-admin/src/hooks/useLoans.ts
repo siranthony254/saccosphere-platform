@@ -30,3 +30,12 @@ export function useDisburseLoan() {
     onSuccess: () => qc.invalidateQueries({ queryKey: QueryKeys.adminLoans() }),
   })
 }
+
+export function useB2CStatus(conversationId: string) {
+  return useQuery({
+    queryKey: ['b2c-status', conversationId],
+    queryFn: () => api.saccoAdmin.getB2CStatus(conversationId),
+    enabled: !!conversationId,
+    refetchInterval: 5000, // Poll every 5 seconds
+  })
+}

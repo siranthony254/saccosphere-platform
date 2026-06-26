@@ -16,6 +16,37 @@ export function MembersList() {
   const [status, setStatus] = useState('all')
   const { data, isLoading } = useMembers({ search: search || undefined, status: status === 'all' ? undefined : status })
 
+  const handleExportCSV = () => {
+    if (!data?.results || data.results.length === 0) {
+      alert('No members to export')
+      return
+    }
+
+    const headers = ['First Name', 'Last Name', 'Member Number', 'Email', 'Phone', 'Savings (KES)', 'Active Loans', 'KYC Status', 'Membership Status']
+    const rows = data.results.map(m => [
+      m.first_name,
+      m.last_name,
+      m.member_number,
+      m.email,
+      m.phone,
+      (m.bosa_balance + m.fosa_balance).toString(),
+      m.active_loans_count.toString(),
+      m.kyc_status,
+      m.membership_status,
+    ])
+
+    const csvContent = [headers, ...rows].map(row => row.join(',')).join('\n')
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `members_${new Date().toISOString().split('T')[0]}.csv`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+
   return (
     <div className="p-5">
       <div className="flex justify-between items-center mb-5">
@@ -24,8 +55,8 @@ export function MembersList() {
           <div className="text-xs text-ink-muted">{data?.count ?? 0} total members</div>
         </div>
         <div className="flex gap-2">
-          <button className="px-3.5 py-1.5 rounded-lg border border-ink-faint bg-white text-sm cursor-pointer hover:bg-surface-2 transition-colors">Export CSV</button>
-          <button className="px-3.5 py-1.5 rounded-lg border border-mint-600 bg-mint-600 text-white text-sm cursor-pointer hover:bg-mint-700 transition-colors">+ Add member</button>
+          <button onClick={handleExportCSV} className="px-3.5 py-1.5 rounded-lg border border-ink-faint bg-white text-sm cursor-pointer hover:bg-surface-2 transition-colors">Export CSV</button>
+          <button onClick={() => navigate('/members/add')} className="px-3.5 py-1.5 rounded-lg border border-mint-600 bg-mint-600 text-white text-sm cursor-pointer hover:bg-mint-700 transition-colors">+ Add member</button>
         </div>
       </div>
 
@@ -65,7 +96,7 @@ export function MembersList() {
                 <tr key={i}><td colSpan={8} className="p-5"><div className="h-5 bg-ink-faint rounded-[4px]" /></td></tr>
               ))
             ) : (
-              (data?.results ?? []).map((m, ri) => {
+              (data?.results ?? []).map((m: AdminMember, ri: number) => {
                 const sc = statusColors[m.membership_status] ?? statusColors.active
                 return (
                   <tr key={m.id} className={`${ri % 2 === 0 ? 'bg-white' : 'bg-surface-2'} border-b border-surface-3 cursor-pointer hover:bg-violet-50/30 transition-colors`}

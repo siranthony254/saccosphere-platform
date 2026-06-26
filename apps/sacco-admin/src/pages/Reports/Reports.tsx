@@ -1,4 +1,6 @@
+import { useState } from 'react'
 import { useSaccoAdminDashboard } from '../../hooks/useSaccoAdminDashboard'
+import { useDownloadReport } from '../../hooks/useReports'
 
 function Bar({ pct, color }: { pct: number; color: string }) {
   return (
@@ -10,8 +12,27 @@ function Bar({ pct, color }: { pct: number; color: string }) {
 
 export function Reports() {
   const { data: analytics, isLoading } = useSaccoAdminDashboard()
+  const downloadReport = useDownloadReport()
+  const [format, setFormat] = useState<'csv' | 'pdf'>('pdf')
 
   const fmt = (n: number) => n >= 1e9 ? `KES ${(n/1e9).toFixed(1)}B` : n >= 1e6 ? `KES ${(n/1e6).toFixed(1)}M` : `KES ${n.toLocaleString()}`
+
+  const handleDownload = async () => {
+    try {
+      const { blob, filename } = await downloadReport.mutateAsync(format)
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = filename
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+    } catch (error) {
+      console.error('Failed to download report:', error)
+      alert('Failed to download report. Check console for details.')
+    }
+  }
 
   return (
     <div className="p-5">
@@ -21,8 +42,20 @@ export function Reports() {
           <div className="text-xs text-ink-muted">Financial & membership analytics</div>
         </div>
         <div className="flex gap-2">
-          <button className="px-4 py-1.5 rounded-lg border-none bg-mint-600 text-white text-sm font-semibold cursor-pointer hover:bg-mint-700 transition-colors">
-            Export Report
+          <select
+            className="px-3 py-1.5 border border-ink-faint rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+            value={format}
+            onChange={e => setFormat(e.target.value as 'csv' | 'pdf')}
+          >
+            <option value="pdf">PDF</option>
+            <option value="csv">CSV</option>
+          </select>
+          <button
+            onClick={handleDownload}
+            disabled={downloadReport.isPending}
+            className="px-4 py-1.5 rounded-lg border-none bg-mint-600 text-white text-sm font-semibold cursor-pointer hover:bg-mint-700 transition-colors disabled:opacity-50"
+          >
+            {downloadReport.isPending ? 'Downloading...' : 'Export Report'}
           </button>
         </div>
       </div>
