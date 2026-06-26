@@ -16,7 +16,6 @@ export function Compliance() {
           <div className="text-lg font-semibold text-ink">Compliance</div>
           <div className="text-xs text-ink-muted">Platform-wide regulatory monitoring</div>
         </div>
-        <button className="px-4 py-1.5 rounded-lg border border-neutral-300 bg-white text-xs cursor-pointer hover:bg-neutral-50">Download compliance report</button>
       </div>
 
       <div className="grid grid-cols-4 gap-3 mb-5">
@@ -38,12 +37,6 @@ export function Compliance() {
             value: (flags?.length ?? overview?.aml_flags_open ?? 0).toString(),
             delta: flags?.length ? 'From KYC/compliance queue' : 'No open flags',
             deltaColor: flags?.length ? 'text-red-500' : 'text-mint-700',
-          },
-          {
-            label: 'SASRA reports due',
-            value: '—',
-            delta: 'Backend endpoint not available',
-            deltaColor: 'text-ink-muted',
           },
         ].map(m => (
           <div key={m.label} className="bg-surface border border-neutral-300 rounded-xl p-3.5">

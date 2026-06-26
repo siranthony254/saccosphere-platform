@@ -592,6 +592,9 @@ export const api = {
     getMembership: async (id: string) =>
       normalizeMembership(await apiCall<any>('GET', `/members/memberships/${uuid(id)}/`)),
 
+    leaveMembership: async (id: string) =>
+      apiCall<void>('POST', `/members/memberships/${uuid(id)}/leave/`),
+
     getTransactions: async (params?: {
       sacco?: string
       type?: string
@@ -644,6 +647,9 @@ export const api = {
 
     markAllNotificationsRead: () =>
       apiCall<void>('POST', '/notifications/read-all/'),
+
+    registerDevice: (data: { token: string; platform: 'ios' | 'android' }) =>
+      apiCall<void>('POST', '/notifications/device/', data),
   },
 
   //  SACCO DISCOVERY 
@@ -811,6 +817,45 @@ export const api = {
       ).map(normalizeSaving)
       return params?.status ? items.filter((item) => item.status === params.status?.toLowerCase()) : items
     },
+
+    getTypes: async (saccoId: string) => {
+      const items = unwrapResults(
+        await apiCall<any[] | PaginatedResponse<any>>('GET', '/services/savings-types/', undefined, {
+          params: { sacco_id: saccoId },
+        })
+      )
+      return items.map((item: any) => ({
+        id: item.id,
+        name: item.name,
+        description: item.description,
+        interest_rate_pct: Number(item.interest_rate ?? 0),
+        min_balance: Number(item.min_balance ?? 0),
+        withdrawal_terms: item.withdrawal_terms ?? '',
+      }))
+    },
+
+    getBalance: async (saccoId: string) => {
+      const response = await apiCall<any>('GET', '/services/savings/balance/', undefined, {
+        params: { sacco_id: saccoId },
+      })
+      return {
+        total_balance: Number(response.total_balance ?? 0),
+        bosa_balance: Number(response.bosa_balance ?? 0),
+        fosa_balance: Number(response.fosa_balance ?? 0),
+        share_capital: Number(response.share_capital ?? 0),
+      }
+    },
+
+    getBreakdown: async (saccoId: string) => {
+      const response = await apiCall<any>('GET', '/services/savings/breakdown/', undefined, {
+        params: { sacco_id: saccoId },
+      })
+      return Array.isArray(response) ? response.map((item: any) => ({
+        type: item.savings_type ?? item.type,
+        amount: Number(item.amount ?? 0),
+        percentage: Number(item.percentage ?? 0),
+      })) : []
+    },
   },
 
   // LOANS
@@ -868,6 +913,31 @@ export const api = {
 
     get: (id: string) =>
       api.loans.list().then((loans) => loans.find((loan) => loan.id === id) as LoanApplication),
+
+    getEligibility: async (membershipId: string) => {
+      const response = await apiCall<any>('GET', '/services/loans/eligibility/', undefined, {
+        params: { membership_id: membershipId },
+      })
+      return {
+        max_amount: Number(response.max_amount ?? 0),
+        max_term_months: Number(response.max_term_months ?? 0),
+        available_multiplier: Number(response.available_multiplier ?? 1),
+        reasons: response.reasons ?? [],
+      }
+    },
+
+    getSchedule: async (loanId: string) => {
+      const response = await apiCall<any>('GET', `/services/loans/${uuid(loanId)}/schedule/`)
+      return Array.isArray(response) ? response.map((item: any) => ({
+        instalment_number: Number(item.instalment_number ?? 0),
+        due_date: item.due_date,
+        amount: Number(item.amount ?? 0),
+        principal: Number(item.principal ?? 0),
+        interest: Number(item.interest ?? 0),
+        balance_after: Number(item.balance_after ?? 0),
+        status: String(item.status ?? 'pending').toLowerCase(),
+      })) : []
+    },
 
     apply: async (data: LoanApplicationInput) => {
       const membership = await api.member.getMembership(data.membership_id).catch(() => null)
@@ -998,7 +1068,7 @@ export const api = {
   payments: {
     stkPush: (data: STKPushInput) =>
       apiCall<any>('POST', '/payments/mpesa/stk-push/', parseInput(STKPushInputSchema, data), {
-        idempotent: true, 
+        idempotent: true,
       }).then(normalizeStkPushResponse),
 
     checkStatus: (ref: string) =>
@@ -1006,6 +1076,29 @@ export const api = {
         'GET',
         `/payments/mpesa/stk/${requiredString(ref)}/status/`
       ),
+
+    getMpesaDetails: (id: string) =>
+      apiCall<any>('GET', `/payments/mpesa/${uuid(id)}/`),
+
+    b2cDisburse: (data: { loan_id: string; amount: number; phone_number: string; remarks?: string }) =>
+      apiCall<any>('POST', '/payments/mpesa/b2c/disburse/', {
+        loan_id: uuid(data.loan_id),
+        amount: data.amount,
+        phone_number: data.phone_number,
+        remarks: data.remarks ?? 'Loan disbursement',
+      }, { idempotent: true }).then(normalizeStkPushResponse),
+
+    checkB2cStatus: (conversationId: string) =>
+      apiCall<{ status: string; completed_at: string | null }>(
+        'GET',
+        `/payments/mpesa/b2c/${requiredString(conversationId)}/status/`
+      ),
+
+    getB2cHistory: async (saccoId?: string) => {
+      const params = saccoId ? { sacco_id: saccoId } : undefined
+      const response = await apiCall<any>('GET', '/payments/mpesa/b2c/history/', undefined, { params })
+      return Array.isArray(response) ? response : response.results ?? []
+    },
   },
 
   // ─── KYC ───────────────────────────────────────────────────────────────────
@@ -1016,6 +1109,16 @@ export const api = {
         kyc_status: string
         documents: Array<{ doc_type: string; status: string }>
       }>('GET', '/accounts/kyc/status/'),
+
+    submitId: (data: { national_id: string }) =>
+      apiCall<{ message: string; status: string }>(
+        'POST',
+        '/accounts/kyc/submit-id/',
+        {
+          national_id: z.string().min(1).parse(data.national_id),
+        },
+        { responseSchema: OTPResponseSchema }
+      ),
 
     requestUploadUrl: (data: {
       doc_type: string
@@ -1077,9 +1180,6 @@ export const api = {
       apiCall<void>('PATCH', `/management/members/${id}/status/`, { status }),
 
     getApplications: async () => {
-      // Note: Backend doesn't have a dedicated applications list endpoint yet
-      // Using members with PENDING status as a workaround
-      // TODO: Backend should add GET /api/v1/management/applications/ endpoint
       const response = await apiCall<any>('GET', '/management/members/', undefined, {
         params: { status: 'PENDING' },
       })
@@ -1156,22 +1256,131 @@ export const api = {
       }
     },
 
-    getDisbursements: async () => ({
-      count: 0,
-      next: null,
-      previous: null,
-      results: [],
-    }),
+    getDisbursements: async () => {
+      const response = await apiCall<any>('GET', '/payments/mpesa/b2c/history/')
+      const items = Array.isArray(response) ? response : response.results ?? []
+      return {
+        count: items.length,
+        next: null,
+        previous: null,
+        results: items.map((item: any) => ({
+          id: item.id,
+          date: item.created_at,
+          amount: Number(item.amount ?? 0),
+          phone_number: item.phone_number ?? '',
+          status: String(item.status ?? 'pending').toLowerCase(),
+          conversation_id: item.conversation_id ?? '',
+        })),
+      }
+    },
 
     getReports: async () => apiCall<Record<string, unknown>>('GET', '/management/stats/'),
+
+    // Roles management
+    assignRole: (data: { user_id: string; role_name: string; sacco_id: string }) =>
+      apiCall<void>('POST', '/management/roles/assign/', data),
+
+    revokeRole: (roleId: string) =>
+      apiCall<void>('DELETE', `/management/roles/${uuid(roleId)}/`),
+
+    getUserRoles: (userId: string) =>
+      apiCall<any[]>('GET', '/management/roles/', undefined, { params: { user_id: userId } }),
+
+    // KYC management
+    getKycQueue: async (params?: { status?: string }) => {
+      const response = await apiCall<any>('GET', '/management/kyc/queue/', undefined, { params })
+      return Array.isArray(response) ? response : response.results ?? []
+    },
+
+    reviewKyc: (id: string, data: { status: 'APPROVED' | 'REJECTED'; rejection_reason?: string }) =>
+      apiCall<void>('PATCH', `/management/kyc/${uuid(id)}/review/`, data),
+
+    // Member import
+    importMembers: (file: File) => {
+      const form = new FormData()
+      form.append('file', file)
+      return apiCall<{ job_id: string }>('POST', '/management/import/', form)
+    },
+
+    getImportJobStatus: async (jobId: string) => {
+      const response = await apiCall<any>('GET', `/management/import/${uuid(jobId)}/`)
+      return {
+        job_id: response.job_id,
+        status: response.status,
+        progress: Number(response.progress ?? 0),
+        total_records: Number(response.total_records ?? 0),
+        processed_records: Number(response.processed_records ?? 0),
+        failed_records: Number(response.failed_records ?? 0),
+        error_summary: response.error_summary ?? [],
+      }
+    },
+
+    // Audit logs
+    getAuditLogs: async (params?: { action?: string; resource_type?: string; cursor?: string }) => {
+      const response = await apiCall<any>('GET', '/management/audit-logs/', undefined, { params })
+      const items = Array.isArray(response) ? response : response.results ?? []
+      return {
+        count: items.length,
+        next: response.next ?? null,
+        previous: response.previous ?? null,
+        results: items.map((item: any) => ({
+          id: item.id,
+          timestamp: item.timestamp,
+          user: item.user?.full_name ?? item.user_id,
+          action: item.action,
+          resource_type: item.resource_type,
+          resource_id: item.resource_id,
+          details: item.details,
+        })),
+      }
+    },
+
+    // Billing/Invoices
+    getInvoices: async () => {
+      const response = await apiCall<any>('GET', '/billing/invoices/')
+      const items = Array.isArray(response) ? response : response.results ?? []
+      return {
+        count: items.length,
+        next: response.next ?? null,
+        previous: response.previous ?? null,
+        results: items.map((item: any) => ({
+          id: item.id,
+          invoice_number: item.invoice_number,
+          period: item.period,
+          amount: Number(item.amount ?? 0),
+          status: String(item.status ?? 'pending').toLowerCase(),
+          due_date: item.due_date,
+          paid_date: item.paid_date,
+        })),
+      }
+    },
+
+    getInvoice: (id: string) =>
+      apiCall<any>('GET', `/billing/invoices/${uuid(id)}/`),
+
+    resendInvoice: (id: string) =>
+      apiCall<void>('POST', `/billing/invoices/${uuid(id)}/resend/`),
+
+    downloadInvoice: async (id: string, format: 'csv' | 'pdf' = 'pdf') => {
+      const response = await axiosInstance.get(`/billing/invoices/${uuid(id)}/download/`, {
+        params: { format },
+        responseType: 'blob',
+      })
+      const disposition = String(response.headers?.['content-disposition'] ?? '')
+      const filenameMatch = disposition.match(/filename="?([^";]+)"?/i)
+      return {
+        blob: response.data as Blob,
+        filename: filenameMatch?.[1] ?? `invoice_${id}.${format}`,
+      }
+    },
   },
 
   // ─── SUPER ADMIN ───────────────────────────────────────────────────────────
 
   superAdmin: {
     getDashboard: async () => {
-      const platformStats = await apiCall<any>('GET', '/management/platform-stats/').catch(() => null)
-      return normalizePlatformOverview(platformStats ?? {})
+      const publicStats = await apiCall<any>('GET', '/accounts/public-stats/').catch(() => null)
+      return normalizePlatformOverview(publicStats ?? {})
     },
 
     getSaccos: (params?: { status?: string; sector?: string; search?: string }) =>
@@ -1211,6 +1420,15 @@ export const api = {
 
     unsuspendSacco: (id: string) =>
       apiCall<void>('PATCH', `/super-admin/saccos/${id}/unsuspend/`),
+
+    assignRole: (data: { user_id: string; role_name: string; sacco_id?: string | null }) =>
+      apiCall<any>('POST', '/management/roles/assign/', data),
+
+    revokeRole: (roleId: string) =>
+      apiCall<void>('DELETE', `/management/roles/${roleId}/`),
+
+    getUserRoles: (userId: string) =>
+      apiCall<any[]>('GET', '/management/roles/', undefined, { params: { user_id: userId } }),
 
     getAllMembers: (params?: { sacco?: string; kyc_status?: string; search?: string; cursor?: string }) =>
       api.saccoAdmin.getMembers(params),

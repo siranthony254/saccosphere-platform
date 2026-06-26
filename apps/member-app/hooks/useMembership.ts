@@ -31,3 +31,9 @@ export function useMembershipBySacco(saccoSlug: string) {
     gcTime: 300_000,
   })
 }
+
+export function useLeaveMembership() {
+  return useMutation({
+    mutationFn: (id: string) => api.member.leaveMembership(id),
+  })
+}

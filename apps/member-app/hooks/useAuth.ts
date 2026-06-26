@@ -134,3 +134,10 @@ export function useConfirmPasswordReset() {
     }) => api.auth.confirmPasswordReset(data),
   })
 }
+
+export function useChangePassword() {
+  return useMutation({
+    mutationFn: (data: { old_password: string; new_password: string; new_password2: string }) =>
+      api.auth.changePassword(data),
+  })
+}

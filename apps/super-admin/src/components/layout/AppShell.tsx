@@ -5,9 +5,13 @@ import { useLogout } from '../../hooks/useAuth'
 const NAV = [
   { path: '/overview',     label: 'System overview',    icon: '🌐', badge: null },
   { path: '/saccos',       label: 'All SACCOs',         icon: '🏦', badge: null },
+  { path: '/members',      label: 'All Members',        icon: '👥', badge: null },
   { path: '/transactions', label: 'Transactions',        icon: '💸', badge: null, live: true },
-  { path: '/revenue',      label: 'Revenue & billing',   icon: '📊', badge: null },
-  { path: '/compliance',   label: 'Compliance & KYC',    icon: '🛡️', badge: '4' },
+  { path: '/roles',        label: 'Role Management',    icon: '👑', badge: null },
+  { path: '/kyc',          label: 'KYC Review',         icon: '🪪', badge: null },
+  { path: '/audit-logs',   label: 'Audit Logs',         icon: '📋', badge: null },
+  { path: '/billing',      label: 'Billing & Invoices',  icon: '🧾', badge: null },
+  { path: '/compliance',   label: 'Compliance',         icon: '🛡️', badge: null },
   { path: '/settings',     label: 'Platform settings',   icon: '⚙️', badge: null },
 ]
 

@@ -44,3 +44,23 @@ export function useSearchGuarantors(loanId: string, query: string) {
     enabled: query.length > 0,
   })
 }
+
+export function useLoanEligibility(membershipId: string) {
+  return useQuery({
+    queryKey: ['loan-eligibility', membershipId],
+    queryFn: () => api.loans.getEligibility(membershipId),
+    staleTime: 60_000,
+    gcTime: 300_000,
+    enabled: !!membershipId,
+  })
+}
+
+export function useLoanSchedule(loanId: string) {
+  return useQuery({
+    queryKey: ['loan-schedule', loanId],
+    queryFn: () => api.loans.getSchedule(loanId),
+    staleTime: 300_000, // Schedule doesn't change frequently
+    gcTime: 600_000,
+    enabled: !!loanId,
+  })
+}

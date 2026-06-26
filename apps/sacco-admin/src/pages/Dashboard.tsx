@@ -43,18 +43,23 @@ export function Dashboard() {
     { bg: 'bg-blue-50', text: `${d.pending_kyc_reviews} KYC documents submitted for review`, borderColor: 'border-l-blue-500', textColor: 'text-blue-700' },
   ]
 
-  const portfolioHealth = [
-    { label: 'Performing loans', value: '94.8%', width: '94.8%', barColor: 'bg-mint-600', textColor: 'text-mint-600' },
-    { label: '30–60 day arrears', value: '3.1%', width: '3.1%', barColor: 'bg-amber-500', textColor: 'text-amber-600' },
-    { label: '90+ day default', value: `${d.default_rate_pct}%`, width: `${d.default_rate_pct}%`, barColor: 'bg-red-500', textColor: 'text-red-700' },
-  ]
+  // Portfolio health breakdown should come from backend.
+  // If the backend endpoint is not available yet, render an empty state rather than hardcoded percentages.
+  const portfolioHealth = [] as Array<{
+    label: string
+    value: string
+    width: string
+    barColor: string
+    textColor: string
+  }>
+
 
   return (
     <div className="p-5">
       {/* Top bar */}
       <div className="flex justify-between items-center mb-5">
         <div>
-          <div className="text-lg font-semibold text-ink">{user?.sacco_name || 'Dashboard'}</div>
+          <div className="text-lg font-semibold text-ink">{sacco?.name || 'Dashboard'}</div>
           <div className="text-xs text-ink-muted">{ new Date().toLocaleDateString('en-KE', { day: 'numeric', month: 'long', year: 'numeric' })} · Live data · {new Date().toLocaleDateString('en-KE', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
         </div>
         <div className="flex gap-2">
@@ -89,18 +94,23 @@ export function Dashboard() {
 
         <div className="bg-white border border-[#e5ede9] rounded-[10px] p-4">
           <div className="font-semibold text-sm text-ink mb-3">Portfolio health</div>
-          {portfolioHealth.map((row, i) => (
-            <div key={i} className="mb-2.5">
-              <div className="flex justify-between mb-1">
-                <span className="text-xs text-ink-muted">{row.label}</span>
-                <span className={`text-xs font-semibold ${row.textColor}`}>{row.value}</span>
+          {portfolioHealth.length > 0 ? (
+            portfolioHealth.map((row, i) => (
+              <div key={i} className="mb-2.5">
+                <div className="flex justify-between mb-1">
+                  <span className="text-xs text-ink-muted">{row.label}</span>
+                  <span className={`text-xs font-semibold ${row.textColor}`}>{row.value}</span>
+                </div>
+                <div className="h-1.5 bg-[#e5ede9] rounded-[3px] overflow-hidden">
+                  <div className={`h-full rounded-[3px] ${row.barColor}`} style={{ width: row.width }} />
+                </div>
               </div>
-              <div className="h-1.5 bg-[#e5ede9] rounded-[3px] overflow-hidden">
-                <div className={`h-full rounded-[3px] ${row.barColor}`} style={{ width: row.width }} />
-              </div>
-            </div>
-          ))}
+            ))
+          ) : (
+            <div className="text-xs text-ink-muted py-2">No portfolio health data available.</div>
+          )}
         </div>
+
       </div>
     </div>
   )

@@ -2,19 +2,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { QueryKeys, STALE_TIMES } from '@saccosphere/config'
 import { api } from '@saccosphere/api-client'
 
-type RevenueData = {
-  saas_fees: Array<{
-    sacco: string
-    fee: number
-    txn_fees: number
-    total: number
-    status: string
-  }>
-  arr_kes: number
-  projected_12mo_kes: number
-  avg_per_sacco_kes: number
-}
-
 type LiveTransaction = {
   id: string
   time: string
@@ -27,13 +14,6 @@ type LiveTransaction = {
   platform_fee: number
   status: string
 }
-
-const toRevenueData = (data: Record<string, unknown>): RevenueData => ({
-  saas_fees: Array.isArray(data.saas_fees) ? data.saas_fees as RevenueData['saas_fees'] : [],
-  arr_kes: typeof data.arr_kes === 'number' ? data.arr_kes : 0,
-  projected_12mo_kes: typeof data.projected_12mo_kes === 'number' ? data.projected_12mo_kes : 0,
-  avg_per_sacco_kes: typeof data.avg_per_sacco_kes === 'number' ? data.avg_per_sacco_kes : 0,
-})
 
 const toLiveTransaction = (txn: {
   id: string
@@ -84,6 +64,7 @@ export function useSaccoDetail(id: string) {
   return useQuery({
     queryKey: QueryKeys.superSaccoDetail(id),
     queryFn: () => api.superAdmin.getSacco(id),
+    refetchInterval: 30_000,
   })
 }
 
@@ -106,13 +87,6 @@ export function useKycQueue() {
   return useQuery({
     queryKey: ['kyc-queue'],
     queryFn: api.superAdmin.getKycQueue,
-  })
-}
-
-export function useRevenueData() {
-  return useQuery({
-    queryKey: QueryKeys.revenue(),
-    queryFn: () => api.superAdmin.getRevenue().then(toRevenueData),
   })
 }
 

@@ -15,7 +15,7 @@ const NAV_ITEMS = [
 ]
 
 export function AppShell() {
-  const { sidebarCollapsed, toggleSidebar } = useLayoutStore()
+  const { sidebarCollapsed } = useLayoutStore()
   const { user, clearAuth } = useAuthStore()
   const navigate = useNavigate()
 
@@ -44,8 +44,8 @@ export function AppShell() {
         {/* SACCO chip */}
         {!sidebarCollapsed && (
           <div className="mx-2.5 my-3 bg-mint-700/25 border border-mint-700/35 rounded-lg py-2 px-2.5">
-            <div className="text-[13px] font-semibold text-mint-400">Stima SACCO</div>
-            <div className="text-[10px] text-white/35">{user?.first_name} {user?.last_name} · CEO</div>
+            <div className="text-[13px] font-semibold text-mint-400">{(user as any)?.sacco_slug ? String((user as any).sacco_slug).toUpperCase() : 'SACCO'}</div>
+            <div className="text-[10px] text-white/35">{user?.first_name} {user?.last_name} · Admin</div>
           </div>
         )}
 

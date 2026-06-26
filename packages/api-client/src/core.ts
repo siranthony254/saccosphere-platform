@@ -67,6 +67,7 @@ axiosInstance.interceptors.request.use(
     config.headers['X-Request-ID'] = generateRequestId()
     return config
   },
+
   (error) => Promise.reject(error)
 )
 
@@ -223,3 +224,4 @@ function generateRequestId(): string {
   // Fallback for environments without crypto.randomUUID
   return Math.random().toString(36).substring(2) + Date.now().toString(36)
 }
+

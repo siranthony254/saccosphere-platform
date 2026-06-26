@@ -14,6 +14,9 @@ import { DisbursementsList } from './pages/Disbursements/DisbursementsList'
 import { ContributionsFeed } from './pages/Contributions/ContributionsFeed'
 import { Reports } from './pages/Reports/Reports'
 import { Settings } from './pages/Settings/Settings'
+import { KycReview } from './pages/Kyc/KycReview'
+import { Roles } from './pages/Roles/Roles'
+import { Import } from './pages/Import/Import'
 
 export const router = createBrowserRouter([
   {
@@ -38,6 +41,9 @@ export const router = createBrowserRouter([
       { path: 'contributions', element: <ContributionsFeed /> },
       { path: 'reports', element: <Reports /> },
       { path: 'settings', element: <Settings /> },
+      { path: 'kyc', element: <KycReview /> },
+      { path: 'roles', element: <Roles /> },
+      { path: 'import', element: <Import /> },
     ],
   },
   { path: '*', element: <Navigate to="/" replace /> },

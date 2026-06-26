@@ -33,3 +33,10 @@ export function useMarkAllNotificationsRead() {
     },
   })
 }
+
+export function useRegisterDevice() {
+  return useMutation({
+    mutationFn: (data: { token: string; platform: 'ios' | 'android' }) =>
+      api.member.registerDevice(data),
+  })
+}

@@ -19,7 +19,6 @@ export function TransactionsFeed() {
             <div className="w-1.5 h-1.5 rounded-full bg-violet-600" />
             {connected ? 'Real-time' : 'Connecting...'}
           </div>
-          <button className="px-3.5 py-1.5 rounded-lg border border-neutral-300 bg-surface text-xs cursor-pointer hover:bg-neutral-50">Export</button>
         </div>
       </div>
 

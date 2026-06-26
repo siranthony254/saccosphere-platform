@@ -17,7 +17,7 @@ export function DisbursementsList() {
           <div className="text-xs text-ink-muted">{data?.results.filter(l => l.status === 'approved').length ?? 0} approved loans awaiting disbursement</div>
         </div>
         <div className="flex gap-2">
-          <select
+          <select aria-label="Loan status filter" 
             className="px-3 py-1.5 border border-ink-faint rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
             value={statusFilter}
             onChange={e => setStatusFilter(e.target.value)}
@@ -94,8 +94,8 @@ export function DisbursementsList() {
                         <label className="text-xs font-medium text-ink-soft mb-1 block">M-Pesa Phone Number</label>
                         <input
                           type="text"
+                          title="M-Pesa phone number"
                           className="w-full p-2.5 border border-ink-faint rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
-                          placeholder="+2547XXXXXXXX"
                           value={phone}
                           onChange={e => setPhone(e.target.value)}
                         />
@@ -104,6 +104,7 @@ export function DisbursementsList() {
                         <label className="text-xs font-medium text-ink-soft mb-1 block">Disbursement Amount (KES)</label>
                         <input
                           type="number"
+                          title="Disbursement amount"
                           className="w-full p-2.5 border border-ink-faint rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
                           value={amount}
                           onChange={e => setAmount(e.target.value)}

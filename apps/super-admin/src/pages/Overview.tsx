@@ -41,70 +41,30 @@ export function Overview() {
           <div className="flex items-center gap-1.5 text-xs text-violet-500 bg-violet-50 py-1.5 px-3 rounded-md">
             <div className="w-1.5 h-1.5 rounded-full bg-violet-500" />All systems operational
           </div>
-          <button className="py-1.5 px-3.5 rounded-lg border border-mid bg-surface text-[13px] cursor-pointer hover:bg-surface-2 transition-colors">Export board report</button>
         </div>
       </div>
 
       {/* KPIs */}
       <div className="grid grid-cols-4 gap-3 mb-5">
-        <Metric label="Platform transaction volume" value={fmt(d.transaction_volume_mtd_kes)} />
-        <Metric label="Active SACCOs" value={d.active_saccos.toString()} />
-        <Metric label="Total members on app" value={d.total_members_on_app.toLocaleString()} />
-        <Metric label="Platform revenue (MTD)" value={fmt(d.platform_revenue_mtd_kes)} />
+        <Metric label="Total SACCOs" value={d.total_saccos?.toString() ?? '0'} />
+        <Metric label="Total members on app" value={d.total_members_on_app?.toLocaleString() ?? '0'} />
+        <Metric label="Active SACCOs" value={d.total_saccos?.toString() ?? '0'} />
+        <Metric label="Platform status" value="Operational" delta="All systems running" />
       </div>
 
       <div className="grid grid-cols-2 gap-4">
-        {/* Revenue breakdown */}
-        <div>
-          <div className="bg-surface border border-mid rounded-[10px] p-4 mb-3.5">
-            <div className="font-semibold text-[13px] text-ink mb-3">Revenue breakdown — MTD</div>
-            {[
-              { label:'SaaS fees (45 SACCOs)', value:fmt(d.saas_revenue_mtd_kes), pct:52, color:'bg-violet-500' },
-              { label:'Transaction fees (1%)', value:fmt(d.transaction_fees_mtd_kes), pct:48, color:'bg-mint-700' },
-            ].map(r => (
-              <div key={r.label} className="mb-3">
-                <div className="flex justify-between text-xs mb-1">
-                  <span className="text-ink-muted">{r.label}</span>
-                  <span className="font-semibold text-ink">{r.value}</span>
-                </div>
-                <div className="h-1.5 bg-surface-2 rounded-full overflow-hidden">
-                  <div className={`h-full rounded-full ${r.color}`} style={{ width: `${r.pct}%` }} />
-                </div>
-              </div>
-            ))}
-            <div className="grid grid-cols-3 gap-2.5 mt-3.5 pt-3 border-t border-surface-2">
-              {[
-                { label: 'Total SACCOs', value: d.total_saccos.toString() },
-                { label: 'Open compliance items', value: (d.aml_flags_open ?? 0).toString() },
-                { label: 'System alerts', value: (d.system_alerts ?? 0).toString() },
-              ].map(s => (
-                <div key={s.label} className="text-center">
-                  <div className="text-[10px] text-ink-muted mb-0.5">{s.label}</div>
-                  <div className="text-sm font-bold text-violet-500">{s.value}</div>
-                </div>
-              ))}
+        {/* Platform stats */}
+        <div className="bg-surface border border-mid rounded-[10px] p-4">
+          <div className="font-semibold text-[13px] text-ink mb-3">Platform statistics</div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="text-center">
+              <div className="text-[10px] text-ink-muted mb-0.5">Total SACCOs</div>
+              <div className="text-2xl font-bold text-violet-500">{d.total_saccos ?? 0}</div>
             </div>
-          </div>
-
-          {/* System alerts */}
-          <div className="bg-surface border border-mid rounded-[10px] p-4">
-            <div className="font-semibold text-[13px] text-ink mb-3">Platform alerts</div>
-            {(d.system_alerts ?? 0) > 0 || (d.aml_flags_open ?? 0) > 0 ? (
-              <>
-                {(d.system_alerts ?? 0) > 0 && (
-                  <div className="bg-amber-50 border-l-[3px] border-amber-600 rounded-r-lg py-2 px-3 mb-2 text-xs text-amber-700">
-                    {d.system_alerts} pending application(s) across the platform.
-                  </div>
-                )}
-                {(d.aml_flags_open ?? 0) > 0 && (
-                  <div className="bg-red-50 border-l-[3px] border-red-700 rounded-r-lg py-2 px-3 mb-2 text-xs text-red-800">
-                    {d.aml_flags_open} KYC/compliance item(s) require review.
-                  </div>
-                )}
-              </>
-            ) : (
-              <div className="text-xs text-ink-muted">No platform alerts reported by the backend.</div>
-            )}
+            <div className="text-center">
+              <div className="text-[10px] text-ink-muted mb-0.5">Total members</div>
+              <div className="text-2xl font-bold text-violet-500">{d.total_members_on_app ?? 0}</div>
+            </div>
           </div>
         </div>
 

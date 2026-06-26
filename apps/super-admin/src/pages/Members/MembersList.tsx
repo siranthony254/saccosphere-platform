@@ -11,9 +11,6 @@ export function MembersList() {
           <div className="text-lg font-semibold text-ink">All Members</div>
           <div className="text-xs text-ink-muted">Platform-wide member directory</div>
         </div>
-        <div className="flex gap-2">
-          <button className="py-1.5 px-3.5 rounded-lg border border-mid bg-surface text-[13px] cursor-pointer hover:bg-surface-2 transition-colors">Export CSV</button>
-        </div>
       </div>
 
       {/* Filters */}

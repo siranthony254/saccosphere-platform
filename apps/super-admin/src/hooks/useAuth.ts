@@ -42,24 +42,34 @@ export function useAuthBootstrap() {
       }
 
       try {
-        // Refresh the access token
-        const { access } = await api.auth.refresh(refreshToken)
-        setAccessToken(access)
+        // Clear in-memory refresh token temporarily to prevent interceptor retry loop
+        const { setRefreshToken, axiosInstance } = await import('@saccosphere/api-client')
+        setRefreshToken(null)
+        
+        const response = await axiosInstance.post('/accounts/token/refresh/', { refresh: refreshToken })
+        
+        const newToken = response.data.data?.access || response.data.access
+        if (!newToken) throw new Error('No access token in refresh response')
+        
+        setAccessToken(newToken)
+        setRefreshToken(refreshToken) // Restore it if refresh succeeded
 
         // Fetch user profile
         const user = await api.member.getProfile()
 
         if (!isMounted) return
-        setAuth({ token: access, user })
+        setAuth({ token: newToken, user })
         
         // Invalidate all queries to ensure fresh data on page load
         queryClient.invalidateQueries()
       } catch (error) {
         // Clear tokens on any error (401, network, etc.)
+        console.error('Auth bootstrap failed:', error)
         clearTokens()
         await clearStoredRefreshToken()
         clearAuth()
       } finally {
+        // Always set authReady to true, even on failure
         if (isMounted) setAuthReady(true)
       }
     }

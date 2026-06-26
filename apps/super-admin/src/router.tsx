@@ -10,6 +10,10 @@ import { TransactionsFeed } from './pages/Transactions/TransactionsFeed'
 import { Revenue } from './pages/Revenue/Revenue'
 import { Compliance } from './pages/Compliance/Compliance'
 import { PlatformSettings } from './pages/Settings/PlatformSettings'
+import { Roles } from './pages/Roles/Roles'
+import { KycReview } from './pages/Kyc/KycReview'
+import { AuditLogs } from './pages/AuditLogs/AuditLogs'
+import { Billing } from './pages/Billing/Billing'
 
 export const router = createBrowserRouter([
   {
@@ -34,6 +38,10 @@ export const router = createBrowserRouter([
       { path: 'revenue', element: <Revenue /> },
       { path: 'compliance', element: <Compliance /> },
       { path: 'settings', element: <PlatformSettings /> },
+      { path: 'roles', element: <Roles /> },
+      { path: 'kyc', element: <KycReview /> },
+      { path: 'audit-logs', element: <AuditLogs /> },
+      { path: 'billing', element: <Billing /> },
       { path: '*', element: <Navigate to="/overview" replace /> },
     ],
   },

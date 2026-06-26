@@ -22,20 +22,32 @@ export function PlatformSettings() {
         <div>
           <div className="bg-surface border border-mid rounded-[10px] p-5 mb-4">
             <div className="font-semibold text-sm text-ink mb-4">Signed-in account</div>
-            <div className="space-y-3 text-sm">
-              <div>
-                <div className="text-[11px] uppercase tracking-wider text-ink-muted">Name</div>
-                <div className="font-medium">{user?.first_name} {user?.last_name}</div>
+            {user ? (
+              <div className="space-y-3 text-sm">
+                <div>
+                  <div className="text-[11px] uppercase tracking-wider text-ink-muted">Name</div>
+                  <div className="font-medium">{user.first_name} {user.last_name}</div>
+                </div>
+                <div>
+                  <div className="text-[11px] uppercase tracking-wider text-ink-muted">Email</div>
+                  <div className="font-medium">{user.email}</div>
+                </div>
+                <div>
+                  <div className="text-[11px] uppercase tracking-wider text-ink-muted">Phone</div>
+                  <div className="font-medium">{user.phone_number || '—'}</div>
+                </div>
+                <div>
+                  <div className="text-[11px] uppercase tracking-wider text-ink-muted">Role</div>
+                  <div className="font-medium capitalize">Super Admin</div>
+                </div>
+                <div>
+                  <div className="text-[11px] uppercase tracking-wider text-ink-muted">KYC Status</div>
+                  <div className="font-medium capitalize">{user.kyc_status || 'Not verified'}</div>
+                </div>
               </div>
-              <div>
-                <div className="text-[11px] uppercase tracking-wider text-ink-muted">Email</div>
-                <div className="font-medium">{user?.email}</div>
-              </div>
-              <div>
-                <div className="text-[11px] uppercase tracking-wider text-ink-muted">Role</div>
-                <div className="font-medium capitalize">{user?.role?.replace('_', ' ')}</div>
-              </div>
-            </div>
+            ) : (
+              <div className="text-sm text-ink-muted">Loading user profile...</div>
+            )}
           </div>
         </div>
 

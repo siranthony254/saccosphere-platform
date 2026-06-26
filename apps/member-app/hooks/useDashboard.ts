@@ -29,3 +29,19 @@ export function useDashboard() {
     retry: 2, // Retry twice before giving up
   })
 }
+
+export function useDashboardState() {
+  return useQuery({
+    queryKey: ['dashboard-state'],
+    queryFn: api.member.getState,
+    staleTime: 60_000,
+  })
+}
+
+export function useDashboardActivity(limit?: number) {
+  return useQuery({
+    queryKey: ['dashboard-activity', limit],
+    queryFn: () => api.member.getActivity({ limit }),
+    staleTime: 60_000,
+  })
+}

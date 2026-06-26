@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import { View, Text, TouchableOpacity, ScrollView, TextInput, ActivityIndicator } from 'react-native'
 import { useLocalSearchParams, router } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { useCurrentUser } from '../../../../../store/useAuthStore'
 import { useMembershipApplicationStore } from '../../../../../store/useMembershipApplicationStore'
 import { useSaccoConfig } from '../../../../../hooks/useSaccoConfig'
 import type { AdditionalField } from '@saccosphere/schemas'
@@ -10,45 +9,26 @@ import type { AdditionalField } from '@saccosphere/schemas'
 export default function ApplyStep1Screen() {
   const { slug } = useLocalSearchParams<{ slug: string }>()
   const insets = useSafeAreaInsets()
-  const user = useCurrentUser()
+
   const { setSacco, setFormData, setMonthlyContribution, formData, monthlyContribution } =
     useMembershipApplicationStore()
+
   const { data: config, isLoading: isLoadingConfig } = useSaccoConfig(slug ?? '')
 
-  const [firstName, setFirstName] = useState<string>(
-    (formData.firstName as string) ?? user?.first_name ?? ''
-  )
-  const [lastName, setLastName] = useState<string>(
-    (formData.lastName as string) ?? user?.last_name ?? ''
-  )
-  const [nationalId, setNationalId] = useState<string>(
-    (formData.nationalId as string) ?? (user as any)?.national_id ?? ''
-  )
-  const [dob, setDob] = useState<string>((formData.dob as string) ?? '')
-  const [employer, setEmployer] = useState<string>((formData.employer as string) ?? '')
-  const [employmentType, setEmploymentType] = useState<string>(
-    (formData.employmentType as string) ?? ''
-  )
-  const [income, setIncome] = useState<string>((formData.income as string) ?? '')
+  // SACCO-driven dynamic values only
   const [contribution, setContribution] = useState<string>(
     monthlyContribution ? String(monthlyContribution) : ''
   )
-  const [customFieldValues, setCustomFieldValues] = useState<Record<string, string>>(formData.customFields as Record<string, string> ?? {})
+  const [customFieldValues, setCustomFieldValues] = useState<Record<string, string>>(
+    (formData.customFields as Record<string, string>) ?? {}
+  )
 
   useEffect(() => {
     if (slug) setSacco(slug)
   }, [slug, setSacco])
 
-  useEffect(() => {
-    if (!user) return
-    setFirstName((c) => c || user.first_name || '')
-    setLastName((c) => c || user.last_name || '')
-    setNationalId((c) => c || (user as any).national_id || '')
-    setDob((c) => c || (user as any).date_of_birth || '')
-  }, [user])
-
   const handleCustomFieldChange = (fieldKey: string, value: string) => {
-    setCustomFieldValues(prev => ({ ...prev, [fieldKey]: value }))
+    setCustomFieldValues((prev) => ({ ...prev, [fieldKey]: value }))
   }
 
   if (isLoadingConfig) {
@@ -63,32 +43,25 @@ export default function ApplyStep1Screen() {
   const saccoName = slug?.toUpperCase() ?? 'SACCO'
   const contributionNumber = Number(contribution.replace(/[^0-9]/g, ''))
   const minContribution = config?.membership.min_monthly_contribution_kes ?? 1000
-  
-  // Validate required custom fields
-  const requiredCustomFieldsValid = config?.membership.additional_fields
-    .filter(field => field.required)
-    .every(field => {
-      const value = customFieldValues[field.key]
-      if (field.type === 'number') {
-        const numValue = Number(value?.replace(/[^0-9]/g, '') || 0)
-        return numValue >= (field.min ?? 0)
-      }
-      return Boolean(value?.trim())
-    }) ?? true
 
-  const canContinue = Boolean(
-    firstName && lastName && nationalId && dob && contributionNumber >= minContribution && requiredCustomFieldsValid
-  )
+  const requiredCustomFieldsValid =
+    config?.membership.additional_fields
+      .filter((field) => field.required)
+      .every((field) => {
+        const value = customFieldValues[field.key]
+        if (field.type === 'number') {
+          const numValue = Number(value?.replace(/[^0-9]/g, '') || 0)
+          return numValue >= (field.min ?? 0)
+        }
+        return Boolean(value?.trim())
+      }) ?? true
+
+  const canContinue = Boolean(contributionNumber >= minContribution && requiredCustomFieldsValid)
 
   const handleContinue = () => {
-    setFormData({ 
-      firstName, 
-      lastName, 
-      nationalId, 
-      dob, 
-      employer, 
-      employmentType, 
-      income,
+    setFormData({
+      // keep existing form values (store may already hold other steps)
+      ...formData,
       customFields: customFieldValues,
     })
     setMonthlyContribution(contributionNumber)
@@ -117,57 +90,7 @@ export default function ApplyStep1Screen() {
         <View className="flex-1 h-0.75 rounded bg-border" />
         <View className="flex-1 h-0.75 rounded bg-border" />
       </View>
-      <Text className="text-ink-faint text-xs mx-4 mb-4">Step 1 of 3 — Personal & employment</Text>
-
-      {/* Info alert */}
-      <View className="bg-blue-50 rounded-xl mx-4 p-3 mb-4">
-        <Text className="text-blue-700 text-xs leading-4.5">
-          Your name and ID details are loaded from your Saccosphere profile. Verify and complete the fields below.
-        </Text>
-      </View>
-
-      {/* Form fields */}
-      <View className="flex-row gap-2 mx-4 mb-3">
-        <View className="flex-1">
-          <Text className="text-ink-soft text-xs font-medium mb-1">First name</Text>
-          <TextInput
-            className="bg-surface2 rounded-xl p-2.5 text-xs text-ink"
-            value={firstName}
-            onChangeText={setFirstName}
-            placeholderTextColor="#9ca3af"
-          />
-        </View>
-        <View className="flex-1">
-          <Text className="text-ink-soft text-xs font-medium mb-1">Last name</Text>
-          <TextInput
-            className="bg-surface2 rounded-xl p-2.5 text-xs text-ink"
-            value={lastName}
-            onChangeText={setLastName}
-            placeholderTextColor="#9ca3af"
-          />
-        </View>
-      </View>
-
-      <View className="mx-4 mb-3">
-        <Text className="text-ink-soft text-xs font-medium mb-1">National ID</Text>
-        <TextInput
-          className="bg-surface2 rounded-xl p-2.5 text-xs text-ink"
-          value={nationalId}
-          onChangeText={setNationalId}
-          placeholderTextColor="#9ca3af"
-        />
-      </View>
-
-      <View className="mx-4 mb-3">
-        <Text className="text-ink-soft text-xs font-medium mb-1">Date of birth</Text>
-        <TextInput
-          className="bg-surface2 rounded-xl p-2.5 text-xs text-ink"
-          value={dob}
-          onChangeText={setDob}
-          placeholder="YYYY-MM-DD"
-          placeholderTextColor="#9ca3af"
-        />
-      </View>
+      <Text className="text-ink-faint text-xs mx-4 mb-4">Step 1 of 3 — SACCO details</Text>
 
       {/* Dynamic custom fields from sacco config */}
       {config?.membership.additional_fields.map((field: AdditionalField) => (
@@ -176,6 +99,7 @@ export default function ApplyStep1Screen() {
             {field.label}
             {field.required && <Text className="text-red-500"> *</Text>}
           </Text>
+
           {field.type === 'select' && field.options ? (
             <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row gap-2">
               {field.options.map((option) => (
@@ -216,12 +140,13 @@ export default function ApplyStep1Screen() {
               onChangeText={(value) => handleCustomFieldChange(field.key, value)}
               placeholder={field.placeholder ?? ''}
               placeholderTextColor="#9ca3af"
-              keyboardType={field.type === 'number' || field.type === 'phone' ? 'numeric' : 'default'}
+              keyboardType={
+                field.type === 'number' || field.type === 'phone' ? 'numeric' : 'default'
+              }
             />
           )}
-          {field.hint && (
-            <Text className="text-ink-faint text-xs mt-1">{field.hint}</Text>
-          )}
+
+          {field.hint && <Text className="text-ink-faint text-xs mt-1">{field.hint}</Text>}
         </View>
       ))}
 
@@ -238,7 +163,8 @@ export default function ApplyStep1Screen() {
           keyboardType="numeric"
         />
         <Text className="text-violet-500 text-xs mt-1">
-          This will be deducted via M-Pesa on the {config?.contributions.deduction_day ?? 25}th of each month
+          This will be deducted via M-Pesa on the {config?.contributions.deduction_day ?? 25}th of
+          each month
         </Text>
       </View>
 
@@ -250,14 +176,11 @@ export default function ApplyStep1Screen() {
         onPress={handleContinue}
         disabled={!canContinue}
       >
-        <Text
-          className={`text-xs font-semibold ${
-            !canContinue ? 'text-ink-muted' : 'text-white'
-          }`}
-        >
+        <Text className={`text-xs font-semibold ${!canContinue ? 'text-ink-muted' : 'text-white'}`}>
           Continue →
         </Text>
       </TouchableOpacity>
     </ScrollView>
   )
 }
+
