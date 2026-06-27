@@ -66,27 +66,6 @@ const normalizeStkPushResponse = (payload: any): STKPushResponse => ({
   message: String(payload.message ?? 'Check your phone to enter your M-Pesa PIN.'),
 })
 
-const normalizeUserRole = (roleNames: string[]): User['role'] => {
-  const upper = roleNames.map((r) => String(r).toUpperCase())
-  if (upper.includes('SUPER_ADMIN') || upper.includes('SUPERADMIN')) return 'superadmin'
-  if (upper.includes('SACCO_ADMIN') || upper.includes('SACCOADMIN')) return 'sacco_admin'
-  return 'member'
-}
-
-const resolveUserRole = (basicUser: any, roles: any[]): User['role'] => {
-  // First check if role is provided in the backend response
-  const explicitRole = String(basicUser.role ?? basicUser.user_type ?? '').toLowerCase()
-  if (explicitRole === 'superadmin' || explicitRole === 'super_admin') return 'superadmin'
-  if (explicitRole === 'sacco_admin' || explicitRole === 'saccoadmin') return 'sacco_admin'
-  if (basicUser.is_superuser === true) return 'superadmin'
-  if (basicUser.is_sacco_admin === true || basicUser.is_staff === true) return 'sacco_admin'
-  
-  // Fallback to roles array if provided
-  const fromRoles = normalizeUserRole(roles.map((r: any) => String(r.name ?? r.role ?? '')))
-  if (fromRoles !== 'member') return fromRoles
-  
-  return 'member'
-}
 
 const normalizeUser = (user: any, roleOverrides?: { role?: User['role']; sacco_id?: string | null; sacco_slug?: string | null }): User => {
   const createdAt = user.created_at ?? user.date_joined ?? new Date().toISOString()
@@ -303,7 +282,7 @@ const normalizeAdminApplication = (app: any): MembershipApplication => {
         .replace(/^-|-$/g, ''),
     sacco_name: app.sacco_name ?? 'Unknown SACCO',
     ref: app.id,
-    status: status === 'SUBMITTED' ? 'submitted' : status === 'UNDER_REVIEW' ? 'under_review' : status.toLowerCase(),
+    status: (status === 'SUBMITTED' ? 'submitted' : status === 'UNDER_REVIEW' ? 'under_review' : status.toLowerCase()) as 'submitted' | 'under_review' | 'approved' | 'rejected',
     submitted_at: app.submitted_at ?? app.created_at ?? new Date().toISOString(),
     reviewed_at: app.reviewed_at ?? null,
     form_data: {
@@ -651,6 +630,33 @@ export const api = {
 
     registerDevice: (data: { token: string; platform: 'ios' | 'android' }) =>
       apiCall<void>('POST', '/notifications/device/', data),
+
+    getEntries: async (params?: { sacco_id?: string; from_date?: string; to_date?: string }) => {
+      const response = await apiCall<any>('GET', '/ledger/entries/', undefined, { params })
+      return unwrapResults(response)
+    },
+
+    getBalance: async (saccoId: string) => {
+      const response = await apiCall<any>('GET', '/ledger/balance/', undefined, {
+        params: { sacco_id: saccoId },
+      })
+      return {
+        total_balance: Number(response.total_balance ?? 0),
+        bosa_balance: Number(response.bosa_balance ?? 0),
+        fosa_balance: Number(response.fosa_balance ?? 0),
+        share_capital: Number(response.share_capital ?? 0),
+      }
+    },
+
+    getState: async () => {
+      const response = await apiCall<any>('GET', '/dashboard/state/')
+      return response
+    },
+
+    getActivity: async (params?: { limit?: number }) => {
+      const response = await apiCall<any>('GET', '/dashboard/activity/', undefined, { params })
+      return unwrapResults(response)
+    },
   },
 
   //  SACCO DISCOVERY 
@@ -1311,16 +1317,6 @@ export const api = {
         filename: filenameMatch?.[1] ?? `sacco_report.${format}`,
       }
     },
-
-    // Roles management
-    assignRole: (data: { user_id: string; role_name: string; sacco_id: string }) =>
-      apiCall<void>('POST', '/management/roles/assign/', data),
-
-    revokeRole: (roleId: string) =>
-      apiCall<void>('DELETE', `/management/roles/${uuid(roleId)}/`),
-
-    getUserRoles: (userId: string) =>
-      apiCall<any[]>('GET', '/management/roles/', undefined, { params: { user_id: userId } }),
 
     // KYC management
     getKycQueue: async (params?: { status?: string }) => {

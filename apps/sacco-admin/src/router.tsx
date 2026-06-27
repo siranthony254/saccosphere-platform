@@ -3,8 +3,6 @@ import { AppShell } from './components/layout/AppShell'
 import { RequireAuth } from './components/auth/RequireAuth'
 import { Login } from './pages/Auth/Login'
 
-// Feature flags (controlled via Vite env)
-const ENABLE_REGISTRATION = (import.meta.env.VITE_ENABLE_REGISTRATION ?? 'true') !== 'false'
 import { Dashboard } from './pages/Dashboard'
 import { MembersList } from './pages/Members/MembersList'
 import { MemberDetail } from './pages/Members/MemberDetail'

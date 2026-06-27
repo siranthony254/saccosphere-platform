@@ -1,5 +1,4 @@
 import { useSaccoAdminDashboard } from '../hooks/useSaccoAdminDashboard'
-import { useAuthStore } from '../store/useAuthStore'
 import { useSacco } from '../hooks/useSacco'
 
 function MetricCard({ label, value, delta, deltaColor = 'text-mint-600' }: { label: string; value: string; delta?: string; deltaColor?: string }) {
@@ -14,7 +13,6 @@ function MetricCard({ label, value, delta, deltaColor = 'text-mint-600' }: { lab
 
 export function Dashboard() {
   const { data, isLoading, error } = useSaccoAdminDashboard()
-  const { user } = useAuthStore()
   const { data: sacco } = useSacco()
 
   if (isLoading) return (

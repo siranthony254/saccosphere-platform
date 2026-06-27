@@ -1,4 +1,3 @@
-import React from 'react'
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { useLayoutStore } from '../../store/useLayoutStore'
 import { useAuthStore } from '../../store/useAuthStore'
@@ -23,11 +22,11 @@ export function AppShell() {
   const NAV_ITEMS = [
     { path: '/dashboard', label: 'Dashboard', icon: '📊', badge: null },
     { path: '/members', label: 'Members', icon: '👥', badge: null },
-    { path: '/applications', label: 'Applications', icon: '📋', badge: dashboard?.pending_applications > 0 ? String(dashboard.pending_applications) : null },
-    { path: '/loans', label: 'Loan approvals', icon: '💰', badge: dashboard?.pending_loan_approvals > 0 ? String(dashboard.pending_loan_approvals) : null },
+    { path: '/applications', label: 'Applications', icon: '📋', badge: (dashboard?.pending_applications ?? 0) > 0 ? String(dashboard!.pending_applications) : null },
+    { path: '/loans', label: 'Loan approvals', icon: '💰', badge: (dashboard?.pending_loan_approvals ?? 0) > 0 ? String(dashboard!.pending_loan_approvals) : null },
     { path: '/contributions', label: 'Contributions', icon: '📥', badge: null },
     { path: '/reports', label: 'Reports', icon: '📈', badge: null },
-    { path: '/kyc', label: 'KYC Review', icon: '🔍', badge: dashboard?.pending_kyc_reviews > 0 ? String(dashboard.pending_kyc_reviews) : null },
+    { path: '/kyc', label: 'KYC Review', icon: '🔍', badge: (dashboard?.pending_kyc_reviews ?? 0) > 0 ? String(dashboard!.pending_kyc_reviews) : null },
     { path: '/roles', label: 'Roles', icon: '👤', badge: null },
     { path: '/import', label: 'Import', icon: '📤', badge: null },
     { path: '/settings', label: 'Settings', icon: '⚙️', badge: null },

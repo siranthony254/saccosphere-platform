@@ -5,9 +5,10 @@ export function AuditLogs() {
   const [action, setAction] = useState('')
   const [resourceType, setResourceType] = useState('')
 
-  const { data: logs, isLoading } = useAuditLogs(
+  const { data: logsData, isLoading } = useAuditLogs(
     action || resourceType ? { action, resource_type: resourceType } : undefined
   )
+  const logs = logsData?.results ?? []
 
   return (
     <div className="p-5">

@@ -14,8 +14,6 @@ export function Overview() {
   const { data: overview, isLoading, error } = usePlatformOverview()
   const { feed, connected } = usePlatformLiveFeed()
 
-  const fmt = (n: number) => n >= 1e9 ? `KES ${(n/1e9).toFixed(1)}B` : n >= 1e6 ? `KES ${(n/1e6).toFixed(1)}M` : `KES ${n.toLocaleString()}`
-
   if (isLoading) return <div className="p-6 text-ink-muted">Loading platform data...</div>
   
   if (error || !overview) return (

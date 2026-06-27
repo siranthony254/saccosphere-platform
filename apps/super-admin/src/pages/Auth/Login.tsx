@@ -53,9 +53,7 @@ export function Login() {
             <div className="rounded-xl bg-red-500/10 px-3 py-2 text-sm text-red-400">
               {loginMutation.error && typeof loginMutation.error === 'object' && 'message' in loginMutation.error
                 ? String((loginMutation.error as { message: string }).message)
-                : loginMutation.error instanceof Error
-                  ? loginMutation.error.message
-                  : 'Unable to sign in. Check your credentials.'}
+                : 'Unable to sign in. Check your credentials.'}
             </div>
           )}
 

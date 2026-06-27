@@ -1,5 +1,5 @@
 import { useState, FormEvent } from 'react'
-import { useNavigate, useLocation, Link } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useLogin } from '../../hooks/useAuth'
 
 export function Login() {
@@ -48,11 +48,9 @@ export function Login() {
 
           {loginMutation.isError && (
             <div className="rounded-xl bg-red-500/10 px-3 py-2 text-sm text-red-400">
-              {loginMutation.error && typeof loginMutation.error === 'object' && 'message' in loginMutation.error
-                ? String((loginMutation.error as { message: string }).message)
-                : loginMutation.error instanceof Error
-                  ? loginMutation.error.message
-                  : 'Unable to sign in. Check your credentials.'}
+              {loginMutation.error instanceof Error
+                ? loginMutation.error.message
+                : 'Unable to sign in. Check your credentials.'}
             </div>
           )}
 

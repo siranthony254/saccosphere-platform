@@ -1,7 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
-import { QueryKeys, STALE_TIMES } from '@saccosphere/config'
+import { QueryKeys } from '@saccosphere/config'
 import { api } from '@saccosphere/api-client'
-import type { AdminMember } from '@saccosphere/schemas'
 
 interface MemberFilters { status?: string; search?: string; kyc_status?: string }
 

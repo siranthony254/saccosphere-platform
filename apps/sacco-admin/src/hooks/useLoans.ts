@@ -36,6 +36,13 @@ export function useB2CStatus(conversationId: string) {
     queryKey: ['b2c-status', conversationId],
     queryFn: () => api.saccoAdmin.getB2CStatus(conversationId),
     enabled: !!conversationId,
-    refetchInterval: 5000, // Poll every 5 seconds
+    refetchInterval: (query) => (query.state.data?.status === 'pending' ? 5000 : false), // Poll only while pending
+  })
+}
+
+export function useDisbursementHistory() {
+  return useQuery({
+    queryKey: ['disbursement-history'],
+    queryFn: api.saccoAdmin.getDisbursements,
   })
 }

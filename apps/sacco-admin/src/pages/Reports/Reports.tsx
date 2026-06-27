@@ -114,7 +114,7 @@ export function Reports() {
                   <span className="text-xs text-ink-muted">Default rate</span>
                   <span className="text-xs font-semibold text-ink">{analytics?.default_rate_pct?.toFixed(1) ?? 0}%</span>
                 </div>
-                <Bar pct={analytics?.default_rate_pct ?? 0} color={analytics?.default_rate_pct > 5 ? '#DC2626' : '#10B981'} />
+                <Bar pct={analytics?.default_rate_pct ?? 0} color={(analytics?.default_rate_pct ?? 0) > 5 ? '#DC2626' : '#10B981'} />
               </div>
               <div className="flex justify-between py-2 border-b border-surface-3">
                 <span className="text-xs text-ink-muted">Active loans</span>
