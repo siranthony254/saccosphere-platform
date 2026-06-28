@@ -61,7 +61,7 @@ export function AuditLogs() {
               </tr>
             </thead>
             <tbody>
-              {(data?.results ?? []).map((log) => {
+              {(data?.results ?? []).map((log: any) => {
                 const ac = ACTION_COLORS[log.action] || { bg: 'bg-surface-2', color: 'text-ink' }
                 return (
                   <tr key={log.id} className="border-b border-surface-3 hover:bg-surface-1">

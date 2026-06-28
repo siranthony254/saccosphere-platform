@@ -68,7 +68,7 @@ export function Compliance() {
                   <td colSpan={3} className="px-3 py-6 text-center text-ink-muted">No SACCO data returned from the backend.</td>
                 </tr>
               ) : (
-                (saccosData?.results ?? []).map((row, i) => (
+                (saccosData?.results ?? []).map((row: any, i: any) => (
                   <tr key={row.id} className={`border-b border-neutral-200 ${i % 2 === 0 ? 'bg-white' : 'bg-neutral-50'}`}>
                     <td className="px-3 py-2 font-medium">{row.name}</td>
                     <td className="px-3 py-2 text-ink-muted">{row.member_count.toLocaleString()}</td>
@@ -96,13 +96,14 @@ export function Compliance() {
                   <td colSpan={5} className="px-3 py-6 text-center text-ink-muted">No platform alerts.</td>
                 </tr>
               ) : (
-                (flags ?? []).map((flag, i) => {
-                  const severityClass = {
+                (flags ?? []).map((flag: any, i: any) => {
+                  const severityMap: Record<string, string> = {
                     CRITICAL: 'bg-red-50 text-red-700',
                     HIGH: 'bg-amber-50 text-amber-800',
                     MEDIUM: 'bg-yellow-50 text-yellow-700',
                     LOW: 'bg-mint-50 text-mint-700',
-                  }[flag.severity] || 'bg-amber-50 text-amber-800'
+                  }
+                  const severityClass = severityMap[flag.severity] || 'bg-amber-50 text-amber-800'
                   return (
                     <tr key={flag.id} className={`border-b border-neutral-200 ${i % 2 === 0 ? 'bg-white' : 'bg-neutral-50'}`}>
                       <td className="px-3 py-2 font-medium">{flag.sacco_name}</td>

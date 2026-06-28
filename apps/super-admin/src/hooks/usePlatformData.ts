@@ -120,7 +120,7 @@ export function usePlatformLiveFeed() {
     queryKey: QueryKeys.platformTransactions(),
     queryFn: () =>
       api.superAdmin.getTransactions().then((r) =>
-        r.results.map((txn) =>
+        r.results.map((txn: any) =>
           toLiveTransaction({
             id: txn.id,
             date: txn.date,

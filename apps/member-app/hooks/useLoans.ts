@@ -34,18 +34,6 @@ export function useLoanComparison(amount: number, months: number) {
   })
 }
 
-export function useGuarantorRequests() {
-  const isAuthenticated = useIsAuthenticated()
-  return useQuery({
-    queryKey: ['guarantor-requests'],
-    queryFn: api.loans.getGuarantorRequests,
-    staleTime: 30_000,
-    gcTime: 300_000,
-    retry: 1,
-    enabled: isAuthenticated, // Only fetch when authenticated
-  })
-}
-
 export function useSearchGuarantors(loanId: string, query: string) {
   return useQuery({
     queryKey: QueryKeys.guarantorSearch(loanId, query),

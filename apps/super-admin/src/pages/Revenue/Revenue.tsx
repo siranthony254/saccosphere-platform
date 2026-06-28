@@ -14,9 +14,9 @@ export function Revenue() {
     </div>
   )
 
-  const totalSaaS = revenueData.reduce((sum, item) => sum + item.saas_fees, 0)
-  const totalTxnFees = revenueData.reduce((sum, item) => sum + item.transaction_fees, 0)
-  const totalMRR = revenueData.reduce((sum, item) => sum + item.total_mrr, 0)
+  const totalSaaS = revenueData.reduce((sum: any, item: any) => sum + item.saas_fees, 0)
+  const totalTxnFees = revenueData.reduce((sum: any, item: any) => sum + item.transaction_fees, 0)
+  const totalMRR = revenueData.reduce((sum: any, item: any) => sum + item.total_mrr, 0)
 
   return (
     <div className="p-5">
@@ -53,7 +53,7 @@ export function Revenue() {
             </tr>
           </thead>
           <tbody>
-            {revenueData.map((item, i) => (
+            {revenueData.map((item: any, i: any) => (
               <tr key={item.month} className={`border-b border-surface-2 ${i % 2 === 0 ? 'bg-surface' : 'bg-surface-2'}`}>
                 <td className="px-3 py-2 font-medium">{item.month}</td>
                 <td className="px-3 py-2 text-ink-muted">KES {item.saas_fees.toLocaleString()}</td>

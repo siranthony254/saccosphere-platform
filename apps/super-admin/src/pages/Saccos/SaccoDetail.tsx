@@ -19,7 +19,7 @@ export function SaccoDetail() {
           <span className="text-surface-3">|</span>
           <div>
             <div className="text-lg font-semibold text-ink">{sacco.name}</div>
-            <div className="text-xs text-ink-muted">{sacco.sasra_reg_no} · {sacco.sector} · Active since {new Date(sacco.joined_platform_at).getFullYear()}</div>
+            <div className="text-xs text-ink-muted">{sacco.sasra_reg_no} · {sacco.sector} · Active since {sacco.joined_platform_at ? new Date(sacco.joined_platform_at).getFullYear() : 'N/A'}</div>
           </div>
         </div>
         <div className="flex gap-2">
@@ -47,7 +47,7 @@ export function SaccoDetail() {
 
       {/* Profile banner */}
       <div className="bg-violet-25 border border-violet-100 rounded-[10px] p-4 mb-5 flex items-center gap-4">
-        <div className="w-[52px] h-[52px] rounded-xl flex items-center justify-center text-lg font-bold text-white shrink-0" style={{ background: sacco.color }}>
+        <div className="w-[52px] h-[52px] rounded-xl flex items-center justify-center text-lg font-bold text-white shrink-0" style={{ background: sacco.color || '#6D28D9' }}>
           {sacco.initials}
         </div>
         <div className="flex-1">
@@ -65,7 +65,7 @@ export function SaccoDetail() {
         </div>
         <div className="text-right">
           <div className="text-[10px] text-ink-muted mb-1">Platform fee this month</div>
-          <div className="text-lg font-bold text-ink mb-1">KES {sacco.platform_fee_kes.toLocaleString()}</div>
+          <div className="text-lg font-bold text-ink mb-1">KES {(sacco.platform_fee_kes ?? 0).toLocaleString()}</div>
           <span className={`${sacco.fee_status === 'paid' ? 'bg-mint-50 text-mint-700' : 'bg-red-50 text-red-800'} py-0.5 px-2 rounded-full text-[11px] font-semibold`}>
             {sacco.fee_status}
           </span>
@@ -76,9 +76,9 @@ export function SaccoDetail() {
       <div className="grid grid-cols-3 gap-4 mb-5">
         {[
           { title: 'On platform', stats: [
-            { l: 'Members on app', v: sacco.members_on_app.toLocaleString() },
-            { l: '% of total members', v: `${((sacco.members_on_app / sacco.member_count) * 100).toFixed(1)}%` },
-            { l: 'Txn volume (MTD)', v: `KES ${(sacco.transaction_volume_mtd_kes / 1e6).toFixed(1)}M` },
+            { l: 'Members on app', v: (sacco.members_on_app ?? 0).toLocaleString() },
+            { l: '% of total members', v: sacco.member_count > 0 ? `${(((sacco.members_on_app ?? 0) / sacco.member_count) * 100).toFixed(1)}%` : '0%' },
+            { l: 'Txn volume (MTD)', v: `KES ${((sacco.transaction_volume_mtd_kes ?? 0) / 1e6).toFixed(1)}M` },
           ]},
           { title: 'Health', stats: [
             { l: 'Total members', v: sacco.member_count.toLocaleString() },
@@ -86,9 +86,9 @@ export function SaccoDetail() {
             { l: 'Overall health', v: sacco.health },
           ]},
           { title: 'Revenue contribution', stats: [
-            { l: 'SaaS fee', v: `KES ${sacco.platform_fee_kes.toLocaleString()}/mo` },
-            { l: 'Transaction fees (est.)', v: `KES ${Math.round(sacco.transaction_volume_mtd_kes * 0.01).toLocaleString()}` },
-            { l: 'Total MTD', v: `KES ${(sacco.platform_fee_kes + Math.round(sacco.transaction_volume_mtd_kes * 0.01)).toLocaleString()}` },
+            { l: 'SaaS fee', v: `KES ${(sacco.platform_fee_kes ?? 0).toLocaleString()}/mo` },
+            { l: 'Transaction fees (est.)', v: `KES ${Math.round((sacco.transaction_volume_mtd_kes ?? 0) * 0.01).toLocaleString()}` },
+            { l: 'Total MTD', v: `KES ${((sacco.platform_fee_kes ?? 0) + Math.round((sacco.transaction_volume_mtd_kes ?? 0) * 0.01)).toLocaleString()}` },
           ]},
         ].map(card => (
           <div key={card.title} className="bg-surface border border-mid rounded-[10px] p-4">

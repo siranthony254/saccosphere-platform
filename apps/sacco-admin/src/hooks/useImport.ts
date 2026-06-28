@@ -12,6 +12,6 @@ export function useImportJobStatus(jobId: string) {
     queryKey: ['import-job', jobId],
     queryFn: () => api.saccoAdmin.getImportJobStatus(jobId),
     enabled: !!jobId,
-    refetchInterval: 5000, // Poll every 5 seconds
+    refetchInterval: 5000,
   })
 }

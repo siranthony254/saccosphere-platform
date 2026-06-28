@@ -23,7 +23,7 @@ export function LoansList() {
         <div>
           <div className="text-lg font-semibold text-ink">Loan review</div>
           <div className="text-xs text-ink-muted">
-            {data?.count ?? 0} total · {data?.results.filter((l) => l.status === 'PENDING_APPROVAL').length ?? 0} pending decision
+            {data?.count ?? 0} total · {data?.results.filter((l: any) => l.status === 'PENDING_APPROVAL').length ?? 0} pending decision
           </div>
         </div>
           <div className="flex gap-2">
@@ -50,10 +50,9 @@ export function LoansList() {
       {isLoading ? (
         [1, 2, 3].map((i) => <div key={i} className="h-[100px] bg-ink-faint rounded-[10px] mb-2.5" />)
       ) : (
-        (data?.results ?? []).map((loan) => {
+        (data?.results ?? []).map((loan: any) => {
           const sc = STATUS_COLORS[loan.status] ?? STATUS_COLORS.PENDING_APPROVAL
           const isExpanded = activeId === loan.loan_id
-          const guarantorsReady = loan.guarantors_confirmed >= loan.guarantors_required
 
           return (
             <div key={loan.loan_id} className="bg-white border border-[#e5ede9] rounded-[10px] p-4 mb-3">
@@ -61,7 +60,7 @@ export function LoansList() {
               <div className="grid grid-cols-[2fr_1.2fr_1fr_1fr_1fr_1fr_auto] gap-2.5 items-center mb-3">
                 <div className="flex items-center gap-2.5">
                   <div className="w-8 h-8 rounded-full bg-mint-600 flex items-center justify-center text-[10px] font-bold text-white shrink-0">
-                    {loan.member_name.split(' ').map((n) => n[0]).join('')}
+                    {loan.member_name.split(' ').map((n: any) => n[0]).join('')}
                   </div>
                   <div>
                     <div className="font-medium text-sm">{loan.member_name}</div>

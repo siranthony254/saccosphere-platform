@@ -25,7 +25,6 @@ import {
   DashboardSchema,
   LoanApplicationSchema,
   MembershipSchema,
-  PlatformOverviewSchema,
   RegisterInputSchema,
   SaccoConfigSchema,
   SaccoAdminDashboardSchema,
@@ -294,31 +293,6 @@ const normalizeAdminMember = (member: any): AdminMember => {
   })
 }
 
-const normalizeAdminApplication = (app: any): MembershipApplication => {
-  const status = String(app.status ?? 'SUBMITTED').toUpperCase()
-  return {
-    id: app.id,
-    sacco_slug:
-      app.sacco?.slug ??
-      String(app.sacco_name ?? 'unknown-sacco')
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-|-$/g, ''),
-    sacco_name: app.sacco_name ?? 'Unknown SACCO',
-    ref: app.id,
-    status: (status === 'SUBMITTED' ? 'submitted' : status === 'UNDER_REVIEW' ? 'under_review' : status.toLowerCase()) as 'submitted' | 'under_review' | 'approved' | 'rejected',
-    submitted_at: app.submitted_at ?? app.created_at ?? new Date().toISOString(),
-    reviewed_at: app.reviewed_at ?? null,
-    form_data: {
-      sacco_name: app.sacco_name ?? 'Unknown SACCO',
-      applicant_name: app.user_name ?? 'Unknown Applicant',
-      applicant_email: app.user_email ?? '',
-    },
-    registration_fee_paid: false,
-    registration_fee_txn_ref: null,
-  }
-}
-
 const normalizeAdminLoan = (loan: any): AdminLoan => {
   const membership = loan.membership ?? {}
   const user = membership.user ?? loan.user ?? {}
@@ -360,23 +334,6 @@ const normalizeAdminLoan = (loan: any): AdminLoan => {
   })
 }
 
-const normalizePlatformOverview = (stats: any) => {
-  return PlatformOverviewSchema.parse({
-    total_saccos: Number(stats.total_saccos ?? 0),
-    active_saccos: Number(stats.active_saccos ?? 0),
-    total_members: Number(stats.total_members ?? 0),
-    total_members_on_app: Number(stats.total_members_on_app ?? 0),
-    transaction_volume_mtd_kes: Number(
-      stats.transaction_volume_mtd_kes ?? stats.transaction_volume_mtd ?? stats.monthly_contributions ?? 0
-    ),
-    platform_revenue_mtd_kes: Number(stats.platform_revenue_mtd_kes ?? stats.platform_revenue_mtd ?? 0),
-    saas_revenue_mtd_kes: Number(stats.saas_revenue_mtd_kes ?? stats.saas_revenue_mtd ?? 0),
-    transaction_fees_mtd_kes: Number(stats.transaction_fees_mtd_kes ?? stats.transaction_fees_mtd ?? 0),
-    kyc_verified_pct: Number(stats.kyc_verified_pct ?? stats.kyc_verification_rate ?? 0),
-    aml_flags_open: Number(stats.aml_flags_open ?? stats.pending_kyc_reviews ?? 0),
-    system_alerts: Number(stats.system_alerts ?? stats.pending_applications ?? 0),
-  })
-}
 
 const normalizeTransaction = (item: any): Transaction => {
   const rawType = String(item.txn_type ?? item.transaction_type ?? item.type ?? 'contribution').toLowerCase()
@@ -853,11 +810,6 @@ export const api = {
     get: (id: string) =>
       api.applications.list().then((items) => items.find((item) => item.id === id) as MembershipApplication),
 
-    attachDocuments: (id: string, documentIds: string[]) =>
-      apiCall<void>('PATCH', `/members/memberships/${uuid(id)}/documents/`, {
-        document_ids: documentIds,
-      }),
-
     payRegistrationFee: (_id: string) =>
       Promise.reject(new Error('Registration-fee STK push is not supported by the current backend contract.')),
   },
@@ -890,18 +842,6 @@ export const api = {
         min_balance: Number(item.min_balance ?? 0),
         withdrawal_terms: item.withdrawal_terms ?? '',
       }))
-    },
-
-    getBalance: async (saccoId: string) => {
-      const response = await apiCall<any>('GET', '/services/savings/balance/', undefined, {
-        params: { sacco_id: saccoId },
-      })
-      return {
-        total_balance: Number(response.total_balance ?? 0),
-        bosa_balance: Number(response.bosa_balance ?? 0),
-        fosa_balance: Number(response.fosa_balance ?? 0),
-        share_capital: Number(response.share_capital ?? 0),
-      }
     },
 
     getBreakdown: async (saccoId: string) => {
@@ -1080,28 +1020,6 @@ export const api = {
       })
     },
 
-    getGuarantorRequests: () =>
-      apiCall<
-        Array<{
-          id: string
-          loan_id?: string
-          guarantor_id?: string
-          loan_ref: string
-          applicant_name: string
-          amount: number
-          guarantee_amount?: number
-          sacco_name: string
-          status: string
-        }>
-      >('GET', '/services/loans/guarantor-requests/').then((requests) =>
-        requests.map((request) => ({
-          ...request,
-          id: request.loan_id && request.guarantor_id ? `${request.loan_id}:${request.guarantor_id}` : request.id,
-          amount: Number(request.amount ?? 0),
-          guarantee_amount: Number(request.guarantee_amount ?? request.amount ?? 0),
-        }))
-      ),
-
     searchGuarantors: (loanId: string, query: string) =>
       apiCall<any[]>('GET', `/services/loans/${uuid(loanId)}/guarantors/search/`, undefined, {
         params: { phone: query },
@@ -1189,11 +1107,6 @@ export const api = {
         upload_url: string
         expires_in: number
       }>('POST', '/accounts/kyc/upload/', data),
-
-    confirmUpload: (documentId: string) =>
-      apiCall<void>('PATCH', `/accounts/kyc/documents/${documentId}/`, {
-        upload_complete: true,
-      }),
 
     uploadDocument: (data: { document_type: KycDocumentType; file: KycUploadFile }) => {
       const documentType = KycDocumentTypeSchema.parse(data.document_type)
@@ -1307,18 +1220,6 @@ export const api = {
     revokeRole: async (roleId: string) =>
       apiCall<any>('DELETE', `/management/roles/${uuid(roleId)}/`),
 
-
-    getApplications: async () => {
-      const response = await apiCall<any>('GET', '/management/applications/')
-      const items = unwrapResults(response)
-      return items.map(normalizeAdminApplication)
-    },
-
-    reviewApplication: (id: string, data: { action: 'approve' | 'reject'; notes?: string }) =>
-      apiCall<void>('PATCH', `/management/applications/${uuid(id)}/review/`, {
-        status: data.action === 'approve' ? 'APPROVED' : 'REJECTED',
-        review_notes: data.notes,
-      }),
 
     // Loan approval queue (admin view)
     getLoanApprovals: async () => {

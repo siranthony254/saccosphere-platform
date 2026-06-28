@@ -19,7 +19,7 @@ export function ExternalGuarantors() {
         <div>
           <div className="text-lg font-semibold text-ink">External Guarantors</div>
           <div className="text-xs text-ink-muted">
-            {data?.count ?? 0} total · {data?.results.filter((g) => g.status === 'PENDING').length ?? 0} pending review
+            {data?.count ?? 0} total · {data?.results.filter((g: any) => g.status === 'PENDING').length ?? 0} pending review
           </div>
         </div>
       </div>
@@ -31,7 +31,7 @@ export function ExternalGuarantors() {
       {isLoading ? (
         [1, 2, 3].map((i) => <div key={i} className="h-[100px] bg-ink-faint rounded-[10px] mb-2.5" />)
       ) : (
-        (data?.results ?? []).map((guarantor) => {
+        (data?.results ?? []).map((guarantor: any) => {
           const sc = STATUS_COLORS[guarantor.status] ?? STATUS_COLORS.PENDING
           const isExpanded = activeId === guarantor.id
 

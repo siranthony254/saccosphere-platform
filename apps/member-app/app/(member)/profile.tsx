@@ -22,7 +22,7 @@ export default function ProfileScreen() {
     try {
       // Download statements for all active SACCOs
       for (const membership of activeMemberships) {
-        const { blob, filename } = await api.ledger.downloadStatementPdf({
+        const { blob, filename } = await api.member.downloadStatementPdf({
           sacco_id: membership.sacco_id,
           from_date: '2024-01-01', // Default to current year
           to_date: new Date().toISOString().split('T')[0],

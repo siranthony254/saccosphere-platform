@@ -29,7 +29,7 @@ export function useSavingsBalance(saccoId: string) {
   const isAuthenticated = useIsAuthenticated()
   return useQuery({
     queryKey: ['savings-balance', saccoId],
-    queryFn: () => api.savings.getBalance(saccoId),
+    queryFn: () => api.member.getBalance(saccoId),
     staleTime: 60_000,
     gcTime: 300_000,
     enabled: isAuthenticated && !!saccoId,

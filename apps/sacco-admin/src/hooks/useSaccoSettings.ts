@@ -33,10 +33,6 @@ export function useSaccoSettings() {
     queryKey: ['sacco-admin-settings'],
     queryFn: async (): Promise<SettingsUiModel> => {
       const res = await apiCallMgmtSettingsGet()
-
-      // SACCO name/details are not guaranteed to be included in the settings response.
-      // We keep UI aligned with backend by using settings as the source of truth.
-      // SACCO profile can be derived elsewhere; to avoid breaking, we render only settings values.
       return {
         sacco: null,
         settings: res.data,

@@ -57,7 +57,7 @@ export function MembersList() {
               </tr>
             </thead>
             <tbody>
-              {data?.results.map((member, idx) => (
+              {data?.results.map((member: any, idx: any) => (
                 <tr key={`${member.id}-${idx}`} className="hover:bg-surface-2">
                   <td className="py-2 px-3 border-b border-mid">
                     <div className="font-medium text-ink">{member.first_name} {member.last_name}</div>

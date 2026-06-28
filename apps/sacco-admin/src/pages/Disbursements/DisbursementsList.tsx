@@ -71,14 +71,14 @@ export function DisbursementsList() {
               No approved loans awaiting disbursement.
             </div>
           ) : (
-            (loansData?.results ?? []).map(loan => {
+            (loansData?.results ?? []).map((loan: any) => {
               const isExpanded = activeId === loan.id
               return (
                 <div key={loan.id} className="bg-white border border-[#e5ede9] rounded-[10px] p-4 mb-3">
                   <div className="grid grid-cols-[2fr_1.2fr_1fr_1fr_1fr_auto] gap-2.5 items-center">
                     <div className="flex items-center gap-2.5">
                       <div className="w-8 h-8 rounded-full bg-mint-600 flex items-center justify-center text-[10px] font-bold text-white shrink-0">
-                        {loan.member_name.split(' ').map(n => n[0]).join('')}
+                        {loan.member_name.split(' ').map((n: any) => n[0]).join('')}
                       </div>
                       <div>
                         <div className="font-medium text-sm">{loan.member_name}</div>
