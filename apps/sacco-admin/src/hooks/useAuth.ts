@@ -62,10 +62,15 @@ export function useAuthBootstrap() {
         let saccoId = null
         try {
           const roles = await api.saccoAdmin.getRoles(user.id)
-          const saccoAdminRole = roles?.find((r: any) => r.name === 'SACCO_ADMIN' && r.sacco)
+          const saccoAdminRole = roles?.find((r: any) => r.name === 'SACCO_ADMIN')
           if (saccoAdminRole) {
-            saccoId = saccoAdminRole.sacco.id
+            saccoId =
+              saccoAdminRole?.sacco?.id ??
+              saccoAdminRole?.sacco_id ??
+              saccoAdminRole?.saccoId ??
+              null
           }
+
         } catch (e) {
           console.log('Could not fetch roles:', e)
         }
@@ -119,9 +124,13 @@ export function useLogin() {
       let saccoId = null
       try {
         const roles = await api.saccoAdmin.getRoles(tokens.user.id)
-        const saccoAdminRole = roles?.find((r: any) => r.name === 'SACCO_ADMIN' && r.sacco)
+        const saccoAdminRole = roles?.find((r: any) => r.name === 'SACCO_ADMIN')
         if (saccoAdminRole) {
-          saccoId = saccoAdminRole.sacco.id
+          saccoId =
+            saccoAdminRole?.sacco?.id ??
+            saccoAdminRole?.sacco_id ??
+            saccoAdminRole?.saccoId ??
+            null
         }
       } catch (e) {
         console.log('Could not fetch roles:', e)

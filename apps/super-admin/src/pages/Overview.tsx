@@ -26,6 +26,9 @@ export function Overview() {
   )
 
   const d = overview
+  const volumeChange = d.transaction_volume_change_pct
+    ? `${d.transaction_volume_change_pct >= 0 ? '+' : ''}${d.transaction_volume_change_pct.toFixed(1)}%`
+    : null
 
   return (
     <div className="p-5">
@@ -36,18 +39,19 @@ export function Overview() {
           <div className="text-xs text-ink-muted">Saccosphere platform · All SACCOs · {new Date().toLocaleDateString('en-KE',{day:'numeric',month:'long',year:'numeric'})}</div>
         </div>
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1.5 text-xs text-violet-500 bg-violet-50 py-1.5 px-3 rounded-md">
-            <div className="w-1.5 h-1.5 rounded-full bg-violet-500" />All systems operational
+          <div className={`flex items-center gap-1.5 text-xs py-1.5 px-3 rounded-md ${d.all_systems_operational ? 'bg-mint-50 text-mint-700' : 'bg-red-50 text-red-700'}`}>
+            <div className={`w-1.5 h-1.5 rounded-full ${d.all_systems_operational ? 'bg-mint-500' : 'bg-red-500'}`} />
+            {d.all_systems_operational ? 'All systems operational' : 'System issues detected'}
           </div>
         </div>
       </div>
 
       {/* KPIs */}
       <div className="grid grid-cols-4 gap-3 mb-5">
-        <Metric label="Total SACCOs" value={d.total_saccos?.toString() ?? '0'} />
-        <Metric label="Total members on app" value={d.total_members_on_app?.toLocaleString() ?? '0'} />
-        <Metric label="Active SACCOs" value={d.total_saccos?.toString() ?? '0'} />
-        <Metric label="Platform status" value="Operational" delta="All systems running" />
+        <Metric label="Total SACCOs" value={d.total_saccos?.toString() ?? '0'} delta={`+${d.active_saccos_change_this_month} this month`} />
+        <Metric label="Total members" value={d.total_members?.toLocaleString() ?? '0'} delta={`+${d.total_members_change_this_month} this month`} />
+        <Metric label="Transaction volume MTD" value={`KES ${(d.transaction_volume_mtd_kes / 1000000).toFixed(1)}M`} delta={volumeChange || 'No change'} />
+        <Metric label="Platform revenue MTD" value={`KES ${(d.platform_revenue_mtd_kes / 1000).toFixed(0)}K`} accent />
       </div>
 
       <div className="grid grid-cols-2 gap-4">

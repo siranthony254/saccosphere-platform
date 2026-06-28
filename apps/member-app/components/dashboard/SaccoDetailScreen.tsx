@@ -56,10 +56,10 @@ export default function SaccoDetailScreen() {
       <View className="bg-surface mx-3.5 mt-0 mb-3 rounded-xl p-4 border border-border">
         <Text className="text-ink text-xs font-semibold mb-2.5">Account breakdown</Text>
         {[
-          { label: 'BOSA savings', value: membership.bosa_balance },
-          { label: 'FOSA savings', value: membership.fosa_balance },
-          { label: 'Share capital', value: membership.share_capital },
-          { label: 'Dividends (2023)', value: membership.total_dividends },
+          { label: 'BOSA savings', value: membership.bosa_balance || 0 },
+          { label: 'FOSA savings', value: membership.fosa_balance || 0 },
+          { label: 'Share capital', value: membership.share_capital || 0 },
+          { label: 'Dividends (2023)', value: membership.total_dividends || 0 },
         ].map(row => (
           <View key={row.label} className="flex-row justify-between py-2 border-b border-border">
             <Text className="text-ink-muted text-xs">{row.label}</Text>
@@ -68,12 +68,12 @@ export default function SaccoDetailScreen() {
         ))}
         <View className="flex-row justify-between py-2 border-b border-border">
           <Text className="text-ink-muted text-xs">Loan limit</Text>
-          <Text className="text-mint-500 text-xs font-semibold">KES {membership.loan_limit.toLocaleString()}</Text>
+          <Text className="text-mint-500 text-xs font-semibold">KES {(membership.loan_limit || 0).toLocaleString()}</Text>
         </View>
       </View>
 
       {/* Active loan */}
-      {activeLoan && (
+      {activeLoan ? (
         <View className="bg-surface mx-3.5 mb-3 rounded-xl p-4 border border-border">
           <View className="flex-row justify-between items-center mb-2">
             <Text className="text-ink text-xs font-semibold mb-2.5">Active loan</Text>
@@ -91,7 +91,7 @@ export default function SaccoDetailScreen() {
             <Text className="text-ink-faint text-xs">
               {Math.round(((activeLoan.amount_requested - (activeLoan.balance_remaining ?? 0)) / activeLoan.amount_requested) * 100)}% repaid
             </Text>
-            <Text className="text-ink-faint text-xs">Next: {activeLoan.next_payment_date}</Text>
+            <Text className="text-ink-faint text-xs">Next: {activeLoan.next_payment_date || 'TBD'}</Text>
           </View>
 
           <TouchableOpacity
@@ -100,6 +100,11 @@ export default function SaccoDetailScreen() {
           >
             <Text className="text-white text-xs font-semibold">Pay instalment via M-Pesa</Text>
           </TouchableOpacity>
+        </View>
+      ) : (
+        <View className="bg-surface mx-3.5 mb-3 rounded-xl p-4 border border-border">
+          <Text className="text-ink text-xs font-semibold mb-2">Active loan</Text>
+          <Text className="text-ink-faint text-xs">No active loans</Text>
         </View>
       )}
 

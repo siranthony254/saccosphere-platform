@@ -8,7 +8,14 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window')
 const PADDING_H = Math.max(16, Math.min(24, SCREEN_WIDTH * 0.05))
 
 export default function LoanDisbursed() {
-  const { slug } = useLocalSearchParams<{ slug: string }>()
+  const { slug, amount, phone, ref, mpesaRef, date } = useLocalSearchParams<{ 
+    slug: string; 
+    amount?: string; 
+    phone?: string; 
+    ref?: string; 
+    mpesaRef?: string; 
+    date?: string 
+  }>()
   const insets = useSafeAreaInsets()
 
   return (
@@ -38,19 +45,19 @@ export default function LoanDisbursed() {
           Amount received
         </Text>
         <Text className="text-white text-3xl font-bold mb-2">
-          KES 150,000
+          KES {amount ? Number(amount).toLocaleString() : '---'}
         </Text>
         <Text className="text-white/80 text-xs">
-          Sent to +254 712 ··· 678
+          Sent to {phone ? phone.replace(/(\d{4})(\d{3})(\d{3})/, '$1 ··· $3') : '---'}
         </Text>
       </View>
 
       {/* Receipt */}
       <View className="bg-surface2 rounded-xl p-3.5 w-full mb-6">
         {[
-          { label: 'Loan reference', value: 'LOAN-2024-00123' },
-          { label: 'M-Pesa reference', value: 'QB2934LKPM' },
-          { label: 'Disbursement time', value: 'Apr 26, 2024 · 9:41 AM' },
+          { label: 'Loan reference', value: ref || 'Pending' },
+          { label: 'M-Pesa reference', value: mpesaRef || 'Pending' },
+          { label: 'Disbursement time', value: date || 'Pending' },
           { label: 'Status', value: 'Completed' },
         ].map((row) => (
           <View 

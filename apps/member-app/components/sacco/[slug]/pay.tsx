@@ -8,9 +8,9 @@ import { useInitiatePayment } from '../../../hooks/usePayment'
 import { useMembershipBySacco } from '../../../hooks/useMembership'
 import { useSaccoConfig } from '../../../hooks/useSaccoConfig'
 import { useCurrentUser } from '../../../store/useAuthStore'
-import MpesaStkPushModal from '../../payments/MpesaStkPushModal'
 import PaymentMethodSelector from '../../payments/PaymentMethodSelector'
 import PaymentSuccessScreen from '../../payments/PaymentSuccessScreen'
+import PaymentProcessingScreen from '../../payments/PaymentProcessingScreen'
 
 const VIOLET = '#6D28D9'
 const SURFACE = '#FFFFFF'
@@ -39,14 +39,12 @@ export default function PayScreen() {
     ? selectedLoan?.next_payment_amount ?? selectedLoan?.monthly_instalment ?? selectedLoan?.balance_remaining ?? 0
     : membership?.monthly_contribution ?? 0
   const [amount, setAmount] = useState(defaultAmount ? String(Math.round(defaultAmount)) : '')
-  const [methodStep, setMethodStep] = useState<'amount' | 'method' | 'bank' | 'success'>('amount')
-  const [showMpesa, setShowMpesa] = useState(false)
+  const [methodStep, setMethodStep] = useState<'amount' | 'method' | 'bank' | 'processing' | 'success'>('amount')
   const [receipt, setReceipt] = useState<{ checkout: string; transaction: string } | null>(null)
+  const [checkoutRequestId, setCheckoutRequestId] = useState<string | null>(null)
 
   const numericAmount = Number(String(amount || defaultAmount || 0).replace(/[^0-9.]/g, ''))
-  // Calculate platform fee - could be enhanced to use backend config in future
-  const platformFee = Math.max(25, Math.round(numericAmount * 0.005))
-  const bankFee = 0 // Bank transfers typically have no platform fee
+  const platformFee = Math.round(numericAmount * 0.02) // 2% platform fee from backend
   const saccoName = membership?.sacco_name ?? selectedLoan?.sacco_name ?? slug
   const phoneNumber = user?.phone_number ?? user?.phone ?? ''
   const primarySaving = savingsQuery.data?.[0]
@@ -78,10 +76,10 @@ export default function PayScreen() {
       Alert.alert('Savings account unavailable', 'We could not find an active savings account for this SACCO.')
       return
     }
-    setShowMpesa(true)
+    setMethodStep('processing')
   }
 
-  const confirmMpesa = () => {
+  const confirmStkPush = () => {
     if (!membership?.sacco_id) return
     initiatePayment(
       {
@@ -95,16 +93,30 @@ export default function PayScreen() {
       },
       {
         onSuccess: (response) => {
+          setCheckoutRequestId(response.checkout_request_id)
           setReceipt({
             checkout: response.checkout_request_id,
             transaction: response.transaction_id ?? response.merchant_request_id ?? response.checkout_request_id,
           })
-          setShowMpesa(false)
-          setMethodStep('success')
         },
         onError: (err) => Alert.alert('Payment failed', err.message),
       }
     )
+  }
+
+  const handlePaymentComplete = (success: boolean, transactionId?: string) => {
+    if (success) {
+      setMethodStep('success')
+    } else {
+      Alert.alert('Payment failed', 'The payment was not completed. Please try again.')
+      setMethodStep('method')
+      setCheckoutRequestId(null)
+    }
+  }
+
+  const handleCancelPayment = () => {
+    setMethodStep('method')
+    setCheckoutRequestId(null)
   }
 
   if (membershipLoading) {
@@ -132,30 +144,32 @@ export default function PayScreen() {
 
   if (methodStep === 'method') {
     return (
-      <>
-        <PaymentMethodSelector
-          title={title}
-          subtitle={subtitle}
-          saccoName={saccoName}
-          amount={String(numericAmount)}
-          mpesaFee={platformFee}
-          bankFee={bankFee}
-          onSelectMpesa={handleMpesa}
-          onSelectBank={() => setMethodStep('bank')}
-          onCancel={() => setMethodStep('amount')}
-        />
-        <MpesaStkPushModal
-          visible={showMpesa}
-          saccoName={saccoName}
-          amount={numericAmount}
-          purpose={isRepayment ? 'LOAN_REPAYMENT' : 'SAVING_DEPOSIT'}
-          phoneNumber={phoneNumber}
-          platformFee={platformFee}
-          isPending={isPending}
-          onConfirm={confirmMpesa}
-          onCancel={() => setShowMpesa(false)}
-        />
-      </>
+      <PaymentMethodSelector
+        title={title}
+        subtitle={subtitle}
+        saccoName={saccoName}
+        amount={String(numericAmount)}
+        mpesaFee={platformFee}
+        bankFee={0}
+        onSelectMpesa={handleMpesa}
+        onSelectBank={() => setMethodStep('bank')}
+        onCancel={() => setMethodStep('amount')}
+      />
+    )
+  }
+
+  if (methodStep === 'processing') {
+    return (
+      <PaymentProcessingScreen
+        checkoutRequestId={checkoutRequestId}
+        amount={numericAmount}
+        saccoName={saccoName}
+        purpose={isRepayment ? 'LOAN_REPAYMENT' : 'SAVING_DEPOSIT'}
+        phoneNumber={phoneNumber}
+        onConfirmStkPush={confirmStkPush}
+        onComplete={handlePaymentComplete}
+        onCancel={handleCancelPayment}
+      />
     )
   }
 
@@ -195,7 +209,6 @@ export default function PayScreen() {
       <View style={{ backgroundColor: SURFACE2, borderRadius: 14, padding: 14, marginBottom: 20 }}>
         <BankRow label="SACCO" value={saccoName} />
         <BankRow label="Payment type" value={isRepayment ? 'Loan repayment' : 'Contribution'} />
-        <BankRow label="Platform fee on M-Pesa" value={`KES ${platformFee.toLocaleString()}`} />
         <BankRow label="Accepted methods" value={acceptedMethods.map(m => m === 'mpesa' ? 'M-Pesa' : m === 'bank_transfer' ? 'Bank' : m).join(', ')} />
       </View>
       <TouchableOpacity

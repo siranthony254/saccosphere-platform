@@ -8,8 +8,9 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window')
 const PADDING_H = Math.max(16, Math.min(24, SCREEN_WIDTH * 0.05))
 
 export default function LoanSubmittedSuccess() {
-  const { slug } = useLocalSearchParams<{ slug: string }>()
+  const { slug, ref } = useLocalSearchParams<{ slug: string; ref?: string }>()
   const insets = useSafeAreaInsets()
+  const loanRef = ref || 'Pending'
 
   return (
     <ScrollView 
@@ -35,7 +36,7 @@ export default function LoanSubmittedSuccess() {
       {/* Reference Box */}
       <View className="bg-surface2 rounded-xl p-3 mb-5">
         <Text className="text-ink-soft text-xs font-bold text-center tracking-wider">
-          LOAN-2024-00123
+          {loanRef}
         </Text>
       </View>
 

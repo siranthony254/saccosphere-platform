@@ -53,10 +53,35 @@ export function usePlatformOverview() {
   })
 }
 
+export function useRevenueChart() {
+  return useQuery({
+    queryKey: ['revenue-chart'],
+    queryFn: api.superAdmin.getRevenueChart,
+    staleTime: 300_000, // 5 minutes
+  })
+}
+
+export function useTopSaccos() {
+  return useQuery({
+    queryKey: ['top-saccos'],
+    queryFn: api.superAdmin.getTopSaccos,
+    staleTime: 60_000, // 1 minute
+  })
+}
+
+export function usePlatformAlerts() {
+  return useQuery({
+    queryKey: ['platform-alerts'],
+    queryFn: api.superAdmin.getPlatformAlerts,
+    staleTime: 30_000, // 30 seconds
+  })
+}
+
 export function useAllSaccos(filters?: { status?: string; sector?: string; search?: string }) {
   return useQuery({
     queryKey: QueryKeys.allSaccos(filters),
     queryFn: () => api.superAdmin.getSaccos(filters),
+    staleTime: 60_000, // 1 minute
   })
 }
 
@@ -99,7 +124,7 @@ export function usePlatformLiveFeed() {
           toLiveTransaction({
             id: txn.id,
             date: txn.date,
-            member_name: (txn as { member_name?: string }).member_name,
+            member_name: txn.member_name,
             sacco_name: txn.sacco_name,
             txn_type: txn.txn_type,
             amount: txn.amount,

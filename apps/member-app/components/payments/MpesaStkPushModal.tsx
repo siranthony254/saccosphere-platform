@@ -30,8 +30,8 @@ export default function MpesaStkPushModal({
   saccoName,
   amount,
   purpose,
-  phoneNumber,
   platformFee,
+  phoneNumber,
   isPending,
   onConfirm,
   onCancel,
@@ -91,7 +91,7 @@ export default function MpesaStkPushModal({
                 value={`KES ${amount.toLocaleString()}`}
                 valueStyle={{ color: INK, fontWeight: '600' }}
               />
-              <PaymentRow label="Platform fee" value={`KES ${platformFee}`} />
+              <PaymentRow label="Platform fee (2%)" value={`KES ${platformFee}`} />
               <View
                 style={{
                   borderTopWidth: 0.5,

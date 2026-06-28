@@ -53,7 +53,7 @@ export default function ApplyDocumentsScreen() {
       <Text className="text-ink-faint text-xs mx-4 mb-4">Step 2 of 3 — Required documents</Text>
 
       <Text className="text-ink text-xs font-medium mx-4 mb-2.5">
-        Required documents
+        {saccoName} requires the following:
       </Text>
 
       {/* KYC Verified Documents */}
@@ -62,11 +62,11 @@ export default function ApplyDocumentsScreen() {
           <Text className="text-ink-faint text-xs mb-2 mx-4">Auto-imported from your KYC</Text>
           {kycVerifiedDocs.map((doc: RequiredDocument) => (
             <View key={doc.key} className="flex-row gap-2.5 mx-4 mb-3">
-              <View className="w-6 h-6 rounded-full justify-center items-center" style={{ backgroundColor: '#6D28D9' }}>
+              <View className="w-6 h-6 rounded-full justify-center items-center" style={{ backgroundColor: '#10B981' }}>
                 <Text className="text-white text-xs font-bold">✓</Text>
               </View>
               <View>
-                <Text className="text-ink text-xs font-semibold" style={{ color: '#6D28D9' }}>
+                <Text className="text-ink text-xs font-semibold" style={{ color: '#084D32' }}>
                   {doc.label}
                 </Text>
                 <Text className="text-ink-faint text-xs">Auto-imported from your KYC · Verified</Text>
@@ -104,8 +104,8 @@ export default function ApplyDocumentsScreen() {
           Payment of registration fee (KES {registrationFee.toLocaleString()})
         </Text>
         <View className="flex-row gap-2 mt-1">
-          <TouchableOpacity className="flex-1 p-2.5 rounded-xl items-center" style={{ borderWidth: 2, borderColor: '#6D28D9' }}>
-            <Text className="text-xs font-semibold" style={{ color: '#6D28D9' }}>
+          <TouchableOpacity className="flex-1 p-2.5 rounded-xl items-center" style={{ borderWidth: 2, borderColor: '#10B981' }}>
+            <Text className="text-xs font-semibold" style={{ color: '#10B981' }}>
               Pay via M-Pesa
             </Text>
             <Text className="text-ink-faint text-xs">Instant · +KES 25 fee</Text>

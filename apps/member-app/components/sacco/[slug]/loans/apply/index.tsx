@@ -4,12 +4,15 @@ import { useState } from 'react'
 import { useSaccoConfig } from '../../../../../hooks/useSaccoConfig'
 import { useMembershipBySacco } from '../../../../../hooks/useMembership'
 import { useLoanApplicationStore } from '../../../../../store/useLoanApplicationStore'
+import { useCurrentUser } from '../../../../../store/useAuthStore'
 
 export default function LoanStep1() {
   const { slug } = useLocalSearchParams<{ slug: string }>()
   const { data: config } = useSaccoConfig(slug)
   const { data: membership } = useMembershipBySacco(slug)
   const { setContext, setStep1, step1 } = useLoanApplicationStore()
+  const user = useCurrentUser()
+  const phoneNumber = user?.phone_number ?? user?.phone ?? ''
 
   const [productKey, setProductKey] = useState(step1?.loan_product_key ?? '')
   const [amount, setAmount] = useState(step1?.amount_requested?.toString() ?? '100000')
@@ -34,7 +37,7 @@ export default function LoanStep1() {
       period_months: n,
       purpose,
       disbursement_method: disburse,
-      disbursement_account: '+254712345678',
+      disbursement_account: phoneNumber,
     })
     router.push({ pathname: '/sacco/[slug]/loans/apply/review', params: { slug } })
   }

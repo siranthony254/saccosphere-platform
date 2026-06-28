@@ -5,12 +5,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useMembershipApplicationStore } from '../../../../../store/useMembershipApplicationStore'
 import { useSubmitMembershipApplication } from '../../../../../hooks/useMembershipApplication'
 import { useSaccoConfig } from '../../../../../hooks/useSaccoConfig'
+import { useProfile } from '../../../../../hooks/useProfile'
 
 export default function ApplyReviewScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>()
   const insets = useSafeAreaInsets()
   const { formData, monthlyContribution, saccoSlug, reset } = useMembershipApplicationStore()
   const { data: config, isLoading: isLoadingConfig } = useSaccoConfig(slug ?? '')
+  const { data: userProfile } = useProfile()
   const { mutateAsync: submitApplication } = useSubmitMembershipApplication()
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -25,13 +27,15 @@ export default function ApplyReviewScreen() {
 
   const saccoName = slug?.toUpperCase() ?? 'SACCO'
   const applicantName =
-    `${formData.firstName ?? ''} ${formData.lastName ?? ''}`.trim() || 'Applicant'
+    `${userProfile?.first_name ?? ''} ${userProfile?.last_name ?? ''}`.trim() || 'Applicant'
   const employment = `${formData.employer ?? 'Employer'} · ${formData.employmentType ?? 'Employment'}`
   const contributionString = `KES ${monthlyContribution.toLocaleString()}`
   const registrationFee = config?.membership.registration_fee_kes ?? 1000
   const shareCapital = config?.membership.min_share_capital_kes ?? 5000
   const canSubmit = Boolean(
-    saccoSlug && formData.firstName && formData.lastName && monthlyContribution >= 1000
+    saccoSlug &&
+    (userProfile?.first_name || userProfile?.last_name) &&
+    monthlyContribution >= 1000
   )
 
   const handleSubmit = async () => {
@@ -124,7 +128,7 @@ export default function ApplyReviewScreen() {
       <View className="mx-4 rounded-xl p-3 mb-4" style={{ backgroundColor: '#FEF3C7' }}>
         <Text className="text-xs leading-4.5" style={{ color: '#92400E' }}>
           By submitting you agree to {saccoName}'s{' '}
-          <Text className="font-semibold">bylaws and membership terms</Text>. Your monthly
+          <Text className="font-semibold" style={{ color: '#C47D0E' }}>bylaws and membership terms</Text>. Your monthly
           contribution will begin after approval.
         </Text>
       </View>

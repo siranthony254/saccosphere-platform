@@ -2,13 +2,16 @@ import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'rea
 import { useLocalSearchParams, router } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useSacco } from '../../../hooks/useSaccos'
+import { useSaccoConfig } from '../../../hooks/useSaccoConfig'
 
-export default function SaccoDetailScreen() {
+export default function SaccoProfileScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>()
   const insets = useSafeAreaInsets()
-  const { data: sacco, isLoading, isError, refetch } = useSacco(slug)
+  // Use real-time data with 30 second stale time for member count
+  const { data: sacco, isLoading, isError, refetch } = useSacco(slug, { staleTime: 30_000 })
+  const { data: config, isLoading: isLoadingConfig } = useSaccoConfig(sacco?.slug ?? slug ?? '', { staleTime: 30_000 })
 
-  if (isLoading) {
+  if (isLoading || isLoadingConfig) {
     return (
       <View className="flex-1 bg-surface items-center justify-center px-8">
         <ActivityIndicator color="#6D28D9" />
@@ -21,6 +24,7 @@ export default function SaccoDetailScreen() {
     return (
       <View className="flex-1 bg-surface items-center justify-center px-8">
         <Text className="text-ink-muted text-xs mb-3">Failed to load SACCO details.</Text>
+        <Text className="text-ink-faint text-xs mb-2">Slug: {slug}</Text>
         <TouchableOpacity onPress={() => refetch()}>
           <Text className="text-violet-500 text-xs font-semibold">Try again</Text>
         </TouchableOpacity>
@@ -68,7 +72,7 @@ export default function SaccoDetailScreen() {
       <View className="flex-row gap-2 mx-4 mt-4">
         {[
           { label: 'Members', value: sacco.member_count?.toLocaleString() ?? '—' },
-          { label: 'Rate p.a.', value: sacco.loan_rate_pct ? `${sacco.loan_rate_pct}%` : '—' },
+          { label: 'Rate p.a.', value: sacco.default_interest_rate ? `${sacco.default_interest_rate}%` : '—' },
           { label: 'Loan limit', value: sacco.loan_multiplier ? `${sacco.loan_multiplier}×` : '—' },
         ].map((stat) => (
           <View key={stat.label} className="flex-1 bg-surface2 rounded-xl py-3 items-center">
@@ -78,14 +82,14 @@ export default function SaccoDetailScreen() {
         ))}
       </View>
 
-      {/* Membership requirements */}
+      {/* Membership requirements - from config */}
       <View className="mx-4 mt-4 bg-surface border border-border rounded-xl p-3.5">
         <Text className="text-ink text-xs font-semibold mb-2">Membership requirements</Text>
         {[
           { label: 'Min. age', value: '18 years' },
-          { label: 'Monthly contribution', value: 'KES 1,000 min' },
-          { label: 'Registration fee', value: 'KES 1,000' },
-          { label: 'Share capital', value: 'KES 5,000 min' },
+          { label: 'Monthly contribution', value: `KES ${config?.membership.min_monthly_contribution_kes?.toLocaleString() ?? '1,000'} min` },
+          { label: 'Registration fee', value: `KES ${config?.membership.registration_fee_kes?.toLocaleString() ?? '1,000'}` },
+          { label: 'Share capital', value: `KES ${config?.membership.min_share_capital_kes?.toLocaleString() ?? '5,000'} min` },
           { label: 'KYC docs required', value: 'ID + photo + payslip' },
         ].map((req) => (
           <View

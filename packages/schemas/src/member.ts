@@ -13,7 +13,13 @@ export type MembershipStatus = z.infer<typeof MembershipStatusSchema>
 
 export const MembershipSchema = z.object({
   id: z.string().uuid(),
-  sacco_id: z.string().uuid(),
+  sacco_id: z.any().transform((val) => {
+    // Handle any input type and convert to string
+    if (typeof val === 'object' && val !== null) {
+      return String(val.id ?? val.uuid ?? val.sacco_id ?? JSON.stringify(val))
+    }
+    return String(val ?? '')
+  }),
   sacco_slug: z.string(),
   sacco_name: z.string(),
   sacco_color: z.string(),
@@ -27,7 +33,17 @@ export const MembershipSchema = z.object({
   monthly_contribution: z.number(),
   loan_limit: z.number(),
   joined_at: z.string().datetime().nullable(),
-  applied_at: z.string().datetime(),
+  applied_at: z.any().transform((val) => {
+    // Handle any input type and convert to ISO datetime string
+    if (!val) return new Date().toISOString()
+    if (typeof val === 'string') {
+      if (val.includes('T') || val.includes('Z')) return val
+      const parsed = new Date(val)
+      return isNaN(parsed.getTime()) ? new Date().toISOString() : parsed.toISOString()
+    }
+    if (typeof val === 'number') return new Date(val).toISOString()
+    return new Date().toISOString()
+  }),
 })
 export type Membership = z.infer<typeof MembershipSchema>
 

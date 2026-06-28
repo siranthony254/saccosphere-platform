@@ -1,26 +1,32 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation } from '@tanstack/react-query'
 import { QueryKeys, STALE_TIMES } from '@saccosphere/config'
 import { api } from '@saccosphere/api-client'
+import { useIsAuthenticated } from '../store/useAuthStore'
 
 export function useMemberships() {
+  const isAuthenticated = useIsAuthenticated()
   return useQuery({
     queryKey: QueryKeys.memberships(),
     queryFn: api.member.getMemberships,
     staleTime: 60_000, // 1 minute
     gcTime: 300_000, // Keep in cache for 5 minutes
+    enabled: isAuthenticated, // Only fetch when authenticated
   })
 }
 
 export function useMembership(id: string) {
+  const isAuthenticated = useIsAuthenticated()
   return useQuery({
     queryKey: QueryKeys.membership(id),
     queryFn: () => api.member.getMembership(id),
     staleTime: STALE_TIMES.dashboard,
     gcTime: 300_000,
+    enabled: isAuthenticated && !!id, // Only fetch when authenticated and has ID
   })
 }
 
 export function useMembershipBySacco(saccoSlug: string) {
+  const isAuthenticated = useIsAuthenticated()
   return useQuery({
     queryKey: ['membership-by-sacco', saccoSlug],
     queryFn: async () => {
@@ -29,6 +35,7 @@ export function useMembershipBySacco(saccoSlug: string) {
     },
     staleTime: STALE_TIMES.dashboard,
     gcTime: 300_000,
+    enabled: isAuthenticated && !!saccoSlug, // Only fetch when authenticated and has slug
   })
 }
 

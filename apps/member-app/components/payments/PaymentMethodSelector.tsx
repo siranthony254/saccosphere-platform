@@ -28,7 +28,7 @@ export default function PaymentMethodSelector({
   subtitle,
   saccoName,
   amount,
-  mpesaFee = 25,
+  mpesaFee = 0,
   bankFee = 0,
   onSelectMpesa,
   onSelectBank,
@@ -166,9 +166,9 @@ export default function PaymentMethodSelector({
               >
                 <Text style={{ fontSize: 9, color: BRAND_MINT, fontWeight: '600' }}>
                   Instant
+              {mpesaFee > 0 && <Text style={{ fontSize: 9, color: INK_FAINT }}>+ KES {mpesaFee} fee</Text>}
                 </Text>
               </View>
-              <Text style={{ fontSize: 9, color: INK_FAINT }}>+ KES {mpesaFee} fee</Text>
             </View>
           </View>
           <Text style={{ color: INK_FAINT, fontSize: 18 }}>{'>'}</Text>
@@ -224,10 +224,10 @@ export default function PaymentMethodSelector({
                 }}
               >
                 <Text style={{ fontSize: 9, color: '#D97706', fontWeight: '600' }}>
+              {bankFee > 0 ? <Text style={{ fontSize: 9, color: INK_FAINT }}>+ KES {bankFee} fee</Text> : <Text style={{ fontSize: 9, color: INK_FAINT }}>No additional fee</Text>}
                   1–3 days
                 </Text>
               </View>
-              <Text style={{ fontSize: 9, color: INK_FAINT }}>{bankFee > 0 ? `+ KES ${bankFee} fee` : 'No additional fee'}</Text>
             </View>
           </View>
           <Text style={{ color: INK_FAINT, fontSize: 18 }}>{'>'}</Text>

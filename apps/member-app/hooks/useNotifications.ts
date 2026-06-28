@@ -1,14 +1,17 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { QueryKeys } from '@saccosphere/config'
 import { api } from '@saccosphere/api-client'
+import { useIsAuthenticated } from '../store/useAuthStore'
 
 export function useNotifications() {
+  const isAuthenticated = useIsAuthenticated()
   return useQuery({
     queryKey: QueryKeys.notifications(),
     queryFn: api.member.getNotifications,
     staleTime: 0,
     gcTime: 300_000, // Keep in cache for 5 minutes
-    refetchInterval: 60_000, // Refresh every minute instead of 30 seconds
+    retry: 1,
+    enabled: isAuthenticated,
   })
 }
 

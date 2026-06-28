@@ -44,9 +44,11 @@ export default function HomeScreen() {
   const [pickerVisible, setPickerVisible] = useState(false)
   const [currentAction, setCurrentAction] = useState<QuickAction | null>(null)
 
+  // Use membershipsQuery as the authoritative source for context switching.
+  // Fall back to dashboard memberships only while membershipsQuery hasn't responded yet.
   const allMemberships = useMemo(() => {
-    const memberships = membershipsQuery.data ?? []
-    return memberships.length > 0 ? memberships : dashboardQuery.data?.memberships ?? []
+    if (membershipsQuery.data !== undefined) return membershipsQuery.data
+    return dashboardQuery.data?.memberships ?? []
   }, [dashboardQuery.data?.memberships, membershipsQuery.data])
 
   const activeMemberships = useMemo(() => getActiveMemberships(allMemberships), [allMemberships])
@@ -57,8 +59,10 @@ export default function HomeScreen() {
     [activeMemberships, activeSlugs, dashboardQuery.data]
   )
 
-  const isLoading = dashboardQuery.isLoading && membershipsQuery.isLoading
+  // Show spinner until we have a definitive answer on memberships (the context gate).
+  const isLoading = membershipsQuery.isLoading || (membershipsQuery.data === undefined && dashboardQuery.isLoading)
   const isRefreshing = dashboardQuery.isRefetching || membershipsQuery.isRefetching
+  const isError = membershipsQuery.isError && membershipsQuery.data === undefined
 
   const refetch = async () => {
     await Promise.all([dashboardQuery.refetch(), membershipsQuery.refetch()])
@@ -95,6 +99,23 @@ export default function HomeScreen() {
       <View style={{ flex: 1, backgroundColor: SURFACE2, alignItems: 'center', justifyContent: 'center' }}>
         <ActivityIndicator color={MINT} size="small" />
         <Text style={{ color: INK_MUTED, fontSize: 12, marginTop: 12 }}>Loading your dashboard...</Text>
+      </View>
+    )
+  }
+
+  if (isError) {
+    return (
+      <View style={{ flex: 1, backgroundColor: SURFACE2, alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+        <Text style={{ fontSize: 14, fontWeight: '600', color: INK, marginBottom: 8 }}>Could not load your SACCOs</Text>
+        <Text style={{ fontSize: 12, color: INK_MUTED, textAlign: 'center', marginBottom: 20 }}>
+          Check your internet connection and try again.
+        </Text>
+        <TouchableOpacity
+          onPress={refetch}
+          style={{ backgroundColor: VIOLET, borderRadius: 12, paddingVertical: 12, paddingHorizontal: 24 }}
+        >
+          <Text style={{ color: '#fff', fontSize: 12, fontWeight: '600' }}>Try again</Text>
+        </TouchableOpacity>
       </View>
     )
   }
@@ -176,6 +197,7 @@ export default function HomeScreen() {
               membership={activeMemberships[0]}
               transactions={dashboard.recent_transactions}
               onAction={handleQuickAction}
+              onViewDetail={() => handleSaccoSelect(activeMemberships[0].sacco_slug)}
             />
           ) : (
             <UnifiedDashboard
@@ -452,10 +474,12 @@ function SingleSaccoDashboard({
   membership,
   transactions,
   onAction,
+  onViewDetail,
 }: {
   membership: Membership
   transactions: Transaction[]
   onAction: (action: QuickAction) => void
+  onViewDetail?: () => void
 }) {
   const { data: loans = [] } = useLoans({ sacco: membership.sacco_slug })
   const activeLoan = loans.find((l) => l.status === 'active' || l.status === 'disbursed' || l.status === 'approved')
@@ -463,8 +487,10 @@ function SingleSaccoDashboard({
 
   return (
     <View>
-      {/* ── Balance hero card ── */}
-      <View
+      {/* ── Balance hero card — tap to view SACCO detail ── */}
+      <TouchableOpacity
+        onPress={onViewDetail}
+        activeOpacity={onViewDetail ? 0.85 : 1}
         style={{
           backgroundColor: NAVY,
           borderRadius: 16,
@@ -490,14 +516,19 @@ function SingleSaccoDashboard({
             backgroundColor: 'rgba(255,255,255,0.03)',
           }}
         />
-        <Text
-          style={{
-            fontSize: 10, color: 'rgba(255,255,255,0.5)',
-            letterSpacing: 0.6, textTransform: 'uppercase', marginBottom: 4,
-          }}
-        >
-          Total savings — {membership.sacco_name.toUpperCase()}
-        </Text>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+          <Text
+            style={{
+              fontSize: 10, color: 'rgba(255,255,255,0.5)',
+              letterSpacing: 0.6, textTransform: 'uppercase',
+            }}
+          >
+            Total savings — {membership.sacco_name.toUpperCase()}
+          </Text>
+          {onViewDetail && (
+            <Text style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', letterSpacing: 0.3 }}>View detail {'>'}</Text>
+          )}
+        </View>
         <Text
           style={{
             fontSize: 30, fontWeight: '700', color: '#fff',
@@ -511,7 +542,7 @@ function SingleSaccoDashboard({
           <StatLight label="FOSA" value={money(membership.fosa_balance)} />
           <StatLight label="Loan limit" value={money(membership.loan_limit)} />
         </View>
-      </View>
+      </TouchableOpacity>
 
       {/* ── Quick actions ── */}
       <QuickActions onAction={onAction} isSingle />

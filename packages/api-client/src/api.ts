@@ -174,9 +174,33 @@ const normalizeMembership = (membership: any): Membership => {
           ? 'withdrawn'
           : status
 
+  // Extract sacco_id - handle all possible formats
+  let saccoId = membership.sacco_id
+  if (!saccoId && typeof sacco === 'object' && sacco.id) {
+    saccoId = sacco.id
+  }
+  if (!saccoId) {
+    saccoId = membership.id
+  }
+  // Convert to string, handling nested objects
+  if (typeof saccoId === 'object') {
+    saccoId = saccoId.id ?? saccoId.uuid ?? JSON.stringify(saccoId)
+  }
+  const saccoIdStr = String(saccoId ?? '')
+
+  // Handle applied_at - ensure valid datetime format
+  let appliedAt = membership.applied_at ?? membership.application_date
+  if (!appliedAt || typeof appliedAt !== 'string') {
+    appliedAt = new Date().toISOString()
+  } else if (!appliedAt.includes('T') && !appliedAt.includes('Z')) {
+    // Try to parse non-ISO dates
+    const parsed = new Date(appliedAt)
+    appliedAt = isNaN(parsed.getTime()) ? new Date().toISOString() : parsed.toISOString()
+  }
+
   return MembershipSchema.parse({
     id: membership.id,
-    sacco_id: membership.sacco_id ?? sacco.id ?? membership.sacco,
+    sacco_id: saccoIdStr,
     sacco_slug:
       membership.sacco_slug ??
       String(sacco.name ?? membership.sacco_name ?? membership.id)
@@ -202,7 +226,7 @@ const normalizeMembership = (membership: any): Membership => {
     monthly_contribution: Number(membership.monthly_contribution ?? 0),
     loan_limit: Number(membership.loan_limit ?? 0),
     joined_at: membership.joined_at ?? membership.approved_date ?? null,
-    applied_at: membership.applied_at ?? membership.application_date ?? new Date().toISOString(),
+    applied_at: appliedAt,
   })
 }
 
@@ -753,16 +777,28 @@ export const api = {
       monthly_contribution: number
     }) => {
       const sacco = await api.saccos.get(data.sacco_slug)
-      const customFields = Object.entries(data.form_data ?? {}).map(([field_id, value]) => ({
-        field_id,
-        value: String(value ?? ''),
-      }))
+      
+      // Map custom fields from form_data to backend format
+      // Only include fields that are not the standard employment fields
+      const standardFields = ['employer', 'employmentType', 'monthlyIncome']
+      const customFields = Object.entries(data.form_data ?? {})
+        .filter(([key]) => !standardFields.includes(key))
+        .map(([field_id, value]) => ({
+          field_id,
+          value: String(value ?? ''),
+        }))
+      
+      // Extract employment fields from form_data
+      const employmentStatus = String(data.form_data?.employmentType ?? 'Employed — salaried')
+      const employerName = String(data.form_data?.employer ?? '')
+      const monthlyIncome = Number(data.form_data?.monthlyIncome ?? 0)
+      
       const membership = await apiCall<any>('POST', '/members/memberships/', {
         sacco: sacco.id,
         custom_fields: customFields,
-        employment_status: String(data.form_data?.employment_status ?? ''),
-        employer_name: String(data.form_data?.employer_name ?? ''),
-        monthly_income: data.monthly_contribution,
+        employment_status: employmentStatus,
+        employer_name: employerName,
+        monthly_income: monthlyIncome,
       })
       return {
         id: membership.id,
@@ -1411,20 +1447,55 @@ export const api = {
 
   superAdmin: {
     getDashboard: async () => {
-      const publicStats = await apiCall<any>('GET', '/accounts/public-stats/').catch(() => null)
-      return normalizePlatformOverview(publicStats ?? {})
+      const overview = await apiCall<any>('GET', '/management/superadmin/overview/').catch(() => null)
+      return {
+        total_saccos: overview?.active_saccos_count ?? 0,
+        active_saccos: overview?.active_saccos_count ?? 0,
+        total_members: overview?.total_members ?? 0,
+        total_members_on_app: overview?.total_members ?? 0,
+        transaction_volume_mtd_kes: Number(overview?.platform_transaction_volume_mtd ?? 0),
+        transaction_volume_change_pct: overview?.platform_transaction_volume_change_pct ?? null,
+        active_saccos_change_this_month: overview?.active_saccos_change_this_month ?? 0,
+        total_members_change_this_month: overview?.total_members_change_this_month ?? 0,
+        platform_revenue_mtd_kes: Number(overview?.platform_revenue_mtd ?? 0),
+        kyc_verified_pct: 0,
+        aml_flags_open: 0,
+        system_alerts: 0,
+        all_systems_operational: overview?.all_systems_operational ?? true,
+      }
     },
 
-    getSaccos: (params?: { status?: string; sector?: string; search?: string }) =>
-      api.saccos.list({ sector: params?.sector, search: params?.search }).then((items) => {
-        const filtered = params?.status ? items.filter((item) => item.status === params.status) : items
-        return {
-          count: filtered.length,
-          next: null,
-          previous: null,
-          results: filtered.map((item) => normalizeSuperAdminSacco(item)),
-        }
-      }),
+    getSaccos: async (params?: { status?: string; sector?: string; search?: string }) => {
+      const response = await apiCall<any>('GET', '/management/superadmin/saccos/').catch(() => ({ results: [] }))
+      let items = response.results || response
+      if (params?.search) {
+        items = items.filter((item: any) => 
+          item.name?.toLowerCase().includes(params.search.toLowerCase())
+        )
+      }
+      if (params?.status) {
+        items = items.filter((item: any) => 
+          (params.status === 'active' && item.is_active) ||
+          (params.status === 'suspended' && !item.is_active)
+        )
+      }
+      return {
+        count: items.length,
+        next: null,
+        previous: null,
+        results: items.map((item: any) => ({
+          id: item.id,
+          name: item.name,
+          slug: item.slug || '',
+          member_count: item.member_count || 0,
+          is_active: item.is_active,
+          status: item.is_active ? 'active' : 'suspended',
+          health_status: item.health_status || 'GOOD',
+          last_transaction_at: item.last_transaction_at,
+          created_at: item.created_at,
+        })),
+      }
+    },
 
     getSacco: async (id: string) => {
       const [sacco, stats] = await Promise.all([
@@ -1462,54 +1533,88 @@ export const api = {
     getUserRoles: (userId: string) =>
       apiCall<any[]>('GET', '/management/roles/', undefined, { params: { user_id: userId } }),
 
-    getAllMembers: (params?: { sacco?: string; kyc_status?: string; search?: string; cursor?: string }) =>
-      api.saccoAdmin.getMembers(params),
-
-    getTransactions: async (params?: { cursor?: string; sacco?: string }) => {
-      const response = await apiCall<any>('GET', '/payments/transactions/', undefined, { params })
-      const items = unwrapResults(response)
+    getAllMembers: async (params?: { sacco?: string; kyc_status?: string; search?: string; cursor?: string }) => {
+      const queryParams: Record<string, string> = {}
+      if (params?.sacco) queryParams.sacco_id = params.sacco
+      if (params?.search) queryParams.search = params.search
+      if (params?.cursor) queryParams.cursor = params.cursor
+      
+      const response = await apiCall<any>('GET', '/management/superadmin/members/', undefined, { params: queryParams })
+      const items = response.results || []
       return {
-        count: Number(response.count ?? items.length),
-        next: response.next ?? null,
-        previous: response.previous ?? null,
+        count: Number(response.count || items.length),
+        next: response.next || null,
+        previous: response.previous || null,
         results: items.map((item: any) => ({
-          ...normalizeTransaction(item),
-          member_name:
-            item.member_name ??
-            item.user?.full_name ??
-            item.membership?.user?.full_name ??
-            item.description ??
-            '—',
+          id: item.id,
+          full_name: item.full_name,
+          email: item.email,
+          phone_number: item.phone_number,
+          kyc_status: item.kyc_status,
+          member_since: item.member_since,
+          sacco_name: '',
+          member_number: '',
+          status: 'active',
         })),
       }
     },
 
-    getRevenue: async () => {
-      const [stats, saccos] = await Promise.all([
-        apiCall<any>('GET', '/management/stats/').catch(() => ({})),
-        api.saccos.list().catch(() => [] as Sacco[]),
-      ])
-
-      const saasFees = saccos.map((sacco) => {
-        const normalized = normalizeSuperAdminSacco(sacco)
-        return {
-          sacco: normalized.name,
-          fee: normalized.platform_fee_kes,
-          txn_fees: 0,
-          total: normalized.platform_fee_kes,
-          status: normalized.fee_status,
-        }
-      })
-
+    getTransactions: async () => {
+      const response = await apiCall<any>('GET', '/management/superadmin/transactions/live/')
       return {
-        saas_fees: saasFees,
-        arr_kes: Number(stats.arr_kes ?? stats.platform_revenue_mtd_kes ?? 0) * 12,
-        projected_12mo_kes: Number(stats.projected_12mo_kes ?? 0),
-        avg_per_sacco_kes:
-          saasFees.length > 0
-            ? saasFees.reduce((sum, row) => sum + row.total, 0) / saasFees.length
-            : 0,
+        count: response.length,
+        next: null,
+        previous: null,
+        results: response.map((item: any) => ({
+          id: item.id || Math.random().toString(),
+          date: item.created_at,
+          member_name: item.user_name,
+          sacco_name: item.sacco_name,
+          txn_type: item.transaction_type,
+          amount: Number(item.amount || 0),
+          direction: 'in',
+          payment_method: 'mpesa',
+          platform_fee: 0,
+          status: item.stk_status === '0' ? 'completed' : 'failed',
+        })),
       }
+    },
+
+    getRevenueChart: async () => {
+      const response = await apiCall<any>('GET', '/management/superadmin/revenue-chart/')
+      return response.map((item: any) => ({
+        month: item.month,
+        saas_fees: Number(item.saas_fees || 0),
+        transaction_fees: Number(item.transaction_fees || 0),
+        total_mrr: Number(item.total_mrr || 0),
+      }))
+    },
+
+    getTopSaccos: async () => {
+      const response = await apiCall<any>('GET', '/management/superadmin/top-saccos/')
+      return response.map((item: any) => ({
+        sacco_id: item.sacco_id,
+        sacco_name: item.sacco_name,
+        member_count: item.member_count,
+        txn_volume_this_month: Number(item.txn_volume_this_month || 0),
+        platform_fee_this_month: Number(item.platform_fee_this_month || 0),
+        health_status: item.health_status,
+      }))
+    },
+
+    getPlatformAlerts: async () => {
+      const response = await apiCall<any>('GET', '/management/superadmin/alerts/')
+      return response.map((item: any) => ({
+        id: Math.random().toString(),
+        sacco_name: item.sacco_name,
+        flag_type: item.flag_type,
+        description: item.description,
+        severity: item.severity,
+        created_at: item.created_at,
+        risk_level: item.severity === 'CRITICAL' ? 'high' : item.severity === 'HIGH' ? 'medium' : 'low',
+        flag_reason: item.description,
+        member_name: '—',
+      }))
     },
 
     getKycQueue: async () => {

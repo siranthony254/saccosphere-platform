@@ -16,21 +16,6 @@ const INK_MUTED = '#6B7280'
 const INK_FAINT = '#9CA3AF'
 const BORDER = 'rgba(0,0,0,0.07)'
 
-const SACCO_COLORS: Record<string, string> = {
-  'stima-sacco': '#0070ba',
-  'teachers-sacco': '#7c3aed',
-  'unaitas-sacco': '#16a085',
-  'kenya-police-sacco': '#c0392b',
-  'imarika-sacco': '#2980b9',
-}
-
-const SACCO_INITIALS: Record<string, string> = {
-  'stima-sacco': 'ST',
-  'teachers-sacco': 'TS',
-  'unaitas-sacco': 'UN',
-  'kenya-police-sacco': 'KP',
-  'imarika-sacco': 'IK',
-}
 
 export default function SaccoLoanSelectorScreen() {
   const { data: memberships = [], isLoading } = useMemberships()
@@ -177,8 +162,8 @@ export default function SaccoLoanSelectorScreen() {
 
         {activeMemberships.map((membership) => {
           const totalSavings = getMembershipSavings(membership)
-          const saccoColor = SACCO_COLORS[membership.sacco_slug] || membership.sacco_color || VIOLET
-          const initials = SACCO_INITIALS[membership.sacco_slug] || membership.sacco_initials || 'SA'
+          const saccoColor = membership.sacco_color || VIOLET
+          const initials = membership.sacco_initials || 'SA'
           const activeLoanCount = loans.filter(
             (l) =>
               l.sacco_slug === membership.sacco_slug &&

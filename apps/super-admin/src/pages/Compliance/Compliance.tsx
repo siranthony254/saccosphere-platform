@@ -1,12 +1,12 @@
-import { useAMLFlags, usePlatformOverview, useKycQueue, useAllSaccos } from '../../hooks/usePlatformData'
+import { usePlatformAlerts, usePlatformOverview, useKycQueue, useAllSaccos } from '../../hooks/usePlatformData'
 
 export function Compliance() {
-  const { data: flags } = useAMLFlags()
+  const { data: flags } = usePlatformAlerts()
   const { data: overview } = usePlatformOverview()
   const { data: kycQueue } = useKycQueue()
   const { data: saccosData } = useAllSaccos()
 
-  const pendingKycCount = kycQueue?.length ?? overview?.aml_flags_open ?? 0
+  const pendingKycCount = kycQueue?.length ?? 0
   const kycVerifiedPct = overview?.kyc_verified_pct ?? 0
 
   return (
@@ -33,9 +33,9 @@ export function Compliance() {
             deltaColor: 'text-amber-600',
           },
           {
-            label: 'AML flags open',
-            value: (flags?.length ?? overview?.aml_flags_open ?? 0).toString(),
-            delta: flags?.length ? 'From KYC/compliance queue' : 'No open flags',
+            label: 'Platform alerts',
+            value: (flags?.length ?? 0).toString(),
+            delta: flags?.length ? 'From compliance flags' : 'No open alerts',
             deltaColor: flags?.length ? 'text-red-500' : 'text-mint-700',
           },
         ].map(m => (
@@ -47,8 +47,8 @@ export function Compliance() {
         ))}
       </div>
 
-      <div className="bg-red-50 border-l-4 border-red-500 rounded-r-lg p-2.5 mb-2.5 text-xs text-red-900">
-        {flags?.length ? `${flags.length} compliance items require review` : 'No compliance flags open'}
+      <div className={`bg-${flags?.length ? 'red' : 'mint'}-50 border-l-4 border-${flags?.length ? 'red' : 'mint'}-500 rounded-r-lg p-2.5 mb-2.5 text-xs text-${flags?.length ? 'red' : 'mint'}-900`}>
+        {flags?.length ? `${flags.length} platform alerts require review` : 'No platform alerts open'}
       </div>
 
       <div className="grid grid-cols-2 gap-4">
@@ -81,11 +81,11 @@ export function Compliance() {
         </div>
 
         <div className="bg-surface border border-neutral-300 rounded-xl overflow-hidden">
-          <div className="p-3 border-b border-neutral-200 font-semibold text-sm text-ink">KYC / compliance queue</div>
+          <div className="p-3 border-b border-neutral-200 font-semibold text-sm text-ink">Platform alerts</div>
           <table className="w-full border-collapse text-xs">
             <thead>
               <tr className="bg-neutral-100">
-                {['Member', 'SACCO', 'Reason', 'Risk', 'Action'].map(h => (
+                {['SACCO', 'Flag type', 'Severity', 'Description', 'Action'].map(h => (
                   <th key={h} className="text-left px-3 py-1.5 text-xs text-ink-muted font-medium border-b border-neutral-300">{h}</th>
                 ))}
               </tr>
@@ -93,23 +93,24 @@ export function Compliance() {
             <tbody>
               {(flags ?? []).length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-3 py-6 text-center text-ink-muted">No items in the KYC review queue.</td>
+                  <td colSpan={5} className="px-3 py-6 text-center text-ink-muted">No platform alerts.</td>
                 </tr>
               ) : (
                 (flags ?? []).map((flag, i) => {
-                  const riskClass = {
-                    low: 'bg-mint-50 text-mint-700',
-                    medium: 'bg-amber-50 text-amber-800',
-                    high: 'bg-red-50 text-red-700',
-                  }[flag.risk_level] || 'bg-amber-50 text-amber-800'
+                  const severityClass = {
+                    CRITICAL: 'bg-red-50 text-red-700',
+                    HIGH: 'bg-amber-50 text-amber-800',
+                    MEDIUM: 'bg-yellow-50 text-yellow-700',
+                    LOW: 'bg-mint-50 text-mint-700',
+                  }[flag.severity] || 'bg-amber-50 text-amber-800'
                   return (
                     <tr key={flag.id} className={`border-b border-neutral-200 ${i % 2 === 0 ? 'bg-white' : 'bg-neutral-50'}`}>
-                      <td className="px-3 py-2 font-medium">{flag.member_name}</td>
-                      <td className="px-3 py-2 text-ink-muted">{flag.sacco_name}</td>
-                      <td className="px-3 py-2 text-ink-muted max-w-48 overflow-hidden text-ellipsis whitespace-nowrap">{flag.flag_reason}</td>
+                      <td className="px-3 py-2 font-medium">{flag.sacco_name}</td>
+                      <td className="px-3 py-2 text-ink-muted">{flag.flag_type}</td>
                       <td className="px-3 py-2">
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${riskClass}`}>{flag.risk_level}</span>
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${severityClass}`}>{flag.severity}</span>
                       </td>
+                      <td className="px-3 py-2 text-ink-muted max-w-48 overflow-hidden text-ellipsis whitespace-nowrap">{flag.description}</td>
                       <td className="px-3 py-2">
                         <button className="px-2.5 py-0.5 rounded text-xs font-semibold bg-violet-50 text-violet-700 hover:bg-violet-100">Review</button>
                       </td>

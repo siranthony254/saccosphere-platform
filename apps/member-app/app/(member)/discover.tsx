@@ -3,6 +3,8 @@ import { useState, useEffect } from 'react'
 import { View, Text, ScrollView, TouchableOpacity, TextInput, ActivityIndicator } from 'react-native'
 import { router } from 'expo-router'
 import { useSaccos } from '../../hooks/useSaccos'
+import { useMemberships } from '../../hooks/useMembership'
+import { getActiveMemberships } from '../../lib/membership'
 
 
 const SECTORS = ['All', 'Community', 'Education', 'Energy', 'Government', 'Health']
@@ -24,6 +26,9 @@ export default function DiscoverScreen() {
     search: debouncedSearch || undefined,
     sector: sector === 'All' ? undefined : sector,
   })
+  const { data: memberships } = useMemberships()
+  const activeMemberships = getActiveMemberships(memberships ?? [])
+  const memberSaccoSlugs = new Set(activeMemberships.map(m => m.sacco_slug))
 
   return (
     <ScrollView className="bg-surface2" keyboardShouldPersistTaps="handled">
@@ -32,6 +37,33 @@ export default function DiscoverScreen() {
         <Text className="text-ink text-xl font-bold">Find a SACCO</Text>
         <Text className="text-ink-faint text-xs mt-0.5">{saccos?.length} SACCOs · All SASRA regulated</Text>
       </View>
+
+      {/* Member SACCOs section */}
+      {activeMemberships.length > 0 && (
+        <View className="px-3.5 py-3 bg-surface border-b border-border">
+          <Text className="text-ink text-xs font-semibold mb-2.5">Your SACCOs</Text>
+          {activeMemberships.map(membership => (
+            <TouchableOpacity
+              key={membership.id}
+              className="bg-surface2 rounded-xl p-3 mb-2 border border-border"
+              onPress={() => router.push({ pathname: '/sacco/[slug]', params: { slug: membership.sacco_slug } })}
+            >
+              <View className="flex-row items-center gap-2.5">
+                <View className="w-10 h-10 rounded-lg items-center justify-center" style={{ backgroundColor: membership.sacco_color || '#6D28D9' }}>
+                  <Text className="text-white text-xs font-bold">{membership.sacco_initials || 'SA'}</Text>
+                </View>
+                <View className="flex-1">
+                  <Text className="text-ink text-xs font-semibold">{membership.sacco_name}</Text>
+                  <Text className="text-ink-faint text-xs">Member {membership.member_number}</Text>
+                </View>
+                <View className="bg-mint-50 px-2 py-0.5 rounded-lg">
+                  <Text className="text-mint-700 text-xs font-semibold">Active</Text>
+                </View>
+              </View>
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
 
       {/* Search */}
       <View className="px-3.5 py-3.5 bg-surface">
@@ -62,7 +94,7 @@ export default function DiscoverScreen() {
             <Text className="text-ink-muted text-xs mb-3">Failed to load SACCOs.</Text>
             <TouchableOpacity onPress={() => refetch()}><Text className="text-violet-500 text-xs font-semibold">Try again</Text></TouchableOpacity>
           </View>
-        ) : saccos?.map(sacco => (
+        ) : saccos?.filter(sacco => !memberSaccoSlugs.has(sacco.slug)).map(sacco => (
           <TouchableOpacity
             key={sacco.id}
             className="bg-surface rounded-xl p-3.5 mb-3 border border-border"
@@ -88,7 +120,7 @@ export default function DiscoverScreen() {
                 <Text className="text-ink-faint text-xs mt-0.5">Members</Text>
               </View>
               <View className="items-center">
-                <Text className="text-ink text-xs font-bold">{sacco.loan_rate_pct}%</Text>
+                <Text className="text-ink text-xs font-bold">{sacco.default_interest_rate}%</Text>
                 <Text className="text-ink-faint text-xs mt-0.5">Rate p.a.</Text>
               </View>
               <View className="items-center">
@@ -100,7 +132,7 @@ export default function DiscoverScreen() {
               className={`rounded-lg p-2.5 items-center ${sacco.membership_type === 'open' ? 'bg-violet-500' : 'bg-surface3'}`}
               onPress={() =>
                 sacco.membership_type === 'open' &&
-                router.push({ pathname: '/(member)/discover/[slug]/apply', params: { slug: sacco.slug } })
+                router.push({ pathname: '/(member)/discover/[slug]', params: { slug: sacco.id } })
               }
               disabled={sacco.membership_type !== 'open'}
             >
