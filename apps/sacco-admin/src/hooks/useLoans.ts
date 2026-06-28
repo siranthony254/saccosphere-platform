@@ -5,7 +5,7 @@ import { api } from '@saccosphere/api-client'
 export function useAdminLoans(filters?: { status?: string }) {
   return useQuery({
     queryKey: QueryKeys.adminLoans(filters),
-    queryFn: () => api.saccoAdmin.getLoans(filters),
+    queryFn: () => api.saccoAdmin.getLoanApprovals(),
   })
 }
 

@@ -18,6 +18,58 @@ export const SaccoAdminDashboardSchema = z.object({
 })
 export type SaccoAdminDashboard = z.infer<typeof SaccoAdminDashboardSchema>
 
+export const DisbursementsDashboardSchema = z.object({
+  disbursed_today: z.object({
+    count: z.number(),
+    total_amount: z.number(),
+  }),
+  pending_disbursement: z.object({
+    count: z.number(),
+    total_amount: z.number(),
+  }),
+  total_disbursements: z.object({
+    count: z.number(),
+    total_amount: z.number(),
+  }),
+  recent_disbursements: z.array(z.object({
+    member_name: z.string(),
+    member_number: z.string(),
+    loan_id: z.string(),
+    amount: z.number(),
+    disbursed_at: z.string().datetime().nullable(),
+    phone_number: z.string(),
+  })),
+})
+export type DisbursementsDashboard = z.infer<typeof DisbursementsDashboardSchema>
+
+export const ContributionsDashboardSchema = z.object({
+  received_today: z.object({
+    count: z.number(),
+    total_amount: z.number(),
+  }),
+  expected_this_month: z.object({
+    count: z.number(),
+    total_amount: z.number(),
+  }),
+  received_so_far_this_month: z.object({
+    count: z.number(),
+    total_amount: z.number(),
+  }),
+  missed_overdue: z.object({
+    count: z.number(),
+    total_amount: z.number(),
+  }),
+  contribution_rate_pct: z.number(),
+  recent_contributions: z.array(z.object({
+    member_name: z.string(),
+    member_number: z.string(),
+    amount: z.number(),
+    date: z.string().datetime().nullable(),
+    savings_type: z.string(),
+  })),
+})
+export type ContributionsDashboard = z.infer<typeof ContributionsDashboardSchema>
+
 export const AdminMemberSchema = z.object({
   id: z.string().uuid(),
   user_id: z.string().uuid().nullable().optional(), // backend user UUID — used for roles lookup
@@ -71,6 +123,22 @@ export const AdminLoanSchema = z.object({
   disbursed_at: z.string().datetime().nullable(),
 })
 export type AdminLoan = z.infer<typeof AdminLoanSchema>
+
+// Loan approval queue schema (from /management/loans/approvals/)
+export const LoanApprovalSchema = z.object({
+  loan_id: z.string(),
+  member_name: z.string(),
+  member_number: z.string(),
+  loan_type_name: z.string().nullable(),
+  amount: z.number(),
+  term_months: z.number(),
+  application_notes: z.string().nullable(),
+  applied_at: z.string().datetime().nullable(),
+  status: z.string(),
+  guarantors_summary: z.any(), // Complex object from build_guarantors_summary
+  required_documents: z.any(), // Complex object from get_member_application_documents
+})
+export type LoanApproval = z.infer<typeof LoanApprovalSchema>
 
 // ─── SUPER ADMIN ─────────────────────────────────────────────────────────────
 
@@ -177,3 +245,40 @@ export const PlatformMemberSchema = z.object({
   status: z.string(),
 })
 export type PlatformMember = z.infer<typeof PlatformMemberSchema>
+
+// ─── SACCO ADMIN ADDITIONAL SCHEMAS ─────────────────────────────────────────────
+
+export const ExternalGuarantorSchema = z.object({
+  id: z.string(),
+  loan_id: z.string(),
+  member_name: z.string(),
+  guarantor_name: z.string(),
+  guarantor_phone: z.string(),
+  guarantor_national_id: z.string(),
+  amount: z.number(),
+  status: z.string(),
+  created_at: z.string().datetime().nullable(),
+})
+export type ExternalGuarantor = z.infer<typeof ExternalGuarantorSchema>
+
+export const AuditLogSchema = z.object({
+  id: z.string(),
+  timestamp: z.string().datetime().nullable(),
+  user: z.string().nullable(),
+  action: z.string(),
+  resource_type: z.string(),
+  resource_id: z.string(),
+  details: z.any(),
+})
+export type AuditLog = z.infer<typeof AuditLogSchema>
+
+export const ImportStatusSchema = z.object({
+  job_id: z.string(),
+  status: z.string(),
+  progress: z.number(),
+  total_records: z.number(),
+  processed_records: z.number(),
+  failed_records: z.number(),
+  error_summary: z.array(z.any()),
+})
+export type ImportStatus = z.infer<typeof ImportStatusSchema>

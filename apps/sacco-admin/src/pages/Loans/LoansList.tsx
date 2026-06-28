@@ -2,12 +2,12 @@ import { useState } from 'react'
 import { useAdminLoans, useReviewLoan } from '../../hooks/useLoans'
 
 const STATUS_COLORS: Record<string, { bg: string; color: string }> = {
-  submitted: { bg: 'bg-amber-50', color: 'text-amber-700' },
-  under_review: { bg: 'bg-blue-50', color: 'text-blue-700' },
-  approved: { bg: 'bg-mint-50', color: 'text-mint-700' },
-  rejected: { bg: 'bg-red-50', color: 'text-red-700' },
-  disbursed: { bg: 'bg-mint-50', color: 'text-mint-700' },
-  guarantors_pending: { bg: 'bg-violet-50', color: 'text-violet-700' },
+  PENDING_APPROVAL: { bg: 'bg-amber-50', color: 'text-amber-700' },
+  UNDER_REVIEW: { bg: 'bg-blue-50', color: 'text-blue-700' },
+  APPROVED: { bg: 'bg-mint-50', color: 'text-mint-700' },
+  REJECTED: { bg: 'bg-red-50', color: 'text-red-700' },
+  DISBURSED: { bg: 'bg-mint-50', color: 'text-mint-700' },
+  BOARD_REVIEW: { bg: 'bg-violet-50', color: 'text-violet-700' },
 }
 
 export function LoansList() {
@@ -23,7 +23,7 @@ export function LoansList() {
         <div>
           <div className="text-lg font-semibold text-ink">Loan review</div>
           <div className="text-xs text-ink-muted">
-            {data?.count ?? 0} total · {data?.results.filter((l) => l.status === 'submitted').length ?? 0} pending decision
+            {data?.count ?? 0} total · {data?.results.filter((l) => l.status === 'PENDING_APPROVAL').length ?? 0} pending decision
           </div>
         </div>
           <div className="flex gap-2">
@@ -35,10 +35,10 @@ export function LoansList() {
             onChange={(e) => setStatusFilter(e.target.value)}
           >
             <option value="all">All statuses</option>
-            <option value="submitted">Pending</option>
-            <option value="under_review">In review</option>
-            <option value="approved">Approved — not disbursed</option>
-            <option value="disbursed">Disbursed</option>
+            <option value="PENDING_APPROVAL">Pending</option>
+            <option value="UNDER_REVIEW">In review</option>
+            <option value="APPROVED">Approved — not disbursed</option>
+            <option value="DISBURSED">Disbursed</option>
           </select>
         </div>
       </div>
@@ -51,12 +51,12 @@ export function LoansList() {
         [1, 2, 3].map((i) => <div key={i} className="h-[100px] bg-ink-faint rounded-[10px] mb-2.5" />)
       ) : (
         (data?.results ?? []).map((loan) => {
-          const sc = STATUS_COLORS[loan.status] ?? STATUS_COLORS.submitted
-          const isExpanded = activeId === loan.id
+          const sc = STATUS_COLORS[loan.status] ?? STATUS_COLORS.PENDING_APPROVAL
+          const isExpanded = activeId === loan.loan_id
           const guarantorsReady = loan.guarantors_confirmed >= loan.guarantors_required
 
           return (
-            <div key={loan.id} className="bg-white border border-[#e5ede9] rounded-[10px] p-4 mb-3">
+            <div key={loan.loan_id} className="bg-white border border-[#e5ede9] rounded-[10px] p-4 mb-3">
               {/* Header row */}
               <div className="grid grid-cols-[2fr_1.2fr_1fr_1fr_1fr_1fr_auto] gap-2.5 items-center mb-3">
                 <div className="flex items-center gap-2.5">
@@ -65,32 +65,32 @@ export function LoansList() {
                   </div>
                   <div>
                     <div className="font-medium text-sm">{loan.member_name}</div>
-                    <div className="text-[10px] text-ink-faint font-mono">{loan.ref}</div>
+                    <div className="text-[10px] text-ink-faint font-mono">{loan.member_number}</div>
                   </div>
                 </div>
-                <div className="text-sm">{loan.loan_product_label}</div>
-                <div className="text-sm font-semibold">KES {loan.amount_requested.toLocaleString()}</div>
-                <div className="text-xs text-ink-muted">{loan.period_months} mo</div>
+                <div className="text-sm">{loan.loan_type_name || '—'}</div>
+                <div className="text-sm font-semibold">KES {loan.amount.toLocaleString()}</div>
+                <div className="text-xs text-ink-muted">{loan.term_months} mo</div>
                 <div>
-                  <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${guarantorsReady ? 'bg-mint-50 text-mint-700' : 'bg-amber-50 text-amber-700'}`}>
-                    {loan.guarantors_confirmed}/{loan.guarantors_required} guarantors
+                  <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full bg-surface-2 text-ink-muted`}>
+                    Guarantors
                   </span>
                 </div>
                 <div>
                   <span className={`${sc.bg} ${sc.color} px-2 py-0.5 rounded-full text-[11px] font-semibold`}>{loan.status}</span>
                 </div>
                 <div className="flex gap-1.5">
-                  {loan.status === 'submitted' || loan.status === 'under_review' ? (
+                  {loan.status === 'PENDING_APPROVAL' || loan.status === 'UNDER_REVIEW' ? (
                     <button
                       className="px-3 py-1 rounded-[6px] border-none bg-mint-600 text-white text-xs font-semibold cursor-pointer hover:bg-mint-700 transition-colors"
                       onClick={() => {
-                        setActiveId(isExpanded ? null : loan.id)
+                        setActiveId(isExpanded ? null : loan.loan_id)
                         setNotes('')
                       }}
                     >
                       {isExpanded ? 'Close' : 'Review'}
                     </button>
-                  ) : loan.status === 'approved' ? (
+                  ) : loan.status === 'APPROVED' ? (
                     <button
                       className="px-3 py-1 rounded-[6px] border-none bg-slate-200 text-slate-600 text-xs font-semibold cursor-not-allowed"
                       disabled
@@ -110,9 +110,10 @@ export function LoansList() {
                     <div className="bg-surface-2 rounded-lg p-3">
                       <div className="font-semibold text-xs text-ink-soft mb-2">Loan summary</div>
                       {[
-                        { l: 'Interest rate', v: `${loan.interest_rate}% p.a.` },
-                        { l: 'Monthly instalment', v: `KES ${loan.monthly_instalment.toLocaleString()}` },
-                        { l: 'Disbursement', v: `${loan.disbursement_method} · ${loan.disbursement_account}` },
+                        { l: 'Loan type', v: loan.loan_type_name || '—' },
+                        { l: 'Term', v: `${loan.term_months} months` },
+                        { l: 'Applied at', v: loan.applied_at ? new Date(loan.applied_at).toLocaleDateString() : '—' },
+                        { l: 'Notes', v: loan.application_notes || 'None' },
                       ].map((row) => (
                         <div key={row.l} className="flex justify-between py-1 border-b border-ink-faint text-xs">
                           <span className="text-ink-muted">{row.l}</span>
@@ -130,14 +131,14 @@ export function LoansList() {
                       <div className="flex gap-2">
                         <button
                           className={`flex-1 py-2 rounded-lg border-none bg-mint-600 text-white text-sm font-semibold cursor-pointer hover:bg-mint-700 transition-colors ${reviewing ? 'opacity-60' : ''}`}
-                          onClick={() => reviewLoan({ id: loan.id, action: 'approve', notes }, { onSuccess: () => setActiveId(null) })}
+                          onClick={() => reviewLoan({ id: loan.loan_id, action: 'approve', notes }, { onSuccess: () => setActiveId(null) })}
                           disabled={reviewing}
                         >
                           {reviewing ? 'Processing...' : '✓ Approve'}
                         </button>
                         <button
                           className="flex-1 py-2 rounded-lg border-none bg-red-50 text-red-700 text-sm font-semibold cursor-pointer hover:bg-red-100 transition-colors"
-                          onClick={() => reviewLoan({ id: loan.id, action: 'reject', notes }, { onSuccess: () => setActiveId(null) })}
+                          onClick={() => reviewLoan({ id: loan.loan_id, action: 'reject', notes }, { onSuccess: () => setActiveId(null) })}
                           disabled={reviewing}
                         >
                           ✗ Reject

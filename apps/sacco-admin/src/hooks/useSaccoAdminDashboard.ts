@@ -10,3 +10,21 @@ export function useSaccoAdminDashboard() {
     refetchInterval: 30_000,
   })
 }
+
+export function useDisbursementsDashboard() {
+  return useQuery({
+    queryKey: ['disbursements-dashboard'],
+    queryFn: api.saccoAdmin.getDisbursementsDashboard,
+    staleTime: STALE_TIMES.adminDashboard,
+    refetchInterval: 30_000,
+  })
+}
+
+export function useContributionsDashboard() {
+  return useQuery({
+    queryKey: ['contributions-dashboard'],
+    queryFn: api.saccoAdmin.getContributionsDashboard,
+    staleTime: STALE_TIMES.adminDashboard,
+    refetchInterval: 30_000,
+  })
+}

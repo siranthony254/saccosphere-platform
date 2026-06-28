@@ -1,4 +1,4 @@
-import { useSaccoAdminDashboard } from '../hooks/useSaccoAdminDashboard'
+import { useSaccoAdminDashboard, useDisbursementsDashboard, useContributionsDashboard } from '../hooks/useSaccoAdminDashboard'
 import { useSacco } from '../hooks/useSacco'
 
 function MetricCard({ label, value, delta, deltaColor = 'text-mint-600' }: { label: string; value: string; delta?: string; deltaColor?: string }) {
@@ -13,6 +13,8 @@ function MetricCard({ label, value, delta, deltaColor = 'text-mint-600' }: { lab
 
 export function Dashboard() {
   const { data, isLoading, error } = useSaccoAdminDashboard()
+  const { data: disbursements } = useDisbursementsDashboard()
+  const { data: contributions } = useContributionsDashboard()
   const { data: sacco } = useSacco()
 
   if (isLoading) return (
@@ -77,6 +79,58 @@ export function Dashboard() {
         <MetricCard label="Total savings" value={fmt(d.total_savings_kes)} delta={``} />
         <MetricCard label="Active loans" value={d.active_loans_count.toLocaleString()} delta={`${fmt(d.active_loans_kes)} outstanding`} deltaColor="text-amber-600" />
         <MetricCard label="Default rate" value={`${d.default_rate_pct}%`} delta={``} deltaColor="text-red-700" />
+      </div>
+
+      {/* Disbursements & Contributions */}
+      <div className="grid grid-cols-2 gap-4 mb-5">
+        <div className="bg-white border border-[#e5ede9] rounded-[10px] p-4">
+          <div className="font-semibold text-sm text-ink mb-3">Disbursements</div>
+          {disbursements ? (
+            <div className="space-y-2">
+              <div className="flex justify-between py-1 border-b border-surface-3">
+                <span className="text-xs text-ink-muted">Disbursed today</span>
+                <span className="text-xs font-semibold text-ink">{disbursements.disbursed_today.count} · {fmt(disbursements.disbursed_today.total_amount)}</span>
+              </div>
+              <div className="flex justify-between py-1 border-b border-surface-3">
+                <span className="text-xs text-ink-muted">Pending disbursement</span>
+                <span className="text-xs font-semibold text-amber-700">{disbursements.pending_disbursement.count} · {fmt(disbursements.pending_disbursement.total_amount)}</span>
+              </div>
+              <div className="flex justify-between py-1">
+                <span className="text-xs text-ink-muted">Total disbursements</span>
+                <span className="text-xs font-semibold text-ink">{disbursements.total_disbursements.count} · {fmt(disbursements.total_disbursements.total_amount)}</span>
+              </div>
+            </div>
+          ) : (
+            <div className="text-xs text-ink-muted">Loading disbursement data...</div>
+          )}
+        </div>
+        <div className="bg-white border border-[#e5ede9] rounded-[10px] p-4">
+          <div className="font-semibold text-sm text-ink mb-3">Contributions</div>
+          {contributions ? (
+            <div className="space-y-2">
+              <div className="flex justify-between py-1 border-b border-surface-3">
+                <span className="text-xs text-ink-muted">Received today</span>
+                <span className="text-xs font-semibold text-ink">{contributions.received_today.count} · {fmt(contributions.received_today.total_amount)}</span>
+              </div>
+              <div className="flex justify-between py-1 border-b border-surface-3">
+                <span className="text-xs text-ink-muted">Expected this month</span>
+                <span className="text-xs font-semibold text-ink-muted">{fmt(contributions.expected_this_month.total_amount)}</span>
+              </div>
+              <div className="flex justify-between py-1 border-b border-surface-3">
+                <span className="text-xs text-ink-muted">Received so far</span>
+                <span className="text-xs font-semibold text-mint-700">{fmt(contributions.received_so_far_this_month.total_amount)}</span>
+              </div>
+              <div className="flex justify-between py-1">
+                <span className="text-xs text-ink-muted">Contribution rate</span>
+                <span className={`text-xs font-semibold ${contributions.contribution_rate_pct >= 80 ? 'text-mint-700' : contributions.contribution_rate_pct >= 50 ? 'text-amber-700' : 'text-red-700'}`}>
+                  {contributions.contribution_rate_pct.toFixed(1)}%
+                </span>
+              </div>
+            </div>
+          ) : (
+            <div className="text-xs text-ink-muted">Loading contribution data...</div>
+          )}
+        </div>
       </div>
 
       {/* Pending actions */}

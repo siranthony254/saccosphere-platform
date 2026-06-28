@@ -1213,6 +1213,66 @@ export const api = {
   saccoAdmin: {
     getDashboard: async () => normalizeAdminDashboard(await apiCall<any>('GET', '/management/stats/')),
 
+    getDisbursementsDashboard: async () => {
+      const response = await apiCall<any>('GET', '/management/dashboard/disbursements/')
+      return {
+        disbursed_today: {
+          count: Number(response.disbursed_today?.count ?? 0),
+          total_amount: Number(response.disbursed_today?.total_amount ?? 0),
+        },
+        pending_disbursement: {
+          count: Number(response.pending_disbursement?.count ?? 0),
+          total_amount: Number(response.pending_disbursement?.total_amount ?? 0),
+        },
+        total_disbursements: {
+          count: Number(response.total_disbursements?.count ?? 0),
+          total_amount: Number(response.total_disbursements?.total_amount ?? 0),
+        },
+        recent_disbursements: Array.isArray(response.recent_disbursements)
+          ? response.recent_disbursements.map((item: any) => ({
+              member_name: item.member_name,
+              member_number: item.member_number,
+              loan_id: item.loan_id,
+              amount: Number(item.amount ?? 0),
+              disbursed_at: item.disbursed_at,
+              phone_number: item.phone_number,
+            }))
+          : [],
+      }
+    },
+
+    getContributionsDashboard: async () => {
+      const response = await apiCall<any>('GET', '/management/dashboard/contributions/')
+      return {
+        received_today: {
+          count: Number(response.received_today?.count ?? 0),
+          total_amount: Number(response.received_today?.total_amount ?? 0),
+        },
+        expected_this_month: {
+          count: Number(response.expected_this_month?.count ?? 0),
+          total_amount: Number(response.expected_this_month?.total_amount ?? 0),
+        },
+        received_so_far_this_month: {
+          count: Number(response.received_so_far_this_month?.count ?? 0),
+          total_amount: Number(response.received_so_far_this_month?.total_amount ?? 0),
+        },
+        missed_overdue: {
+          count: Number(response.missed_overdue?.count ?? 0),
+          total_amount: Number(response.missed_overdue?.total_amount ?? 0),
+        },
+        contribution_rate_pct: Number(response.contribution_rate_pct ?? 0),
+        recent_contributions: Array.isArray(response.recent_contributions)
+          ? response.recent_contributions.map((item: any) => ({
+              member_name: item.member_name,
+              member_number: item.member_number,
+              amount: Number(item.amount ?? 0),
+              date: item.date,
+              savings_type: item.savings_type,
+            }))
+          : [],
+      }
+    },
+
     getMembers: async (params?: {
       status?: string
       search?: string
@@ -1247,8 +1307,6 @@ export const api = {
     revokeRole: async (roleId: string) =>
       apiCall<any>('DELETE', `/management/roles/${uuid(roleId)}/`),
 
-    updateMemberStatus: (id: string, status: 'active' | 'suspended') =>
-      apiCall<void>('PATCH', `/management/members/${id}/status/`, { status }),
 
     getApplications: async () => {
       const response = await apiCall<any>('GET', '/management/applications/')
@@ -1262,6 +1320,29 @@ export const api = {
         review_notes: data.notes,
       }),
 
+    // Loan approval queue (admin view)
+    getLoanApprovals: async () => {
+      const response = await apiCall<any>('GET', '/management/loans/approvals/')
+      const items = Array.isArray(response.results) ? response.results : []
+      return {
+        count: Number(response.count ?? items.length),
+        results: items.map((item: any) => ({
+          loan_id: item.loan_id,
+          member_name: item.member_name,
+          member_number: item.member_number,
+          loan_type_name: item.loan_type_name,
+          amount: Number(item.amount ?? 0),
+          term_months: item.term_months,
+          application_notes: item.application_notes,
+          applied_at: item.applied_at,
+          status: item.status,
+          guarantors_summary: item.guarantors_summary,
+          required_documents: item.required_documents,
+        })),
+      }
+    },
+
+    // General loan list (if needed for other views)
     getLoans: async (params?: { status?: string; cursor?: string }) => {
       const requestParams: Record<string, string> = {}
       if (params?.status) requestParams.status = params.status.toUpperCase()
@@ -1398,6 +1479,34 @@ export const api = {
       }
     },
 
+    // External guarantors
+    getExternalGuarantors: async () => {
+      const response = await apiCall<any>('GET', '/management/external-guarantors/')
+      const items = Array.isArray(response.results) ? response.results : []
+      return {
+        count: Number(response.count ?? items.length),
+        next: response.next ?? null,
+        previous: response.previous ?? null,
+        results: items.map((item: any) => ({
+          id: item.id,
+          loan_id: item.loan_id,
+          member_name: item.member_name,
+          guarantor_name: item.guarantor_name,
+          guarantor_phone: item.guarantor_phone,
+          guarantor_national_id: item.guarantor_national_id,
+          amount: Number(item.amount ?? 0),
+          status: item.status,
+          created_at: item.created_at,
+        })),
+      }
+    },
+
+    reviewExternalGuarantor: (id: string, data: { action: 'approve' | 'reject'; notes?: string }) =>
+      apiCall<void>('PATCH', `/management/external-guarantors/${uuid(id)}/review/`, {
+        status: data.action === 'approve' ? 'APPROVED' : 'REJECTED',
+        review_notes: data.notes,
+      }),
+
     // Audit logs
     getAuditLogs: async (params?: { action?: string; resource_type?: string; cursor?: string }) => {
       const response = await apiCall<any>('GET', '/management/audit-logs/', undefined, { params })
@@ -1484,8 +1593,8 @@ export const api = {
       const response = await apiCall<any>('GET', '/management/superadmin/saccos/').catch(() => ({ results: [] }))
       let items = response.results || response
       if (params?.search) {
-        items = items.filter((item: any) => 
-          item.name?.toLowerCase().includes(params.search.toLowerCase())
+        items = items.filter((item: any) =>
+          item.name?.toLowerCase().includes(params.search!.toLowerCase())
         )
       }
       if (params?.status) {
