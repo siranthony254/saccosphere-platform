@@ -4,10 +4,13 @@ import { router } from 'expo-router'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRegistrationStore } from '../../../store/useRegistrationStore'
-import { useRegister } from '../../../hooks/useAuth'
+import { useRegister, useGoogleAuth } from '../../../hooks/useAuth'
 import type { ApiError } from '@saccosphere/api-client'
+import GoogleSignin, {
+  statusCodes,
+} from '@react-native-google-signin/google-signin'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 const PADDING_H = Math.max(16, Math.min(24, SCREEN_WIDTH * 0.05))
@@ -44,6 +47,7 @@ export default function RegisterStep1() {
   const insets = useSafeAreaInsets()
   const { step1, setStep1, setOtpVerified } = useRegistrationStore()
   const { mutate: register, isPending: isRegistering } = useRegister()
+  const { mutate: googleAuth, isPending: isGooglePending } = useGoogleAuth()
   const [registrationError, setRegistrationError] = useState<string | null>(null)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
@@ -54,6 +58,63 @@ export default function RegisterStep1() {
   })
 
   const password = watch('password')
+
+  useEffect(() => {
+    GoogleSignin.configure({
+      webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+      offlineAccess: true,
+    })
+  }, [])
+
+  const handleGoogleSignUp = async () => {
+    try {
+      await GoogleSignin.hasPlayServices()
+      const userInfo = await GoogleSignin.signIn()
+      const idToken = userInfo.idToken
+
+      if (!idToken) {
+        Alert.alert('Error', 'Failed to get Google ID token')
+        return
+      }
+
+      googleAuth(
+        { id_token: idToken, flow: 'signup' },
+        {
+          onSuccess: (data) => {
+            // If user already exists, backend returns is_existing_user: true
+            if (data.is_existing_user) {
+              Alert.alert('Account exists', 'An account with this Google account already exists. You have been logged in.')
+              router.replace('/(member)')
+            } else {
+              // New user created, proceed to registration flow
+              setStep1({
+                email: data.user.email,
+                first_name: data.user.first_name,
+                last_name: data.user.last_name,
+                phone_number: '254',
+                password: '',
+                password2: '',
+              })
+              setOtpVerified(false)
+              router.push('/(auth)/register/otp')
+            }
+          },
+          onError: (err) => Alert.alert('Google sign-up failed', err.message),
+        }
+      )
+    } catch (error: any) {
+      if (error.code === statusCodes.SIGN_IN_CANCELLED) {
+        // User cancelled the sign-in
+        return
+      } else if (error.code === statusCodes.IN_PROGRESS) {
+        Alert.alert('Error', 'Sign in is already in progress')
+      } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+        Alert.alert('Error', 'Google Play Services not available')
+      } else {
+        Alert.alert('Error', error.message || 'Something went wrong')
+      }
+    }
+  }
 
   // Calculate password strength
   const getPasswordStrength = (pwd: string) => {
@@ -121,10 +182,16 @@ export default function RegisterStep1() {
       <TouchableOpacity
         className="w-full flex-row items-center justify-center gap-2 py-2.5 rounded-xl mb-2"
         style={{ borderWidth: 1, borderColor: BORDER_MID, backgroundColor: SURFACE }}
+        onPress={handleGoogleSignUp}
+        disabled={isGooglePending}
       >
-        <View className="w-4 h-4 rounded-full" style={{ backgroundColor: '#4285F4' }} />
+        {isGooglePending ? (
+          <ActivityIndicator size="small" color={INK} />
+        ) : (
+          <View className="w-4 h-4 rounded-full" style={{ backgroundColor: '#4285F4' }} />
+        )}
         <Text className="text-xs font-medium" style={{ color: INK }}>
-          Sign up with Google
+          {isGooglePending ? 'Signing up...' : 'Sign up with Google'}
         </Text>
       </TouchableOpacity>
 

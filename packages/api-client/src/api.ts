@@ -468,6 +468,21 @@ export const api = {
       })
     },
 
+    googleAuth: async (data: { id_token: string; flow: 'login' | 'signup' }) => {
+      const payload = await apiCall<any>('POST', '/accounts/oauth/google/callback/', {
+        id_token: data.id_token,
+        flow: data.flow,
+      })
+
+      setAccessToken(payload.access)
+
+      return AuthTokensSchema.parse({
+        access: payload.access,
+        refresh: payload.refresh,
+        user: normalizeUser(payload.user),
+      })
+    },
+
     register: async (data: RegisterInput) => {
       const input = parseInput(RegisterInputSchema, data)
       const normalizedPhone = normalizeKenyanPhoneNumber(input.phone_number)

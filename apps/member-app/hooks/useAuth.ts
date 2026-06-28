@@ -40,6 +40,25 @@ export async function clearStoredRefreshToken() {
   await SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY)
 }
 
+export function useGoogleAuth() {
+  const { setAuth } = useAuthStore()
+
+  return useMutation({
+    mutationFn: async (data: { id_token: string; flow: 'login' | 'signup' }) => {
+      const tokens = await api.auth.googleAuth(data)
+      if (tokens.user.role !== 'member') {
+        await clearStoredRefreshToken()
+        clearTokens()
+        throw new Error('Only member accounts may use this app.')
+      }
+      setAccessToken(tokens.access)
+      await saveRefreshToken(tokens.refresh)
+      setAuth({ token: tokens.access, user: tokens.user })
+      return tokens
+    },
+  })
+}
+
 export function useLogin() {
   const { setAuth } = useAuthStore()
 

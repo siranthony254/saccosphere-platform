@@ -16,6 +16,7 @@
   "dependencies": {
     "@expo/metro-runtime": "~6.1.2",
     "@hookform/resolvers": "^3.6.0",
+    "@react-native-google-signin/google-signin": "^12.2.1",
     "@saccosphere/api-client": "workspace:*",
     "@saccosphere/config": "workspace:*",
     "@saccosphere/schemas": "workspace:*",

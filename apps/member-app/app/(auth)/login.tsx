@@ -13,8 +13,12 @@ import { router } from 'expo-router'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { useState } from 'react'
-import { useLogin } from '../../hooks/useAuth'
+import { useState, useEffect } from 'react'
+import { useLogin, useGoogleAuth } from '../../hooks/useAuth'
+import GoogleSignin, {
+  statusCodes,
+} from '@react-native-google-signin/google-signin'
+import { Platform } from 'react-native'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 const PADDING_H = Math.max(16, Math.min(24, SCREEN_WIDTH * 0.05))
@@ -44,12 +48,52 @@ const BORDER_MID = 'rgba(0,0,0,0.13)'
 export default function LoginScreen() {
   const insets = useSafeAreaInsets()
   const { mutate: login, isPending } = useLogin()
+  const { mutate: googleAuth, isPending: isGooglePending } = useGoogleAuth()
   const [showPassword, setShowPassword] = useState(false)
 
   const { control, handleSubmit, formState: { errors } } = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
     defaultValues: { email: '', password: '' },
   })
+
+  useEffect(() => {
+    GoogleSignin.configure({
+      webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+      offlineAccess: true,
+    })
+  }, [])
+
+  const handleGoogleSignIn = async () => {
+    try {
+      await GoogleSignin.hasPlayServices()
+      const userInfo = await GoogleSignin.signIn()
+      const idToken = userInfo.idToken
+
+      if (!idToken) {
+        Alert.alert('Error', 'Failed to get Google ID token')
+        return
+      }
+
+      googleAuth(
+        { id_token: idToken, flow: 'login' },
+        {
+          onSuccess: () => router.replace('/(member)'),
+          onError: (err) => Alert.alert('Google login failed', err.message),
+        }
+      )
+    } catch (error: any) {
+      if (error.code === statusCodes.SIGN_IN_CANCELLED) {
+        // User cancelled the sign-in
+        return
+      } else if (error.code === statusCodes.IN_PROGRESS) {
+        Alert.alert('Error', 'Sign in is already in progress')
+      } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+        Alert.alert('Error', 'Google Play Services not available')
+      } else {
+        Alert.alert('Error', error.message || 'Something went wrong')
+      }
+    }
+  }
 
   const onSubmit = handleSubmit((data) => {
     login(
@@ -87,10 +131,16 @@ export default function LoginScreen() {
       <TouchableOpacity
         className="w-full flex-row items-center justify-center gap-2 py-2.5 rounded-xl mb-2"
         style={{ borderWidth: 1, borderColor: BORDER_MID, backgroundColor: SURFACE }}
+        onPress={handleGoogleSignIn}
+        disabled={isGooglePending}
       >
-        <View className="w-4 h-4 rounded-full" style={{ backgroundColor: '#4285F4' }} />
+        {isGooglePending ? (
+          <ActivityIndicator size="small" color={INK} />
+        ) : (
+          <View className="w-4 h-4 rounded-full" style={{ backgroundColor: '#4285F4' }} />
+        )}
         <Text className="text-xs font-medium" style={{ color: INK }}>
-          Continue with Google
+          {isGooglePending ? 'Signing in...' : 'Continue with Google'}
         </Text>
       </TouchableOpacity>
 

@@ -33,6 +33,9 @@ importers:
       '@hookform/resolvers':
         specifier: ^3.6.0
         version: 3.10.0(react-hook-form@7.75.0(react@19.1.0))
+      '@react-native-google-signin/google-signin':
+        specifier: ^12.2.1
+        version: 12.2.1(expo@54.0.0)(react-dom@19.1.0(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@react-native-community/cli@13.6.9)(@react-native/metro-config@0.85.3(@babel/core@7.29.0))(@types/react@18.3.28)(react@19.1.0))(react@19.1.0)
       '@saccosphere/api-client':
         specifier: workspace:*
         version: link:../../packages/api-client
@@ -1771,6 +1774,19 @@ packages:
     resolution: {integrity: sha512-hFJL4cgLPxncJJd/epQ4dHnMg5Jy/7Q56jFvA3MHViuKpzzfTCJCB+pGY54maZbtym53UJON9WTGpM3S81UfjQ==}
     engines: {node: '>=18'}
     hasBin: true
+
+  '@react-native-google-signin/google-signin@12.2.1':
+    resolution: {integrity: sha512-qt2Cb+bN2NS8BBT06M3UbLVS1gaSYTenNh4uZtPNmyJC23xZAynLkuhvsC6gmeEnxcj0wLVUn1Es+LSHw0OhVQ==}
+    peerDependencies:
+      expo: '>=50.0.0'
+      react: '*'
+      react-dom: '*'
+      react-native: '*'
+    peerDependenciesMeta:
+      expo:
+        optional: true
+      react-dom:
+        optional: true
 
   '@react-native/assets-registry@0.81.5':
     resolution: {integrity: sha512-705B6x/5Kxm1RKRvSv0ADYWm5JOnoiQ1ufW7h8uu2E6G9Of/eE6hP/Ivw3U5jI16ERqZxiKQwk34VJbB0niX9w==}
@@ -7433,6 +7449,14 @@ snapshots:
       - supports-color
       - utf-8-validate
     optional: true
+
+  '@react-native-google-signin/google-signin@12.2.1(expo@54.0.0)(react-dom@19.1.0(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@react-native-community/cli@13.6.9)(@react-native/metro-config@0.85.3(@babel/core@7.29.0))(@types/react@18.3.28)(react@19.1.0))(react@19.1.0)':
+    dependencies:
+      react: 19.1.0
+      react-native: 0.81.5(@babel/core@7.29.0)(@react-native-community/cli@13.6.9)(@react-native/metro-config@0.85.3(@babel/core@7.29.0))(@types/react@18.3.28)(react@19.1.0)
+    optionalDependencies:
+      expo: 54.0.0(@babel/core@7.29.0)(@expo/metro-runtime@6.1.2)(expo-router@6.0.24)(graphql@15.8.0)(react-native@0.81.5(@babel/core@7.29.0)(@react-native-community/cli@13.6.9)(@react-native/metro-config@0.85.3(@babel/core@7.29.0))(@types/react@18.3.28)(react@19.1.0))(react@19.1.0)(typescript@5.9.3)
+      react-dom: 19.1.0(react@19.1.0)
 
   '@react-native/assets-registry@0.81.5': {}
 
