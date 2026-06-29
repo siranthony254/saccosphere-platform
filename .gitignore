@@ -10,3 +10,5 @@ coverage
 .env.staging
 .env.production
 *.tsbuildinfo
+
+.vercel

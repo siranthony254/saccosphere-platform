@@ -1,30 +1,51 @@
 /* eslint-disable no-restricted-globals */
-const CACHE_VERSION = 'super-admin-v1';
+
+const CACHE_VERSION = 'super-admin-v2';
 const CACHE_NAME = `super-admin-${CACHE_VERSION}`;
 
-const CORE_ASSETS = [
+const PRECACHE_URLS = [
   '/',
+  '/index.html',
+  '/manifest.webmanifest',
+  '/favicon.svg',
+  '/icons/icon-192.png',
+  '/icons/icon-512.png',
 ];
+
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(CORE_ASSETS).catch(() => undefined);
-    })
+    (async () => {
+      const cache = await caches.open(CACHE_NAME);
+
+      await Promise.all(
+        PRECACHE_URLS.map(async (url) => {
+          try {
+            await cache.add(url);
+          } catch {
+            // ignore
+          }
+        })
+      );
+
+      self.skipWaiting();
+    })()
   );
-  self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((keys) => {
-      return Promise.all(
+    (async () => {
+      const keys = await caches.keys();
+      await Promise.all(
         keys.map((key) => {
           if (key !== CACHE_NAME) return caches.delete(key);
           return undefined;
         })
       );
-    }).then(() => self.clients.claim())
+
+      await self.clients.claim();
+    })()
   );
 });
 
@@ -32,23 +53,40 @@ self.addEventListener('fetch', (event) => {
   const req = event.request;
   if (req.method !== 'GET') return;
 
+  if (req.mode === 'navigate') {
+    event.respondWith(
+      (async () => {
+        try {
+          const fresh = await fetch(req);
+          const cloned = fresh.clone();
+          const cache = await caches.open(CACHE_NAME);
+          await cache.put('/index.html', cloned).catch(() => undefined);
+          return fresh;
+        } catch {
+          const cachedShell = await caches.match('/index.html');
+          if (cachedShell) return cachedShell;
+          return caches.match('/');
+        }
+      })()
+    );
+    return;
+  }
+
   event.respondWith(
-    caches.match(req).then((cached) => {
+    caches.match(req).then(async (cached) => {
       if (cached) return cached;
 
-      return fetch(req)
-        .then((res) => {
-          const cloned = res.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(req, cloned).catch(() => undefined);
-          });
-          return res;
-        })
-        .catch(() => {
-          if (req.mode === 'navigate') return caches.match('/');
-          return undefined;
-        });
+      try {
+        const res = await fetch(req);
+        const cloned = res.clone();
+        const cache = await caches.open(CACHE_NAME);
+        cache.put(req, cloned).catch(() => undefined);
+        return res;
+      } catch {
+        return cached;
+      }
     })
   );
 });
+
 

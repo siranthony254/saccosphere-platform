@@ -11,16 +11,19 @@
     "format": "prettier --write \"**/*.{ts,tsx,json,md}\""
   },
   "devDependencies": {
-    "turbo": "^2.0.0",
+    "@babel/core": "^7.24.0",
     "prettier": "^3.2.5",
-    "typescript": "^5.4.5",
-    "@babel/core": "^7.24.0"
+    "turbo": "^2.0.0",
+    "typescript": "^5.4.5"
   },
   "pnpm": {
     "overrides": {
       "@types/react": "^18.3.1",
       "@types/react-dom": "^18.3.0"
-    }
+    },
+    "ignoredBuiltDependencies": [
+      "esbuild"
+    ]
   },
   "engines": {
     "node": ">=18",
