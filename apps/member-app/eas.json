@@ -6,7 +6,7 @@
   "build": {
     "base": {
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://your-backend-url/api/v1"
+        "EXPO_PUBLIC_API_URL": "https://saccosphere-production.up.railway.app"
       }
     },
     "preview": {
