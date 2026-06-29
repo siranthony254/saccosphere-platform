@@ -1,8 +1,14 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   presets: [require('nativewind/preset')],
-  content: ['./app/**/*.tsx', './components/**/*.tsx'],
-  darkMode: 'class', // Use class-based dark mode instead of media queries to avoid NativeWind warnings
+  content: [
+    './app/**/*.{ts,tsx}',
+    './components/**/*.{ts,tsx}',
+    './hooks/**/*.{ts,tsx}',      // ← add — your hooks use className too
+    './lib/**/*.{ts,tsx}',        // ← add — lib components
+    './store/**/*.{ts,tsx}',      // ← add — just in case
+  ],
+  darkMode: 'class',
   theme: {
     extend: {
       colors: {
@@ -24,8 +30,8 @@ module.exports = {
           300: '#8B5CF6',
           200: '#A78BFA',
           100: '#C4B5FD',
-          50: '#EDE9FE',
-          25: '#F5F3FF',
+          50:  '#EDE9FE',
+          25:  '#F5F3FF',
         },
         // Brand Colors - Mint
         mint: {
@@ -35,43 +41,49 @@ module.exports = {
           400: '#34D399',
           300: '#6EE7B7',
           100: '#D1FAE5',
-          50: '#ECFDF5',
+          50:  '#ECFDF5',
         },
-        // Semantic Colors - Text (Ink)
+        // Saccosphere green — use as bg-brand, text-brand-dark etc.
+        brand: {
+          DEFAULT: '#0d7a4e',
+          light:   '#e6f7f1',
+          dark:    '#084d32',
+          mid:     '#1a9e6a',
+        },
+        // Semantic - Text
         ink: {
           DEFAULT: '#111827',
-          soft: '#374151',
-          muted: '#6B7280',
-          faint: '#9CA3AF',
+          soft:    '#374151',
+          muted:   '#6B7280',
+          faint:   '#9CA3AF',
         },
-        // Semantic Colors - Surfaces
-        // surface-2 and surface-3 via nested, surface2/surface3 as aliases
+        // Semantic - Surfaces
         surface: {
           DEFAULT: '#FFFFFF',
-          2: '#F8FAFC',
-          3: '#F1F5F9',
+          2:       '#F8FAFC',
+          3:       '#F1F5F9',
         },
         surface2: '#F8FAFC',
         surface3: '#F1F5F9',
-        // Semantic Colors - Border
+        // Semantic - Border
         border: 'rgba(0,0,0,0.07)',
-        // Semantic Colors - Status
+        // Status colours
         red: {
           500: '#DC2626',
-          50: '#FEE2E2',
+          50:  '#FEE2E2',
         },
         amber: {
           500: '#D97706',
-          50: '#FEF3C7',
+          50:  '#FEF3C7',
         },
         blue: {
           500: '#2563EB',
-          50: '#DBEAFE',
+          50:  '#DBEAFE',
         },
       },
       borderColor: {
         DEFAULT: 'rgba(0,0,0,0.07)',
-        mid: 'rgba(0,0,0,0.13)',
+        mid:     'rgba(0,0,0,0.13)',
       },
       spacing: {
         '4.5': '1.125rem',

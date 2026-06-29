@@ -4,11 +4,7 @@
     "slug": "saccosphere-member",
     "sdkVersion": "54.0.0",
     "version": "1.0.0",
-    "platforms": [
-      "ios",
-      "android",
-      "web"
-    ],
+    "platforms": ["ios", "android", "web"],
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -17,9 +13,7 @@
       "resizeMode": "contain",
       "backgroundColor": "#0d7a4e"
     },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "co.ke.saccosphere.member",
@@ -32,7 +26,14 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#0d7a4e"
       },
-      "package": "co.ke.saccosphere.member"
+      "package": "co.ke.saccosphere.member",
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.INTERNET",
+        "android.permission.ACCESS_NETWORK_STATE"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png",
@@ -41,13 +42,23 @@
     "plugins": [
       "expo-router",
       "expo-font",
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Saccosphere needs access to your photos for KYC document upload.",
+          "cameraPermission": "Saccosphere needs your camera to capture KYC documents."
+        }
+      ]
     ],
     "scheme": "saccosphere",
+    "experiments": {
+      "typedRoutes": true    // ← adds TypeScript types for Expo Router paths
+    },
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "8b636f5b-f8ba-4717-addf-8b9849f1b0bd"
+        "projectId": "8b636f5b-f8ba-4717-addf-8b9849f1b0bd"  // ← keep yours exactly
       }
     }
   }
