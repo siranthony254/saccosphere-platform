@@ -38,8 +38,9 @@ export function Compliance() {
             delta: flags?.length ? 'From compliance flags' : 'No open alerts',
             deltaColor: flags?.length ? 'text-red-500' : 'text-mint-700',
           },
-        ].map(m => (
+        ].map((m: { label: string; value: string; delta: string; deltaColor: string }) => (
           <div key={m.label} className="bg-surface border border-neutral-300 rounded-xl p-3.5">
+
             <div className="text-xs text-ink-muted mb-1.5 uppercase tracking-wider font-medium">{m.label}</div>
             <div className="text-2xl font-semibold text-ink leading-tight mb-1">{m.value}</div>
             <div className={`text-xs ${m.deltaColor}`}>{m.delta}</div>
@@ -68,7 +69,8 @@ export function Compliance() {
                   <td colSpan={3} className="px-3 py-6 text-center text-ink-muted">No SACCO data returned from the backend.</td>
                 </tr>
               ) : (
-                (saccosData?.results ?? []).map((row: any, i: any) => (
+                (saccosData?.results ?? []).map((row: { id: string; name: string; member_count: number; status: string }, i: number) => (
+
                   <tr key={row.id} className={`border-b border-neutral-200 ${i % 2 === 0 ? 'bg-white' : 'bg-neutral-50'}`}>
                     <td className="px-3 py-2 font-medium">{row.name}</td>
                     <td className="px-3 py-2 text-ink-muted">{row.member_count.toLocaleString()}</td>
@@ -96,15 +98,20 @@ export function Compliance() {
                   <td colSpan={5} className="px-3 py-6 text-center text-ink-muted">No platform alerts.</td>
                 </tr>
               ) : (
-                (flags ?? []).map((flag: any, i: any) => {
-                  const severityMap: Record<string, string> = {
+                (flags ?? []).map((flag: { id: string; sacco_name: string; flag_type: string; severity: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW' | string; description: string }, i: number) => {
+                  const severityMap = {
                     CRITICAL: 'bg-red-50 text-red-700',
                     HIGH: 'bg-amber-50 text-amber-800',
                     MEDIUM: 'bg-yellow-50 text-yellow-700',
                     LOW: 'bg-mint-50 text-mint-700',
-                  }
-                  const severityClass = severityMap[flag.severity] || 'bg-amber-50 text-amber-800'
+                  } as const
+
+                  type SeverityKey = keyof typeof severityMap
+                  const severityKey = String(flag.severity) as SeverityKey
+                  const severityClass = severityMap[severityKey] ?? severityMap.HIGH
+
                   return (
+
                     <tr key={flag.id} className={`border-b border-neutral-200 ${i % 2 === 0 ? 'bg-white' : 'bg-neutral-50'}`}>
                       <td className="px-3 py-2 font-medium">{flag.sacco_name}</td>
                       <td className="px-3 py-2 text-ink-muted">{flag.flag_type}</td>

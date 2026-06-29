@@ -116,26 +116,40 @@ export function useKycQueue() {
 }
 
 export function usePlatformLiveFeed() {
+  type ApiTxn = {
+    id: string
+    date: string
+    member_name?: string
+    sacco_name: string
+    txn_type: string
+    amount: number
+    direction: string
+    payment_method: string
+    platform_fee: number
+    status: string
+  }
+
   const { data, isLoading } = useQuery({
     queryKey: QueryKeys.platformTransactions(),
-    queryFn: () =>
-      api.superAdmin.getTransactions().then((r) =>
-        r.results.map((txn: any) =>
-          toLiveTransaction({
-            id: txn.id,
-            date: txn.date,
-            member_name: txn.member_name,
-            sacco_name: txn.sacco_name,
-            txn_type: txn.txn_type,
-            amount: txn.amount,
-            direction: txn.direction,
-            payment_method: txn.payment_method,
-            platform_fee: txn.platform_fee,
-            status: txn.status,
-          })
-        )
-      ),
+    queryFn: async () => {
+      const r = await api.superAdmin.getTransactions()
+      return r.results.map((txn: ApiTxn) =>
+        toLiveTransaction({
+          id: txn.id,
+          date: txn.date,
+          member_name: txn.member_name,
+          sacco_name: txn.sacco_name,
+          txn_type: txn.txn_type,
+          amount: txn.amount,
+          direction: txn.direction,
+          payment_method: txn.payment_method,
+          platform_fee: txn.platform_fee,
+          status: txn.status,
+        })
+      )
+    },
     refetchInterval: 10_000,
   })
   return { feed: data ?? [], connected: !isLoading }
 }
+

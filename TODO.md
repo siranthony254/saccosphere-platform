@@ -1,19 +1,28 @@
-# TODO
+# TODO: Fix super-admin type-check/build errors
 
-## Goal
-Ensure MPesa option is pressable from the member dashboard contribute/pay-loan selection and routes into the existing payment processing UI (the “screen 17 → 18” flow).
+Status: queued fixes based on CI/Vercel TypeScript errors (TS7006/TS7053/TS6133/TS18048).
 
-## Steps
-1. Identify where the dashboard “Contribute” and “Pay loan” buttons land (routes and any selection step UI).
-2. Modify routing so that clicking **MPesa** from that selection page navigates (or jumps) into the existing payment flow (`apps/member-app/components/payments/*` via `apps/member-app/components/sacco/[slug]/pay.tsx`).
-3. If the pay screen currently always starts at `methodStep='amount'`, add support for a query param to start directly at `processing` (or add a `step` param) so the MPesa press shows the processing screens immediately.
-4. Update any TypeScript types and ensure the route params are wired correctly.
-5. Run a quick typecheck/build for `apps/member-app` to ensure no compile errors.
 
-## Status
-- Found Pay/Contribution flow: `apps/member-app/components/sacco/[slug]/pay.tsx` already has Mpesa → `methodStep='processing'` and renders the processing UI.
-- Dashboard “Contribute” goes to `/sacco/[slug]/pay`.
-- Dashboard “Pay loan” goes to `/sacco/[slug]/pay` with params `type=repayment` and `loanId`.
-- Remaining item: ensure any other selection-page Mpesa button is pressable (selection page referenced by the task wasn’t a separate route; it’s the method selector inside the pay flow).
+## Step 1 — Fix implicit `any` + index typing in `Compliance.tsx`
+- Add proper types for `.map` callback params (`m`, `row`, `i`, `flag`).
+- Fix TS7053 dynamic indexing by constraining severity key type (e.g. `keyof typeof severityMap`) or avoiding indexing with `any`.
 
+## Step 2 — Fix implicit `any` in `MembersList.tsx`
+- Add types for `member` and `idx` in `.map` callback.
+
+## Step 3 — Fix implicit `any` in `Revenue.tsx`
+- Add types for `sum`, `item`, `i` in reduce/map callbacks.
+
+## Step 4 — Fix implicit `any` in `usePlatformData.ts`
+- Replace `txn: any` usage with a typed transaction shape or cast to `LiveTransaction` inputs.
+
+## Step 5 — Fix unused function in `packages/api-client/src/api.ts`
+- Remove `normalizePlatformOverview` if truly unused OR use it.
+
+## Step 6 — Fix `params.search` possibly undefined in `packages/api-client/src/api.ts`
+- Ensure search is defined before calling `.toLowerCase()`.
+
+## Step 7 — Re-run:
+- `pnpm --filter super-admin type-check`
+- `pnpm --filter super-admin build`
 

@@ -14,9 +14,20 @@ export function Revenue() {
     </div>
   )
 
-  const totalSaaS = revenueData.reduce((sum: any, item: any) => sum + item.saas_fees, 0)
-  const totalTxnFees = revenueData.reduce((sum: any, item: any) => sum + item.transaction_fees, 0)
-  const totalMRR = revenueData.reduce((sum: any, item: any) => sum + item.total_mrr, 0)
+  type RevenueRow = {
+    month: string
+    saas_fees: number
+    transaction_fees: number
+    total_mrr: number
+  }
+
+  const rows = revenueData as RevenueRow[]
+
+  const totalSaaS = rows.reduce((sum, item) => sum + item.saas_fees, 0)
+  const totalTxnFees = rows.reduce((sum, item) => sum + item.transaction_fees, 0)
+  const totalMRR = rows.reduce((sum, item) => sum + item.total_mrr, 0)
+
+
 
   return (
     <div className="p-5">
@@ -33,7 +44,8 @@ export function Revenue() {
           { label: 'Total SaaS fees (12mo)', value: `KES ${(totalSaaS / 1000).toFixed(0)}K` },
           { label: 'Total transaction fees (12mo)', value: `KES ${(totalTxnFees / 1000).toFixed(0)}K` },
           { label: 'Total MRR (12mo)', value: `KES ${(totalMRR / 1000).toFixed(0)}K`, accent: true },
-        ].map(m => (
+        ].map((m: { label: string; value: string; accent?: boolean }) => (
+
           <div key={m.label} className={`${m.accent ? 'bg-gradient-to-br from-violet-600 to-violet-500 text-white' : 'bg-surface border border-mid'} rounded-xl p-3.5`}>
             <div className={`text-xs ${m.accent ? 'text-white/60' : 'text-ink-muted'} mb-1.5 uppercase tracking-wider font-medium`}>{m.label}</div>
             <div className={`text-2xl font-semibold ${m.accent ? 'text-white' : 'text-ink'} leading-tight`}>{m.value}</div>
@@ -47,14 +59,17 @@ export function Revenue() {
         <table className="w-full border-collapse text-xs">
           <thead>
             <tr className="bg-surface-2">
-              {['Month', 'SaaS fees', 'Transaction fees', 'Total MRR'].map(h => (
+              {['Month', 'SaaS fees', 'Transaction fees', 'Total MRR'].map((h: string) => (
+
                 <th key={h} className="text-left px-3 py-1.5 text-xs text-ink-muted font-medium border-b border-mid">{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {revenueData.map((item: any, i: any) => (
+            {rows.map((item, i) => (
+
               <tr key={item.month} className={`border-b border-surface-2 ${i % 2 === 0 ? 'bg-surface' : 'bg-surface-2'}`}>
+
                 <td className="px-3 py-2 font-medium">{item.month}</td>
                 <td className="px-3 py-2 text-ink-muted">KES {item.saas_fees.toLocaleString()}</td>
                 <td className="px-3 py-2 text-ink-muted">KES {item.transaction_fees.toLocaleString()}</td>

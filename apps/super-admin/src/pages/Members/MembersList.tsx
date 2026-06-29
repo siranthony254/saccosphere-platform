@@ -13,8 +13,21 @@ export function MembersList() {
     enabled: true,
   })
 
+  type ApiMember = {
+    id: string
+    first_name: string
+    last_name: string
+    email: string
+    sacco_name: string
+    member_number?: string | null
+    status?: string | null
+    joined_date?: string | null
+    created_at?: string | null
+  }
+
   return (
     <div className="p-5">
+
       <div className="flex justify-between items-center mb-5">
         <div>
           <div className="text-lg font-semibold text-ink">All Members</div>
@@ -26,7 +39,13 @@ export function MembersList() {
       <div className="flex gap-2.5 mb-4">
         <input className="flex-1 py-2 px-3 border border-mid rounded-lg text-[13px] outline-none"
           placeholder="Search member name or email..." value={search} onChange={e => setSearch(e.target.value)} />
-        <select className="py-2 px-3 border border-mid rounded-lg text-[13px] outline-none bg-surface" value={status} onChange={e => setStatus(e.target.value)}>
+                <select
+                  className="py-2 px-3 border border-mid rounded-lg text-[13px] outline-none bg-surface"
+                  aria-label="Member status filter"
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value)}
+                >
+
           <option value="all">All statuses</option>
           <option value="active">Active</option>
           <option value="pending">Pending</option>
@@ -57,8 +76,11 @@ export function MembersList() {
               </tr>
             </thead>
             <tbody>
-              {data?.results.map((member: any, idx: any) => (
+              {data?.results.map((member: ApiMember, idx: number) => (
+
                 <tr key={`${member.id}-${idx}`} className="hover:bg-surface-2">
+
+
                   <td className="py-2 px-3 border-b border-mid">
                     <div className="font-medium text-ink">{member.first_name} {member.last_name}</div>
                   </td>
@@ -72,11 +94,17 @@ export function MembersList() {
                       member.status === 'SUSPENDED' ? 'bg-red-100 text-red-700' :
                       'bg-surface-2 text-ink-muted'
                     }`}>
+
                       {member.status?.toLowerCase() || 'unknown'}
                     </span>
                   </td>
                   <td className="py-2 px-3 border-b border-mid text-ink-muted">
-                    {member.joined_date || member.created_at ? new Date(member.joined_date || member.created_at).toLocaleDateString() : '—'}
+                    {(() => {
+                      const joined = member.joined_date ?? member.created_at
+                      return joined ? new Date(joined as string).toLocaleDateString() : '—'
+                    })()}
+
+
                   </td>
                 </tr>
               ))}
