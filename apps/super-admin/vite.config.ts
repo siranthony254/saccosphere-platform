@@ -7,7 +7,6 @@ export default defineConfig({
     postcss: './postcss.config.js',
   },
   build: {
-    // Make Vercel output-directory detection deterministic
     outDir: 'dist',
   },
 })
