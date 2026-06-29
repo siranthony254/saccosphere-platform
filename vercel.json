@@ -1,7 +1,8 @@
 {
-  "buildCommand": "pnpm build --filter=super-admin",
+  "buildCommand": "cd apps/super-admin && pnpm build",
   "outputDirectory": "apps/super-admin/dist",
   "rewrites": [
+
     {
       "source": "/(.*)",
       "destination": "/index.html"
