@@ -8,17 +8,20 @@ const monorepoRoot = path.resolve(__dirname, '../..')
 const config = getDefaultConfig(__dirname)
 
 // ── MONOREPO: tell Metro where to find workspace packages ──────────────────
-config.watchFolders = [monorepoRoot]
-
-config.resolver.nodeModulesPaths = [
-  path.resolve(__dirname, 'node_modules'),          // app-level node_modules
-  path.resolve(monorepoRoot, 'node_modules'),       // root node_modules (workspace packages)
+config.watchFolders = [
+  ...config.watchFolders,
+  monorepoRoot,
 ]
 
-// Keep hierarchical lookup ON — needed for workspace: resolution
+config.resolver.nodeModulesPaths = [
+  path.resolve(__dirname, 'node_modules'),
+  path.resolve(monorepoRoot, 'node_modules'),
+]
+
+// Keep hierarchical lookup ON
 config.resolver.disableHierarchicalLookup = false
 
-// ── NATIVEWIND v4: must wrap last, after all other config ──────────────────
+// ── NATIVEWIND v4 ─────────────────────────────────────────────────────────
 module.exports = withNativeWind(config, {
-  input: './global.css',   // your Tailwind CSS entry file
+  input: './global.css',
 })
