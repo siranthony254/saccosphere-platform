@@ -53,8 +53,9 @@
     ],
     "scheme": "saccosphere",
     "experiments": {
-      "typedRoutes": true    // ← adds TypeScript types for Expo Router paths
+      "typedRoutes": true
     },
+
     "extra": {
       "router": {},
       "eas": {
