@@ -7,6 +7,12 @@
     "base": {
       "env": {
         "EXPO_PUBLIC_API_URL": "https://saccosphere-production.up.railway.app"
+      },
+      "ios": {
+        "buildConfiguration": "Release"
+      },
+      "android": {
+        "buildType": "apk"
       }
     },
     "preview": {

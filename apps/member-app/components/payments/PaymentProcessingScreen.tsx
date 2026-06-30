@@ -43,9 +43,11 @@ export default function PaymentProcessingScreen({
 
   useEffect(() => {
     if (status && !isLoading && hasStartedPolling) {
-      if (status.status === 'completed' || status.status === 'success') {
+      const normalizedStatus = String(status.status).toLowerCase()
+
+      if (normalizedStatus === 'completed' || normalizedStatus === 'success') {
         onComplete(true, checkoutRequestId ?? '')
-      } else if (status.status === 'failed' || status.status === 'cancelled') {
+      } else if (normalizedStatus === 'failed' || normalizedStatus === 'cancelled') {
         onComplete(false)
       }
     }

@@ -14,6 +14,11 @@ export function usePaymentStatus(reference: string) {
     queryKey: QueryKeys.paymentStatus(reference),
     queryFn: () => api.payments.checkStatus(reference),
     staleTime: STALE_TIMES.paymentStatus,
+    enabled: Boolean(reference),
+    refetchInterval: (query) => {
+      const status = String(query.state.data?.status ?? '').toLowerCase()
+      return status === 'completed' || status === 'failed' || status === 'cancelled' ? false : 4000
+    },
   })
 }
 

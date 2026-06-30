@@ -18,6 +18,8 @@ interface PaymentMethodSelectorProps {
   amount?: string
   mpesaFee?: number
   bankFee?: number
+  mpesaDisabled?: boolean
+  bankDisabled?: boolean
   onSelectMpesa: () => void
   onSelectBank: () => void
   onCancel: () => void
@@ -30,6 +32,8 @@ export default function PaymentMethodSelector({
   amount,
   mpesaFee = 0,
   bankFee = 0,
+  mpesaDisabled = false,
+  bankDisabled = false,
   onSelectMpesa,
   onSelectBank,
   onCancel,
@@ -118,6 +122,7 @@ export default function PaymentMethodSelector({
         {/* M-Pesa option */}
         <TouchableOpacity
           onPress={onSelectMpesa}
+          disabled={mpesaDisabled}
           activeOpacity={0.7}
           style={{
             backgroundColor: SURFACE,
@@ -129,6 +134,7 @@ export default function PaymentMethodSelector({
             flexDirection: 'row',
             alignItems: 'center',
             gap: 14,
+            opacity: mpesaDisabled ? 0.55 : 1,
           }}
         >
           <View
@@ -165,10 +171,12 @@ export default function PaymentMethodSelector({
                 }}
               >
                 <Text style={{ fontSize: 9, color: BRAND_MINT, fontWeight: '600' }}>
-                  Instant
-              {mpesaFee > 0 && <Text style={{ fontSize: 9, color: INK_FAINT }}>+ KES {mpesaFee} fee</Text>}
+                  {mpesaDisabled ? 'Unavailable' : 'Instant'}
                 </Text>
               </View>
+              {!mpesaDisabled && mpesaFee > 0 ? (
+                <Text style={{ fontSize: 9, color: INK_FAINT }}>+ KES {mpesaFee} fee</Text>
+              ) : null}
             </View>
           </View>
           <Text style={{ color: INK_FAINT, fontSize: 18 }}>{'>'}</Text>
@@ -177,6 +185,7 @@ export default function PaymentMethodSelector({
         {/* Bank option */}
         <TouchableOpacity
           onPress={onSelectBank}
+          disabled={bankDisabled}
           activeOpacity={0.7}
           style={{
             backgroundColor: SURFACE,
@@ -188,6 +197,7 @@ export default function PaymentMethodSelector({
             flexDirection: 'row',
             alignItems: 'center',
             gap: 14,
+            opacity: bankDisabled ? 0.55 : 1,
           }}
         >
           <View
@@ -224,10 +234,14 @@ export default function PaymentMethodSelector({
                 }}
               >
                 <Text style={{ fontSize: 9, color: '#D97706', fontWeight: '600' }}>
-              {bankFee > 0 ? <Text style={{ fontSize: 9, color: INK_FAINT }}>+ KES {bankFee} fee</Text> : <Text style={{ fontSize: 9, color: INK_FAINT }}>No additional fee</Text>}
-                  1–3 days
+                  {bankDisabled ? 'Unavailable' : '1-3 days'}
                 </Text>
               </View>
+              {!bankDisabled ? (
+                <Text style={{ fontSize: 9, color: INK_FAINT }}>
+                  {bankFee > 0 ? `+ KES ${bankFee} fee` : 'No additional fee'}
+                </Text>
+              ) : null}
             </View>
           </View>
           <Text style={{ color: INK_FAINT, fontSize: 18 }}>{'>'}</Text>

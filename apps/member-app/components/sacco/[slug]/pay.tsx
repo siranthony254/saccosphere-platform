@@ -20,7 +20,7 @@ const INK_MUTED = '#6B7280'
 const BORDER = 'rgba(0,0,0,0.07)'
 
 export default function PayScreen() {
-  const { slug, type, loanId } = useLocalSearchParams<{ slug: string; type?: string; loanId?: string }>()
+  const { slug, type, loanId, step } = useLocalSearchParams<{ slug: string; type?: string; loanId?: string; step?: string }>()
   const isRepayment = type === 'repayment'
   const { data: membership, isLoading: membershipLoading } = useMembershipBySacco(slug)
   const { data: config } = useSaccoConfig(slug)
@@ -39,7 +39,9 @@ export default function PayScreen() {
     ? selectedLoan?.next_payment_amount ?? selectedLoan?.monthly_instalment ?? selectedLoan?.balance_remaining ?? 0
     : membership?.monthly_contribution ?? 0
   const [amount, setAmount] = useState(defaultAmount ? String(Math.round(defaultAmount)) : '')
-  const [methodStep, setMethodStep] = useState<'amount' | 'method' | 'bank' | 'processing' | 'success'>('amount')
+  const [methodStep, setMethodStep] = useState<'amount' | 'method' | 'bank' | 'processing' | 'success'>(
+    step === 'method' ? 'method' : 'amount'
+  )
   const [receipt, setReceipt] = useState<{ checkout: string; transaction: string } | null>(null)
   const [checkoutRequestId, setCheckoutRequestId] = useState<string | null>(null)
 
@@ -49,6 +51,8 @@ export default function PayScreen() {
   const phoneNumber = user?.phone_number ?? user?.phone ?? ''
   const primarySaving = savingsQuery.data?.[0]
   const acceptedMethods = config?.payments.accepted_methods ?? ['mpesa', 'bank_transfer']
+  const acceptsMpesa = acceptedMethods.includes('mpesa')
+  const acceptsBank = acceptedMethods.includes('bank_transfer')
 
   const title = isRepayment ? 'Pay loan' : 'Contribute'
   const subtitle = isRepayment
@@ -56,6 +60,10 @@ export default function PayScreen() {
     : `Add savings to ${saccoName}`
 
   const handleMpesa = () => {
+    if (!acceptsMpesa) {
+      Alert.alert('M-Pesa unavailable', `${saccoName} is not accepting M-Pesa payments right now.`)
+      return
+    }
     if (!membership?.sacco_id) {
       Alert.alert('SACCO loading', 'Please wait while we load your SACCO details.')
       return
@@ -151,6 +159,8 @@ export default function PayScreen() {
         amount={String(numericAmount)}
         mpesaFee={platformFee}
         bankFee={0}
+        mpesaDisabled={!acceptsMpesa}
+        bankDisabled={!acceptsBank}
         onSelectMpesa={handleMpesa}
         onSelectBank={() => setMethodStep('bank')}
         onCancel={() => setMethodStep('amount')}
