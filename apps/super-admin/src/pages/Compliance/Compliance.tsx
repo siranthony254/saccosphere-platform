@@ -1,134 +1,133 @@
 import { usePlatformAlerts, usePlatformOverview, useKycQueue, useAllSaccos } from '../../hooks/usePlatformData'
+import { PageHeader } from '../../components/ui/PageHeader'
+import { MetricCard } from '../../components/ui/MetricCard'
+import { Card } from '../../components/ui/Card'
+import { DataTable } from '../../components/ui/DataTable'
+import { Badge } from '../../components/ui/Badge'
+import { HealthDot } from '../../components/ui/HealthDot'
+import type { SuperAdminSacco, PlatformAlert } from '@saccosphere/schemas'
 
 export function Compliance() {
-  const { data: flags } = usePlatformAlerts()
-  const { data: overview } = usePlatformOverview()
-  const { data: kycQueue } = useKycQueue()
-  const { data: saccosData } = useAllSaccos()
+  const { data: flags, isLoading: flagsLoading } = usePlatformAlerts()
+  const { data: overview, isLoading: overviewLoading } = usePlatformOverview()
+  const { data: kycQueue, isLoading: kycLoading } = useKycQueue()
+  const { data: saccosData, isLoading: saccosLoading } = useAllSaccos()
 
   const pendingKycCount = kycQueue?.length ?? 0
   const kycVerifiedPct = overview?.kyc_verified_pct ?? 0
 
   return (
     <div className="p-5">
-      <div className="flex justify-between items-center mb-5">
-        <div>
-          <div className="text-lg font-semibold text-ink">Compliance</div>
-          <div className="text-xs text-ink-muted">Platform-wide regulatory monitoring</div>
-        </div>
-      </div>
+      <PageHeader title="Compliance & KYC" subtitle="Platform-wide regulatory monitoring" />
 
       <div className="grid grid-cols-4 gap-3 mb-5">
-        {[
-          {
-            label: 'KYC verified members',
-            value: kycVerifiedPct > 0 ? `${kycVerifiedPct.toFixed(1)}%` : '—',
-            delta: kycVerifiedPct > 0 ? 'From platform stats' : 'Not reported by backend yet',
-            deltaColor: 'text-ink-muted',
-          },
-          {
-            label: 'KYC pending review',
-            value: pendingKycCount.toString(),
-            delta: 'From KYC review queue',
-            deltaColor: 'text-amber-600',
-          },
-          {
-            label: 'Platform alerts',
-            value: (flags?.length ?? 0).toString(),
-            delta: flags?.length ? 'From compliance flags' : 'No open alerts',
-            deltaColor: flags?.length ? 'text-red-500' : 'text-mint-700',
-          },
-        ].map((m: { label: string; value: string; delta: string; deltaColor: string }) => (
-          <div key={m.label} className="bg-surface border border-neutral-300 rounded-xl p-3.5">
-
-            <div className="text-xs text-ink-muted mb-1.5 uppercase tracking-wider font-medium">{m.label}</div>
-            <div className="text-2xl font-semibold text-ink leading-tight mb-1">{m.value}</div>
-            <div className={`text-xs ${m.deltaColor}`}>{m.delta}</div>
-          </div>
-        ))}
+        <MetricCard
+          label="KYC verified members"
+          value={kycVerifiedPct > 0 ? `${kycVerifiedPct.toFixed(1)}%` : '—'}
+          delta={kycVerifiedPct > 0 ? 'From platform stats' : 'Not reported by backend yet'}
+        />
+        <MetricCard
+          label="KYC pending review"
+          value={pendingKycCount.toString()}
+          delta="From KYC review queue"
+        />
+        <MetricCard
+          label="AML flags / alerts"
+          value={(flags?.length ?? 0).toString()}
+          delta={flags?.length ? `${flags.length} open alerts` : 'No open alerts'}
+        />
+        <MetricCard
+          label="System alerts"
+          value={(overview?.system_alerts ?? 0).toString()}
+          delta="From platform overview"
+        />
       </div>
 
-      <div className={`bg-${flags?.length ? 'red' : 'mint'}-50 border-l-4 border-${flags?.length ? 'red' : 'mint'}-500 rounded-r-lg p-2.5 mb-2.5 text-xs text-${flags?.length ? 'red' : 'mint'}-900`}>
-        {flags?.length ? `${flags.length} platform alerts require review` : 'No platform alerts open'}
-      </div>
+      {flags && flags.length > 0 && (
+        <div className="bg-red-50 border-l-4 border-red-500 rounded-r-lg p-2.5 mb-2.5 text-xs text-red-900">
+          {flags.length} platform alert{flags.length === 1 ? '' : 's'} require review
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-4">
-        <div className="bg-surface border border-neutral-300 rounded-xl overflow-hidden">
-          <div className="p-3 border-b border-neutral-200 font-semibold text-sm text-ink">SACCO directory summary</div>
-          <table className="w-full border-collapse text-xs">
-            <thead>
-              <tr className="bg-neutral-100">
-                {['SACCO', 'Members', 'Status'].map(h => (
-                  <th key={h} className="text-left px-3 py-1.5 text-xs text-ink-muted font-medium border-b border-neutral-300">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {(saccosData?.results ?? []).length === 0 ? (
-                <tr>
-                  <td colSpan={3} className="px-3 py-6 text-center text-ink-muted">No SACCO data returned from the backend.</td>
-                </tr>
-              ) : (
-                (saccosData?.results ?? []).map((row: { id: string; name: string; member_count: number; status: string }, i: number) => (
+        <Card title="KYC status by SACCO">
+          {saccosLoading ? (
+            <div className="text-xs text-ink-muted">Loading SACCO directory...</div>
+          ) : (saccosData?.results ?? []).length === 0 ? (
+            <div className="text-xs text-ink-muted">No SACCO data returned from the backend.</div>
+          ) : (
+            <DataTable
+              columns={[
+                { key: 'name', header: 'SACCO', render: (row: SuperAdminSacco) => row.name },
+                {
+                  key: 'member_count',
+                  header: 'Members',
+                  render: (row: SuperAdminSacco) => row.member_count.toLocaleString(),
+                },
+                {
+                  key: 'health',
+                  header: 'Health',
+                  render: (row: SuperAdminSacco) => <HealthDot status={row.health_status.toLowerCase()} />,
+                },
+                {
+                  key: 'status',
+                  header: 'Status',
+                  render: (row: SuperAdminSacco) => <Badge variant={row.is_active ? 'success' : 'error'}>{row.status}</Badge>,
+                },
+              ]}
+              data={saccosData?.results ?? []}
+              keyExtractor={(row: SuperAdminSacco) => row.id}
+            />
+          )}
+        </Card>
 
-                  <tr key={row.id} className={`border-b border-neutral-200 ${i % 2 === 0 ? 'bg-white' : 'bg-neutral-50'}`}>
-                    <td className="px-3 py-2 font-medium">{row.name}</td>
-                    <td className="px-3 py-2 text-ink-muted">{row.member_count.toLocaleString()}</td>
-                    <td className="px-3 py-2 capitalize">{row.status}</td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        <div className="bg-surface border border-neutral-300 rounded-xl overflow-hidden">
-          <div className="p-3 border-b border-neutral-200 font-semibold text-sm text-ink">Platform alerts</div>
-          <table className="w-full border-collapse text-xs">
-            <thead>
-              <tr className="bg-neutral-100">
-                {['SACCO', 'Flag type', 'Severity', 'Description', 'Action'].map(h => (
-                  <th key={h} className="text-left px-3 py-1.5 text-xs text-ink-muted font-medium border-b border-neutral-300">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {(flags ?? []).length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="px-3 py-6 text-center text-ink-muted">No platform alerts.</td>
-                </tr>
-              ) : (
-                (flags ?? []).map((flag: { id: string; sacco_name: string; flag_type: string; severity: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW' | string; description: string }, i: number) => {
-                  const severityMap = {
-                    CRITICAL: 'bg-red-50 text-red-700',
-                    HIGH: 'bg-amber-50 text-amber-800',
-                    MEDIUM: 'bg-yellow-50 text-yellow-700',
-                    LOW: 'bg-mint-50 text-mint-700',
-                  } as const
-
-                  type SeverityKey = keyof typeof severityMap
-                  const severityKey = String(flag.severity) as SeverityKey
-                  const severityClass = severityMap[severityKey] ?? severityMap.HIGH
-
-                  return (
-
-                    <tr key={flag.id} className={`border-b border-neutral-200 ${i % 2 === 0 ? 'bg-white' : 'bg-neutral-50'}`}>
-                      <td className="px-3 py-2 font-medium">{flag.sacco_name}</td>
-                      <td className="px-3 py-2 text-ink-muted">{flag.flag_type}</td>
-                      <td className="px-3 py-2">
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${severityClass}`}>{flag.severity}</span>
-                      </td>
-                      <td className="px-3 py-2 text-ink-muted max-w-48 overflow-hidden text-ellipsis whitespace-nowrap">{flag.description}</td>
-                      <td className="px-3 py-2">
-                        <button className="px-2.5 py-0.5 rounded text-xs font-semibold bg-violet-50 text-violet-700 hover:bg-violet-100">Review</button>
-                      </td>
-                    </tr>
-                  )
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
+        <Card title="Platform alerts">
+          {flagsLoading ? (
+            <div className="text-xs text-ink-muted">Loading alerts...</div>
+          ) : (flags ?? []).length === 0 ? (
+            <div className="text-xs text-ink-muted">No platform alerts.</div>
+          ) : (
+            <DataTable
+              columns={[
+                { key: 'sacco_name', header: 'SACCO', render: (row: PlatformAlert) => row.sacco_name },
+                { key: 'flag_type', header: 'Flag type', render: (row: PlatformAlert) => row.flag_type },
+                {
+                  key: 'severity',
+                  header: 'Severity',
+                  render: (row: PlatformAlert) => {
+                    const variant =
+                      row.severity === 'CRITICAL' || row.severity === 'HIGH'
+                        ? 'error'
+                        : row.severity === 'MEDIUM'
+                        ? 'warning'
+                        : 'info'
+                    return <Badge variant={variant}>{row.severity}</Badge>
+                  },
+                },
+                {
+                  key: 'description',
+                  header: 'Description',
+                  render: (row: PlatformAlert) => (
+                    <div className="max-w-48 overflow-hidden text-ellipsis whitespace-nowrap text-ink-muted">
+                      {row.description}
+                    </div>
+                  ),
+                },
+                {
+                  key: 'action',
+                  header: 'Action',
+                  render: () => (
+                    <button className="px-2.5 py-0.5 rounded text-xs font-semibold bg-violet-50 text-violet-700 hover:bg-violet-100">
+                      Review
+                    </button>
+                  ),
+                },
+              ]}
+              data={flags ?? []}
+              keyExtractor={(row: PlatformAlert) => row.id}
+            />
+          )}
+        </Card>
       </div>
     </div>
   )

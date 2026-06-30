@@ -14,6 +14,7 @@ import { Roles } from './pages/Roles/Roles'
 import { KycReview } from './pages/Kyc/KycReview'
 import { AuditLogs } from './pages/AuditLogs/AuditLogs'
 import { Billing } from './pages/Billing/Billing'
+import { SystemHealth } from './pages/System/SystemHealth'
 
 export const router = createBrowserRouter([
   {
@@ -37,6 +38,7 @@ export const router = createBrowserRouter([
       { path: 'transactions', element: <TransactionsFeed /> },
       { path: 'revenue', element: <Revenue /> },
       { path: 'compliance', element: <Compliance /> },
+      { path: 'system', element: <SystemHealth /> },
       { path: 'settings', element: <PlatformSettings /> },
       { path: 'roles', element: <Roles /> },
       { path: 'kyc', element: <KycReview /> },

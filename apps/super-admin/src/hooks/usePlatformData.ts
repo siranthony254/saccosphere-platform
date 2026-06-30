@@ -115,6 +115,23 @@ export function useKycQueue() {
   })
 }
 
+export function useAllMembers(params?: { sacco?: string; kyc_status?: string; search?: string }) {
+  return useQuery({
+    queryKey: QueryKeys.allMembers(params),
+    queryFn: () => api.superAdmin.getAllMembers(params),
+    staleTime: 60_000,
+  })
+}
+
+export function useSystemHealth() {
+  return useQuery({
+    queryKey: ['system-health'],
+    queryFn: api.superAdmin.getSystemHealth,
+    staleTime: 30_000,
+    refetchInterval: 30_000,
+  })
+}
+
 export function usePlatformLiveFeed() {
   type ApiTxn = {
     id: string

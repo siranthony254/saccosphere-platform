@@ -36,6 +36,11 @@ import {
   SuperAdminSaccoSchema,
   TransactionSchema,
   UserSchema,
+  NotificationSchema,
+  PlatformMemberSchema,
+  RevenueChartSchema,
+  TopSaccosSchema,
+  PlatformAlertSchema,
 } from '@saccosphere/schemas'
 import { z } from 'zod'
 
@@ -1514,9 +1519,9 @@ export const api = {
         active_saccos_change_this_month: overview?.active_saccos_change_this_month ?? 0,
         total_members_change_this_month: overview?.total_members_change_this_month ?? 0,
         platform_revenue_mtd_kes: Number(overview?.platform_revenue_mtd ?? 0),
-        kyc_verified_pct: 0,
-        aml_flags_open: 0,
-        system_alerts: 0,
+        kyc_verified_pct: overview?.kyc_verified_pct ?? 0,
+        aml_flags_open: overview?.aml_flags_open ?? 0,
+        system_alerts: overview?.system_alerts ?? 0,
         all_systems_operational: overview?.all_systems_operational ?? true,
       }
     },
@@ -1530,34 +1535,37 @@ export const api = {
         )
       }
       if (params?.status) {
-        items = items.filter((item: any) => 
+        items = items.filter((item: any) =>
           (params.status === 'active' && item.is_active) ||
-          (params.status === 'suspended' && !item.is_active)
+          (params.status === 'suspended' && !item.is_active) ||
+          (params.status === 'onboarding' && item.status?.toLowerCase() === 'onboarding')
+        )
+      }
+      if (params?.sector) {
+        items = items.filter((item: any) =>
+          String(item.sector ?? '').toLowerCase() === params.sector!.toLowerCase()
         )
       }
       return {
         count: items.length,
         next: null,
         previous: null,
-        results: items.map((item: any) => ({
-          id: item.id,
-          name: item.name,
-          slug: item.slug || '',
-          member_count: item.member_count || 0,
-          is_active: item.is_active,
-          status: item.is_active ? 'active' : 'suspended',
-          health_status: item.health_status || 'GOOD',
-          last_transaction_at: item.last_transaction_at,
-          created_at: item.created_at,
-        })),
+        results: items.map((item: any) => normalizeSuperAdminSacco(item)),
       }
     },
 
     getSacco: async (id: string) => {
-      const [sacco, stats] = await Promise.all([
-        api.saccos.get(id),
-        apiCall<any>('GET', '/management/stats/', undefined, { params: { sacco: id } }).catch(() => null),
-      ])
+      let sacco: Sacco | null = null
+      try {
+        sacco = await api.saccos.get(id)
+      } catch {
+        // Fallback to super-admin SACCO list if public detail fails
+        const all = await api.superAdmin.getSaccos()
+        sacco = (all.results.find((s) => s.id === id || s.slug === id) as Sacco | undefined) ?? null
+      }
+      if (!sacco) throw { code: 'NOT_FOUND', message: 'SACCO not found.' }
+
+      const stats = await apiCall<any>('GET', '/management/stats/', undefined, { params: { sacco_id: id } }).catch(() => null)
       return {
         ...normalizeSuperAdminSacco({
           ...sacco,
@@ -1568,23 +1576,19 @@ export const api = {
       }
     },
 
-    getSaccoConfig: (id: string) =>
-      apiCall<SaccoConfig>('GET', `/super-admin/saccos/${id}/configuration/`),
-
-    updateSaccoConfig: (id: string, partial: Partial<SaccoConfig>) =>
-      apiCall<SaccoConfig>('PATCH', `/super-admin/saccos/${id}/configuration/`, partial),
-
+    // NOTE: These endpoints are not present in the documented API collection.
+    // They are retained for API compatibility but will return 404 until the backend exposes them.
     suspendSacco: (id: string) =>
-      apiCall<void>('PATCH', `/super-admin/saccos/${id}/suspend/`),
+      apiCall<void>('PATCH', `/super-admin/saccos/${uuid(id)}/suspend/`),
 
     unsuspendSacco: (id: string) =>
-      apiCall<void>('PATCH', `/super-admin/saccos/${id}/unsuspend/`),
+      apiCall<void>('PATCH', `/super-admin/saccos/${uuid(id)}/unsuspend/`),
 
     assignRole: (data: { user_id: string; role_name: string; sacco_id?: string | null }) =>
       apiCall<any>('POST', '/management/roles/assign/', data),
 
     revokeRole: (roleId: string) =>
-      apiCall<void>('DELETE', `/management/roles/${roleId}/`),
+      apiCall<void>('DELETE', `/management/roles/${uuid(roleId)}/`),
 
     getUserRoles: (userId: string) =>
       apiCall<any[]>('GET', '/management/roles/', undefined, { params: { user_id: userId } }),
@@ -1594,83 +1598,98 @@ export const api = {
       if (params?.sacco) queryParams.sacco_id = params.sacco
       if (params?.search) queryParams.search = params.search
       if (params?.cursor) queryParams.cursor = params.cursor
-      
+      if (params?.kyc_status) queryParams.kyc_status = params.kyc_status
+
       const response = await apiCall<any>('GET', '/management/superadmin/members/', undefined, { params: queryParams })
       const items = response.results || []
       return {
         count: Number(response.count || items.length),
         next: response.next || null,
         previous: response.previous || null,
-        results: items.map((item: any) => ({
-          id: item.id,
-          full_name: item.full_name,
-          email: item.email,
-          phone_number: item.phone_number,
-          kyc_status: item.kyc_status,
-          member_since: item.member_since,
-          sacco_name: '',
-          member_number: '',
-          status: 'active',
-        })),
+        results: items.map((item: any) =>
+          PlatformMemberSchema.parse({
+            id: item.id,
+            full_name: item.full_name ?? `${item.first_name ?? ''} ${item.last_name ?? ''}`.trim(),
+            email: item.email,
+            phone_number: item.phone_number ?? null,
+            kyc_status: item.kyc_status ?? null,
+            member_since: item.member_since ?? item.date_joined ?? item.created_at ?? null,
+            sacco_name: item.sacco_name ?? item.sacco?.name ?? null,
+            member_number: item.member_number ?? null,
+            status: item.status ?? 'active',
+          })
+        ),
       }
     },
 
     getTransactions: async () => {
       const response = await apiCall<any>('GET', '/management/superadmin/transactions/live/')
+      const results = Array.isArray(response) ? response : response.results || []
       return {
-        count: response.length,
+        count: results.length,
         next: null,
         previous: null,
-        results: response.map((item: any) => ({
-          id: item.id || Math.random().toString(),
-          date: item.created_at,
-          member_name: item.user_name,
-          sacco_name: item.sacco_name,
-          txn_type: item.transaction_type,
-          amount: Number(item.amount || 0),
-          direction: 'in',
-          payment_method: 'mpesa',
-          platform_fee: 0,
-          status: item.stk_status === '0' ? 'completed' : 'failed',
-        })),
+        results: results.map((item: any) =>
+          normalizeTransaction({
+            ...item,
+            id: item.id ?? `${item.created_at ?? Date.now()}-${Math.random()}`,
+            txn_type: item.transaction_type ?? item.txn_type ?? 'contribution',
+            description: item.description ?? item.transaction_type ?? 'Transaction',
+            payment_method: item.payment_method ?? 'mpesa',
+            payment_ref: item.payment_ref ?? item.mpesa_receipt ?? item.reference ?? null,
+            platform_fee: item.platform_fee ?? 0,
+            sacco_name: item.sacco_name,
+            date: item.created_at ?? item.date,
+            completed_at: item.completed_at ?? item.created_at ?? null,
+          })
+        ),
       }
     },
 
     getRevenueChart: async () => {
       const response = await apiCall<any>('GET', '/management/superadmin/revenue-chart/')
-      return response.map((item: any) => ({
-        month: item.month,
-        saas_fees: Number(item.saas_fees || 0),
-        transaction_fees: Number(item.transaction_fees || 0),
-        total_mrr: Number(item.total_mrr || 0),
-      }))
+      const items = Array.isArray(response) ? response : response.results || []
+      return items.map((item: any) =>
+        RevenueChartSchema.parse({
+          month: item.month,
+          saas_fees: Number(item.saas_fees || 0),
+          transaction_fees: Number(item.transaction_fees || 0),
+          total_mrr: Number(item.total_mrr || 0),
+        })
+      )
     },
 
     getTopSaccos: async () => {
       const response = await apiCall<any>('GET', '/management/superadmin/top-saccos/')
-      return response.map((item: any) => ({
-        sacco_id: item.sacco_id,
-        sacco_name: item.sacco_name,
-        member_count: item.member_count,
-        txn_volume_this_month: Number(item.txn_volume_this_month || 0),
-        platform_fee_this_month: Number(item.platform_fee_this_month || 0),
-        health_status: item.health_status,
-      }))
+      const items = Array.isArray(response) ? response : response.results || []
+      return items.map((item: any) =>
+        TopSaccosSchema.parse({
+          sacco_id: item.sacco_id,
+          sacco_name: item.sacco_name,
+          member_count: Number(item.member_count || 0),
+          txn_volume_this_month: Number(item.txn_volume_this_month || 0),
+          platform_fee_this_month: Number(item.platform_fee_this_month || 0),
+          health_status: item.health_status ?? 'GOOD',
+        })
+      )
     },
 
     getPlatformAlerts: async () => {
       const response = await apiCall<any>('GET', '/management/superadmin/alerts/')
-      return response.map((item: any) => ({
-        id: Math.random().toString(),
-        sacco_name: item.sacco_name,
-        flag_type: item.flag_type,
-        description: item.description,
-        severity: item.severity,
-        created_at: item.created_at,
-        risk_level: item.severity === 'CRITICAL' ? 'high' : item.severity === 'HIGH' ? 'medium' : 'low',
-        flag_reason: item.description,
-        member_name: '—',
-      }))
+      const items = Array.isArray(response) ? response : response.results || []
+      return items.map((item: any) =>
+        PlatformAlertSchema.parse({
+          id: item.id ?? `${item.sacco_name ?? 'alert'}-${Date.now()}-${Math.random()}`,
+          sacco_name: item.sacco_name,
+          flag_type: item.flag_type,
+          description: item.description,
+          severity: item.severity,
+          created_at: item.created_at,
+          risk_level: item.severity === 'CRITICAL' ? 'high' : item.severity === 'HIGH' ? 'medium' : 'low',
+          flag_reason: item.description,
+          member_name: item.member_name ?? '—',
+        })
+      )
     },
 
     getKycQueue: async () => {
@@ -1718,9 +1737,15 @@ export const api = {
         review_notes: _notes,
       }),
 
-    getSystemHealth: () =>
-      apiCall<Record<string, unknown>>('GET', '/management/stats/').then((stats) => ({
+    getSystemHealth: async () => {
+      const [stats, readiness] = await Promise.all([
+        apiCall<Record<string, unknown>>('GET', '/management/stats/').catch(() => ({} as Record<string, unknown>)),
+        apiCall<{ status: string; checks?: Record<string, boolean> }>('GET', '/health/ready/').catch(() => ({ status: 'unknown' })),
+      ])
+      return {
         services: Array.isArray(stats.services) ? stats.services : [],
-      })),
+        readiness,
+      }
+    },
   },
 }

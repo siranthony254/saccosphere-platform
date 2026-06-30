@@ -12,6 +12,7 @@ const NAV = [
   { path: '/audit-logs',   label: 'Audit Logs',         icon: '📋', badge: null },
   { path: '/billing',      label: 'Billing & Invoices',  icon: '🧾', badge: null },
   { path: '/compliance',   label: 'Compliance',         icon: '🛡️', badge: null },
+  { path: '/system',       label: 'System & API health', icon: '🔧', badge: null },
   { path: '/settings',     label: 'Platform settings',   icon: '⚙️', badge: null },
 ]
 

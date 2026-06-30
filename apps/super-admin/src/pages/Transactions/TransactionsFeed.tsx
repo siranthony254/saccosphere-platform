@@ -1,88 +1,103 @@
+import { useState, useMemo } from 'react'
 import { usePlatformLiveFeed } from '../../hooks/usePlatformData'
+import { PageHeader } from '../../components/ui/PageHeader'
+import { MetricCard } from '../../components/ui/MetricCard'
+import { DataTable } from '../../components/ui/DataTable'
+import { Badge } from '../../components/ui/Badge'
+
+const today = new Date().toISOString().slice(0, 10)
 
 export function TransactionsFeed() {
+  const [range, setRange] = useState<'today' | 'week' | 'month'>('today')
   const { feed, connected } = usePlatformLiveFeed()
 
-  const totalVol = feed.reduce((s: number, t: any) => s + t.amount, 0)
-  const totalFees = feed.reduce((s: number, t: any) => s + t.platform_fee, 0)
-  const failed = feed.filter((t: any) => t.status === 'failed').length
+  const filtered = useMemo(() => {
+    const now = new Date()
+    return feed.filter((t: any) => {
+      const d = new Date(t.date)
+      if (range === 'today') return d.toISOString().slice(0, 10) === today
+      if (range === 'week') return now.getTime() - d.getTime() <= 7 * 24 * 60 * 60 * 1000
+      return now.getTime() - d.getTime() <= 30 * 24 * 60 * 60 * 1000
+    })
+  }, [feed, range])
+
+  const totalVol = filtered.reduce((s: number, t: any) => s + (t.direction === 'debit' ? -t.amount : t.amount), 0)
+  const totalFees = filtered.reduce((s: number, t: any) => s + t.platform_fee, 0)
+  const failed = filtered.filter((t: any) => t.status === 'failed').length
+  const successful = filtered.filter((t: any) => t.status === 'completed').length
 
   return (
     <div className="p-5">
-      <div className="flex justify-between items-center mb-5">
-        <div>
-          <div className="text-lg font-semibold text-ink">Transaction feed</div>
-          <div className="text-xs text-ink-muted">Platform-wide · Real-time feed · {new Date().toLocaleDateString('en-KE', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
-        </div>
-        <div className="flex items-center gap-2">
+      <PageHeader
+        title="All transactions"
+        subtitle={`Platform-wide · Real-time feed · ${new Date().toLocaleDateString('en-KE', { day: 'numeric', month: 'long', year: 'numeric' })}`}
+        actions={
           <div className="flex items-center gap-1.5 text-xs text-violet-600 bg-violet-50 px-3 py-1.5 rounded-md">
             <div className="w-1.5 h-1.5 rounded-full bg-violet-600" />
             {connected ? 'Real-time' : 'Connecting...'}
           </div>
-        </div>
-      </div>
+        }
+      />
 
-      {/* Metrics */}
       <div className="grid grid-cols-4 gap-3 mb-5">
-        {[
-          { label: 'Volume (session)', value: `KES ${totalVol.toLocaleString()}`, delta: `${feed.length} transactions`, accent: true },
-          { label: 'Platform fees earned', value: `KES ${totalFees.toLocaleString()}`, delta: '~1% take rate' },
-          { label: 'Successful', value: `${feed.filter((t: any) => t.status === 'completed').length}`, delta: 'All SACCOs' },
-          { label: 'Failed transactions', value: failed.toString(), delta: failed > 0 ? '⚠ Needs attention' : '✓ All clear', deltaColor: failed > 0 ? 'text-red-700' : 'text-mint-700' },
-        ].map(m => (
-          <div key={m.label} className={m.accent ? 'bg-gradient-to-br from-violet-600 to-violet-500 rounded-xl p-3.5 text-white' : 'bg-surface border border-neutral-300 rounded-xl p-3.5'}>
-            <div className={`text-xs ${m.accent ? 'text-white/60' : 'text-ink-muted'} mb-1.5 uppercase tracking-wider font-medium`}>{m.label}</div>
-            <div className={`text-2xl font-semibold ${m.accent ? 'text-white' : 'text-ink'} leading-tight mb-1`}>{m.value}</div>
-            <div className={`text-xs ${(m as any).deltaColor || (m.accent ? 'text-mint-300' : 'text-mint-700')}`}>{m.delta}</div>
-          </div>
-        ))}
+        <MetricCard
+          label="Volume (session)"
+          value={`KES ${Math.abs(totalVol).toLocaleString()}`}
+          delta={`${filtered.length} transactions`}
+          accent
+        />
+        <MetricCard label="Platform fees earned" value={`KES ${totalFees.toLocaleString()}`} delta="~1% take rate" />
+        <MetricCard label="Successful" value={successful.toString()} delta="All SACCOs" />
+        <MetricCard
+          label="Failed transactions"
+          value={failed.toString()}
+          delta={failed > 0 ? 'Needs attention' : 'All clear'}
+        />
       </div>
 
-      {/* Live table */}
-      <div className="bg-surface border border-neutral-300 rounded-xl overflow-hidden">
-        <div className="flex justify-between items-center p-3 border-b border-neutral-200">
-          <div className="font-semibold text-sm text-ink">Live transaction feed — all SACCOs</div>
-          <div className="flex items-center gap-1 text-xs text-violet-600">
-            <div className="w-1 h-1 rounded-full bg-violet-600" />
-            Auto-updating every 3.5 seconds
-          </div>
+      <div className="flex justify-between items-center mb-3">
+        <select
+          className="py-2 px-3 border border-mid rounded-lg text-[13px] outline-none bg-surface"
+          value={range}
+          onChange={(e) => setRange(e.target.value as 'today' | 'week' | 'month')}
+        >
+          <option value="today">Today</option>
+          <option value="week">This week</option>
+          <option value="month">This month</option>
+        </select>
+        <div className="flex items-center gap-1 text-xs text-violet-600">
+          <div className="w-1 h-1 rounded-full bg-violet-600" />
+          Auto-updating every 10 seconds
         </div>
-        <table className="w-full border-collapse text-xs">
-          <thead>
-            <tr className="bg-neutral-100">
-              {['Time', 'Member', 'SACCO', 'Type', 'Amount (KES)', 'Method', 'Platform fee', 'Status'].map(h => (
-                <th key={h} className="text-left px-3 py-1.5 text-xs text-ink-muted font-medium border-b border-neutral-300">{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {(feed as any[]).length === 0 ? (
-              <tr>
-                <td colSpan={8} className="px-3 py-6 text-center text-ink-muted">No transactions returned from the backend.</td>
-              </tr>
-            ) : (
-              (feed as any[]).map((t, i) => (
-              <tr key={t.id} className={`border-b border-neutral-200 ${i === 0 ? 'bg-violet-25' : i % 2 === 0 ? 'bg-white' : 'bg-neutral-50'}`}>
-                <td className="px-3 py-2 text-ink-muted font-mono text-xs">{t.time}</td>
-                <td className="px-3 py-2 font-medium">{t.member}</td>
-                <td className="px-3 py-2 text-ink-muted">{t.sacco}</td>
-                <td className="px-3 py-2">{t.type}</td>
-                <td className={`px-3 py-2 font-semibold ${t.status === 'failed' ? 'text-red-700' : 'text-mint-700'}`}>
-                  {t.status === 'failed' ? '✗ ' : '+'}{t.amount.toLocaleString()}
-                </td>
-                <td className="px-3 py-2">📱 {t.method === 'mpesa' ? 'M-Pesa' : t.method}</td>
-                <td className="px-3 py-2 text-ink-muted">KES {t.platform_fee}</td>
-                <td className="px-3 py-2">
-                  <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${t.status === 'completed' ? 'bg-mint-50 text-mint-800' : 'bg-red-50 text-red-700'}`}>
-                    {t.status === 'completed' ? '✓ OK' : '✗ Failed'}
-                  </span>
-                </td>
-              </tr>
-            ))
-            )}
-          </tbody>
-        </table>
       </div>
+
+      <DataTable
+        columns={[
+          { key: 'time', header: 'Time', render: (row: any) => <span className="text-ink-faint font-mono text-xs">{row.time}</span> },
+          { key: 'member', header: 'Member', render: (row: any) => row.member },
+          { key: 'sacco', header: 'SACCO', render: (row: any) => <span className="text-ink-muted">{row.sacco}</span> },
+          { key: 'type', header: 'Type', render: (row: any) => row.type },
+          {
+            key: 'amount',
+            header: 'Amount (KES)',
+            render: (row: any) => (
+              <span className={`font-semibold ${row.status === 'failed' ? 'text-red-700' : row.direction === 'debit' ? 'text-red-700' : 'text-mint-700'}`}>
+                {row.direction === 'debit' ? '-' : '+'}{row.amount.toLocaleString()}
+              </span>
+            ),
+          },
+          { key: 'method', header: 'Method', render: (row: any) => <span className="capitalize">{row.method}</span> },
+          { key: 'platform_fee', header: 'Platform fee', render: (row: any) => <span className="text-ink-muted">KES {row.platform_fee}</span> },
+          {
+            key: 'status',
+            header: 'Status',
+            render: (row: any) => <Badge variant={row.status === 'completed' ? 'success' : 'error'}>{row.status === 'completed' ? '✓ OK' : '✗ Failed'}</Badge>,
+          },
+        ]}
+        data={filtered}
+        emptyMessage="No transactions returned from the backend for the selected range."
+        keyExtractor={(row: any, index: number) => `${row.id}-${index}`}
+      />
     </div>
   )
 }
