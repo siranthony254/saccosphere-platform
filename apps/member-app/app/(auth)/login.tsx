@@ -15,10 +15,11 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useState, useEffect } from 'react'
 import { useLogin, useGoogleAuth } from '../../hooks/useAuth'
-import GoogleSignin, {
+import {
+  GoogleSignin,
   statusCodes,
-} from '@react-native-google-signin/google-signin'
-import { Platform } from 'react-native'
+  isGoogleSignInAvailable,
+} from '../../lib/googleAuth'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 const PADDING_H = Math.max(16, Math.min(24, SCREEN_WIDTH * 0.05))
@@ -57,6 +58,7 @@ export default function LoginScreen() {
   })
 
   useEffect(() => {
+    if (!isGoogleSignInAvailable() || !GoogleSignin) return
     GoogleSignin.configure({
       webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || '',
       offlineAccess: true,
@@ -64,6 +66,14 @@ export default function LoginScreen() {
   }, [])
 
   const handleGoogleSignIn = async () => {
+    if (!isGoogleSignInAvailable() || !GoogleSignin) {
+      Alert.alert(
+        'Google Sign-In unavailable',
+        'Google Sign-In requires a custom development build. It does not work in Expo Go.'
+      )
+      return
+    }
+
     try {
       await GoogleSignin.hasPlayServices()
       const userInfo = await GoogleSignin.signIn()

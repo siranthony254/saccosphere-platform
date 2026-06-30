@@ -21,6 +21,17 @@ config.resolver.nodeModulesPaths = [
 // Keep hierarchical lookup ON
 config.resolver.disableHierarchicalLookup = false
 
+// ── WEB: Fix import.meta issue ─────────────────────────────────────────────
+config.transformer = {
+  ...config.transformer,
+  getTransformOptions: async () => ({
+    transform: {
+      experimentalImportSupport: false,
+      inlineRequires: true,
+    },
+  }),
+}
+
 // ── NATIVEWIND v4 ─────────────────────────────────────────────────────────
 module.exports = withNativeWind(config, {
   input: './global.css',

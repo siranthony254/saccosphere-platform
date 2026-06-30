@@ -345,6 +345,11 @@ const normalizeTransaction = (item: any): Transaction => {
         : rawType
   const amount = Number(item.amount ?? 0)
 
+  const providerName = String(item.provider_name ?? item.provider?.name ?? item.payment_method ?? '').toLowerCase()
+  const paymentMethod = providerName.includes('m-pesa') || providerName.includes('mpesa')
+    ? 'mpesa'
+    : String(item.payment_method ?? 'internal').toLowerCase()
+
   return {
     id: item.id,
     ref: item.ref ?? item.reference ?? item.id,
@@ -353,9 +358,9 @@ const normalizeTransaction = (item: any): Transaction => {
     amount,
     direction: item.direction ?? (amount < 0 ? 'debit' : 'credit'),
     status: TransactionSchema.shape.status.parse(String(item.status ?? 'completed').toLowerCase()),
-    payment_method: TransactionSchema.shape.payment_method.parse(String(item.payment_method ?? 'internal').toLowerCase()),
-    payment_ref: item.payment_ref ?? item.reference ?? null,
-    platform_fee: Number(item.platform_fee ?? 0),
+    payment_method: TransactionSchema.shape.payment_method.parse(paymentMethod),
+    payment_ref: item.payment_ref ?? item.external_reference ?? null,
+    platform_fee: Number(item.platform_fee ?? item.fee_amount ?? 0),
     balance_after: Number(item.balance_after ?? 0),
     sacco_name: item.sacco_name ?? item.sacco?.name ?? '',
     sacco_slug:
@@ -367,6 +372,32 @@ const normalizeTransaction = (item: any): Transaction => {
     date: item.date ?? item.created_at ?? item.completed_at ?? new Date().toISOString(),
     completed_at: item.completed_at ?? item.created_at ?? null,
   }
+}
+
+const normalizeNotification = (item: any): AppNotification => {
+  const category = String(item.type ?? item.category ?? 'system').toLowerCase()
+  const typeMap: Record<string, AppNotification['type']> = {
+    loan: 'loan_approved',
+    payment: 'contribution_received',
+    alert: 'system',
+    guarantor: 'guarantor_request',
+    dividend: 'dividend_credited',
+    system: 'system',
+  }
+  const type = NotificationSchema.shape.type.safeParse(category).success
+    ? category as AppNotification['type']
+    : typeMap[category] ?? 'system'
+
+  return NotificationSchema.parse({
+    id: item.id,
+    title: item.title ?? 'Notification',
+    body: item.body ?? item.message ?? '',
+    type,
+    is_read: Boolean(item.is_read),
+    deep_link: item.deep_link ?? item.action_url ?? undefined,
+    sacco_name: item.sacco_name ?? undefined,
+    created_at: item.created_at,
+  })
 }
 
 const normalizeLoanStatus = (status: unknown): LoanApplication['status'] => {

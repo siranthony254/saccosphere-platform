@@ -8,9 +8,11 @@ import { useState, useEffect } from 'react'
 import { useRegistrationStore } from '../../../store/useRegistrationStore'
 import { useRegister, useGoogleAuth } from '../../../hooks/useAuth'
 import type { ApiError } from '@saccosphere/api-client'
-import GoogleSignin, {
+import {
+  GoogleSignin,
   statusCodes,
-} from '@react-native-google-signin/google-signin'
+  isGoogleSignInAvailable,
+} from '../../../lib/googleAuth'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 const PADDING_H = Math.max(16, Math.min(24, SCREEN_WIDTH * 0.05))
@@ -60,6 +62,7 @@ export default function RegisterStep1() {
   const password = watch('password')
 
   useEffect(() => {
+    if (!isGoogleSignInAvailable() || !GoogleSignin) return
     GoogleSignin.configure({
       webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || '',
       offlineAccess: true,
@@ -67,6 +70,14 @@ export default function RegisterStep1() {
   }, [])
 
   const handleGoogleSignUp = async () => {
+    if (!isGoogleSignInAvailable() || !GoogleSignin) {
+      Alert.alert(
+        'Google Sign-In unavailable',
+        'Google Sign-In requires a custom development build. It does not work in Expo Go.'
+      )
+      return
+    }
+
     try {
       await GoogleSignin.hasPlayServices()
       const userInfo = await GoogleSignin.signIn()
