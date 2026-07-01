@@ -79,7 +79,7 @@ export const QueryKeys = {
   adminMembers: (filters?: object) => ['admin-members', filters] as const,
   adminMember: (id: string) => ['admin-member', id] as const,
   adminLoans: (filters?: object) => ['admin-loans', filters] as const,
-  adminApplications: () => ['admin-applications'] as const,
+  adminApplications: (filters?: object) => ['admin-applications', filters] as const,
   adminContributions: (filters?: object) => ['admin-contributions', filters] as const,
 
   // Super admin

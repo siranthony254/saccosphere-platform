@@ -1,4 +1,4 @@
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import { useSaccoDetail } from '../../hooks/usePlatformData'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { Card } from '../../components/ui/Card'
@@ -7,7 +7,6 @@ import { SaccoAvatar, SaccoFeeBadge } from '../../components/saccos'
 
 export function SaccoDetail() {
   const { id } = useParams<{ id: string }>()
-  const navigate = useNavigate()
   const { data: sacco, isLoading } = useSaccoDetail(id!)
 
   if (isLoading) return <div className="p-6 text-ink-muted">Loading SACCO details...</div>

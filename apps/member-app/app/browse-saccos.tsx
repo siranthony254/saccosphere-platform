@@ -80,10 +80,7 @@ export default function BrowseSaccos() {
         saccos.map((sacco) => (
           <TouchableOpacity
             key={sacco.id}
-            onPress={() => {
-              setSelectedSaccoSlug(sacco.slug)
-              router.push('/(auth)/register')
-            }}
+            onPress={() => router.push(`/sacco/${sacco.slug}`)}
             className="bg-surface border border-border rounded-xl p-3 mb-2.5"
           >
             <View className="flex-row items-center gap-2.5 mb-2">

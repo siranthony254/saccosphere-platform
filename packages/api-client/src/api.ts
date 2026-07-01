@@ -5,7 +5,6 @@ import type {
   RegisterInput,
   User,
   Sacco,
-  SaccoConfig,
   Membership,
   MembershipApplication,
   LoanApplication,
@@ -36,7 +35,6 @@ import {
   SuperAdminSaccoSchema,
   TransactionSchema,
   UserSchema,
-  NotificationSchema,
   PlatformMemberSchema,
   RevenueChartSchema,
   TopSaccosSchema,
@@ -379,32 +377,6 @@ const normalizeTransaction = (item: any): Transaction => {
   }
 }
 
-const normalizeNotification = (item: any): AppNotification => {
-  const category = String(item.type ?? item.category ?? 'system').toLowerCase()
-  const typeMap: Record<string, AppNotification['type']> = {
-    loan: 'loan_approved',
-    payment: 'contribution_received',
-    alert: 'system',
-    guarantor: 'guarantor_request',
-    dividend: 'dividend_credited',
-    system: 'system',
-  }
-  const type = NotificationSchema.shape.type.safeParse(category).success
-    ? category as AppNotification['type']
-    : typeMap[category] ?? 'system'
-
-  return NotificationSchema.parse({
-    id: item.id,
-    title: item.title ?? 'Notification',
-    body: item.body ?? item.message ?? '',
-    type,
-    is_read: Boolean(item.is_read),
-    deep_link: item.deep_link ?? item.action_url ?? undefined,
-    sacco_name: item.sacco_name ?? undefined,
-    created_at: item.created_at,
-  })
-}
-
 const normalizeLoanStatus = (status: unknown): LoanApplication['status'] => {
   const normalized = String(status ?? 'PENDING').toLowerCase()
   const statusMap: Record<string, LoanApplication['status']> = {
@@ -622,6 +594,9 @@ export const api = {
         results: unwrapResults(response).map(normalizeTransaction),
       }
     },
+
+    getSaccoFields: async (saccoId: string) =>
+      apiCall<any>('GET', `/members/saccos/${saccoId}/fields/`),
 
     getStatement: async (params: { sacco_id: string; from_date: string; to_date: string }) =>
       apiCall<{
@@ -848,6 +823,19 @@ export const api = {
 
     payRegistrationFee: (_id: string) =>
       Promise.reject(new Error('Registration-fee STK push is not supported by the current backend contract.')),
+
+    uploadDocument: async (applicationId: string, documentType: string, file: File) => {
+      const formData = new FormData()
+      formData.append('document_type', documentType)
+      formData.append('file', file)
+      return apiCall<any>('POST', `/members/applications/${uuid(applicationId)}/documents/`, formData)
+    },
+
+    listDocuments: async (applicationId: string) =>
+      unwrapResults(await apiCall<any>('GET', `/members/applications/${uuid(applicationId)}/documents/`)),
+
+    deleteDocument: async (applicationId: string, documentId: string) =>
+      apiCall<void>('DELETE', `/members/applications/${uuid(applicationId)}/documents/${uuid(documentId)}/`),
   },
 
   savings: {
@@ -1245,6 +1233,35 @@ export const api = {
     createMember: async (data: { first_name: string; last_name: string; email: string; phone_number: string; national_id: string }) =>
       apiCall<any>('POST', '/management/members/', data),
 
+    // Membership applications
+    getApplications: async (params?: { status?: string }) => {
+      const response = await apiCall<any>('GET', '/management/applications/', undefined, { params })
+      const items = Array.isArray(response.results) ? response.results : Array.isArray(response) ? response : []
+      return {
+        count: Number(response.count ?? items.length),
+        next: response.next ?? null,
+        previous: response.previous ?? null,
+        results: items.map((item: any) => ({
+          id: item.id,
+          application_id: item.application_id || item.id,
+          user_id: item.user_id,
+          full_name: item.full_name || item.user?.full_name,
+          email: item.email || item.user?.email,
+          phone_number: item.phone_number || item.user?.phone_number,
+          national_id: item.national_id,
+          employment_status: item.employment_status,
+          employer_name: item.employer_name,
+          monthly_income: Number(item.monthly_income ?? 0),
+          status: item.status,
+          submitted_at: item.submitted_at || item.created_at,
+          review_notes: item.review_notes,
+        })),
+      }
+    },
+
+    reviewApplication: (id: string, data: { status: 'APPROVED' | 'REJECTED'; review_notes?: string }) =>
+      apiCall<void>('PATCH', `/management/applications/${uuid(id)}/review/`, data),
+
     // Role management
     getRoles: async (userId: string) => apiCall<any>('GET', '/management/roles/', undefined, {
       params: { user_id: userId }
@@ -1561,7 +1578,7 @@ export const api = {
       } catch {
         // Fallback to super-admin SACCO list if public detail fails
         const all = await api.superAdmin.getSaccos()
-        sacco = (all.results.find((s) => s.id === id || s.slug === id) as Sacco | undefined) ?? null
+        sacco = (all.results.find((s: SuperAdminSacco) => s.id === id || s.slug === id) as Sacco | undefined) ?? null
       }
       if (!sacco) throw { code: 'NOT_FOUND', message: 'SACCO not found.' }
 

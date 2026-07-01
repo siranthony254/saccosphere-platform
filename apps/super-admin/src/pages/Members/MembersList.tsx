@@ -4,7 +4,7 @@ import { useAllSaccos } from '../../hooks/usePlatformData'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { DataTable } from '../../components/ui/DataTable'
 import { Badge } from '../../components/ui/Badge'
-import type { PlatformMember } from '@saccosphere/schemas'
+import type { PlatformMember, SuperAdminSacco } from '@saccosphere/schemas'
 
 function kycVariant(status: string | null | undefined): 'success' | 'warning' | 'error' | 'neutral' {
   const s = String(status ?? 'unknown').toLowerCase()
@@ -37,7 +37,7 @@ export function MembersList() {
 
   const kycOptions = useMemo(() => {
     const set = new Set<string>()
-    ;(data?.results ?? []).forEach((m) => {
+    ;(data?.results ?? []).forEach((m: PlatformMember) => {
       if (m.kyc_status) set.add(m.kyc_status)
     })
     return Array.from(set).sort()
@@ -63,7 +63,7 @@ export function MembersList() {
           onChange={(e) => setSaccoFilter(e.target.value)}
         >
           <option value="all">All SACCOs</option>
-          {(saccosData?.results ?? []).map((sacco) => (
+          {(saccosData?.results ?? []).map((sacco: SuperAdminSacco) => (
             <option key={sacco.id} value={sacco.id}>
               {sacco.name}
             </option>

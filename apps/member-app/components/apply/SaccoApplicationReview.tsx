@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Dimensions } from 'react-native'
 import { useMembershipApplicationStore } from '../../store/useMembershipApplicationStore'
 import { useSubmitMembershipApplication } from '../../hooks/useMembershipApplication'
+import { useSacco } from '../../hooks/useSaccos'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 const PADDING_H = Math.max(16, Math.min(24, SCREEN_WIDTH * 0.05))
@@ -14,14 +15,18 @@ export default function SaccoApplicationReview() {
   const insets = useSafeAreaInsets()
   const { formData, monthlyContribution, saccoSlug } = useMembershipApplicationStore()
   const { mutateAsync: submitApplication } = useSubmitMembershipApplication()
+  const { data: sacco } = useSacco(slug)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const applicantName = `${formData.firstName ?? ''} ${formData.lastName ?? ''}`.trim() || 'Applicant'
   const employment = `${formData.employer ?? 'Employer'} · ${formData.employmentType ?? 'Employment'}`
   const contributionString = `KES ${monthlyContribution.toLocaleString()}`
-  const saccoName = saccoSlug ? saccoSlug.toUpperCase() : slug?.toUpperCase() ?? 'SACCO'
+  const saccoName = sacco?.name ?? saccoSlug?.toUpperCase() ?? 'SACCO'
+  const registrationFee = sacco?.registration_fee ?? 1000
+  const shareCapital = sacco?.min_share_capital ?? 5000
+  const minContribution = sacco?.min_monthly_contribution ?? 1000
 
-  const canSubmit = Boolean(saccoSlug && formData.firstName && formData.lastName && monthlyContribution >= 1000)
+  const canSubmit = Boolean(saccoSlug && formData.firstName && formData.lastName && monthlyContribution >= minContribution)
 
   const handleSubmit = async () => {
     if (!canSubmit || !saccoSlug) return
@@ -55,7 +60,7 @@ export default function SaccoApplicationReview() {
           <Text className="text-ink-soft text-lg">←</Text>
         </TouchableOpacity>
         <View className="ml-3">
-          <Text className="text-ink text-sm font-semibold">Apply — {saccoName}</Text>
+          <Text className="text-ink text-sm font-semibold">Apply — {saccoName.toUpperCase()}</Text>
           <Text className="text-ink-faint text-xs">Step 3 of 3 — Review</Text>
         </View>
       </View>
@@ -76,8 +81,8 @@ export default function SaccoApplicationReview() {
           { label: 'Applicant', value: applicantName },
           { label: 'Employment', value: employment },
           { label: 'Monthly contribution', value: contributionString },
-          { label: 'Registration fee', value: 'KES 1,000 · Paid via M-Pesa' },
-          { label: 'Share capital to pay', value: 'KES 5,000' },
+          { label: 'Registration fee', value: `KES ${registrationFee.toLocaleString()} · Paid via M-Pesa` },
+          { label: 'Share capital to pay', value: `KES ${shareCapital.toLocaleString()}` },
         ].map((row) => (
           <View
             key={row.label}

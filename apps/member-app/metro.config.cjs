@@ -21,12 +21,32 @@ config.resolver.nodeModulesPaths = [
 // Keep hierarchical lookup ON
 config.resolver.disableHierarchicalLookup = false
 
-// ── WEB: Fix import.meta issue ─────────────────────────────────────────────
+
+// ── IGNORE VITE TEMP FILES FROM OTHER APPS ────────────────
+// Without this, Metro tries to crawl sacco-admin and super-admin
+// Vite cache folders and throws ENOENT errors
+config.watchFolders = [
+  monorepoRoot,
+]
+
+config.resolver.blockList = [
+  // Ignore Vite cache from admin portals
+  /apps[\\\/]sacco-admin[\\\/]node_modules[\\\/]\.vite/,
+  /apps[\\\/]super-admin[\\\/]node_modules[\\\/]\.vite/,
+  // Ignore dist folders
+  /apps[\\\/]sacco-admin[\\\/]dist/,
+  /apps[\\\/]super-admin[\\\/]dist/,
+  // Ignore admin app source — Metro shouldn't bundle these
+  /apps[\\\/]sacco-admin[\\\/]src/,
+  /apps[\\\/]super-admin[\\\/]src/,
+]
+
+// ── WEB: enable import.meta support for expo-router and web bundles ─────
 config.transformer = {
   ...config.transformer,
   getTransformOptions: async () => ({
     transform: {
-      experimentalImportSupport: false,
+      experimentalImportSupport: true,
       inlineRequires: true,
     },
   }),

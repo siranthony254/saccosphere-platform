@@ -38,7 +38,7 @@ export function Reports() {
     <div className="p-5">
       <div className="flex justify-between items-center mb-5">
         <div>
-          <div className="text-lg font-semibold text-ink">Analytics</div>
+          <div className="text-lg font-semibold text-ink">Reports</div>
           <div className="text-xs text-ink-muted">Financial & membership analytics</div>
         </div>
         <div className="flex gap-2">
@@ -65,7 +65,7 @@ export function Reports() {
         {[
           { label: 'Total members', value: analytics?.total_members ?? null, col: 'text-mint-600' },
           { label: 'Total savings', value: analytics?.total_savings_kes ?? null, col: 'text-mint-600' },
-          { label: 'Active loans', value: analytics?.active_loans_count ?? null, col: 'text-mint-600' },
+          { label: 'Active loans', value: analytics?.active_loans_kes ?? null, col: 'text-mint-600' },
           { label: 'Monthly contributions', value: analytics?.contributions_mtd_kes ?? null, col: 'text-mint-600' },
         ].map((m) => (
           <div key={m.label} className="bg-white border border-[#e5ede9] rounded-[10px] p-[14px_16px]">

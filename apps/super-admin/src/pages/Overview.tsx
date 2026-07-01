@@ -109,8 +109,8 @@ export function Overview() {
               <>
                 <div className="h-24 flex items-end gap-1">
                   {(() => {
-                    const max = Math.max(...(revenue ?? []).map((r) => r.total_mrr), 1)
-                    return (revenue ?? []).map((row, i) => (
+                    const max = Math.max(...(revenue ?? []).map((r: any) => r.total_mrr), 1)
+                    return (revenue ?? []).map((row: any, i: number) => (
                       <div
                         key={row.month}
                         className="flex-1 bg-indigo-400 rounded-t min-w-[8px]"
@@ -121,7 +121,7 @@ export function Overview() {
                   })()}
                 </div>
                 <div className="flex justify-between text-[9px] text-ink-faint mt-2">
-                  {(revenue ?? []).slice(-12).map((row) => (
+                  {(revenue ?? []).slice(-12).map((row: any) => (
                     <span key={row.month}>{row.month.slice(-2)}</span>
                   ))}
                 </div>

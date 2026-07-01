@@ -45,8 +45,8 @@ export function SystemHealth() {
     String(s.status).toLowerCase() === 'healthy'
   ).length
 
-  const events: SystemEvent[] = Array.isArray(health.events)
-    ? health.events.map((e: any) => ({
+  const events: SystemEvent[] = Array.isArray((health as any).events)
+    ? (health as any).events.map((e: any) => ({
         id: e.id ?? `${e.time ?? ''}-${e.event ?? ''}`,
         time: e.time ?? e.created_at ?? '—',
         event: e.event ?? e.message ?? e.description ?? 'System event',

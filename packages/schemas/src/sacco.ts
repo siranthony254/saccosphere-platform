@@ -108,5 +108,12 @@ export const SaccoSchema = z.object({
   loan_rate_pct: z.number(),
   loan_multiplier: z.number(),
   established_year: z.number().optional(),
+  // Membership requirements (optional as they may come from config endpoint)
+  min_age: z.number().optional(),
+  min_monthly_contribution: z.number().optional(),
+  registration_fee: z.number().optional(),
+  min_share_capital: z.number().optional(),
+  is_open_to_new_members: z.boolean().optional(),
+  application_review_days: z.string().optional(),
 })
 export type Sacco = z.infer<typeof SaccoSchema>

@@ -8,6 +8,9 @@ type MgmtSettingsResponse = {
   data: {
     registration_fee?: number
     loan_multiplier?: number
+    interest_rate?: number
+    max_repayment_period?: number
+    min_guarantors?: number
   }
 }
 
@@ -23,6 +26,9 @@ type SettingsUiModel = {
   settings: {
     registration_fee?: number
     loan_multiplier?: number
+    interest_rate?: number
+    max_repayment_period?: number
+    min_guarantors?: number
   }
 }
 

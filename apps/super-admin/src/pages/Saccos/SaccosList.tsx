@@ -20,7 +20,7 @@ export function SaccosList() {
 
   const sectors = useMemo(() => {
     const set = new Set<string>()
-    ;(data?.results ?? []).forEach((s) => {
+    ;(data?.results ?? []).forEach((s: SuperAdminSacco) => {
       if (s.sector) set.add(s.sector)
     })
     return Array.from(set).sort()

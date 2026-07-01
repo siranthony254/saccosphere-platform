@@ -1,1 +1,2 @@
-export { SaccoAvatar, SaccoFeeBadge, SaccoHealthDot, SaccoRow, SaccoStatusBadge } from './SaccoRow'
+export { SaccoAvatar } from './SaccoAvatar'
+export { SaccoFeeBadge, SaccoHealthDot, SaccoStatusBadge } from './SaccoRow'

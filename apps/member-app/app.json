@@ -37,7 +37,7 @@
     },
     "web": {
       "favicon": "./assets/favicon.png",
-      "bundler": "webpack"
+      "bundler": "metro"
     },
     "plugins": [
       "expo-router",
@@ -55,11 +55,14 @@
     "experiments": {
       "typedRoutes": true
     },
+    "doctor": {
+      "enabled": false
+    },
 
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "8b636f5b-f8ba-4717-addf-8b9849f1b0bd"  // ← keep yours exactly
+        "projectId": "8b636f5b-f8ba-4717-addf-8b9849f1b0bd"  
       }
     }
   }

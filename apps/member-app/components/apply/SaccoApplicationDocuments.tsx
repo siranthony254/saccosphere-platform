@@ -3,6 +3,7 @@ import { useLocalSearchParams, router } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Dimensions } from 'react-native'
 import { useMembershipApplicationStore } from '../../store/useMembershipApplicationStore'
+import { useSacco } from '../../hooks/useSaccos'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 const PADDING_H = Math.max(16, Math.min(24, SCREEN_WIDTH * 0.05))
@@ -11,8 +12,10 @@ export default function SaccoApplicationDocuments() {
   const { slug } = useLocalSearchParams<{ slug: string }>()
   const insets = useSafeAreaInsets()
   const { saccoSlug } = useMembershipApplicationStore()
+  const { data: sacco } = useSacco(slug)
 
   const isReady = Boolean(saccoSlug)
+  const registrationFee = sacco?.registration_fee ?? 1000
 
   return (
     <ScrollView
@@ -28,7 +31,7 @@ export default function SaccoApplicationDocuments() {
           <Text className="text-ink-soft text-lg">←</Text>
         </TouchableOpacity>
         <View className="ml-3">
-          <Text className="text-ink text-sm font-semibold">Apply — {saccoSlug ? saccoSlug.toUpperCase() : 'SACCO'}</Text>
+          <Text className="text-ink text-sm font-semibold">Apply — {sacco?.name?.toUpperCase() ?? 'SACCO'}</Text>
           <Text className="text-ink-faint text-xs">Step 2 of 3 — Documents</Text>
         </View>
       </View>
@@ -41,7 +44,7 @@ export default function SaccoApplicationDocuments() {
       </View>
       <Text className="text-ink-faint text-xs mb-4">Step 2 of 3 — Required documents</Text>
 
-      <Text className="text-ink text-xs font-medium mb-2.5">{saccoSlug ? `${saccoSlug.toUpperCase()} requires the following:` : 'Required documents'}</Text>
+      <Text className="text-ink text-xs font-medium mb-2.5">{sacco?.name ? `${sacco.name} requires the following:` : 'Required documents'}</Text>
 
       {/* Auto-imported from KYC */}
       <View className="flex-row gap-2.5 mb-3">
@@ -69,7 +72,7 @@ export default function SaccoApplicationDocuments() {
         <Text className="text-base">📄</Text>
         <View>
           <Text className="text-ink text-xs font-semibold mb-0.5">Latest payslip (last 3 months)</Text>
-          <Text className="text-ink-faint text-xs">Required by {saccoSlug?.toUpperCase() ?? 'the SACCO'} · PDF or image</Text>
+          <Text className="text-ink-faint text-xs">Required by {sacco?.name ?? 'the SACCO'} · PDF or image</Text>
         </View>
       </TouchableOpacity>
 
@@ -77,13 +80,13 @@ export default function SaccoApplicationDocuments() {
         <Text className="text-base">🏦</Text>
         <View>
           <Text className="text-ink text-xs font-semibold mb-0.5">Bank statement (3 months)</Text>
-          <Text className="text-ink-faint text-xs">Required by {saccoSlug?.toUpperCase() ?? 'the SACCO'} · PDF</Text>
+          <Text className="text-ink-faint text-xs">Required by {sacco?.name ?? 'the SACCO'} · PDF</Text>
         </View>
       </TouchableOpacity>
 
       {/* Payment of registration fee */}
       <View className="mb-4">
-        <Text className="text-ink-soft text-xs font-medium mb-1">Payment of registration fee (KES 1,000)</Text>
+        <Text className="text-ink-soft text-xs font-medium mb-1">Payment of registration fee (KES {registrationFee.toLocaleString()})</Text>
         <View className="flex-row gap-2 mt-1">
           <TouchableOpacity className="flex-1 p-2.5 border-2 border-violet-500 rounded-xl items-center">
             <Text className="text-violet-500 text-xs font-semibold">Pay via M-Pesa</Text>

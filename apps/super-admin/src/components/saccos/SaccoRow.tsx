@@ -8,8 +8,6 @@ interface SaccoRowProps {
 }
 
 export function SaccoRow({ sacco }: SaccoRowProps) {
-  const feeStatus = sacco.fee_status ?? 'unknown'
-
   return (
     <div className="flex items-center gap-3">
       <SaccoAvatar name={sacco.name} color={sacco.color} initials={sacco.initials} />

@@ -32,10 +32,10 @@ export function Revenue() {
   }
 
   const rows = revenueData
-  const totalSaaS = rows.reduce((sum, item) => sum + item.saas_fees, 0)
-  const totalTxnFees = rows.reduce((sum, item) => sum + item.transaction_fees, 0)
-  const totalMRR = rows.reduce((sum, item) => sum + item.total_mrr, 0)
-  const maxMRR = Math.max(...rows.map((r) => r.total_mrr), 1)
+  const totalSaaS = rows.reduce((sum: number, item: any) => sum + item.saas_fees, 0)
+  const totalTxnFees = rows.reduce((sum: number, item: any) => sum + item.transaction_fees, 0)
+  const totalMRR = rows.reduce((sum: number, item: any) => sum + item.total_mrr, 0)
+  const maxMRR = Math.max(...rows.map((r: any) => r.total_mrr), 1)
 
   return (
     <div className="p-5">
@@ -55,7 +55,7 @@ export function Revenue() {
           ) : (
             <>
               <div className="h-24 flex items-end gap-1 mb-2">
-                {rows.map((row, i) => (
+                {rows.map((row: any, i: number) => (
                   <div
                     key={row.month}
                     className="flex-1 bg-indigo-400 rounded-t min-w-[8px]"
@@ -65,7 +65,7 @@ export function Revenue() {
                 ))}
               </div>
               <div className="flex justify-between text-[9px] text-ink-faint">
-                {rows.slice(-12).map((row) => (
+                {rows.slice(-12).map((row: any) => (
                   <span key={row.month}>{row.month.slice(-2)}</span>
                 ))}
               </div>
@@ -121,17 +121,17 @@ export function Revenue() {
       <Card title="Monthly revenue breakdown" className="mt-4">
         <DataTable
           columns={[
-            { key: 'month', header: 'Month', render: (row) => row.month },
-            { key: 'saas_fees', header: 'SaaS fees', render: (row) => formatKes(row.saas_fees) },
-            { key: 'transaction_fees', header: 'Transaction fees', render: (row) => formatKes(row.transaction_fees) },
+            { key: 'month', header: 'Month', render: (row: any) => row.month },
+            { key: 'saas_fees', header: 'SaaS fees', render: (row: any) => formatKes(row.saas_fees) },
+            { key: 'transaction_fees', header: 'Transaction fees', render: (row: any) => formatKes(row.transaction_fees) },
             {
               key: 'total_mrr',
               header: 'Total MRR',
-              render: (row) => <span className="font-semibold text-violet-600">{formatKes(row.total_mrr)}</span>,
+              render: (row: any) => <span className="font-semibold text-violet-600">{formatKes(row.total_mrr)}</span>,
             },
           ]}
           data={rows}
-          keyExtractor={(row) => row.month}
+          keyExtractor={(row: any) => row.month}
         />
       </Card>
     </div>

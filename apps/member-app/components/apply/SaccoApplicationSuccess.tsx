@@ -3,7 +3,7 @@ import { useLocalSearchParams, router } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Dimensions } from 'react-native'
 import { useMembershipApplicationStore } from '../../store/useMembershipApplicationStore'
-import { useSaccoConfig } from '../../hooks/useSaccoConfig'
+import { useSacco } from '../../hooks/useSaccos'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 const PADDING_H = Math.max(16, Math.min(24, SCREEN_WIDTH * 0.05))
@@ -12,9 +12,10 @@ export default function SaccoApplicationSuccess() {
   const { slug } = useLocalSearchParams<{ slug: string }>()
   const insets = useSafeAreaInsets()
   const { saccoSlug } = useMembershipApplicationStore()
-  const { data: config } = useSaccoConfig(slug ?? '')
-  const saccoName = saccoSlug ? saccoSlug.toUpperCase() : slug?.toUpperCase() ?? 'SACCO'
-  const registrationFee = config?.membership.registration_fee_kes ?? 1000
+  const { data: sacco } = useSacco(slug)
+  const saccoName = sacco?.name ?? saccoSlug?.toUpperCase() ?? 'SACCO'
+  const registrationFee = sacco?.registration_fee ?? 1000
+  const reviewDays = sacco?.application_review_days ?? '5-7'
 
   return (
     <ScrollView
@@ -46,10 +47,10 @@ export default function SaccoApplicationSuccess() {
 
       {/* Receipt */}
       <View className="bg-surface2 rounded-xl p-3.5 w-full mb-4">
-        {[  
+        {[
           { label: 'SACCO', value: saccoName },
           { label: 'Status', value: 'Under review' },
-          { label: 'Expected decision', value: '5–7 business days' },
+          { label: 'Expected decision', value: `${reviewDays} business days` },
           { label: 'Registration fee', value: `KES ${registrationFee.toLocaleString()} paid` },
         ].map((row) => (
           <View
