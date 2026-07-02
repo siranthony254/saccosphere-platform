@@ -13,20 +13,32 @@ export function ApplicationsList() {
   const { mutate: reviewApplication, isPending } = useReviewApplication()
   const [reviewingId, setReviewingId] = useState<string | null>(null)
   const [reviewNotes, setReviewNotes] = useState('')
+  const [alertInfo, setAlertInfo] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
+
+  const showAlert = (type: 'success' | 'error', message: string) => {
+    setAlertInfo({ type, message })
+    setTimeout(() => setAlertInfo(null), 3000)
+  }
 
   const handleReview = async (id: string, status: 'APPROVED' | 'REJECTED') => {
     try {
       await reviewApplication({ id, status, review_notes: reviewNotes })
       setReviewingId(null)
       setReviewNotes('')
+      showAlert('success', `Application ${status.toLowerCase()} successfully`)
     } catch (error) {
       console.error('Failed to review application:', error)
-      alert('Failed to review application. Check console for details.')
+      showAlert('error', 'Failed to review application. Please try again.')
     }
   }
 
   return (
-    <div className="p-5">
+    <div className="p-5 relative">
+      {alertInfo && (
+        <div className={`fixed top-4 right-4 px-4 py-2 rounded-lg text-sm font-medium z-50 shadow-lg ${alertInfo.type === 'success' ? 'bg-mint-500 text-white' : 'bg-red-500 text-white'}`}>
+          {alertInfo.message}
+        </div>
+      )}
       <div className="flex justify-between items-center mb-5">
         <div>
           <div className="text-lg font-semibold text-ink">Membership applications</div>
@@ -105,11 +117,13 @@ export function ApplicationsList() {
                         { l: 'Employment status', v: app.employment_status || '—' },
                         { l: 'Employer', v: app.employer_name || '—' },
                         { l: 'Monthly income', v: `KES ${app.monthly_income?.toLocaleString() || '0'}` },
+                        { l: 'Monthly contribution', v: `KES ${app.monthly_contribution?.toLocaleString() || '0'}` },
+                        ...(Object.entries(app.custom_fields || {}).map(([k, v]) => ({ l: k, v: String(v) }))),
                         { l: 'Submitted', v: app.submitted_at ? new Date(app.submitted_at).toLocaleDateString() : '—' },
-                      ].map(row => (
-                        <div key={row.l} className="flex justify-between py-1 border-b border-ink-faint text-xs last:border-0">
-                          <span className="text-ink-muted">{row.l}</span>
-                          <span className="font-medium text-ink">{row.v}</span>
+                      ].map((row, idx) => (
+                        <div key={`${row.l}-${idx}`} className="flex justify-between py-1 border-b border-ink-faint text-xs last:border-0">
+                          <span className="text-ink-muted capitalize">{row.l.replace(/([A-Z])/g, ' $1').trim()}</span>
+                          <span className="font-medium text-ink text-right max-w-[60%] truncate" title={row.v}>{row.v}</span>
                         </div>
                       ))}
                     </div>

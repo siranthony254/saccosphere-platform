@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useAdminLoans, useReviewLoan } from '../../hooks/useLoans'
+import { useAdminLoans, useReviewLoan, useDisburseLoan } from '../../hooks/useLoans'
 
 const STATUS_COLORS: Record<string, { bg: string; color: string }> = {
   PENDING_APPROVAL: { bg: 'bg-amber-50', color: 'text-amber-700' },
@@ -14,11 +14,58 @@ export function LoansList() {
   const [statusFilter, setStatusFilter] = useState('all')
   const { data, isLoading } = useAdminLoans({ status: statusFilter === 'all' ? undefined : statusFilter })
   const { mutate: reviewLoan, isPending: reviewing } = useReviewLoan()
+  const { mutate: disburseLoan, isPending: disbursing } = useDisburseLoan()
   const [activeId, setActiveId] = useState<string | null>(null)
   const [notes, setNotes] = useState('')
+  const [alertInfo, setAlertInfo] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
+
+  const showAlert = (type: 'success' | 'error', message: string) => {
+    setAlertInfo({ type, message })
+    setTimeout(() => setAlertInfo(null), 3000)
+  }
+
+  const handleReview = (id: string, action: 'approve' | 'reject') => {
+    reviewLoan(
+      { id, action, notes },
+      {
+        onSuccess: () => {
+          setActiveId(null)
+          setNotes('')
+          const msg = action === 'approve' ? 'approved' : 'rejected'
+          showAlert('success', `Loan ${msg} successfully`)
+        },
+        onError: (error) => {
+          console.error('Failed to process loan:', error)
+          showAlert('error', 'Failed to process loan. Please try again.')
+        }
+      }
+    )
+  }
+
+  const handleDisburse = (loan: any) => {
+    disburseLoan(
+      { loanId: loan.loan_id, amount: loan.amount, phone_number: loan.phone_number, remarks: notes },
+      {
+        onSuccess: () => {
+          setActiveId(null)
+          setNotes('')
+          showAlert('success', `Loan disbursed successfully`)
+        },
+        onError: (error) => {
+          console.error('Failed to disburse loan:', error)
+          showAlert('error', 'Failed to disburse loan. Please try again.')
+        }
+      }
+    )
+  }
 
   return (
-    <div className="p-5">
+    <div className="p-5 relative">
+      {alertInfo && (
+        <div className={`fixed top-4 right-4 px-4 py-2 rounded-lg text-sm font-medium z-50 shadow-lg ${alertInfo.type === 'success' ? 'bg-mint-500 text-white' : 'bg-red-500 text-white'}`}>
+          {alertInfo.message}
+        </div>
+      )}
       <div className="flex justify-between items-center mb-5">
         <div>
           <div className="text-lg font-semibold text-ink">Loan review</div>
@@ -79,22 +126,17 @@ export function LoansList() {
                   <span className={`${sc.bg} ${sc.color} px-2 py-0.5 rounded-full text-[11px] font-semibold`}>{loan.status}</span>
                 </div>
                 <div className="flex gap-1.5">
-                  {loan.status === 'PENDING_APPROVAL' || loan.status === 'UNDER_REVIEW' ? (
+                  {loan.status === 'PENDING_APPROVAL' || loan.status === 'UNDER_REVIEW' || loan.status === 'APPROVED' ? (
                     <button
-                      className="px-3 py-1 rounded-[6px] border-none bg-mint-600 text-white text-xs font-semibold cursor-pointer hover:bg-mint-700 transition-colors"
+                      className={`px-3 py-1 rounded-[6px] border-none text-white text-xs font-semibold cursor-pointer transition-colors ${
+                        loan.status === 'APPROVED' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-mint-600 hover:bg-mint-700'
+                      }`}
                       onClick={() => {
                         setActiveId(isExpanded ? null : loan.loan_id)
                         setNotes('')
                       }}
                     >
-                      {isExpanded ? 'Close' : 'Review'}
-                    </button>
-                  ) : loan.status === 'APPROVED' ? (
-                    <button
-                      className="px-3 py-1 rounded-[6px] border-none bg-slate-200 text-slate-600 text-xs font-semibold cursor-not-allowed"
-                      disabled
-                    >
-                      Review in backend
+                      {isExpanded ? 'Close' : loan.status === 'APPROVED' ? 'Action' : 'Review'}
                     </button>
                   ) : (
                     <span className="text-xs text-ink-faint">—</span>
@@ -128,20 +170,32 @@ export function LoansList() {
                         onChange={(e) => setNotes(e.target.value)}
                       />
                       <div className="flex gap-2">
-                        <button
-                          className={`flex-1 py-2 rounded-lg border-none bg-mint-600 text-white text-sm font-semibold cursor-pointer hover:bg-mint-700 transition-colors ${reviewing ? 'opacity-60' : ''}`}
-                          onClick={() => reviewLoan({ id: loan.loan_id, action: 'approve', notes }, { onSuccess: () => setActiveId(null) })}
-                          disabled={reviewing}
-                        >
-                          {reviewing ? 'Processing...' : '✓ Approve'}
-                        </button>
-                        <button
-                          className="flex-1 py-2 rounded-lg border-none bg-red-50 text-red-700 text-sm font-semibold cursor-pointer hover:bg-red-100 transition-colors"
-                          onClick={() => reviewLoan({ id: loan.loan_id, action: 'reject', notes }, { onSuccess: () => setActiveId(null) })}
-                          disabled={reviewing}
-                        >
-                          ✗ Reject
-                        </button>
+                        {loan.status === 'APPROVED' ? (
+                          <button
+                            className={`flex-1 py-2 rounded-lg border-none bg-blue-600 text-white text-sm font-semibold cursor-pointer hover:bg-blue-700 transition-colors ${disbursing ? 'opacity-60' : ''}`}
+                            onClick={() => handleDisburse(loan)}
+                            disabled={disbursing}
+                          >
+                            {disbursing ? 'Processing...' : '💸 Disburse Funds'}
+                          </button>
+                        ) : (
+                          <>
+                            <button
+                              className={`flex-1 py-2 rounded-lg border-none bg-mint-600 text-white text-sm font-semibold cursor-pointer hover:bg-mint-700 transition-colors ${reviewing ? 'opacity-60' : ''}`}
+                              onClick={() => handleReview(loan.loan_id, 'approve')}
+                              disabled={reviewing}
+                            >
+                              {reviewing ? 'Processing...' : '✓ Approve'}
+                            </button>
+                            <button
+                              className="flex-1 py-2 rounded-lg border-none bg-red-50 text-red-700 text-sm font-semibold cursor-pointer hover:bg-red-100 transition-colors"
+                              onClick={() => handleReview(loan.loan_id, 'reject')}
+                              disabled={reviewing}
+                            >
+                              ✗ Reject
+                            </button>
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>

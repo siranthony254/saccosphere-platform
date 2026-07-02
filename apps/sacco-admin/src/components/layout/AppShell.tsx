@@ -2,7 +2,6 @@ import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { useLayoutStore } from '../../store/useLayoutStore'
 import { useAuthStore } from '../../store/useAuthStore'
 import { useSacco } from '../../hooks/useSacco'
-import { useSaccoAdminDashboard } from '../../hooks/useSaccoAdminDashboard'
 import { clearTokens } from '@saccosphere/api-client'
 import { useApplications } from '../../hooks/useApplications'
 import { useAdminLoans } from '../../hooks/useLoans'
@@ -13,7 +12,6 @@ export function AppShell() {
   const { user, clearAuth } = useAuthStore()
   const navigate = useNavigate()
   const { data: sacco } = useSacco()
-  const { data: dashboard } = useSaccoAdminDashboard()
   const { data: applications } = useApplications({ status: 'PENDING' })
   const { data: loans } = useAdminLoans()
   const { data: kycQueue } = useKycQueue({ status: 'PENDING' })
