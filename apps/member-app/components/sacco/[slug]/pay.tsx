@@ -50,9 +50,9 @@ export default function PayScreen() {
   const saccoName = membership?.sacco_name ?? selectedLoan?.sacco_name ?? slug
   const phoneNumber = user?.phone_number ?? user?.phone ?? ''
   const primarySaving = savingsQuery.data?.[0]
-  const acceptedMethods = config?.payments.accepted_methods ?? ['mpesa', 'bank_transfer']
-  const acceptsMpesa = acceptedMethods.includes('mpesa')
-  const acceptsBank = acceptedMethods.includes('bank_transfer')
+  const acceptedMethods = config?.payments?.accepted_methods ?? ['mpesa', 'bank_transfer']
+  const acceptsMpesa = acceptedMethods.some(m => String(m).toLowerCase() === 'mpesa')
+  const acceptsBank = acceptedMethods.some(m => String(m).toLowerCase() === 'bank_transfer')
 
   const title = isRepayment ? 'Pay loan' : 'Contribute'
   const subtitle = isRepayment
@@ -81,8 +81,7 @@ export default function PayScreen() {
       return
     }
     if (!isRepayment && !primarySaving?.id) {
-      Alert.alert('Savings account unavailable', 'We could not find an active savings account for this SACCO.')
-      return
+      console.warn('No active savings account found, proceeding without saving_id')
     }
     setMethodStep('processing')
   }

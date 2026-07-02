@@ -222,9 +222,6 @@ export default function HomeScreen() {
           )}
         </View>
       </ScrollView>
-      </SafeAreaView>
-    </DeepSpaceBackground>
-
       <SaccoSelectModal
         visible={pickerVisible}
         onClose={() => {
@@ -243,7 +240,8 @@ export default function HomeScreen() {
         }
         subtitle="Select one of your active SACCOs to continue"
       />
-    </SafeAreaView>
+      </SafeAreaView>
+    </DeepSpaceBackground>
   )
 }
 

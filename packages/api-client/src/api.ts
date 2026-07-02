@@ -112,8 +112,12 @@ const normalizeSacco = (sacco: any): Sacco => {
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-|-$/g, '')
 
+  const rawLogoUrl = sacco.logo_url ?? sacco.logo
+  const logo_url = rawLogoUrl && typeof rawLogoUrl === 'string' && rawLogoUrl.trim() !== '' ? rawLogoUrl : undefined
+
   return SaccoSchema.parse({
     ...sacco,
+    id: String(sacco.id),
     slug,
     initials:
       sacco.initials ??
@@ -125,14 +129,22 @@ const normalizeSacco = (sacco: any): Sacco => {
         .toUpperCase(),
     color: sacco.color ?? '#6D28D9',
     membership_type: membershipType === 'closed' ? 'invitation_only' : membershipType,
-    status: sacco.status ?? (sacco.is_active === false ? 'suspended' : 'active'),
+    status: String(sacco.status ?? (sacco.is_active === false ? 'suspended' : 'active')).toLowerCase(),
     sasra_reg_no: sacco.sasra_reg_no ?? '',
     sector: sacco.sector ?? 'SACCO',
     county: sacco.county ?? '',
-    logo_url: sacco.logo_url ?? sacco.logo ?? undefined,
+    logo_url,
     member_count: Number(sacco.member_count ?? 0),
     loan_rate_pct: Number(sacco.loan_rate_pct ?? sacco.default_interest_rate ?? 0),
     loan_multiplier: Number(sacco.loan_multiplier ?? 0),
+    description: sacco.description ?? undefined,
+    established_year: sacco.established_year != null ? Number(sacco.established_year) : undefined,
+    min_age: sacco.min_age != null ? Number(sacco.min_age) : undefined,
+    min_monthly_contribution: sacco.min_monthly_contribution != null ? Number(sacco.min_monthly_contribution) : undefined,
+    registration_fee: sacco.registration_fee != null ? Number(sacco.registration_fee) : undefined,
+    min_share_capital: sacco.min_share_capital != null ? Number(sacco.min_share_capital) : undefined,
+    is_open_to_new_members: sacco.is_open_to_new_members ?? undefined,
+    application_review_days: sacco.application_review_days ?? undefined,
   })
 }
 
@@ -701,7 +713,8 @@ export const api = {
         return normalizeSacco(await apiCall<any>('GET', `/accounts/saccos/${key}/`))
       }
       // Otherwise, search by slug and return the first match
-      const saccos = await api.saccos.list({ search: key })
+      // The backend API searches by name, so replace hyphens with spaces to match the name.
+      const saccos = await api.saccos.list({ search: key.replace(/-/g, ' ') })
       const sacco = saccos.find((item) => item.slug === key) ?? saccos[0]
       if (!sacco) throw { code: 'NOT_FOUND', message: 'SACCO not found.' }
       return sacco
@@ -781,19 +794,22 @@ export const api = {
       const sacco = await api.saccos.get(data.sacco_slug)
       
       // Map custom fields from form_data to backend format
-      // Only include fields that are not the standard employment fields
-      const standardFields = ['employer', 'employmentType', 'monthlyIncome']
-      const customFields = Object.entries(data.form_data ?? {})
-        .filter(([key]) => !standardFields.includes(key))
-        .map(([field_id, value]) => ({
-          field_id,
-          value: String(value ?? ''),
-        }))
+      // The frontend stores custom fields in data.form_data.customFields
+      const customFieldsObj = (data.form_data?.customFields as Record<string, unknown>) ?? {}
+      const customFields = Object.entries(customFieldsObj).map(([field_id, value]) => ({
+        field_id,
+        value: String(value ?? ''),
+      }))
       
       // Extract employment fields from form_data
-      const employmentStatus = String(data.form_data?.employmentType ?? 'Employed — salaried')
+      let employmentStatus = String(data.form_data?.employmentType ?? 'Employed')
+      if (employmentStatus === 'Employed — salaried') employmentStatus = 'Employed'
+      
       const employerName = String(data.form_data?.employer ?? '')
-      const monthlyIncome = Number(data.form_data?.monthlyIncome ?? 0)
+      
+      // Strip commas from monthlyIncome before parsing as Number
+      const rawIncome = String(data.form_data?.monthlyIncome ?? '0').replace(/[^0-9.]/g, '')
+      const monthlyIncome = Number(rawIncome) || 0
       
       const membership = await apiCall<any>('POST', '/members/memberships/', {
         sacco: sacco.id,
@@ -801,6 +817,7 @@ export const api = {
         employment_status: employmentStatus,
         employer_name: employerName,
         monthly_income: monthlyIncome,
+        monthly_contribution: data.monthly_contribution,
       })
       return {
         id: membership.id,

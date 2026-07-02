@@ -10,7 +10,7 @@ export default function LoanCompareScreen() {
   const [months, setMonths] = useState('24')
   const { data: comparison, isLoading } = useLoanComparison(parseFloat(amount || '0'), parseInt(months))
 
-  const best = comparison?.reduce((a, b) => a.monthly_instalment < b.monthly_instalment ? a : b)
+  const best = comparison?.length ? comparison.reduce((a, b) => a.monthly_instalment < b.monthly_instalment ? a : b) : undefined
 
   return (
     <ScrollView className="bg-surface2" contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>

@@ -91,7 +91,7 @@ export const SaccoStatusSchema = z.enum(['onboarding', 'active', 'suspended'])
 export type SaccoStatus = z.infer<typeof SaccoStatusSchema>
 
 export const SaccoSchema = z.object({
-  id: z.string().uuid(),
+  id: z.string(),
   slug: z.string(),
   name: z.string(),
   sector: z.string(),

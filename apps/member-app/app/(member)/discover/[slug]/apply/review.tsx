@@ -6,6 +6,7 @@ import { useMembershipApplicationStore } from '../../../../../store/useMembershi
 import { useSubmitMembershipApplication } from '../../../../../hooks/useMembershipApplication'
 import { useSaccoConfig } from '../../../../../hooks/useSaccoConfig'
 import { useProfile } from '../../../../../hooks/useProfile'
+import { DeepSpaceBackground } from '../../../../../components/DeepSpaceBackground'
 
 export default function ApplyReviewScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>()
@@ -18,10 +19,12 @@ export default function ApplyReviewScreen() {
 
   if (isLoadingConfig) {
     return (
-      <View className="flex-1 bg-surface items-center justify-center px-8">
-        <ActivityIndicator color="#6D28D9" />
-        <Text className="text-ink-muted text-xs mt-3">Loading application details...</Text>
-      </View>
+      <DeepSpaceBackground>
+        <View className="flex-1 items-center justify-center px-8">
+          <ActivityIndicator color="#6D28D9" />
+          <Text className="text-white/60 text-xs mt-3">Loading application details...</Text>
+        </View>
+      </DeepSpaceBackground>
     )
   }
 
@@ -62,97 +65,99 @@ export default function ApplyReviewScreen() {
   }
 
   return (
-    <ScrollView
-      className="bg-surface flex-1"
-      contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
-    >
-      {/* Header */}
-      <View className="px-4 py-2.5 border-b border-border flex-row items-center mb-4">
-        <TouchableOpacity onPress={() => router.back()}>
-          <Text className="text-ink-soft text-lg">←</Text>
-        </TouchableOpacity>
-        <View className="ml-2.5">
-          <Text className="text-ink text-sm font-semibold">Apply — {saccoName}</Text>
-          <Text className="text-ink-faint text-xs">Step 3 of 3 — Review</Text>
-        </View>
-      </View>
-
-      {/* Progress bar - step 3 of 3 */}
-      <View className="flex-row gap-1 mx-4 mb-1.5">
-        <View className="flex-1 h-0.75 rounded" style={{ backgroundColor: '#6D28D9' }} />
-        <View className="flex-1 h-0.75 rounded" style={{ backgroundColor: '#6D28D9' }} />
-        <View className="flex-1 h-0.75 rounded" style={{ backgroundColor: '#6D28D9' }} />
-      </View>
-      <Text className="text-ink-faint text-xs mx-4 mb-4">Step 3 of 3 — Review & confirm</Text>
-
-      {/* Application summary */}
-      <View className="mx-4 bg-surface border border-border rounded-xl p-3.5 mb-2.5">
-        <Text className="text-ink text-xs font-semibold mb-2">Application summary</Text>
-        {[  
-          { label: 'SACCO', value: saccoName },
-          { label: 'Applicant', value: applicantName },
-          { label: 'Employment', value: employment },
-          { label: 'Monthly contribution', value: contributionString },
-          { label: 'Registration fee', value: `KES ${registrationFee.toLocaleString()} · Paid via M-Pesa` },
-          { label: 'Share capital to pay', value: `KES ${shareCapital.toLocaleString()}` },
-        ].map((row) => (
-          <View
-            key={row.label}
-            className="flex-row justify-between py-2 border-b border-border last:border-b-0"
-          >
-            <Text className="text-ink-muted text-xs">{row.label}</Text>
-            <Text className="text-ink text-xs font-semibold">{row.value}</Text>
-          </View>
-        ))}
-      </View>
-
-      {/* Documents */}
-      <View className="mx-4 bg-surface border border-border rounded-xl p-3.5 mb-2.5">
-        <Text className="text-ink text-xs font-semibold mb-2">Documents</Text>
-        {config?.membership.required_documents.map((doc) => (
-          <View
-            key={doc.key}
-            className="flex-row justify-between py-2 border-b border-border last:border-b-0"
-          >
-            <Text className="text-ink-muted text-xs">{doc.label}</Text>
-            <View className={`px-2 py-0.5 rounded-md ${doc.already_verified_from_kyc ? 'bg-mint-100' : 'bg-blue-50'}`}>
-              <Text className={`text-xs font-semibold ${doc.already_verified_from_kyc ? 'text-mint-700' : 'text-blue-700'}`}>
-                {doc.already_verified_from_kyc ? '✓ Verified' : '✓ Uploaded'}
-              </Text>
-            </View>
-          </View>
-        ))}
-      </View>
-
-      {/* Warning alert */}
-      <View className="mx-4 rounded-xl p-3 mb-4" style={{ backgroundColor: '#FEF3C7' }}>
-        <Text className="text-xs leading-4.5" style={{ color: '#92400E' }}>
-          By submitting you agree to {saccoName}'s{' '}
-          <Text className="font-semibold" style={{ color: '#C47D0E' }}>bylaws and membership terms</Text>. Your monthly
-          contribution will begin after approval.
-        </Text>
-      </View>
-
-      {/* Submit button */}
-      <TouchableOpacity
-        className={`mx-4 py-3 rounded-xl items-center ${
-          !canSubmit ? 'bg-surface2' : 'bg-violet-500'
-        }`}
-        onPress={handleSubmit}
-        disabled={!canSubmit || isSubmitting}
+    <DeepSpaceBackground>
+      <ScrollView
+        className="flex-1"
+        contentContainerStyle={{ paddingBottom: insets.bottom + 24, paddingTop: insets.top }}
       >
-        {isSubmitting ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <Text
-            className={`text-xs font-semibold ${
-              !canSubmit ? 'text-ink-muted' : 'text-white'
-            }`}
-          >
-            Submit application
+        {/* Header */}
+        <View className="px-4 py-2.5 border-b border-white/10 flex-row items-center mb-4">
+          <TouchableOpacity onPress={() => router.back()} className="w-7 h-7 rounded-full bg-white/10 items-center justify-center">
+            <Text className="text-white/80 text-xs">←</Text>
+          </TouchableOpacity>
+          <View className="ml-2.5">
+            <Text className="text-white text-sm font-semibold">Apply — {saccoName}</Text>
+            <Text className="text-white/60 text-xs">Step 3 of 3 — Review</Text>
+          </View>
+        </View>
+
+        {/* Progress bar - step 3 of 3 */}
+        <View className="flex-row gap-1 mx-4 mb-1.5">
+          <View className="flex-1 h-0.75 rounded bg-violet-500" />
+          <View className="flex-1 h-0.75 rounded bg-violet-500" />
+          <View className="flex-1 h-0.75 rounded bg-violet-500" />
+        </View>
+        <Text className="text-white/40 text-xs mx-4 mb-4">Step 3 of 3 — Review & confirm</Text>
+
+        {/* Application summary */}
+        <View className="mx-4 bg-white/5 border border-white/10 rounded-xl p-3.5 mb-2.5">
+          <Text className="text-white text-xs font-semibold mb-2">Application summary</Text>
+          {[  
+            { label: 'SACCO', value: saccoName },
+            { label: 'Applicant', value: applicantName },
+            { label: 'Employment', value: employment },
+            { label: 'Monthly contribution', value: contributionString },
+            { label: 'Registration fee', value: `KES ${registrationFee.toLocaleString()} · Paid via M-Pesa` },
+            { label: 'Share capital to pay', value: `KES ${shareCapital.toLocaleString()}` },
+          ].map((row) => (
+            <View
+              key={row.label}
+              className="flex-row justify-between py-2 border-b border-white/5 last:border-b-0"
+            >
+              <Text className="text-white/60 text-xs">{row.label}</Text>
+              <Text className="text-white text-xs font-semibold">{row.value}</Text>
+            </View>
+          ))}
+        </View>
+
+        {/* Documents */}
+        <View className="mx-4 bg-white/5 border border-white/10 rounded-xl p-3.5 mb-2.5">
+          <Text className="text-white text-xs font-semibold mb-2">Documents</Text>
+          {config?.membership.required_documents.map((doc) => (
+            <View
+              key={doc.key}
+              className="flex-row justify-between py-2 border-b border-white/5 last:border-b-0"
+            >
+              <Text className="text-white/60 text-xs">{doc.label}</Text>
+              <View className={`px-2 py-0.5 rounded-md ${doc.already_verified_from_kyc ? 'bg-mint-500/20' : 'bg-blue-500/20'}`}>
+                <Text className={`text-xs font-semibold ${doc.already_verified_from_kyc ? 'text-mint-400' : 'text-blue-400'}`}>
+                  {doc.already_verified_from_kyc ? '✓ Verified' : '✓ Uploaded'}
+                </Text>
+              </View>
+            </View>
+          ))}
+        </View>
+
+        {/* Warning alert */}
+        <View className="mx-4 rounded-xl p-3 mb-4" style={{ backgroundColor: 'rgba(245, 158, 11, 0.15)', borderWidth: 1, borderColor: 'rgba(245, 158, 11, 0.3)' }}>
+          <Text className="text-xs leading-4.5 text-amber-500">
+            By submitting you agree to {saccoName}'s{' '}
+            <Text className="font-semibold text-amber-400">bylaws and membership terms</Text>. Your monthly
+            contribution will begin after approval.
           </Text>
-        )}
-      </TouchableOpacity>
-    </ScrollView>
+        </View>
+
+        {/* Submit button */}
+        <TouchableOpacity
+          className={`mx-4 py-3 rounded-xl items-center ${
+            !canSubmit ? 'bg-white/10' : 'bg-violet-500'
+          }`}
+          onPress={handleSubmit}
+          disabled={!canSubmit || isSubmitting}
+        >
+          {isSubmitting ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text
+              className={`text-xs font-semibold ${
+                !canSubmit ? 'text-white/40' : 'text-white'
+              }`}
+            >
+              Submit application
+            </Text>
+          )}
+        </TouchableOpacity>
+      </ScrollView>
+    </DeepSpaceBackground>
   )
 }
