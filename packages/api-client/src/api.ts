@@ -251,7 +251,7 @@ const normalizeAdminDashboard = (dashboard: any): SaccoAdminDashboard => {
 const normalizeAdminMember = (member: any): AdminMember => {
   // Handle both nested user object and flat structure
   const user = member.user ?? member
-  const fullName = String(user.full_name || user.first_name && user.last_name ? `${user.first_name} ${user.last_name}` : '').trim()
+  const fullName = String(user.full_name || [user.first_name, user.last_name].filter(Boolean).join(' ')).trim()
   const [first_name, ...rest] = fullName.split(' ')
   const last_name = rest.join(' ') || (user.last_name || first_name)
   const statusMap: Record<string, AdminMember['membership_status']> = {
@@ -268,7 +268,7 @@ const normalizeAdminMember = (member: any): AdminMember => {
 
   return AdminMemberSchema.parse({
     id: String(member.id ?? user.id ?? ''),
-    user_id: String(user.id ?? null) || null,
+    user_id: member.user?.id ? String(member.user.id) : member.user_id ? String(member.user_id) : user.id ? String(user.id) : null,
     saccosphere_id: member.member_number ? `SS-${member.member_number}` : String(member.id ?? ''),
     member_number: String(member.member_number ?? user.member_number ?? ''),
     first_name: String(first_name || user.first_name || ''),

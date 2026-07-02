@@ -1,5 +1,8 @@
 import { useSaccoAdminDashboard, useDisbursementsDashboard, useContributionsDashboard } from '../hooks/useSaccoAdminDashboard'
 import { useSacco } from '../hooks/useSacco'
+import { useApplications } from '../hooks/useApplications'
+import { useAdminLoans } from '../hooks/useLoans'
+import { useKycQueue } from '../hooks/useKyc'
 
 function MetricCard({ label, value, delta, deltaColor = 'text-mint-600' }: { label: string; value: string; delta?: string; deltaColor?: string }) {
   return (
@@ -16,6 +19,10 @@ export function Dashboard() {
   const { data: disbursements } = useDisbursementsDashboard()
   const { data: contributions } = useContributionsDashboard()
   const { data: sacco } = useSacco()
+
+  const { data: applications } = useApplications({ status: 'PENDING' })
+  const { data: loans } = useAdminLoans()
+  const { data: kycQueue } = useKycQueue({ status: 'PENDING' })
 
   if (isLoading) return (
     <div className="p-5">
@@ -37,10 +44,10 @@ export function Dashboard() {
   const fmt = (n: number) => n >= 1e9 ? `KES ${(n/1e9).toFixed(1)}B` : n >= 1e6 ? `KES ${(n/1e6).toFixed(1)}M` : `KES ${n.toLocaleString()}`
 
   const pendingActions = [
-    { bg: 'bg-amber-50', text: `${d.pending_applications} new membership applications awaiting review`, borderColor: 'border-l-amber-500', textColor: 'text-amber-700' },
-    { bg: 'bg-amber-50', text: `${d.pending_loan_approvals} loan applications awaiting approval`, borderColor: 'border-l-amber-500', textColor: 'text-amber-700' },
+    { bg: 'bg-amber-50', text: `${applications?.count ?? 0} new membership applications awaiting review`, borderColor: 'border-l-amber-500', textColor: 'text-amber-700' },
+    { bg: 'bg-amber-50', text: `${loans?.count ?? 0} loan applications awaiting approval`, borderColor: 'border-l-amber-500', textColor: 'text-amber-700' },
     { bg: 'bg-red-50', text: `${d.members_in_arrears} members in 90+ day default — escalation required`, borderColor: 'border-l-red-500', textColor: 'text-red-700' },
-    { bg: 'bg-blue-50', text: `${d.pending_kyc_reviews} KYC documents submitted for review`, borderColor: 'border-l-blue-500', textColor: 'text-blue-700' },
+    { bg: 'bg-blue-50', text: `${kycQueue?.length ?? 0} KYC documents submitted for review`, borderColor: 'border-l-blue-500', textColor: 'text-blue-700' },
   ]
 
   // Portfolio health breakdown should come from backend.
