@@ -8,7 +8,7 @@ import {
   ActivityIndicator,
   Dimensions,
 } from 'react-native'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { router } from 'expo-router'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -34,6 +34,12 @@ const loginSchema = z.object({
 })
 type LoginForm = z.infer<typeof loginSchema>
 
+const BACKGROUND = '#06091A'
+const FROSTED = 'rgba(255, 255, 255, 0.08)'
+const FROSTED_DARK = 'rgba(255, 255, 255, 0.06)'
+const BORDER_WHITE = 'rgba(255, 255, 255, 0.1)'
+const TEXT = '#F8FAFC'
+const TEXT_MUTED = 'rgba(248, 250, 252, 0.68)'
 const VIOLET = '#6D28D9'
 const VIOLET_LIGHT = '#EDE9FE'
 const SURFACE = '#FFFFFF'
@@ -116,63 +122,65 @@ export default function LoginScreen() {
   })
 
   return (
-    <ScrollView
-      contentContainerStyle={{
-        paddingBottom: insets.bottom + 20,
-        paddingHorizontal: PADDING_H,
-        paddingTop: 8,
-      }}
-      keyboardShouldPersistTaps="handled"
-      scrollEventThrottle={16}
-      className="bg-surface"
-    >
+    <SafeAreaView style={{ flex: 1, backgroundColor: BACKGROUND }} edges={['bottom', 'left', 'right']}>
+      <ScrollView
+        contentContainerStyle={{
+          flexGrow: 1,
+          justifyContent: 'center',
+          paddingBottom: insets.bottom + 20,
+          paddingHorizontal: PADDING_H,
+          paddingTop: insets.top + 20,
+        }}
+        keyboardShouldPersistTaps="handled"
+        scrollEventThrottle={16}
+      >
       {/* Brand */}
       <Text style={{ color: VIOLET, fontWeight: '700', fontSize: 40, marginBottom: 24, fontFamily: 'Fraunces_700Bold' }}>
         Saccosphere
       </Text>
 
       {/* Heading */}
-      <Text className="text-ink text-lg font-bold mb-1">Welcome back</Text>
-      <Text className="text-xs mb-6" style={{ color: INK_MUTED, lineHeight: 20 }}>
+      <Text className="text-lg font-bold mb-1" style={{ color: TEXT }}>Welcome back</Text>
+      <Text className="text-xs mb-6" style={{ color: TEXT_MUTED, lineHeight: 20 }}>
         Sign in to your account
       </Text>
 
       {/* Social login buttons */}
       <TouchableOpacity
         className="w-full flex-row items-center justify-center gap-2 py-2.5 rounded-xl mb-2"
-        style={{ borderWidth: 1, borderColor: BORDER_MID, backgroundColor: SURFACE }}
+        style={{ borderWidth: 1, borderColor: BORDER_WHITE, backgroundColor: FROSTED_DARK }}
         onPress={handleGoogleSignIn}
         disabled={isGooglePending}
       >
         {isGooglePending ? (
-          <ActivityIndicator size="small" color={INK} />
+          <ActivityIndicator size="small" color={TEXT} />
         ) : (
           <View className="w-4 h-4 rounded-full" style={{ backgroundColor: '#4285F4' }} />
         )}
-        <Text className="text-xs font-medium" style={{ color: INK }}>
+        <Text className="text-xs font-medium" style={{ color: TEXT }}>
           {isGooglePending ? 'Signing in...' : 'Continue with Google'}
         </Text>
       </TouchableOpacity>
 
       <TouchableOpacity
         className="w-full flex-row items-center justify-center gap-2 py-2.5 rounded-xl mb-3"
-        style={{ borderWidth: 1, borderColor: BORDER_MID, backgroundColor: SURFACE }}
+        style={{ borderWidth: 1, borderColor: BORDER_WHITE, backgroundColor: FROSTED_DARK }}
       >
         <View className="w-4 h-4 rounded-full" style={{ backgroundColor: '#00a550' }} />
-        <Text className="text-xs font-medium" style={{ color: INK }}>
+        <Text className="text-xs font-medium" style={{ color: TEXT }}>
           Continue with M-Pesa number
         </Text>
       </TouchableOpacity>
 
       {/* Divider */}
       <View className="flex-row items-center gap-3 mb-4">
-        <View className="flex-1 h-px" style={{ backgroundColor: BORDER_MID }} />
-        <Text className="text-xs" style={{ color: INK_FAINT }}>or use email</Text>
-        <View className="flex-1 h-px" style={{ backgroundColor: BORDER_MID }} />
+        <View className="flex-1 h-px" style={{ backgroundColor: BORDER_WHITE }} />
+        <Text className="text-xs" style={{ color: TEXT_MUTED }}>or use email</Text>
+        <View className="flex-1 h-px" style={{ backgroundColor: BORDER_WHITE }} />
       </View>
 
       {/* Email */}
-      <Text className="text-xs font-medium mb-1.5" style={{ color: INK_SOFT }}>
+      <Text className="text-xs font-medium mb-1.5" style={{ color: TEXT_MUTED }}>
         Email address
       </Text>
       <Controller
@@ -182,16 +190,16 @@ export default function LoginScreen() {
           <TextInput
             className="border rounded-xl p-3 text-sm mb-2"
             style={{
-              borderColor: errors.email ? '#EF4444' : BORDER_MID,
-              color: INK,
-              backgroundColor: SURFACE,
+              borderColor: errors.email ? '#EF4444' : BORDER_WHITE,
+              color: TEXT,
+              backgroundColor: FROSTED_DARK,
             }}
             onChangeText={onChange}
             value={value}
             placeholder="you@email.com"
             keyboardType="email-address"
             autoCapitalize="none"
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor={TEXT_MUTED}
           />
         )}
       />
@@ -199,7 +207,7 @@ export default function LoginScreen() {
 
       {/* Password + Forgot password */}
       <View className="flex-row justify-between items-center mb-1">
-        <Text className="text-xs font-medium" style={{ color: INK_SOFT }}>
+        <Text className="text-xs font-medium" style={{ color: TEXT_MUTED }}>
           Password
         </Text>
         <TouchableOpacity onPress={() => router.push('/(auth)/forgot-password')}>
@@ -214,16 +222,16 @@ export default function LoginScreen() {
         render={({ field: { onChange, value } }) => (
           <View
             className="flex-row items-center border rounded-xl mb-1"
-            style={{ borderColor: errors.password ? '#EF4444' : BORDER_MID }}
+            style={{ borderColor: errors.password ? '#EF4444' : BORDER_WHITE, backgroundColor: FROSTED_DARK }}
           >
             <TextInput
               className="flex-1 p-3 pr-2 text-sm"
-              style={{ color: INK }}
+              style={{ color: TEXT }}
               onChangeText={onChange}
               value={value}
               placeholder="········"
               secureTextEntry={!showPassword}
-              placeholderTextColor="#9CA3AF"
+              placeholderTextColor={TEXT_MUTED}
             />
             <TouchableOpacity
               className="px-3 py-3"
@@ -256,7 +264,7 @@ export default function LoginScreen() {
 
       {/* Create account prompt */}
       <View className="flex-row justify-center">
-        <Text className="text-xs" style={{ color: INK_MUTED }}>
+        <Text className="text-xs" style={{ color: TEXT_MUTED }}>
           No account?{' '}
         </Text>
         <TouchableOpacity onPress={() => router.push('/(auth)/register')}>
@@ -266,5 +274,6 @@ export default function LoginScreen() {
         </TouchableOpacity>
       </View>
     </ScrollView>
+    </SafeAreaView>
   )
 }

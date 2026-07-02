@@ -15,7 +15,8 @@ export type GoogleSigninType = {
   signOut: () => Promise<void>
 }
 
-export const statusCodes: {
+// NOT exported — internal fallback only. Only `moduleStatusCodes` below is exported as `statusCodes`.
+const fallbackStatusCodes: {
   SIGN_IN_CANCELLED: string
   IN_PROGRESS: string
   PLAY_SERVICES_NOT_AVAILABLE: string
@@ -26,14 +27,14 @@ export const statusCodes: {
 }
 
 let GoogleSignin: GoogleSigninType | null = null
-let moduleStatusCodes = statusCodes
+let moduleStatusCodes = fallbackStatusCodes
 let available = false
 
 try {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const googleSigninModule = require('@react-native-google-signin/google-signin')
   GoogleSignin = googleSigninModule.default ?? googleSigninModule.GoogleSignin
-  moduleStatusCodes = googleSigninModule.statusCodes ?? statusCodes
+  moduleStatusCodes = googleSigninModule.statusCodes ?? fallbackStatusCodes
   available = true
 } catch {
   available = false

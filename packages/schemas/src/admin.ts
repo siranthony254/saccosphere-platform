@@ -89,8 +89,8 @@ export const AdminMemberSchema = z.object({
   active_loans_kes: z.number(),
   monthly_contribution: z.number(),
   repayment_rate_pct: z.number(),
-  joined_at: z.string().datetime().nullable(),
-  last_active: z.string().datetime().nullable(),
+  joined_at: z.string().nullable(),
+  last_active: z.string().nullable(),
 })
 export type AdminMember = z.infer<typeof AdminMemberSchema>
 

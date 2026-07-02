@@ -10,7 +10,7 @@ import {
   Alert,
 } from 'react-native'
 import { router } from 'expo-router'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { api } from '@saccosphere/api-client'
 import { useRegistrationStore } from '../../../store/useRegistrationStore'
 import { useSaccos } from '../../../hooks/useSaccos'
@@ -21,6 +21,12 @@ import { useMemberships } from '../../../hooks/useMembership'
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 const PADDING_H = Math.max(16, Math.min(24, SCREEN_WIDTH * 0.05))
 
+const BACKGROUND = '#06091A'
+const FROSTED = 'rgba(255, 255, 255, 0.08)'
+const FROSTED_DARK = 'rgba(255, 255, 255, 0.06)'
+const BORDER_WHITE = 'rgba(255, 255, 255, 0.1)'
+const TEXT = '#F8FAFC'
+const TEXT_MUTED = 'rgba(248, 250, 252, 0.68)'
 const VIOLET = '#6D28D9'
 const MINT = '#10B981'
 const MINT_LIGHT = '#E6F7F1'
@@ -128,25 +134,28 @@ export default function LinkSaccos() {
   const pending = isLinkPending
 
   return (
-    <ScrollView
-      contentContainerStyle={{
-        paddingHorizontal: PADDING_H,
-        paddingBottom: insets.bottom + 20,
-      }}
-      keyboardShouldPersistTaps="handled"
-      className="bg-surface"
-    >
+    <SafeAreaView style={{ flex: 1, backgroundColor: BACKGROUND }} edges={['bottom', 'left', 'right']}>
+      <ScrollView
+        contentContainerStyle={{
+          flexGrow: 1,
+          justifyContent: 'center',
+          paddingHorizontal: PADDING_H,
+          paddingBottom: insets.bottom + 20,
+          paddingTop: insets.top + 20,
+        }}
+        keyboardShouldPersistTaps="handled"
+      >
       {/* Step progress bar */}
       <View className="flex-row gap-1 mb-1.5">
         {[0, 1, 2, 3].map((i) => (
           <View
             key={i}
             className="flex-1 h-0.5 rounded"
-            style={{ backgroundColor: i < 4 ? VIOLET : BORDER }}
+            style={{ backgroundColor: i < 4 ? VIOLET : BORDER_WHITE }}
           />
         ))}
       </View>
-      <Text className="text-xs mb-3" style={{ color: INK_FAINT }}>
+      <Text className="text-xs mb-3" style={{ color: TEXT_MUTED }}>
         Step 4 of 4 — Link your SACCOs
       </Text>
 
@@ -159,19 +168,19 @@ export default function LinkSaccos() {
       </Text>
 
       {/* Heading */}
-      <Text className="text-ink text-base font-bold mb-1">
+      <Text className="text-base font-bold mb-1" style={{ color: TEXT }}>
         Which SACCOs are you a member of?
       </Text>
-      <Text className="text-xs mb-4" style={{ color: INK_MUTED, lineHeight: 18 }}>
+      <Text className="text-xs mb-4" style={{ color: TEXT_MUTED, lineHeight: 18 }}>
         Select all that apply. You can add more later.
       </Text>
 
       {/* Search */}
       <View
         className="border rounded-xl p-3 text-sm mb-3"
-        style={{ borderColor: BORDER_MID, backgroundColor: SURFACE }}
+        style={{ borderColor: BORDER_WHITE, backgroundColor: FROSTED_DARK }}
       >
-        <Text className="text-xs" style={{ color: INK_FAINT }}>
+        <Text className="text-xs" style={{ color: TEXT_MUTED }}>
           🔍 Search {saccos.length || 237} SACCOs...
         </Text>
       </View>
@@ -181,13 +190,13 @@ export default function LinkSaccos() {
         value={search}
         onChangeText={setSearch}
         placeholder="Search SACCOs..."
-        placeholderTextColor={INK_FAINT}
+        placeholderTextColor={TEXT_MUTED}
       />
 
       {/* SACCO list */}
       {saccosLoading ? (
         <View className="py-8 items-center">
-          <Text className="text-xs" style={{ color: INK_MUTED }}>
+          <Text className="text-xs" style={{ color: TEXT_MUTED }}>
             Loading SACCOs...
           </Text>
         </View>
@@ -200,9 +209,9 @@ export default function LinkSaccos() {
               key={sacco.id}
               className="flex-row items-center p-3 rounded-xl mb-2"
               style={{
-                backgroundColor: isSelected ? MINT_LIGHT : SURFACE2,
+                backgroundColor: isSelected ? 'rgba(16, 185, 129, 0.15)' : FROSTED_DARK,
                 borderWidth: isSelected ? 1.5 : 1,
-                borderColor: isSelected ? MINT : BORDER,
+                borderColor: isSelected ? MINT : BORDER_WHITE,
                 opacity: isAlreadyLinked ? 0.6 : 1,
               }}
               onPress={() => toggle(sacco.slug)}
@@ -217,8 +226,8 @@ export default function LinkSaccos() {
                 </Text>
               </View>
               <View className="flex-1 ml-3">
-                <Text className="text-ink text-xs font-semibold">{sacco.name}</Text>
-                <Text className="text-xs mt-0.5" style={{ color: INK_MUTED }}>
+                <Text className="text-xs font-semibold" style={{ color: TEXT }}>{sacco.name}</Text>
+                <Text className="text-xs mt-0.5" style={{ color: TEXT_MUTED }}>
                   {sacco.sector}
                   {isAlreadyLinked ? ' · Already linked' : ''}
                 </Text>
@@ -236,7 +245,7 @@ export default function LinkSaccos() {
                   className="w-4 h-4 rounded-full"
                   style={{
                     borderWidth: 2,
-                    borderColor: BORDER_MID,
+                    borderColor: BORDER_WHITE,
                   }}
                 />
               )}
@@ -274,18 +283,19 @@ export default function LinkSaccos() {
         onPress={handleContinueWithoutSacco}
         className="rounded-xl py-3 border items-center mb-3"
         style={{
-          borderColor: BORDER,
-          backgroundColor: SURFACE2,
+          borderColor: BORDER_WHITE,
+          backgroundColor: FROSTED_DARK,
         }}
         disabled={pending || !step1}
       >
-        <Text className="text-xs font-semibold" style={{ color: INK_SOFT }}>
+        <Text className="text-xs font-semibold" style={{ color: TEXT }}>
           Not in a SACCO yet? Browse & join
         </Text>
-        <Text className="text-xs mt-1" style={{ color: INK_FAINT }}>
+        <Text className="text-xs mt-1" style={{ color: TEXT_MUTED }}>
           Your account will work without a linked SACCO
         </Text>
       </TouchableOpacity>
     </ScrollView>
+    </SafeAreaView>
   )
 }

@@ -9,7 +9,7 @@ import {
   Dimensions,
   ScrollView,
 } from 'react-native'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { router } from 'expo-router'
 import { useRegistrationStore } from '../../../store/useRegistrationStore'
 import { api } from '@saccosphere/api-client'
@@ -19,6 +19,12 @@ import { useIsAuthenticated } from '../../../store/useAuthStore'
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 const PADDING_H = Math.max(16, Math.min(24, SCREEN_WIDTH * 0.05))
 
+const BACKGROUND = '#06091A'
+const FROSTED = 'rgba(255, 255, 255, 0.08)'
+const FROSTED_DARK = 'rgba(255, 255, 255, 0.06)'
+const BORDER_WHITE = 'rgba(255, 255, 255, 0.1)'
+const TEXT = '#F8FAFC'
+const TEXT_MUTED = 'rgba(248, 250, 252, 0.68)'
 const VIOLET = '#6D28D9'
 const MINT = '#10B981'
 const MINT_LIGHT = '#E6F7F1'
@@ -133,26 +139,28 @@ export default function RegisterOTP() {
     : ''
 
   return (
-    <ScrollView
-      contentContainerStyle={{
-        paddingHorizontal: PADDING_H,
-        paddingBottom: insets.bottom + 20,
-        paddingTop: 20,
-      }}
-      keyboardShouldPersistTaps="handled"
-      className="bg-surface flex-1"
-    >
+    <SafeAreaView style={{ flex: 1, backgroundColor: BACKGROUND }} edges={['bottom', 'left', 'right']}>
+      <ScrollView
+        contentContainerStyle={{
+          flexGrow: 1,
+          justifyContent: 'center',
+          paddingHorizontal: PADDING_H,
+          paddingBottom: insets.bottom + 20,
+          paddingTop: insets.top + 20,
+        }}
+        keyboardShouldPersistTaps="handled"
+      >
       {/* Step progress bar */}
       <View className="flex-row gap-1 mb-1.5">
         {[0, 1, 2, 3].map(i => (
           <View
             key={i}
             className="flex-1 h-0.5 rounded"
-            style={{ backgroundColor: i < 2 ? VIOLET : BORDER }}
+            style={{ backgroundColor: i < 2 ? VIOLET : BORDER_WHITE }}
           />
         ))}
       </View>
-      <Text className="text-xs mb-5" style={{ color: INK_FAINT }}>
+      <Text className="text-xs mb-5" style={{ color: TEXT_MUTED }}>
         Step 2 of 4 — Verify your phone
       </Text>
 
@@ -162,24 +170,24 @@ export default function RegisterOTP() {
       </Text>
 
       {/* Heading */}
-      <Text className="text-ink text-base font-bold mb-1">Enter the code</Text>
-      <Text className="text-xs mb-1" style={{ color: INK_MUTED, lineHeight: 18 }}>
+      <Text className="text-base font-bold mb-1" style={{ color: TEXT }}>Enter the code</Text>
+      <Text className="text-xs mb-1" style={{ color: TEXT_MUTED, lineHeight: 18 }}>
         We sent a 6-digit code to
       </Text>
-      <Text className="text-sm font-semibold mb-5" style={{ color: INK }}>
+      <Text className="text-sm font-semibold mb-5" style={{ color: TEXT }}>
         {maskedPhone || (step1?.phone_number ?? '+254 712 ··· 678')}
       </Text>
 
       {/* OTP input */}
       {!otpSent && !otpError && (
-        <Text className="text-xs mb-4" style={{ color: INK_SOFT }}>
+        <Text className="text-xs mb-4" style={{ color: TEXT_MUTED }}>
           Sending OTP...
         </Text>
       )}
 
       {otpError && (
-        <View className="border rounded-xl p-3 mb-4" style={{ backgroundColor: '#FEF2F2', borderColor: '#FEE2E2' }}>
-          <Text className="text-xs leading-4" style={{ color: '#DC2626' }}>{otpError}</Text>
+        <View className="border rounded-xl p-3 mb-4" style={{ backgroundColor: 'rgba(220, 38, 38, 0.15)', borderColor: '#EF4444' }}>
+          <Text className="text-xs leading-4" style={{ color: '#FCA5A5' }}>{otpError}</Text>
           <TouchableOpacity
             className="mt-2"
             onPress={() => {
@@ -205,14 +213,14 @@ export default function RegisterOTP() {
               className="w-10 h-12 rounded-xl items-center justify-center"
               style={{
                 borderWidth: focused ? 2 : 1.5,
-                borderColor: focused ? VIOLET : filled ? MINT : BORDER_MID,
-                backgroundColor: filled ? MINT_LIGHT : SURFACE,
+                borderColor: focused ? VIOLET : filled ? MINT : BORDER_WHITE,
+                backgroundColor: filled ? 'rgba(16, 185, 129, 0.2)' : FROSTED_DARK,
               }}
             >
               <Text
                 className="text-lg font-semibold"
                 style={{
-                  color: filled ? '#084D32' : INK,
+                  color: filled ? MINT : TEXT,
                 }}
               >
                 {filled ? code[i] : ''}
@@ -240,7 +248,7 @@ export default function RegisterOTP() {
           </Text>
         </TouchableOpacity>
       ) : (
-        <Text className="text-xs font-semibold text-center mb-5" style={{ color: INK_MUTED }}>
+        <Text className="text-xs font-semibold text-center mb-5" style={{ color: TEXT_MUTED }}>
           Resend in {Math.floor(countdown / 60)}:{(countdown % 60).toString().padStart(2, '0')}
         </Text>
       )}
@@ -249,12 +257,12 @@ export default function RegisterOTP() {
       <View
         className="rounded-xl p-3 mb-4"
         style={{
-          backgroundColor: MINT_LIGHT,
+          backgroundColor: 'rgba(16, 185, 129, 0.15)',
           borderLeftWidth: 3,
           borderLeftColor: MINT,
         }}
       >
-        <Text className="text-xs leading-5" style={{ color: '#084D32' }}>
+        <Text className="text-xs leading-5" style={{ color: MINT }}>
           Code expires in <Text style={{ fontWeight: '600' }}>
             {Math.floor(expiryCountdown / 60)} minutes {expiryCountdown % 60} seconds
           </Text>. Check your SMS or M-Pesa notification.
@@ -280,7 +288,7 @@ export default function RegisterOTP() {
 
       {/* Wrong number */}
       <View className="flex-row justify-center">
-        <Text className="text-xs" style={{ color: INK_MUTED }}>
+        <Text className="text-xs" style={{ color: TEXT_MUTED }}>
           Wrong number?{' '}
         </Text>
         <TouchableOpacity onPress={() => router.back()}>
@@ -290,6 +298,7 @@ export default function RegisterOTP() {
         </TouchableOpacity>
       </View>
     </ScrollView>
+    </SafeAreaView>
   )
 }
 

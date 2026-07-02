@@ -95,6 +95,11 @@ axiosInstance.interceptors.response.use(
 
     // Handle 401 — attempt silent token refresh, then retry original request
     if (error.response?.status === 401 && !original._retry) {
+      // If no refresh token, just reject the error (public endpoints don't need auth)
+      if (!_refreshToken) {
+        return Promise.reject(error)
+      }
+
       if (isRefreshing) {
         // Another request already triggered refresh — queue this one
         return new Promise((resolve) => {
@@ -110,10 +115,6 @@ axiosInstance.interceptors.response.use(
       isRefreshing = true
 
       try {
-        if (!_refreshToken) {
-          throw new Error('No refresh token available')
-        }
-
         const { data } = await axiosInstance.post('/accounts/token/refresh/', {
           refresh: _refreshToken,
         })

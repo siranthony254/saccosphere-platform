@@ -19,10 +19,12 @@ interface Step1Data {
 interface LoanApplicationState {
   membershipId: string | null
   saccoSlug: string | null
+  loanId: string | null
   step1: Step1Data | null
   guarantorIds: string[]
 
   setContext: (membershipId: string, saccoSlug: string) => void
+  setLoanId: (loanId: string) => void
   setStep1: (data: Step1Data) => void
   setGuarantors: (ids: string[]) => void
   getFullInput: () => LoanApplicationInput | null
@@ -32,10 +34,12 @@ interface LoanApplicationState {
 export const useLoanApplicationStore = create<LoanApplicationState>((set, get) => ({
   membershipId: null,
   saccoSlug: null,
+  loanId: null,
   step1: null,
   guarantorIds: [],
 
   setContext: (membershipId, saccoSlug) => set({ membershipId, saccoSlug }),
+  setLoanId: (loanId) => set({ loanId }),
   setStep1: (data) => set({ step1: data }),
   setGuarantors: (ids) => set({ guarantorIds: ids }),
 
@@ -43,11 +47,11 @@ export const useLoanApplicationStore = create<LoanApplicationState>((set, get) =
     const { membershipId, step1, guarantorIds } = get()
     if (!membershipId || !step1) return null
     return {
-      membership_id: membershipId,
-      ...step1,
-      guarantor_membership_ids: guarantorIds,
+      membership_id: get().membershipId!,
+      ...get().step1!,
+      guarantor_membership_ids: get().guarantorIds,
     }
   },
 
-  reset: () => set({ membershipId: null, saccoSlug: null, step1: null, guarantorIds: [] }),
+  reset: () => set({ membershipId: null, saccoSlug: null, step1: null, guarantorIds: [], loanId: null }),
 }))

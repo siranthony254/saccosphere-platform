@@ -31,7 +31,11 @@ export default function RootLayout() {
 
       try {
         const refresh = await loadRefreshToken()
-        if (!refresh) throw new Error('No refresh token')
+        if (!refresh) {
+          // No refresh token - user is not logged in, just mark auth as ready
+          setAuthReady(true)
+          return
+        }
 
         const { access } = await api.auth.refresh(refresh)
         setAccessToken(access)
@@ -66,7 +70,7 @@ export default function RootLayout() {
   return (
     <QueryClientProvider client={queryClient}>
       <SafeAreaProvider>
-        <StatusBar style="auto" />
+        <StatusBar style="light" />
         <Stack screenOptions={{ headerShown: false }} />
       </SafeAreaProvider>
     </QueryClientProvider>

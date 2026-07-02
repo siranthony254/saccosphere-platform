@@ -1,16 +1,18 @@
-import { View, Text, ScrollView, TouchableOpacity, TextInput } from 'react-native'
+import { View, Text, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, Alert } from 'react-native'
 import { useLocalSearchParams, router } from 'expo-router'
 import { useState } from 'react'
 import { useSaccoConfig } from '../../../../../hooks/useSaccoConfig'
 import { useMembershipBySacco } from '../../../../../hooks/useMembership'
 import { useLoanApplicationStore } from '../../../../../store/useLoanApplicationStore'
+import { useSubmitLoanApplication } from '../../../../../hooks/useLoanApplication'
 import { useCurrentUser } from '../../../../../store/useAuthStore'
 
 export default function LoanStep1() {
   const { slug } = useLocalSearchParams<{ slug: string }>()
   const { data: config } = useSaccoConfig(slug)
   const { data: membership } = useMembershipBySacco(slug)
-  const { setContext, setStep1, step1 } = useLoanApplicationStore()
+  const { setContext, setStep1, setLoanId, step1 } = useLoanApplicationStore()
+  const { mutate: applyLoan, isPending } = useSubmitLoanApplication()
   const user = useCurrentUser()
   const phoneNumber = user?.phone_number ?? user?.phone ?? ''
 
@@ -30,16 +32,27 @@ export default function LoanStep1() {
 
   const handleNext = () => {
     if (!membership) return
-    setContext(membership.id, slug)
-    setStep1({
+    const step1Data = {
       loan_product_key: selectedProduct?.key ?? '',
       amount_requested: parseFloat(amount),
       period_months: n,
       purpose,
       disbursement_method: disburse,
       disbursement_account: phoneNumber,
-    })
-    router.push({ pathname: '/sacco/[slug]/loans/apply/review', params: { slug } })
+    }
+    setContext(membership.id, slug)
+    setStep1(step1Data)
+
+    applyLoan(
+      { membership_id: membership.id, ...step1Data, guarantor_membership_ids: [] },
+      {
+        onSuccess: (loan) => {
+          setLoanId(loan.id)
+          router.push({ pathname: '/sacco/[slug]/loans/apply/guarantors', params: { slug } })
+        },
+        onError: (err) => Alert.alert('Error', err.message),
+      }
+    )
   }
 
   if (!config) return <View className="flex-1 bg-surface"><Text className="px-8 py-8 text-center text-ink-muted text-xs">Loading loan products...</Text></View>
@@ -108,8 +121,8 @@ export default function LoanStep1() {
         ))}
       </View>
 
-      <TouchableOpacity className={`bg-violet-500 rounded-xl p-3.5 items-center ${!purpose ? 'opacity-50' : ''}`} onPress={handleNext} disabled={!purpose}>
-        <Text className="text-white text-xs font-semibold">Continue →</Text>
+      <TouchableOpacity className={`bg-violet-500 rounded-xl p-3.5 items-center ${(!purpose || isPending) ? 'opacity-50' : ''}`} onPress={handleNext} disabled={!purpose || isPending}>
+        {isPending ? <ActivityIndicator color="#fff" /> : <Text className="text-white text-xs font-semibold">Continue →</Text>}
       </TouchableOpacity>
     </ScrollView>
   )

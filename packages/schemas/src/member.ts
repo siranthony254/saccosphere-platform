@@ -32,7 +32,7 @@ export const MembershipSchema = z.object({
   total_dividends: z.number(),
   monthly_contribution: z.number(),
   loan_limit: z.number(),
-  joined_at: z.string().datetime().nullable(),
+  joined_at: z.string().nullable(),
   applied_at: z.any().transform((val) => {
     // Handle any input type and convert to ISO datetime string
     if (!val) return new Date().toISOString()

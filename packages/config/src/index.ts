@@ -8,17 +8,11 @@
 export const getApiUrl = (): string => {
   const env = (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env
 
-  // Expo
   const expo = env?.EXPO_PUBLIC_API_URL
+  const vite = env?.VITE_API_URL
+  const api = env?.API_URL
 
-  // Vite
-  const vite =
-    typeof import.meta !== 'undefined' &&
-    (import.meta as { env?: Record<string, string> }).env
-      ? (import.meta as { env: Record<string, string> }).env.VITE_API_URL
-      : undefined
-
-  return expo ?? vite ?? env?.VITE_API_URL ?? env?.API_URL ?? 'https://saccosphere-production.up.railway.app'
+  return expo ?? vite ?? api ?? 'https://saccosphere-production.up.railway.app'
 }
 
 // ─── APP ERROR CODES ─────────────────────────────────────────────────────────
@@ -73,6 +67,8 @@ export const QueryKeys = {
     ['loan-comparison', amount, months] as const,
   notifications: () => ['notifications'] as const,
   applications: () => ['applications'] as const,
+  kyc: () => ['kyc'] as const,
+  savings: (params?: object) => ['savings', params] as const,
 
   // SACCO admin
   saccoAdminDashboard: () => ['sacco-admin-dashboard'] as const,
@@ -106,6 +102,9 @@ export const STALE_TIMES = {
   adminDashboard: 30_000,
   platformOverview: 60_000,
   notifications: 0,        // always fresh
+  profile: 60_000,
+  kycStatus: 30_000,
+  paymentStatus: 15_000,
 } as const
 
 export * from './mock'

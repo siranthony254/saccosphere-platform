@@ -1,9 +1,19 @@
 import { useState } from 'react'
 import { ActivityIndicator, RefreshControl, ScrollView, Text, TouchableOpacity, View } from 'react-native'
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { router } from 'expo-router'
 import { useMemberships } from '../../hooks/useMembership'
 import SaccoSelectModal from '../../components/SaccoSelectModal'
 import { getActiveMemberships, getPendingMemberships } from '../../lib/membership'
+
+const BACKGROUND = '#06091A'
+const FROSTED = 'rgba(255, 255, 255, 0.08)'
+const FROSTED_DARK = 'rgba(255, 255, 255, 0.06)'
+const BORDER_WHITE = 'rgba(255, 255, 255, 0.1)'
+const TEXT = '#F8FAFC'
+const TEXT_MUTED = 'rgba(248, 250, 252, 0.68)'
+const VIOLET = '#6D28D9'
+const MINT = '#10B981'
 
 type ServiceAction = 'contribute' | 'loan' | 'statement'
 
@@ -12,32 +22,33 @@ const servicesList: Array<{
   label: string
   desc: string
   icon: string
-  colorClass: string
+  color: string
 }> = [
   {
     action: 'contribute',
     label: 'Contribute and Save',
     desc: 'Deposit savings or share capital instantly via M-Pesa STK push.',
     icon: 'C',
-    colorClass: 'bg-mint-50',
+    color: 'rgba(16, 185, 129, 0.15)',
   },
   {
     action: 'loan',
     label: 'Apply for a Loan',
     desc: 'Submit a loan application from an active SACCO membership.',
     icon: 'L',
-    colorClass: 'bg-blue-50',
+    color: 'rgba(59, 130, 246, 0.15)',
   },
   {
     action: 'statement',
     label: 'Account Statement',
     desc: 'View recent transactions, ledger entries, and statement records.',
     icon: 'S',
-    colorClass: 'bg-amber-50',
+    color: 'rgba(245, 158, 11, 0.15)',
   },
 ]
 
 export default function ServicesScreen() {
+  const insets = useSafeAreaInsets()
   const { data: memberships = [], isLoading, isError, refetch, isRefetching } = useMemberships()
   const [pickerVisible, setPickerVisible] = useState(false)
   const [currentAction, setCurrentAction] = useState<ServiceAction | null>(null)
@@ -62,55 +73,62 @@ export default function ServicesScreen() {
 
   return (
     <>
-      <ScrollView
-        className="bg-surface2"
-        refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor="#10B981" />}
-      >
-        <View className="px-4 py-3 bg-surface border-b border-border">
-          <Text className="text-ink text-xl font-bold">Services</Text>
-          <Text className="text-ink-faint text-xs mt-0.5">Pick a service, then choose the SACCO it belongs to.</Text>
+      <SafeAreaView style={{ flex: 1, backgroundColor: BACKGROUND }} edges={['top', 'bottom', 'left', 'right']}>
+        <ScrollView
+          style={{ backgroundColor: BACKGROUND }}
+          contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}
+          refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={MINT} />}
+        >
+        <View style={{ paddingHorizontal: 16, paddingVertical: 12, backgroundColor: BACKGROUND, borderBottomWidth: 0.5, borderBottomColor: BORDER_WHITE }}>
+          <Text style={{ color: TEXT, fontSize: 20, fontWeight: '700' }}>Services</Text>
+          <Text style={{ color: TEXT_MUTED, fontSize: 12, marginTop: 2 }}>Pick a service, then choose the SACCO it belongs to.</Text>
         </View>
 
-        <View className="p-3.5 pb-8">
+        <View style={{ padding: 14, paddingBottom: 32 }}>
           {isLoading ? (
-            <View className="py-8 items-center">
-              <ActivityIndicator color="#10B981" />
-              <Text className="text-ink-muted text-xs mt-3">Loading SACCO services...</Text>
+            <View style={{ paddingVertical: 32, alignItems: 'center' }}>
+              <ActivityIndicator color={MINT} />
+              <Text style={{ color: TEXT_MUTED, fontSize: 12, marginTop: 12 }}>Loading SACCO services...</Text>
             </View>
           ) : isError ? (
-            <View className="items-center px-8 py-8 bg-surface rounded-xl border border-border">
-              <Text className="text-ink-muted text-xs mb-3 text-center">Unable to load your SACCO services.</Text>
-              <TouchableOpacity onPress={() => refetch()} className="bg-violet-500 rounded-xl px-4 py-2">
-                <Text className="text-white text-xs font-semibold">Try again</Text>
+            <View style={{ alignItems: 'center', paddingHorizontal: 32, paddingVertical: 32, backgroundColor: FROSTED_DARK, borderRadius: 12, borderWidth: 1, borderColor: BORDER_WHITE }}>
+              <Text style={{ color: TEXT_MUTED, fontSize: 12, marginBottom: 12, textAlign: 'center' }}>Unable to load your SACCO services.</Text>
+              <TouchableOpacity onPress={() => refetch()} style={{ backgroundColor: VIOLET, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 8 }}>
+                <Text style={{ color: '#fff', fontSize: 12, fontWeight: '600' }}>Try again</Text>
               </TouchableOpacity>
             </View>
           ) : activeMemberships.length === 0 ? (
             <LockedServicesState hasPending={pendingMemberships.length > 0} />
           ) : (
-            <View className="bg-surface border border-border rounded-xl p-3.5">
-              <Text className="text-ink-faint text-xs font-semibold tracking-widest mb-3.5">AVAILABLE SERVICES</Text>
+            <View style={{ backgroundColor: FROSTED_DARK, borderRadius: 12, borderWidth: 1, borderColor: BORDER_WHITE, padding: 14 }}>
+              <Text style={{ color: TEXT_MUTED, fontSize: 12, fontWeight: '600', letterSpacing: 2, marginBottom: 14 }}>AVAILABLE SERVICES</Text>
               {servicesList.map((service, index) => (
                 <TouchableOpacity
                   key={service.action}
-                  className={`flex-row items-center py-4 border-b border-border ${
-                    index === servicesList.length - 1 ? 'border-b-0 pb-1' : ''
-                  }`}
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    paddingVertical: 16,
+                    borderBottomWidth: index === servicesList.length - 1 ? 0 : 0.5,
+                    borderBottomColor: BORDER_WHITE,
+                  }}
                   onPress={() => handleServiceSelect(service.action)}
                 >
-                  <View className={`w-11 h-11 rounded-xl ${service.colorClass} items-center justify-center mr-3.5`}>
-                    <Text className="text-ink text-base font-bold">{service.icon}</Text>
+                  <View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: service.color, alignItems: 'center', justifyContent: 'center', marginRight: 14 }}>
+                    <Text style={{ color: TEXT, fontSize: 16, fontWeight: '700' }}>{service.icon}</Text>
                   </View>
-                  <View className="flex-1 pr-3">
-                    <Text className="text-ink text-xs font-bold">{service.label}</Text>
-                    <Text className="text-ink-faint text-xs mt-0.5 leading-4">{service.desc}</Text>
+                  <View style={{ flex: 1, paddingRight: 12 }}>
+                    <Text style={{ color: TEXT, fontSize: 12, fontWeight: '600' }}>{service.label}</Text>
+                    <Text style={{ color: TEXT_MUTED, fontSize: 12, marginTop: 4, lineHeight: 16 }}>{service.desc}</Text>
                   </View>
-                  <Text className="text-ink-faint text-lg font-bold">{'>'}</Text>
+                  <Text style={{ color: TEXT_MUTED, fontSize: 18, fontWeight: '700' }}>{'>'}</Text>
                 </TouchableOpacity>
               ))}
             </View>
           )}
         </View>
       </ScrollView>
+      </SafeAreaView>
 
       <SaccoSelectModal
         visible={pickerVisible}
@@ -130,17 +148,17 @@ export default function ServicesScreen() {
 
 function LockedServicesState({ hasPending }: { hasPending: boolean }) {
   return (
-    <View className="bg-surface border border-border rounded-xl p-5 items-center">
-      <Text className="text-ink text-sm font-semibold mb-1 text-center">
+    <View style={{ backgroundColor: FROSTED_DARK, borderRadius: 12, borderWidth: 1, borderColor: BORDER_WHITE, padding: 20, alignItems: 'center' }}>
+      <Text style={{ color: TEXT, fontSize: 14, fontWeight: '600', marginBottom: 4, textAlign: 'center' }}>
         {hasPending ? 'Services unlock after approval' : 'No SACCO services available'}
       </Text>
-      <Text className="text-ink-muted text-xs text-center leading-5 mb-5 px-4">
+      <Text style={{ color: TEXT_MUTED, fontSize: 12, textAlign: 'center', lineHeight: 20, marginBottom: 20, paddingHorizontal: 16 }}>
         {hasPending
           ? 'Your application is still under review. Once a SACCO approves you, its savings, loan, payment, and statement services will appear here.'
           : 'Join a SACCO first, then its savings, loan, payment, and statement services will appear here.'}
       </Text>
-      <TouchableOpacity className="bg-violet-500 rounded-xl w-full py-3 items-center" onPress={() => router.push('/(member)/discover')}>
-        <Text className="text-white text-xs font-semibold">Browse SACCOs</Text>
+      <TouchableOpacity style={{ backgroundColor: VIOLET, borderRadius: 12, width: '100%', paddingVertical: 12, alignItems: 'center' }} onPress={() => router.push('/(member)/discover')}>
+        <Text style={{ color: '#fff', fontSize: 12, fontWeight: '600' }}>Browse SACCOs</Text>
       </TouchableOpacity>
     </View>
   )

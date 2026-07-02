@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { ActivityIndicator, RefreshControl, ScrollView, Text, TouchableOpacity, View } from 'react-native'
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { router } from 'expo-router'
 import type { Dashboard, Membership, Transaction } from '@saccosphere/schemas'
 import { useDashboard } from '../../hooks/useDashboard'
@@ -9,6 +10,7 @@ import { usePublicStats } from '../../hooks/usePublicStats'
 import { useCurrentUser } from '../../store/useAuthStore'
 import { useSaccoViewStore } from '../../store/useSaccoViewStore'
 import SaccoSelectModal from '../SaccoSelectModal'
+import { DeepSpaceBackground } from '../DeepSpaceBackground'
 import {
   getActiveMemberships,
   getDisplayName,
@@ -22,6 +24,12 @@ type QuickAction = 'contribute' | 'loan' | 'statement' | 'repay'
 const money = (value?: number | null) => `KES ${Number(value ?? 0).toLocaleString('en-KE')}`
 
 // ─── Brand palette constants ──────────────────────────────────────────────
+const BACKGROUND = '#06091A'
+const FROSTED = 'rgba(255, 255, 255, 0.08)'
+const FROSTED_DARK = 'rgba(255, 255, 255, 0.06)'
+const BORDER_WHITE = 'rgba(255, 255, 255, 0.1)'
+const TEXT = '#F8FAFC'
+const TEXT_MUTED = 'rgba(248, 250, 252, 0.68)'
 const NAVY = '#06091A'
 const VIOLET = '#6D28D9'
 const MINT = '#10B981'
@@ -36,6 +44,7 @@ const BORDER = 'rgba(0,0,0,0.07)'
 const BORDER_MID = 'rgba(0,0,0,0.13)'
 
 export default function HomeScreen() {
+  const insets = useSafeAreaInsets()
   const dashboardQuery = useDashboard()
   const membershipsQuery = useMemberships()
   const { data: publicStats } = usePublicStats()
@@ -96,68 +105,72 @@ export default function HomeScreen() {
 
   if (isLoading) {
     return (
-      <View style={{ flex: 1, backgroundColor: SURFACE2, alignItems: 'center', justifyContent: 'center' }}>
-        <ActivityIndicator color={MINT} size="small" />
-        <Text style={{ color: INK_MUTED, fontSize: 12, marginTop: 12 }}>Loading your dashboard...</Text>
-      </View>
+      <DeepSpaceBackground>
+        <SafeAreaView style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }} edges={['bottom', 'left', 'right']}>
+          <ActivityIndicator color={MINT} size="small" />
+          <Text style={{ color: TEXT_MUTED, fontSize: 12, marginTop: 12 }}>Loading your dashboard...</Text>
+        </SafeAreaView>
+      </DeepSpaceBackground>
     )
   }
 
   if (isError) {
     return (
-      <View style={{ flex: 1, backgroundColor: SURFACE2, alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-        <Text style={{ fontSize: 14, fontWeight: '600', color: INK, marginBottom: 8 }}>Could not load your SACCOs</Text>
-        <Text style={{ fontSize: 12, color: INK_MUTED, textAlign: 'center', marginBottom: 20 }}>
-          Check your internet connection and try again.
-        </Text>
-        <TouchableOpacity
-          onPress={refetch}
-          style={{ backgroundColor: VIOLET, borderRadius: 12, paddingVertical: 12, paddingHorizontal: 24 }}
-        >
-          <Text style={{ color: '#fff', fontSize: 12, fontWeight: '600' }}>Try again</Text>
-        </TouchableOpacity>
-      </View>
+      <DeepSpaceBackground>
+        <SafeAreaView style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 }} edges={['bottom', 'left', 'right']}>
+          <Text style={{ fontSize: 14, fontWeight: '600', color: TEXT, marginBottom: 8 }}>Could not load your SACCOs</Text>
+          <Text style={{ fontSize: 12, color: TEXT_MUTED, textAlign: 'center', marginBottom: 20 }}>
+            Check your internet connection and try again.
+          </Text>
+          <TouchableOpacity
+            onPress={refetch}
+            style={{ backgroundColor: VIOLET, borderRadius: 12, paddingVertical: 12, paddingHorizontal: 24 }}
+          >
+            <Text style={{ color: '#fff', fontSize: 12, fontWeight: '600' }}>Try again</Text>
+          </TouchableOpacity>
+        </SafeAreaView>
+      </DeepSpaceBackground>
     )
   }
 
   const name = getDisplayName(user?.first_name, user?.last_name)
   const initials = getInitials(user?.first_name, user?.last_name)
   const isMorning = new Date().getHours() < 12
-  const greeting = isMorning ? 'Good morning' : 'Good afternoon' 
+  const greeting = isMorning ? 'Good morning' : 'Good afternoon'
 
   return (
-    <>
-      <ScrollView
-        style={{ backgroundColor: SURFACE2 }}
-        contentContainerStyle={{ paddingBottom: 32 }}
-        refreshControl={
-          <RefreshControl refreshing={isRefreshing} onRefresh={refetch} tintColor={MINT} colors={[MINT]} />
-        }
-      >
+    <DeepSpaceBackground>
+      <SafeAreaView style={{ flex: 1 }} edges={['bottom', 'left', 'right']}>
+        <ScrollView
+          contentContainerStyle={{ paddingBottom: insets.bottom + 32 }}
+          refreshControl={
+            <RefreshControl refreshing={isRefreshing} onRefresh={refetch} tintColor={MINT} colors={[MINT]} />
+          }
+        >
         {/* ── Top bar ── */}
         <View
           style={{
             paddingHorizontal: 16,
             paddingTop: 12,
             paddingBottom: 12,
-            backgroundColor: SURFACE,
+            backgroundColor: BACKGROUND,
             borderBottomWidth: 0.5,
-            borderBottomColor: BORDER,
+            borderBottomColor: BORDER_WHITE,
             flexDirection: 'row',
             justifyContent: 'space-between',
             alignItems: 'center',
           }}
         >
           <View>
-            <Text style={{ fontSize: 10, color: INK_FAINT, fontWeight: '500' }}>{greeting}</Text>
-            <Text style={{ fontSize: 15, fontWeight: '600', color: INK }}>{name}</Text>
+            <Text style={{ fontSize: 10, color: TEXT_MUTED, fontWeight: '500' }}>{greeting}</Text>
+            <Text style={{ fontSize: 15, fontWeight: '600', color: TEXT }}>{name}</Text>
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <TouchableOpacity
               onPress={() => router.push('/(member)/notifications')}
               style={{
                 width: 32, height: 32, borderRadius: 16,
-                backgroundColor: SURFACE3, alignItems: 'center', justifyContent: 'center',
+                backgroundColor: FROSTED_DARK, alignItems: 'center', justifyContent: 'center',
                 position: 'relative',
               }}
             >
@@ -166,7 +179,7 @@ export default function HomeScreen() {
                 style={{
                   position: 'absolute', top: 4, right: 4,
                   width: 8, height: 8, borderRadius: 4,
-                  backgroundColor: '#DC2626', borderWidth: 1.5, borderColor: SURFACE,
+                  backgroundColor: '#DC2626', borderWidth: 1.5, borderColor: BACKGROUND,
                 }}
               />
             </TouchableOpacity>
@@ -209,6 +222,8 @@ export default function HomeScreen() {
           )}
         </View>
       </ScrollView>
+      </SafeAreaView>
+    </DeepSpaceBackground>
 
       <SaccoSelectModal
         visible={pickerVisible}
@@ -228,7 +243,7 @@ export default function HomeScreen() {
         }
         subtitle="Select one of your active SACCOs to continue"
       />
-    </>
+    </SafeAreaView>
   )
 }
 
@@ -245,10 +260,10 @@ function NoSaccoDashboard({ publicStats }: { publicStats: { total_saccos?: numbe
       {/* ── Empty state hero ── */}
       <View
         style={{
-          backgroundColor: SURFACE,
+          backgroundColor: FROSTED_DARK,
           borderWidth: 1.5,
           borderStyle: 'dashed',
-          borderColor: BORDER_MID,
+          borderColor: BORDER_WHITE,
           borderRadius: 16,
           paddingVertical: 32,
           paddingHorizontal: 18,
@@ -259,19 +274,19 @@ function NoSaccoDashboard({ publicStats }: { publicStats: { total_saccos?: numbe
         <View
           style={{
             width: 64, height: 64, borderRadius: 20,
-            backgroundColor: 'rgba(109, 40, 217, 0.1)',
+            backgroundColor: 'rgba(109, 40, 217, 0.15)',
             alignItems: 'center', justifyContent: 'center',
             marginBottom: 12,
           }}
         >
           <Text style={{ fontSize: 28 }}>🏦</Text>
         </View>
-        <Text style={{ fontSize: 16, fontWeight: '700', color: INK, marginBottom: 6 }}>
+        <Text style={{ fontSize: 16, fontWeight: '700', color: TEXT, marginBottom: 6 }}>
           No SACCOs linked yet
         </Text>
         <Text
           style={{
-            fontSize: 12, color: INK_MUTED, lineHeight: 20,
+            fontSize: 12, color: TEXT_MUTED, lineHeight: 20,
             textAlign: 'center', marginBottom: 20, paddingHorizontal: 8,
           }}
         >
@@ -292,11 +307,11 @@ function NoSaccoDashboard({ publicStats }: { publicStats: { total_saccos?: numbe
         <TouchableOpacity
           onPress={() => router.push('/(member)/discover')}
           style={{
-            backgroundColor: SURFACE3, borderRadius: 12,
+            backgroundColor: FROSTED, borderRadius: 12,
             paddingVertical: 12, width: '100%', alignItems: 'center',
           }}
         >
-          <Text style={{ color: INK_SOFT, fontSize: 12, fontWeight: '500' }}>
+          <Text style={{ color: TEXT, fontSize: 12, fontWeight: '500' }}>
             Link existing membership
           </Text>
         </TouchableOpacity>
@@ -306,7 +321,7 @@ function NoSaccoDashboard({ publicStats }: { publicStats: { total_saccos?: numbe
       <Text
         style={{
           fontSize: 10, fontWeight: '600', letterSpacing: 0.6,
-          color: INK_FAINT, marginBottom: 10, textTransform: 'uppercase',
+          color: TEXT_MUTED, marginBottom: 10, textTransform: 'uppercase',
         }}
       >
         Why join a SACCO?
@@ -315,25 +330,25 @@ function NoSaccoDashboard({ publicStats }: { publicStats: { total_saccos?: numbe
         icon="💰"
         title="Borrow up to 3× your savings"
         subtitle="At rates as low as 10.5% p.a. — far below banks"
-        bgColor="rgba(16, 185, 129, 0.08)"
-        titleColor="#064E3B"
+        bgColor="rgba(16, 185, 129, 0.15)"
+        titleColor={MINT}
         subtitleColor={MINT}
       />
       <BenefitCard
         icon="📈"
         title="Earn annual dividends"
         subtitle="Your shares grow in value every year"
-        bgColor="rgba(37, 99, 235, 0.06)"
-        titleColor="#1E3A5F"
-        subtitleColor="#2563EB"
+        bgColor="rgba(37, 99, 235, 0.15)"
+        titleColor="#60A5FA"
+        subtitleColor="#3B82F6"
       />
       <BenefitCard
         icon="🤝"
         title="Member-owned & trusted"
         subtitle={`All ${saccoCount.toLocaleString()} SACCOs are SASRA regulated`}
-        bgColor="rgba(245, 158, 11, 0.08)"
-        titleColor="#78350F"
-        subtitleColor="#D97706"
+        bgColor="rgba(245, 158, 11, 0.15)"
+        titleColor="#FDBA74"
+        subtitleColor="#F59E0B"
       />
     </View>
   )
@@ -383,7 +398,7 @@ function PendingOnlyDashboard({ pendingMemberships }: { pendingMemberships: Memb
     <View>
       <View
         style={{
-          backgroundColor: '#FEF3C7',
+          backgroundColor: 'rgba(245, 158, 11, 0.15)',
           borderWidth: 1,
           borderColor: '#F59E0B',
           borderRadius: 14,
@@ -391,10 +406,10 @@ function PendingOnlyDashboard({ pendingMemberships }: { pendingMemberships: Memb
           marginBottom: 16,
         }}
       >
-        <Text style={{ fontSize: 14, fontWeight: '700', color: '#78350F', marginBottom: 4 }}>
+        <Text style={{ fontSize: 14, fontWeight: '700', color: '#FDBA74', marginBottom: 4 }}>
           Application under review
         </Text>
-        <Text style={{ fontSize: 12, color: '#7a4f08', lineHeight: 20, marginBottom: 10 }}>
+        <Text style={{ fontSize: 12, color: TEXT_MUTED, lineHeight: 20, marginBottom: 10 }}>
           {primary?.sacco_name ?? 'Your SACCO'} is reviewing your application. You can keep browsing other SACCOs while you wait.
         </Text>
         <InfoRow label="Reference" value={primary?.member_number || primary?.id || 'Pending'} />
@@ -404,11 +419,11 @@ function PendingOnlyDashboard({ pendingMemberships }: { pendingMemberships: Memb
 
       <View
         style={{
-          backgroundColor: SURFACE, borderWidth: 1, borderColor: BORDER,
+          backgroundColor: FROSTED_DARK, borderWidth: 1, borderColor: BORDER_WHITE,
           borderRadius: 14, padding: 14, marginBottom: 16,
         }}
       >
-        <Text style={{ fontSize: 11, fontWeight: '600', color: INK_FAINT, letterSpacing: 0.6, marginBottom: 10, textTransform: 'uppercase' }}>
+        <Text style={{ fontSize: 11, fontWeight: '600', color: TEXT_MUTED, letterSpacing: 0.6, marginBottom: 10, textTransform: 'uppercase' }}>
           Application Tracker
         </Text>
         <TrackerStep label="Submitted" active />
@@ -419,11 +434,11 @@ function PendingOnlyDashboard({ pendingMemberships }: { pendingMemberships: Memb
       {pendingMemberships.length > 1 ? (
         <View
           style={{
-            backgroundColor: SURFACE, borderWidth: 1, borderColor: BORDER,
+            backgroundColor: FROSTED_DARK, borderWidth: 1, borderColor: BORDER_WHITE,
             borderRadius: 14, padding: 14, marginBottom: 16,
           }}
         >
-          <Text style={{ fontSize: 10, fontWeight: '600', color: INK_FAINT, letterSpacing: 0.6, marginBottom: 10, textTransform: 'uppercase' }}>
+          <Text style={{ fontSize: 10, fontWeight: '600', color: TEXT_MUTED, letterSpacing: 0.6, marginBottom: 10, textTransform: 'uppercase' }}>
             Other Applications
           </Text>
           {pendingMemberships.slice(1).map((m) => (
@@ -452,7 +467,7 @@ function PendingBanner({ pendingMemberships }: { pendingMemberships: Membership[
   return (
     <View
       style={{
-        backgroundColor: '#FEF3C7',
+        backgroundColor: 'rgba(245, 158, 11, 0.15)',
         borderWidth: 1,
         borderColor: '#F59E0B',
         borderRadius: 12,
@@ -460,8 +475,8 @@ function PendingBanner({ pendingMemberships }: { pendingMemberships: Membership[
         marginBottom: 16,
       }}
     >
-      <Text style={{ fontSize: 11, fontWeight: '700', color: '#78350F' }}>Pending application</Text>
-      <Text style={{ fontSize: 11, color: '#7a4f08', marginTop: 4 }}>
+      <Text style={{ fontSize: 11, fontWeight: '700', color: '#FDBA74' }}>Pending application</Text>
+      <Text style={{ fontSize: 11, color: TEXT_MUTED, marginTop: 4 }}>
         {names} {pendingMemberships.length === 1 ? 'is' : 'are'} under review. Active SACCOs remain available below.
       </Text>
     </View>
@@ -550,13 +565,13 @@ function SingleSaccoDashboard({
       {/* ── Account breakdown ── */}
       <View
         style={{
-          backgroundColor: SURFACE,
-          borderWidth: 1, borderColor: BORDER,
+          backgroundColor: FROSTED_DARK,
+          borderWidth: 1, borderColor: BORDER_WHITE,
           borderRadius: 14, padding: 14,
           marginBottom: 12,
         }}
       >
-        <Text style={{ fontSize: 12, fontWeight: '600', color: INK, marginBottom: 8 }}>
+        <Text style={{ fontSize: 12, fontWeight: '600', color: TEXT, marginBottom: 8 }}>
           Account breakdown
         </Text>
         <InfoRow label="BOSA savings" value={money(membership.bosa_balance)} />
@@ -574,8 +589,8 @@ function SingleSaccoDashboard({
       {activeLoan ? (
         <View
           style={{
-            backgroundColor: SURFACE,
-            borderWidth: 1, borderColor: BORDER,
+            backgroundColor: FROSTED_DARK,
+            borderWidth: 1, borderColor: BORDER_WHITE,
             borderRadius: 14, padding: 14,
             marginBottom: 12,
           }}
@@ -586,9 +601,9 @@ function SingleSaccoDashboard({
               alignItems: 'center', marginBottom: 8,
             }}
           >
-            <Text style={{ fontSize: 12, fontWeight: '600', color: INK }}>Active loan</Text>
-            <View style={{ backgroundColor: '#FEF3C7', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 20 }}>
-              <Text style={{ fontSize: 10, fontWeight: '600', color: '#78350F' }}>
+            <Text style={{ fontSize: 12, fontWeight: '600', color: TEXT }}>Active loan</Text>
+            <View style={{ backgroundColor: 'rgba(245, 158, 11, 0.15)', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 20 }}>
+              <Text style={{ fontSize: 10, fontWeight: '600', color: '#FDBA74' }}>
                 {activeLoan.status === 'active' || activeLoan.status === 'disbursed' ? 'In repayment' : 'Approved'}
               </Text>
             </View>
@@ -596,7 +611,7 @@ function SingleSaccoDashboard({
           <InfoRow label={activeLoan.loan_product_label} value={money(activeLoan.amount_requested)} />
           <View
             style={{
-              height: 5, backgroundColor: SURFACE3, borderRadius: 3,
+              height: 5, backgroundColor: FROSTED, borderRadius: 3,
               overflow: 'hidden', marginTop: 6, marginBottom: 4,
             }}
           >
@@ -613,10 +628,10 @@ function SingleSaccoDashboard({
               marginBottom: 10,
             }}
           >
-            <Text style={{ fontSize: 10, color: INK_FAINT }}>
+            <Text style={{ fontSize: 10, color: TEXT_MUTED }}>
               {getLoanProgress(activeLoan.amount_requested, activeLoan.balance_remaining)}% repaid
             </Text>
-            <Text style={{ fontSize: 10, color: INK_FAINT }}>
+            <Text style={{ fontSize: 10, color: TEXT_MUTED }}>
               Remaining: {money(activeLoan.balance_remaining)}
             </Text>
           </View>
@@ -716,7 +731,7 @@ function UnifiedDashboard({
       <Text
         style={{
           fontSize: 10, fontWeight: '600', letterSpacing: 0.6,
-          color: INK_FAINT, marginBottom: 8, marginTop: 4, textTransform: 'uppercase',
+          color: TEXT_MUTED, marginBottom: 8, marginTop: 4, textTransform: 'uppercase',
         }}
       >
         My SACCOs
@@ -817,7 +832,7 @@ function QuickActionButton({
       >
         <Text style={{ fontSize: 18 }}>{icon}</Text>
       </View>
-      <Text style={{ fontSize: 9, fontWeight: '500', color: INK_MUTED, textAlign: 'center', lineHeight: 13 }}>
+      <Text style={{ fontSize: 9, fontWeight: '500', color: TEXT_MUTED, textAlign: 'center', lineHeight: 13 }}>
         {label}
       </Text>
     </TouchableOpacity>
@@ -834,9 +849,9 @@ function SaccoRow({ membership, onPress }: { membership: Membership; onPress: ()
         flexDirection: 'row',
         alignItems: 'center',
         gap: 12,
-        backgroundColor: SURFACE,
+        backgroundColor: FROSTED_DARK,
         borderWidth: 1,
-        borderColor: BORDER,
+        borderColor: BORDER_WHITE,
         borderRadius: 14,
         padding: 13,
         marginBottom: 10,
@@ -855,8 +870,8 @@ function SaccoRow({ membership, onPress }: { membership: Membership; onPress: ()
         </Text>
       </View>
       <View style={{ flex: 1 }}>
-        <Text style={{ fontSize: 13, fontWeight: '600', color: INK }}>{membership.sacco_name}</Text>
-        <Text style={{ fontSize: 10, color: INK_FAINT }}>
+        <Text style={{ fontSize: 13, fontWeight: '600', color: TEXT }}>{membership.sacco_name}</Text>
+        <Text style={{ fontSize: 10, color: TEXT_MUTED }}>
           {membership.sacco_slug.includes('stima') ? 'Energy sector' :
            membership.sacco_slug.includes('teacher') ? 'Education sector' :
            membership.sacco_slug.includes('unaitas') ? 'Community' :
@@ -864,10 +879,10 @@ function SaccoRow({ membership, onPress }: { membership: Membership; onPress: ()
         </Text>
       </View>
       <View style={{ alignItems: 'flex-end' }}>
-        <Text style={{ fontSize: 13, fontWeight: '600', color: INK }}>{money(totalSavings)}</Text>
-        <Text style={{ fontSize: 9, color: INK_FAINT }}>Savings</Text>
+        <Text style={{ fontSize: 13, fontWeight: '600', color: TEXT }}>{money(totalSavings)}</Text>
+        <Text style={{ fontSize: 9, color: TEXT_MUTED }}>Savings</Text>
       </View>
-      <Text style={{ fontSize: 14, color: INK_FAINT, marginLeft: 2 }}>{'>'}</Text>
+      <Text style={{ fontSize: 14, color: TEXT_MUTED, marginLeft: 2 }}>{'>'}</Text>
     </TouchableOpacity>
   )
 }
@@ -878,22 +893,22 @@ function RecentTransactions({ transactions, title }: { transactions: Transaction
       <Text
         style={{
           fontSize: 10, fontWeight: '600', letterSpacing: 0.6,
-          color: INK_FAINT, marginBottom: 8, textTransform: 'uppercase',
+          color: TEXT_MUTED, marginBottom: 8, textTransform: 'uppercase',
         }}
       >
         {title}
       </Text>
       <View
         style={{
-          backgroundColor: SURFACE,
-          borderWidth: 1, borderColor: BORDER,
+          backgroundColor: FROSTED_DARK,
+          borderWidth: 1, borderColor: BORDER_WHITE,
           borderRadius: 14, padding: 12,
         }}
       >
         {transactions.length > 0 ? (
           transactions.map((txn) => <TransactionRow key={txn.id} transaction={txn} />)
         ) : (
-          <Text style={{ color: INK_FAINT, fontSize: 12, textAlign: 'center', paddingVertical: 16 }}>
+          <Text style={{ color: TEXT_MUTED, fontSize: 12, textAlign: 'center', paddingVertical: 16 }}>
             No recent activity yet.
           </Text>
         )}
@@ -913,32 +928,32 @@ function TransactionRow({ transaction }: { transaction: Transaction }) {
         gap: 10,
         paddingVertical: 9,
         borderBottomWidth: 0.5,
-        borderBottomColor: BORDER,
+        borderBottomColor: BORDER_WHITE,
       }}
     >
       <View
         style={{
           width: 34, height: 34, borderRadius: 17,
-          backgroundColor: isCredit ? 'rgba(16, 185, 129, 0.1)' : 'rgba(220, 38, 38, 0.08)',
+          backgroundColor: isCredit ? 'rgba(16, 185, 129, 0.15)' : 'rgba(220, 38, 38, 0.15)',
           alignItems: 'center', justifyContent: 'center',
         }}
       >
-        <Text style={{ fontSize: 12, color: isCredit ? MINT : '#DC2626', fontWeight: '600' }}>
+        <Text style={{ fontSize: 12, color: isCredit ? MINT : '#F87171', fontWeight: '600' }}>
           {isCredit ? '↑' : '↓'}
         </Text>
       </View>
       <View style={{ flex: 1 }}>
-        <Text style={{ fontSize: 12, fontWeight: '500', color: INK }}>
+        <Text style={{ fontSize: 12, fontWeight: '500', color: TEXT }}>
           {transaction.description}
         </Text>
-        <Text style={{ fontSize: 10, color: INK_FAINT }}>
+        <Text style={{ fontSize: 10, color: TEXT_MUTED }}>
           {transaction.sacco_name} · {formatDate(transaction.date)}
         </Text>
       </View>
       <Text
         style={{
           fontSize: 12, fontWeight: '600',
-          color: isCredit ? MINT : '#DC2626',
+          color: isCredit ? MINT : '#F87171',
         }}
       >
         {isCredit ? '+' : '-'}{money(transaction.amount)}
@@ -964,13 +979,13 @@ function InfoRow({ label, value, valueColor }: { label: string; value: string; v
         justifyContent: 'space-between',
         paddingVertical: 7,
         borderBottomWidth: 0.5,
-        borderBottomColor: BORDER,
+        borderBottomColor: BORDER_WHITE,
       }}
     >
-      <Text style={{ fontSize: 11, color: INK_MUTED }}>{label}</Text>
+      <Text style={{ fontSize: 11, color: TEXT_MUTED }}>{label}</Text>
       <Text
         style={{
-          fontSize: 11, fontWeight: '600', color: valueColor ?? INK,
+          fontSize: 11, fontWeight: '600', color: valueColor ?? TEXT,
           textAlign: 'right', flex: 1, marginLeft: 12,
         }}
       >
@@ -986,22 +1001,22 @@ function TrackerStep({ label, active }: { label: string; active?: boolean }) {
       <View
         style={{
           width: 22, height: 22, borderRadius: 11,
-          backgroundColor: active ? MINT : SURFACE3,
+          backgroundColor: active ? MINT : FROSTED,
           borderWidth: active ? 0 : 1,
-          borderColor: BORDER,
+          borderColor: BORDER_WHITE,
           alignItems: 'center', justifyContent: 'center',
         }}
       >
         <Text
           style={{
             fontSize: 10, fontWeight: '700',
-            color: active ? '#fff' : INK_FAINT,
+            color: active ? '#fff' : TEXT_MUTED,
           }}
         >
           {active ? '✓' : '○'}
         </Text>
       </View>
-      <Text style={{ fontSize: 12, fontWeight: '500', color: active ? INK : INK_MUTED }}>
+      <Text style={{ fontSize: 12, fontWeight: '500', color: active ? TEXT : TEXT_MUTED }}>
         {label}
       </Text>
     </View>

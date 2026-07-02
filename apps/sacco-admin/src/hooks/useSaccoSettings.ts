@@ -1,18 +1,8 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { apiCall } from '@saccosphere/api-client'
-import type { SaccoConfig } from '@saccosphere/schemas'
+import { api } from '@saccosphere/api-client'
+import { useSacco } from './useSacco'
 
-type MgmtSettingsResponse = {
-  success: boolean
-  data: {
-    registration_fee?: number
-    loan_multiplier?: number
-    interest_rate?: number
-    max_repayment_period?: number
-    min_guarantors?: number
-  }
-}
 
 type SettingsUiModel = {
   sacco: {
@@ -34,31 +24,37 @@ type SettingsUiModel = {
 
 export function useSaccoSettings() {
   const queryClient = useQueryClient()
+  const { data: sacco } = useSacco()
 
   const q = useQuery({
     queryKey: ['sacco-admin-settings'],
     queryFn: async (): Promise<SettingsUiModel> => {
-      const res = await apiCallMgmtSettingsGet()
+      const settings = await api.saccoAdmin.getSettings()
       return {
-        sacco: null,
-        settings: res.data,
+        sacco: sacco ? {
+          id: sacco.id,
+          name: sacco.name,
+          sector: sacco.sector,
+          county: sacco.county,
+          sasra_reg_no: sacco.sasra_reg_no,
+          member_count: sacco.member_count,
+        } : null,
+        settings,
       }
     },
     staleTime: 0,
+    enabled: !!sacco,
   })
 
   const m = useMutation({
-    mutationFn: async () => {
-      const current = (q.data?.settings ?? {}) as Partial<SaccoConfig>
-      await apiCall<void>('PATCH', '/management/settings/', current)
+    mutationFn: async (settings: any) => {
+      await api.saccoAdmin.updateSettings(settings)
       return true
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sacco-admin-settings'] })
     },
   })
-
-
 
   return {
     data: q.data
@@ -70,12 +66,8 @@ export function useSaccoSettings() {
     isLoading: q.isLoading,
     error: q.error,
     isPending: m.isPending,
-    save: () => m.mutate(),
+    save: (settings: any) => m.mutate(settings),
   }
-}
-
-async function apiCallMgmtSettingsGet(): Promise<MgmtSettingsResponse> {
-  return apiCall<MgmtSettingsResponse>('GET', '/management/settings/')
 }
 
 

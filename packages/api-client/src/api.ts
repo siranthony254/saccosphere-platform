@@ -249,10 +249,11 @@ const normalizeAdminDashboard = (dashboard: any): SaccoAdminDashboard => {
 }
 
 const normalizeAdminMember = (member: any): AdminMember => {
-  const user = member.user ?? {}
-  const fullName = String(user.full_name ?? '').trim()
+  // Handle both nested user object and flat structure
+  const user = member.user ?? member
+  const fullName = String(user.full_name || user.first_name && user.last_name ? `${user.first_name} ${user.last_name}` : '').trim()
   const [first_name, ...rest] = fullName.split(' ')
-  const last_name = rest.join(' ') || first_name
+  const last_name = rest.join(' ') || (user.last_name || first_name)
   const statusMap: Record<string, AdminMember['membership_status']> = {
     PENDING: 'applied',
     UNDER_REVIEW: 'under_review',
@@ -261,20 +262,20 @@ const normalizeAdminMember = (member: any): AdminMember => {
     SUSPENDED: 'suspended',
     LEFT: 'withdrawn',
   }
-  const kycStatus = String(user.kyc_status ?? 'pending').toLowerCase()
-  const membershipStatus = statusMap[String(member.status ?? 'PENDING').toUpperCase()] ?? 'applied'
+  const kycStatus = String(user.kyc_status ?? member.kyc_status ?? 'pending').toLowerCase()
+  const membershipStatus = statusMap[String(member.status ?? user.status ?? 'PENDING').toUpperCase()] ?? 'applied'
   const recentTransactions = Array.isArray(member.recent_transactions) ? member.recent_transactions : []
 
   return AdminMemberSchema.parse({
-    id: member.id,
-    user_id: user.id ?? null,
-    saccosphere_id: member.member_number ? `SS-${member.member_number}` : member.id,
-    member_number: member.member_number ?? '',
-    first_name: first_name ?? '',
-    last_name: last_name ?? '',
-    email: user.email ?? '',
-    phone: user.phone_number ?? user.phone ?? '',
-    national_id: user.national_id ?? null,
+    id: String(member.id ?? user.id ?? ''),
+    user_id: String(user.id ?? null) || null,
+    saccosphere_id: member.member_number ? `SS-${member.member_number}` : String(member.id ?? ''),
+    member_number: String(member.member_number ?? user.member_number ?? ''),
+    first_name: String(first_name || user.first_name || ''),
+    last_name: String(last_name || user.last_name || ''),
+    email: String(user.email ?? member.email ?? ''),
+    phone: String(user.phone_number ?? user.phone ?? member.phone_number ?? member.phone ?? ''),
+    national_id: user.national_id ?? member.national_id ?? null,
     kyc_status:
       kycStatus === 'verified' || kycStatus === 'approved'
         ? 'verified'
@@ -284,14 +285,14 @@ const normalizeAdminMember = (member: any): AdminMember => {
             ? 'under_review'
             : 'pending',
     membership_status: membershipStatus,
-    bosa_balance: Number(member.savings_total ?? 0),
-    fosa_balance: 0,
-    share_capital: 0,
-    active_loans_count: Number(member.active_loans?.length ?? 0),
-    active_loans_kes: Number(member.outstanding_loans ?? 0),
-    monthly_contribution: 0,
-    repayment_rate_pct: 0,
-    joined_at: member.approved_date ?? member.application_date ?? null,
+    bosa_balance: Number(member.savings_total ?? member.bosa_balance ?? 0),
+    fosa_balance: Number(member.fosa_balance ?? 0),
+    share_capital: Number(member.share_capital ?? 0),
+    active_loans_count: Number(member.active_loans?.length ?? member.active_loans_count ?? 0),
+    active_loans_kes: Number(member.outstanding_loans ?? member.active_loans_kes ?? 0),
+    monthly_contribution: Number(member.monthly_contribution ?? 0),
+    repayment_rate_pct: Number(member.repayment_rate_pct ?? 0),
+    joined_at: member.approved_date ?? member.application_date ?? member.joined_at ?? null,
     last_active: recentTransactions[0]?.created_at ?? null,
   })
 }
@@ -547,6 +548,22 @@ export const api = {
         },
         { responseSchema: PasswordResetResponseSchema }
       ),
+
+    changePassword: (data: {
+      old_password: string
+      new_password: string
+      new_password2: string
+    }) =>
+      apiCall<{ message: string }>(
+        'POST',
+        '/accounts/password/change/',
+        {
+          old_password: z.string().min(6).parse(data.old_password),
+          new_password: z.string().min(6).parse(data.new_password),
+          new_password2: z.string().min(6).parse(data.new_password2),
+        },
+        { responseSchema: PasswordResetResponseSchema }
+      ),
   },
 
   //  MEMBER PROFILE and DASHBOARD
@@ -674,14 +691,16 @@ export const api = {
 
     list: (params?: { sector?: string; county?: string; search?: string }) =>
       apiCall<any[] | PaginatedResponse<any>>('GET', '/accounts/saccos/', undefined, {
-        params,
+        params: { verified_only: true, ordering: '-member_count', ...params },
       }).then((items) => unwrapResults(items).map(normalizeSacco)),
 
-    get: async (slug: string) => {
-      const key = requiredString(slug)
+    get: async (saccoId: string) => {
+      const key = requiredString(saccoId)
+      // If it's a UUID, use it directly as sacco_id
       if (/^[0-9a-f-]{36}$/i.test(key)) {
         return normalizeSacco(await apiCall<any>('GET', `/accounts/saccos/${key}/`))
       }
+      // Otherwise, search by slug and return the first match
       const saccos = await api.saccos.list({ search: key })
       const sacco = saccos.find((item) => item.slug === key) ?? saccos[0]
       if (!sacco) throw { code: 'NOT_FOUND', message: 'SACCO not found.' }
@@ -1054,6 +1073,17 @@ export const api = {
         guarantor_user_id: uuid(guarantorId),
         guarantee_amount: amount,
       }),
+
+    submitExternalGuarantor: (loanId: string, data: { full_name: string; phone_number: string; email?: string; guarantee_amount?: number }) =>
+      apiCall<void>('POST', `/services/loans/${uuid(loanId)}/external-guarantors/`, {
+        full_name: data.full_name,
+        phone_number: data.phone_number,
+        email: data.email,
+        guarantee_amount: data.guarantee_amount,
+      }),
+
+    getExternalGuarantors: (loanId: string) =>
+      apiCall<any[]>('GET', `/services/loans/${uuid(loanId)}/external-guarantors/`),
 
     respondToGuarantorRequest: (id: string, action: 'approve' | 'decline') => {
       const [loanId, guarantorId] = id.split(':')
@@ -1519,6 +1549,21 @@ export const api = {
         filename: filenameMatch?.[1] ?? `invoice_${id}.${format}`,
       }
     },
+
+    // SACCO settings
+    getSettings: async () => {
+      const response = await apiCall<any>('GET', '/management/settings/')
+      return {
+        registration_fee: Number(response.registration_fee ?? 0),
+        loan_multiplier: Number(response.loan_multiplier ?? 3),
+        interest_rate: Number(response.interest_rate ?? 12),
+        max_repayment_period: Number(response.max_repayment_period ?? 48),
+        min_guarantors: Number(response.min_guarantors ?? 2),
+      }
+    },
+
+    updateSettings: async (settings: any) =>
+      apiCall<void>('PATCH', '/management/settings/', settings),
   },
 
   // ─── SUPER ADMIN ───────────────────────────────────────────────────────────

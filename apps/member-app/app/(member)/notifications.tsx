@@ -1,4 +1,5 @@
 import { View, Text, ScrollView, TouchableOpacity, RefreshControl } from 'react-native'
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useNotifications } from '../../hooks/useNotifications'
 import type { Notification } from '@saccosphere/schemas'
 
@@ -9,57 +10,69 @@ const TYPE_ICONS: Record<string, string> = {
   dividend_credited: '🎉', system: '📢',
 }
 
+const BACKGROUND = '#06091A'
+const FROSTED = 'rgba(255, 255, 255, 0.08)'
+const FROSTED_DARK = 'rgba(255, 255, 255, 0.06)'
+const BORDER_WHITE = 'rgba(255, 255, 255, 0.1)'
+const TEXT = '#F8FAFC'
+const TEXT_MUTED = 'rgba(248, 250, 252, 0.68)'
+const VIOLET = '#6D28D9'
+const MINT = '#10B981'
+
 const TYPE_COLORS: Record<string, string> = {
-  loan_disbursed: '#e6f7f1', guarantor_request: '#eff6ff',
-  instalment_due: '#fef3dc', default: '#f8faf9',
+  loan_disbursed: 'rgba(16, 185, 129, 0.15)', guarantor_request: 'rgba(109, 40, 217, 0.15)',
+  instalment_due: 'rgba(245, 158, 11, 0.15)', default: FROSTED_DARK,
 }
 
 export default function NotificationsScreen() {
+  const insets = useSafeAreaInsets()
   const { data: notifications, isLoading, refetch, isRefetching } = useNotifications()
 
   const unread = notifications?.filter(n => !n.is_read) ?? []
   const read = notifications?.filter(n => n.is_read) ?? []
 
   return (
-    <ScrollView
-      className="bg-surface2"
-      refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor="#10B981" />}
-    >
-      <View className="flex-row justify-between items-center pt-13 px-4 pb-3 bg-surface border-b border-border">
-        <Text className="text-ink text-xl font-bold">Notifications</Text>
-        <TouchableOpacity><Text className="text-violet-500 text-xs font-semibold">Mark all read</Text></TouchableOpacity>
+    <SafeAreaView style={{ flex: 1, backgroundColor: BACKGROUND }} edges={['bottom', 'left', 'right']}>
+      <ScrollView
+        contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}
+        refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={MINT} />}
+      >
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 52, paddingHorizontal: 16, paddingBottom: 12, backgroundColor: BACKGROUND, borderBottomWidth: 0.5, borderBottomColor: BORDER_WHITE }}>
+        <Text style={{ color: TEXT, fontSize: 20, fontWeight: '700' }}>Notifications</Text>
+        <TouchableOpacity><Text style={{ color: VIOLET, fontSize: 12, fontWeight: '600' }}>Mark all read</Text></TouchableOpacity>
       </View>
 
       {/* Filter pills */}
-      <View className="flex-row gap-2 px-3.5 py-3.5 bg-surface">
+      <View style={{ flexDirection: 'row', gap: 8, paddingHorizontal: 14, paddingVertical: 14, backgroundColor: BACKGROUND }}>
         {['All', 'Loans', 'Payments', 'Alerts'].map(p => (
-          <TouchableOpacity key={p} className={`px-3.5 py-1 rounded-full border ${p === 'All' ? 'bg-violet-500 border-violet-500' : 'bg-surface border-border'}`}>
-            <Text className={`text-xs font-medium ${p === 'All' ? 'text-white' : 'text-ink-muted'}`}>{p}</Text>
+          <TouchableOpacity key={p} style={{ paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20, borderWidth: 1, backgroundColor: p === 'All' ? VIOLET : FROSTED_DARK, borderColor: p === 'All' ? VIOLET : BORDER_WHITE }}>
+            <Text style={{ fontSize: 12, fontWeight: '500', color: p === 'All' ? '#fff' : TEXT_MUTED }}>{p}</Text>
           </TouchableOpacity>
         ))}
       </View>
 
       {isLoading ? (
-        <View className="px-3.5">
-          {[1,2,3].map(i => <View key={i} className="h-20 bg-border rounded-xl mb-2" />)}
+        <View style={{ paddingHorizontal: 14 }}>
+          {[1,2,3].map(i => <View key={i} style={{ height: 80, backgroundColor: FROSTED_DARK, borderRadius: 12, marginBottom: 8 }} />)}
         </View>
       ) : (
-        <View className="px-3.5">
+        <View style={{ paddingHorizontal: 14 }}>
           {unread.length > 0 && (
             <>
-              <Text className="text-ink-faint text-xs font-semibold tracking-widest mb-2">New · {unread.length} unread</Text>
+              <Text style={{ color: TEXT_MUTED, fontSize: 12, fontWeight: '600', letterSpacing: 1, marginBottom: 8 }}>New · {unread.length} unread</Text>
               {unread.map(n => <NotifItem key={n.id} notification={n} />)}
             </>
           )}
           {read.length > 0 && (
             <>
-              <Text className="text-ink-faint text-xs font-semibold tracking-widest mb-2 mt-4">Earlier</Text>
+              <Text style={{ color: TEXT_MUTED, fontSize: 12, fontWeight: '600', letterSpacing: 1, marginBottom: 8, marginTop: 16 }}>Earlier</Text>
               {read.map(n => <NotifItem key={n.id} notification={n} />)}
             </>
           )}
         </View>
       )}
     </ScrollView>
+    </SafeAreaView>
   )
 }
 
@@ -69,16 +82,16 @@ function NotifItem({ notification: n }: { notification: Notification }) {
   const timeAgo = getTimeAgo(n.created_at)
 
   return (
-    <TouchableOpacity className={`flex-row gap-3 p-3 rounded-xl mb-2 items-start ${!n.is_read ? 'bg-mint-50' : 'bg-surface'}`}>
-      <View className="w-10 h-10 rounded-xl items-center justify-center flex-shrink-0" style={{ backgroundColor: iconBg }}>
+    <TouchableOpacity style={{ flexDirection: 'row', gap: 12, padding: 12, borderRadius: 12, marginBottom: 8, alignItems: 'flex-start', backgroundColor: !n.is_read ? 'rgba(16, 185, 129, 0.15)' : FROSTED_DARK, borderWidth: 1, borderColor: !n.is_read ? MINT : BORDER_WHITE }}>
+      <View style={{ width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center', flexShrink: 0, backgroundColor: iconBg }}>
         <Text style={{ fontSize: 16 }}>{icon}</Text>
       </View>
-      <View className="flex-1">
-        <Text className="text-ink text-xs font-semibold mb-0.5">{n.title}</Text>
-        <Text className="text-ink-muted text-xs leading-4.5 mb-1">{n.body}</Text>
-        <Text className="text-ink-faint text-xs">{timeAgo}</Text>
+      <View style={{ flex: 1 }}>
+        <Text style={{ color: TEXT, fontSize: 12, fontWeight: '600', marginBottom: 2 }}>{n.title}</Text>
+        <Text style={{ color: TEXT_MUTED, fontSize: 12, lineHeight: 18, marginBottom: 4 }}>{n.body}</Text>
+        <Text style={{ color: TEXT_MUTED, fontSize: 12 }}>{timeAgo}</Text>
       </View>
-      {!n.is_read && <View className="w-2 h-2 rounded-full bg-red-500 mt-1 flex-shrink-0" />}
+      {!n.is_read && <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#EF4444', marginTop: 4, flexShrink: 0 }} />}
     </TouchableOpacity>
   )
 }

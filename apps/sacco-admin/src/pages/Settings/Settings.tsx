@@ -8,6 +8,16 @@ export function Settings() {
   const [maxRepaymentPeriod, setMaxRepaymentPeriod] = useState('')
   const [minGuarantors, setMinGuarantors] = useState('')
 
+  const handleSave = () => {
+    const settings = {
+      loan_multiplier: Number(loanMultiplier || data?.settings?.loan_multiplier),
+      interest_rate: Number(interestRate || data?.settings?.interest_rate),
+      max_repayment_period: Number(maxRepaymentPeriod || data?.settings?.max_repayment_period),
+      min_guarantors: Number(minGuarantors || data?.settings?.min_guarantors),
+    }
+    save(settings)
+  }
+
   return (
     <div className="p-5">
       <div className="text-lg font-semibold text-ink mb-1">SACCO settings</div>
@@ -136,7 +146,7 @@ export function Settings() {
 
       <div className="mt-5 text-right">
         <button
-          onClick={() => save()}
+          onClick={handleSave}
           disabled={isPending}
           className="px-6 py-2 rounded-lg border-none bg-mint-600 text-white text-sm font-semibold cursor-pointer hover:bg-mint-700 transition-colors disabled:opacity-60"
         >

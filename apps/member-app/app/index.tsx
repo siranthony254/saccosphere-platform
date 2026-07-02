@@ -9,7 +9,10 @@ import {
   TextInput,
   ActivityIndicator,
   Alert,
+  StyleSheet,
 } from 'react-native'
+import { StatusBar } from 'expo-status-bar'
+import { LinearGradient } from 'expo-linear-gradient'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { router } from 'expo-router'
 import { usePublicStats } from '../hooks/usePublicStats'
@@ -18,13 +21,26 @@ import { api } from '@saccosphere/api-client'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 const PADDING_H = Math.max(16, Math.min(24, SCREEN_WIDTH * 0.05))
-const CONTENT_WIDTH = Math.min(520, SCREEN_WIDTH - PADDING_H * 2)
+const CONTENT_WIDTH = Math.min(760, SCREEN_WIDTH - PADDING_H * 2)
 
-// 2 columns always — each card takes half minus gap
+// 2 columns always — cards use percentage-based flexBasis so the grid
+// never depends on a (sometimes stale, especially on web) Dimensions read.
 const GAP = 12
-const CARD_WIDTH = (CONTENT_WIDTH - GAP) / 2
+const CARD_REF_WIDTH = 160 // reference size only, for scaling icon/text
+const CARD_HEIGHT = CARD_REF_WIDTH * 0.9
+const ICON_SIZE = Math.max(24, Math.min(32, CARD_REF_WIDTH * 0.18))
+const CARD_TITLE_SIZE = Math.max(14, Math.min(20, CARD_REF_WIDTH * 0.11))
+const CARD_SUBTITLE_SIZE = Math.max(12, Math.min(16, CARD_REF_WIDTH * 0.085))
+const TRUST_STRIP_OVERFLOW = 18
 
 // ─── Brand palette ────────────────────────────────────────────────────
+const BACKGROUND = '#06091A'
+const FROSTED = 'rgba(255, 255, 255, 0.08)'
+const FROSTED_DARK = 'rgba(255, 255, 255, 0.06)'
+const BORDER_WHITE = 'rgba(255, 255, 255, 0.1)'
+const TOP_BAR_SURFACE = 'rgba(8, 12, 28, 0.96)'
+const TEXT = '#F8FAFC'
+const TEXT_MUTED = 'rgba(248, 250, 252, 0.68)'
 const VIOLET = '#6D28D9'
 const VIOLET_LIGHT = '#EDE9FE'
 const MINT = '#10B981'
@@ -50,16 +66,82 @@ export default function LandingScreen() {
 
   return (
     <>
-      <View className="flex-1 bg-surface">
+      <StatusBar style="light" translucent />
+      <View style={{ flex: 1, backgroundColor: BACKGROUND }}>
+        <View
+          style={StyleSheet.absoluteFillObject}
+        />
+        <LinearGradient
+          colors={['rgba(109, 40, 217, 0.36)', 'transparent']}
+          style={{
+            position: 'absolute',
+            width: 260,
+            height: 260,
+            borderRadius: 130,
+            top: -80,
+            left: -80,
+          }}
+        />
+        <LinearGradient
+          colors={['rgba(16, 185, 129, 0.22)', 'transparent']}
+          style={{
+            position: 'absolute',
+            width: 220,
+            height: 220,
+            borderRadius: 110,
+            top: -60,
+            right: -80,
+          }}
+        />
+        <View
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            opacity: 0.18,
+            transform: [{ rotate: '15deg' }],
+          }}
+        >
+          {Array.from({ length: 9 }).map((_, index) => (
+            <View
+              key={`grid-h-${index}`}
+              style={{
+                position: 'absolute',
+                top: index * 42,
+                left: 0,
+                right: 0,
+                height: 1,
+                backgroundColor: 'rgba(255,255,255,0.08)',
+              }}
+            />
+          ))}
+          {Array.from({ length: 9 }).map((_, index) => (
+            <View
+              key={`grid-v-${index}`}
+              style={{
+                position: 'absolute',
+                left: index * 42,
+                top: 0,
+                bottom: 0,
+                width: 1,
+                backgroundColor: 'rgba(255,255,255,0.08)',
+              }}
+            />
+          ))}
+        </View>
+
         {/* ── Top navigation bar ── */}
         <View
-          className="flex-row items-center bg-surface"
+          className="flex-row items-center"
           style={{
             paddingTop: insets.top + 10,
             paddingBottom: 10,
             paddingHorizontal: PADDING_H,
             borderBottomWidth: 0.5,
-            borderBottomColor: BORDER,
+            borderBottomColor: 'rgba(255,255,255,0.12)',
+            backgroundColor: TOP_BAR_SURFACE,
           }}
         >
           {/* Logo */}
@@ -71,51 +153,61 @@ export default function LandingScreen() {
               <Text className="text-white font-bold text-xs">S</Text>
             </View>
             <Text
-              className="text-ink font-bold text-lg"
-              style={{ fontFamily: 'Fraunces_700Bold' }}
+              className="font-bold text-lg"
+              style={{ color: TEXT, fontFamily: 'Fraunces_700Bold' }}
             >
               Saccosphere
             </Text>
-          </View>
-
-          {/* Right nav */}
-          <View className="ml-auto flex-row items-center gap-3">
           </View>
         </View>
 
         <ScrollView
           contentContainerStyle={{
             flexGrow: 1,
+            justifyContent: 'center',
             paddingBottom: insets.bottom + 20,
             paddingHorizontal: PADDING_H,
+            alignItems: 'center',
           }}
           showsVerticalScrollIndicator={false}
           scrollEventThrottle={16}
         >
           <View
             className="items-center self-center w-full"
-            style={{ maxWidth: CONTENT_WIDTH }}
+            style={{ maxWidth: CONTENT_WIDTH, alignItems: 'center' }}
           >
             {/* ── Hero section ── */}
-            <View className="pt-10 pb-6 items-center w-full">
+            <View
+            className="pt-10 items-center w-full"
+            style={{
+              width: '100%',
+              backgroundColor: FROSTED,
+              borderWidth: 1,
+              borderColor: BORDER_WHITE,
+              borderRadius: 28,
+              paddingHorizontal: 24,
+              paddingVertical: 24,
+              marginBottom: 24,
+            }}
+          >
               {/* Trust badge */}
               <View
                 className="px-4 py-1.5 rounded-full mb-5"
                 style={{
-                  backgroundColor: MINT_LIGHT,
+                  backgroundColor: 'rgba(255,255,255,0.08)',
                   borderWidth: 1,
-                  borderColor: 'rgba(16, 185, 129, 0.2)',
+                  borderColor: 'rgba(255,255,255,0.14)',
                 }}
               >
-                <Text className="text-xs font-semibold" style={{ color: '#084D32' }}>
+                <Text className="text-xs font-semibold" style={{ color: TEXT }}>
                   SASRA regulated · CBK licensed
                 </Text>
               </View>
 
               {/* Hero heading */}
               <Text
-                className="text-ink text-center mb-3"
-                style={{ fontSize: 28, fontWeight: '800', lineHeight: 38 }}
+                className="text-center mb-3"
+                style={{ color: TEXT, fontSize: 28, fontWeight: '800', lineHeight: 38 }}
               >
                 The Future of{' '}
                 <Text style={{ color: VIOLET }}>SACCOs</Text>
@@ -134,12 +226,12 @@ export default function LandingScreen() {
                   className="flex-1 py-3 px-5 rounded-xl items-center"
                   style={{
                     borderWidth: 2,
-                    borderColor: VIOLET,
-                    backgroundColor: SURFACE,
+                    borderColor: 'rgba(255,255,255,0.18)',
+                    backgroundColor: 'rgba(255,255,255,0.06)',
                   }}
                   onPress={() => router.push('/(auth)/login')}
                 >
-                  <Text className="text-xs font-semibold" style={{ color: VIOLET }}>
+                  <Text className="text-xs font-semibold" style={{ color: TEXT }}>
                     Log in
                   </Text>
                 </TouchableOpacity>
@@ -149,17 +241,17 @@ export default function LandingScreen() {
               <TouchableOpacity
                 className="mt-4 py-3 px-5 rounded-xl items-center w-full"
                 style={{
-                  backgroundColor: MINT_50,
+                  backgroundColor: 'rgba(255,255,255,0.04)',
                   borderWidth: 1.5,
-                  borderColor: MINT,
+                  borderColor: 'rgba(255,255,255,0.12)',
                   borderStyle: 'dashed',
                 }}
                 onPress={() => setLookupVisible(true)}
               >
-                <Text className="text-xs font-semibold" style={{ color: '#084D32' }}>
+                <Text className="text-xs font-semibold" style={{ color: TEXT }}>
                   🔗 Link my existing SACCOs
                 </Text>
-                <Text className="text-xs mt-1" style={{ color: INK_MUTED }}>
+                <Text className="text-xs mt-1" style={{ color: TEXT_MUTED }}>
                   Already a member? Sync your data in one tap
                 </Text>
               </TouchableOpacity>
@@ -169,12 +261,20 @@ export default function LandingScreen() {
             <View className="py-2 w-full">
               <Text
                 className="text-xs font-semibold text-center mb-4 tracking-widest uppercase"
-                style={{ color: INK_FAINT }}
+                style={{ color: TEXT_MUTED }}
               >
                 Everything in one dashboard
               </Text>
 
-              <View className="flex-row flex-wrap justify-center" style={{ gap: GAP }}>
+              <View
+                style={{
+                  flexDirection: 'row',
+                  flexWrap: 'wrap',
+                  justifyContent: 'center',
+                  columnGap: GAP,
+                  rowGap: GAP,
+                }}
+              >
                 <FeatureCard
                   icon="B"
                   color={MINT}
@@ -202,30 +302,48 @@ export default function LandingScreen() {
               </View>
             </View>
 
-            {/* ── Trust strip ── */}
-            <View
-              className="flex-row flex-wrap rounded-xl py-4 my-4 w-full"
-              style={{
-                backgroundColor: SURFACE2,
-                borderWidth: 1,
-                borderColor: BORDER,
-              }}
-            >
-              <TrustStat value={totalSaccos} label="SACCOs" />
-              <TrustStat value={totalMembers} label="Members" />
-              <TrustStat value="SASRA" label="Regulated" />
-              <TrustStat value="CBK" label="Licensed" />
-            </View>
-
-            {/* ── Footer ── */}
-            <Text
-              className="text-xs text-center mb-6"
-              style={{ color: INK_FAINT }}
-            >
-              © {new Date().getFullYear()} Saccosphere. All rights reserved.
-            </Text>
+                
+            <View className="h-28" />
           </View>
         </ScrollView>
+      </View>
+
+      <View
+        style={{
+          position: 'absolute',
+          left: 0,
+          right: 0,
+          bottom: -TRUST_STRIP_OVERFLOW,
+          zIndex: 10,
+        }}
+      >
+        <View
+          style={{
+            backgroundColor: 'rgba(255,255,255,0.06)',
+            borderRadius: 0,
+            borderWidth: 1,
+            borderColor: BORDER_WHITE,
+            paddingVertical: 28,
+            paddingHorizontal: 28,
+            paddingBottom: 28 + insets.bottom,
+            marginHorizontal: 0,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 10 },
+            shadowOpacity: 0.08,
+            shadowRadius: 24,
+            elevation: 8,
+          }}
+        >
+          <View
+            className="flex-row flex-wrap"
+            style={{ justifyContent: 'space-between', gap: 16 }}
+          >
+            <TrustStat value={totalSaccos} label="SACCOs" />
+            <TrustStat value={totalMembers} label="Members" />
+            <TrustStat value="SASRA" label="Regulated" />
+            <TrustStat value="CBK" label="Licensed" />
+          </View>
+        </View>
       </View>
 
       {/* ── Link Existing Membership Modal ── */}
@@ -341,69 +459,69 @@ function LinkExistingMembershipModal({
       onRequestClose={onClose}
       onDismiss={reset}
     >
-      <View className="flex-1 justify-end bg-black/45">
+      <View className="flex-1 justify-end" style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)' }}>
         <View
           className="rounded-t-3xl p-5"
-          style={{ backgroundColor: SURFACE, maxHeight: '85%' }}
+          style={{ backgroundColor: 'rgba(15, 23, 42, 0.95)', maxHeight: '85%', borderTopWidth: 1, borderTopColor: BORDER_WHITE }}
         >
           {/* Handle */}
           <View
             className="w-9 h-1 rounded-full mx-auto mb-4"
-            style={{ backgroundColor: BORDER_MID }}
+            style={{ backgroundColor: BORDER_WHITE }}
           />
 
           {step === 'search' ? (
             <>
-              <Text className="text-ink text-lg font-bold mb-1.5">
+              <Text className="text-lg font-bold mb-1.5" style={{ color: TEXT }}>
                 Link your SACCOs
               </Text>
-              <Text className="text-xs mb-5" style={{ color: INK_MUTED, lineHeight: 18 }}>
+              <Text className="text-xs mb-5" style={{ color: TEXT_MUTED, lineHeight: 18 }}>
                 Enter your National ID number or M-Pesa phone number to check if you already
                 have existing SACCO memberships. We'll sync them to your dashboard.
               </Text>
 
               {/* ID Number */}
-              <Text className="text-xs font-medium mb-1" style={{ color: INK_SOFT }}>
+              <Text className="text-xs font-medium mb-1" style={{ color: TEXT_MUTED }}>
                 National ID number
               </Text>
               <TextInput
                 className="border rounded-xl p-3 text-sm mb-3"
                 style={{
-                  borderColor: BORDER_MID,
-                  color: INK,
-                  backgroundColor: SURFACE,
+                  borderColor: BORDER_WHITE,
+                  color: TEXT,
+                  backgroundColor: FROSTED_DARK,
                 }}
                 value={idNumber}
                 onChangeText={setIdNumber}
                 placeholder="e.g. 28473910"
                 keyboardType="number-pad"
-                placeholderTextColor={INK_FAINT}
+                placeholderTextColor={TEXT_MUTED}
               />
 
               <View className="flex-row items-center gap-3 mb-3">
-                <View className="flex-1 h-px" style={{ backgroundColor: BORDER_MID }} />
-                <Text className="text-xs" style={{ color: INK_FAINT }}>
+                <View className="flex-1 h-px" style={{ backgroundColor: BORDER_WHITE }} />
+                <Text className="text-xs" style={{ color: TEXT_MUTED }}>
                   or
                 </Text>
-                <View className="flex-1 h-px" style={{ backgroundColor: BORDER_MID }} />
+                <View className="flex-1 h-px" style={{ backgroundColor: BORDER_WHITE }} />
               </View>
 
               {/* Phone */}
-              <Text className="text-xs font-medium mb-1" style={{ color: INK_SOFT }}>
+              <Text className="text-xs font-medium mb-1" style={{ color: TEXT_MUTED }}>
                 Phone number (M-Pesa)
               </Text>
               <TextInput
                 className="border rounded-xl p-3 text-sm mb-5"
                 style={{
-                  borderColor: BORDER_MID,
-                  color: INK,
-                  backgroundColor: SURFACE,
+                  borderColor: BORDER_WHITE,
+                  color: TEXT,
+                  backgroundColor: FROSTED_DARK,
                 }}
                 value={phone}
                 onChangeText={setPhone}
                 placeholder="e.g. 0712345678"
                 keyboardType="phone-pad"
-                placeholderTextColor={INK_FAINT}
+                placeholderTextColor={TEXT_MUTED}
               />
 
               <TouchableOpacity
@@ -426,22 +544,22 @@ function LinkExistingMembershipModal({
 
               <TouchableOpacity
                 className="py-2.5 rounded-xl items-center"
-                style={{ borderWidth: 1, borderColor: BORDER, backgroundColor: SURFACE2 }}
+                style={{ borderWidth: 1, borderColor: BORDER_WHITE, backgroundColor: FROSTED_DARK }}
                 onPress={onClose}
               >
-                <Text className="text-xs font-semibold" style={{ color: INK_SOFT }}>
+                <Text className="text-xs font-semibold" style={{ color: TEXT }}>
                   Skip for now
                 </Text>
               </TouchableOpacity>
             </>
           ) : (
             <>
-              <Text className="text-ink text-lg font-bold mb-1.5">
+              <Text className="text-lg font-bold mb-1.5" style={{ color: TEXT }}>
                 {results.length > 0
                   ? `Found ${results.length} SACCO${results.length > 1 ? 's' : ''}`
                   : 'No SACCOs found'}
               </Text>
-              <Text className="text-xs mb-4" style={{ color: INK_MUTED, lineHeight: 18 }}>
+              <Text className="text-xs mb-4" style={{ color: TEXT_MUTED, lineHeight: 18 }}>
                 {results.length > 0
                   ? 'These SACCO memberships match your details. Confirm to sync data to your dashboard.'
                   : 'No existing SACCO memberships were found for your ID or phone number. You can create an account and join a SACCO from the directory.'}
@@ -454,9 +572,9 @@ function LinkExistingMembershipModal({
                     key={item.sacco_slug}
                     className="flex-row items-center p-3.5 rounded-xl mb-2"
                     style={{
-                      backgroundColor: isConfirmed ? MINT_50 : SURFACE2,
+                      backgroundColor: isConfirmed ? 'rgba(16, 185, 129, 0.15)' : FROSTED_DARK,
                       borderWidth: 1.5,
-                      borderColor: isConfirmed ? MINT : BORDER,
+                      borderColor: isConfirmed ? MINT : BORDER_WHITE,
                     }}
                     onPress={() => toggleConfirm(item.sacco_slug)}
                   >
@@ -469,10 +587,10 @@ function LinkExistingMembershipModal({
                       </Text>
                     </View>
                     <View className="flex-1">
-                      <Text className="text-xs font-semibold" style={{ color: INK }}>
+                      <Text className="text-xs font-semibold" style={{ color: TEXT }}>
                         {item.sacco_name}
                       </Text>
-                      <Text className="text-xs mt-0.5" style={{ color: INK_MUTED }}>
+                      <Text className="text-xs mt-0.5" style={{ color: TEXT_MUTED }}>
                         {item.member_name} · {item.member_number}
                       </Text>
                     </View>
@@ -481,7 +599,7 @@ function LinkExistingMembershipModal({
                       style={{
                         backgroundColor: isConfirmed ? MINT : 'transparent',
                         borderWidth: isConfirmed ? 0 : 2,
-                        borderColor: BORDER_MID,
+                        borderColor: BORDER_WHITE,
                       }}
                     >
                       {isConfirmed && (
@@ -515,7 +633,7 @@ function LinkExistingMembershipModal({
                   </TouchableOpacity>
                   <Text
                     className="text-xs text-center mt-1 mb-1"
-                    style={{ color: INK_FAINT }}
+                    style={{ color: TEXT_MUTED }}
                   >
                     Select the SACCOs you belong to, then sync
                   </Text>
@@ -540,13 +658,13 @@ function LinkExistingMembershipModal({
                 )}
                 <TouchableOpacity
                   className="flex-1 py-2.5 rounded-xl items-center"
-                  style={{ borderWidth: 1, borderColor: BORDER, backgroundColor: SURFACE2 }}
+                  style={{ borderWidth: 1, borderColor: BORDER_WHITE, backgroundColor: FROSTED_DARK }}
                   onPress={() => {
                     reset()
                     setStep('search')
                   }}
                 >
-                  <Text className="text-xs font-semibold" style={{ color: INK_SOFT }}>
+                  <Text className="text-xs font-semibold" style={{ color: TEXT }}>
                     Back to search
                   </Text>
                 </TouchableOpacity>
@@ -627,21 +745,28 @@ function FeatureCard({
 }) {
   return (
     <View
-      className="rounded-xl p-3.5 border"
+      className="rounded-xl p-4 border"
       style={{
-        width: CARD_WIDTH,
-        backgroundColor: SURFACE2,
-        borderColor: BORDER,
+        flexBasis: '48%',
+        minHeight: CARD_HEIGHT,
+        backgroundColor: FROSTED_DARK,
+        borderColor: BORDER_WHITE,
       }}
     >
       <View
-        className="w-8 h-8 rounded-lg mb-2.5 items-center justify-center"
-        style={{ backgroundColor: color }}
+        className="rounded-lg mb-3 items-center justify-center"
+        style={{
+          width: ICON_SIZE,
+          height: ICON_SIZE,
+          backgroundColor: color,
+        }}
       >
-        <Text className="text-white text-xs font-bold">{icon}</Text>
+        <Text style={{ color: '#fff', fontSize: Math.max(14, ICON_SIZE * 0.55), fontWeight: '700' }}>{icon}</Text>
       </View>
-      <Text className="text-ink text-xs font-semibold mb-0.5">{title}</Text>
-      <Text className="text-xs leading-4" style={{ color: INK_FAINT }}>
+      <Text style={{ color: TEXT, fontSize: CARD_TITLE_SIZE, fontWeight: '600', marginBottom: 6 }}>
+        {title}
+      </Text>
+      <Text style={{ color: TEXT_MUTED, fontSize: CARD_SUBTITLE_SIZE, lineHeight: CARD_SUBTITLE_SIZE * 1.5 }}>
         {subtitle}
       </Text>
     </View>
@@ -650,11 +775,11 @@ function FeatureCard({
 
 function TrustStat({ value, label }: { value: string; label: string }) {
   return (
-    <View className="items-center px-2 py-1 flex-1">
-      <Text className="text-lg font-bold mb-1" style={{ color: MINT }}>
+    <View className="items-center px-2 py-2 flex-1">
+      <Text className="text-lg font-bold mb-1" style={{ color: TEXT }}>
         {value}
       </Text>
-      <Text className="text-xs" style={{ color: INK_FAINT }}>
+      <Text className="text-xs" style={{ color: TEXT_MUTED }}>
         {label}
       </Text>
     </View>

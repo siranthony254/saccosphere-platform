@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Dimensions, Alert } from 'react-native'
 import { router } from 'expo-router'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import * as ImagePicker from 'expo-image-picker'
 import { api } from '@saccosphere/api-client'
 import { useRegistrationStore } from '../../../store/useRegistrationStore'
@@ -10,6 +10,12 @@ import { useIsAuthenticated } from '../../../store/useAuthStore'
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 const PADDING_H = Math.max(16, Math.min(24, SCREEN_WIDTH * 0.05))
 
+const BACKGROUND = '#06091A'
+const FROSTED = 'rgba(255, 255, 255, 0.08)'
+const FROSTED_DARK = 'rgba(255, 255, 255, 0.06)'
+const BORDER_WHITE = 'rgba(255, 255, 255, 0.1)'
+const TEXT = '#F8FAFC'
+const TEXT_MUTED = 'rgba(248, 250, 252, 0.68)'
 const VIOLET = '#6D28D9'
 const MINT = '#10B981'
 const MINT_LIGHT = '#E6F7F1'
@@ -106,26 +112,28 @@ export default function RegisterKYC() {
   }
 
   return (
-    <ScrollView
-      contentContainerStyle={{
-        paddingHorizontal: PADDING_H,
-        paddingBottom: insets.bottom + 20,
-        paddingTop: 20,
-      }}
-      keyboardShouldPersistTaps="handled"
-      className="bg-surface"
-    >
+    <SafeAreaView style={{ flex: 1, backgroundColor: BACKGROUND }} edges={['bottom', 'left', 'right']}>
+      <ScrollView
+        contentContainerStyle={{
+          flexGrow: 1,
+          justifyContent: 'center',
+          paddingHorizontal: PADDING_H,
+          paddingBottom: insets.bottom + 20,
+          paddingTop: insets.top + 20,
+        }}
+        keyboardShouldPersistTaps="handled"
+      >
       {/* Step progress bar */}
       <View className="flex-row gap-1 mb-1.5">
         {[0, 1, 2, 3].map((i) => (
           <View
             key={i}
             className="flex-1 h-0.5 rounded"
-            style={{ backgroundColor: i < 3 ? VIOLET : BORDER }}
+            style={{ backgroundColor: i < 3 ? VIOLET : BORDER_WHITE }}
           />
         ))}
       </View>
-      <Text className="text-xs mb-4" style={{ color: INK_FAINT }}>
+      <Text className="text-xs mb-4" style={{ color: TEXT_MUTED }}>
         Step 3 of 4 — Verify your identity
       </Text>
 
@@ -135,14 +143,14 @@ export default function RegisterKYC() {
       </Text>
 
       {/* Heading */}
-      <Text className="text-ink text-base font-bold mb-1">ID verification</Text>
-      <Text className="text-xs mb-5" style={{ color: INK_MUTED, lineHeight: 18 }}>
+      <Text className="text-base font-bold mb-1" style={{ color: TEXT }}>ID verification</Text>
+      <Text className="text-xs mb-5" style={{ color: TEXT_MUTED, lineHeight: 18 }}>
         Required by SASRA regulations. Your documents are encrypted and never shared.
       </Text>
 
       {/* ID Front - uploaded state */}
       {idFront ? (
-        <View className="flex-row items-center gap-3 rounded-xl p-3 mb-2.5" style={{ backgroundColor: MINT_LIGHT }}>
+        <View className="flex-row items-center gap-3 rounded-xl p-3 mb-2.5" style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)', borderWidth: 1, borderColor: MINT }}>
           <View
             className="w-5 h-5 rounded-full items-center justify-center"
             style={{ backgroundColor: MINT }}
@@ -150,10 +158,10 @@ export default function RegisterKYC() {
             <Text className="text-white text-xs font-bold">✓</Text>
           </View>
           <View>
-            <Text className="text-xs font-semibold" style={{ color: MINT_700 }}>
+            <Text className="text-xs font-semibold" style={{ color: MINT }}>
               National ID — Front
             </Text>
-            <Text className="text-xs" style={{ color: MINT }}>
+            <Text className="text-xs" style={{ color: TEXT_MUTED }}>
               {idFront.name || 'Ready to upload securely'}
             </Text>
           </View>
@@ -161,19 +169,19 @@ export default function RegisterKYC() {
       ) : (
         <TouchableOpacity
           className="border-2 border-dashed rounded-xl p-4 items-center mb-3"
-          style={{ borderColor: BORDER_MID, backgroundColor: SURFACE2 }}
+          style={{ borderColor: BORDER_WHITE, backgroundColor: FROSTED_DARK }}
           onPress={() => handleUpload('front')}
         >
           <View
             className="w-8 h-8 rounded-xl items-center justify-center mb-2"
-            style={{ backgroundColor: SURFACE3 || '#F1F5F9' }}
+            style={{ backgroundColor: FROSTED }}
           >
             <Text className="text-base">📷</Text>
           </View>
-          <Text className="text-xs font-semibold mb-0.5" style={{ color: INK }}>
+          <Text className="text-xs font-semibold mb-0.5" style={{ color: TEXT }}>
             Upload ID — Front
           </Text>
-          <Text className="text-xs" style={{ color: INK_FAINT }}>
+          <Text className="text-xs" style={{ color: TEXT_MUTED }}>
             JPG, PNG or PDF · Max 5MB
           </Text>
         </TouchableOpacity>
@@ -181,7 +189,7 @@ export default function RegisterKYC() {
 
       {/* ID Back - uploaded state */}
       {idBack ? (
-        <View className="flex-row items-center gap-3 rounded-xl p-3 mb-2.5" style={{ backgroundColor: MINT_LIGHT }}>
+        <View className="flex-row items-center gap-3 rounded-xl p-3 mb-2.5" style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)', borderWidth: 1, borderColor: MINT }}>
           <View
             className="w-5 h-5 rounded-full items-center justify-center"
             style={{ backgroundColor: MINT }}
@@ -189,10 +197,10 @@ export default function RegisterKYC() {
             <Text className="text-white text-xs font-bold">✓</Text>
           </View>
           <View>
-            <Text className="text-xs font-semibold" style={{ color: MINT_700 }}>
+            <Text className="text-xs font-semibold" style={{ color: MINT }}>
               National ID — Back
             </Text>
-            <Text className="text-xs" style={{ color: MINT }}>
+            <Text className="text-xs" style={{ color: TEXT_MUTED }}>
               {idBack.name || 'Ready to upload securely'}
             </Text>
           </View>
@@ -200,16 +208,16 @@ export default function RegisterKYC() {
       ) : (
         <TouchableOpacity
           className="border-2 border-dashed rounded-xl p-4 items-center mb-3"
-          style={{ borderColor: BORDER_MID, backgroundColor: SURFACE2 }}
+          style={{ borderColor: BORDER_WHITE, backgroundColor: FROSTED_DARK }}
           onPress={() => handleUpload('back')}
         >
-          <View className="w-8 h-8 rounded-sm bg-surface3 items-center justify-center mb-2">
+          <View className="w-8 h-8 rounded-sm items-center justify-center mb-2" style={{ backgroundColor: FROSTED }}>
             <Text className="text-base">📷</Text>
           </View>
-          <Text className="text-xs font-semibold mb-0.5" style={{ color: INK }}>
+          <Text className="text-xs font-semibold mb-0.5" style={{ color: TEXT }}>
             Upload ID — Back
           </Text>
-          <Text className="text-xs" style={{ color: INK_FAINT }}>
+          <Text className="text-xs" style={{ color: TEXT_MUTED }}>
             JPG, PNG or PDF · Max 5MB
           </Text>
         </TouchableOpacity>
@@ -219,12 +227,12 @@ export default function RegisterKYC() {
       <View
         className="rounded-xl p-3 mb-5"
         style={{
-          backgroundColor: '#FEF3E8',
+          backgroundColor: 'rgba(217, 119, 6, 0.15)',
           borderLeftWidth: 3,
           borderLeftColor: '#D97706',
         }}
       >
-        <Text className="text-xs leading-5" style={{ color: '#7A4F08' }}>
+        <Text className="text-xs leading-5" style={{ color: '#FDBA74' }}>
           Why we need this: SASRA requires all SACCO platform operators to verify member
           identity before processing transactions.{' '}
           <Text className="font-semibold" style={{ color: '#D97706' }}>
@@ -247,6 +255,7 @@ export default function RegisterKYC() {
         )}
       </TouchableOpacity>
     </ScrollView>
+    </SafeAreaView>
   )
 }
 

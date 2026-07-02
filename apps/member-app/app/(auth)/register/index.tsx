@@ -1,5 +1,5 @@
 import { View, Text, TextInput, TouchableOpacity, ScrollView, Dimensions, ActivityIndicator, Alert } from 'react-native'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { router } from 'expo-router'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -34,6 +34,12 @@ const schema = z.object({
 })
 type FormData = z.infer<typeof schema>
 
+const BACKGROUND = '#06091A'
+const FROSTED = 'rgba(255, 255, 255, 0.08)'
+const FROSTED_DARK = 'rgba(255, 255, 255, 0.06)'
+const BORDER_WHITE = 'rgba(255, 255, 255, 0.1)'
+const TEXT = '#F8FAFC'
+const TEXT_MUTED = 'rgba(248, 250, 252, 0.68)'
 const VIOLET = '#6D28D9'
 const MINT = '#10B981'
 const SURFACE = '#FFFFFF'
@@ -159,11 +165,17 @@ export default function RegisterStep1() {
   })
 
   return (
-    <ScrollView
-      contentContainerStyle={{ paddingHorizontal: PADDING_H, paddingBottom: insets.bottom + 20 }}
-      keyboardShouldPersistTaps="handled"
-      className="bg-surface"
-    >
+    <SafeAreaView style={{ flex: 1, backgroundColor: BACKGROUND }} edges={['bottom', 'left', 'right']}>
+      <ScrollView
+        contentContainerStyle={{
+          flexGrow: 1,
+          justifyContent: 'center',
+          paddingHorizontal: PADDING_H,
+          paddingBottom: insets.bottom + 20,
+          paddingTop: insets.top + 20,
+        }}
+        keyboardShouldPersistTaps="handled"
+      >
         {/* Brand */}
       <Text style={{ color: VIOLET, fontWeight: '700', fontSize: 40, marginBottom: 14, fontFamily: 'Fraunces_700Bold' }}>
         Saccosphere
@@ -175,46 +187,46 @@ export default function RegisterStep1() {
           <View
             key={i}
             className="flex-1 h-0.5 rounded"
-            style={{ backgroundColor: i === 0 ? VIOLET : BORDER }}
+            style={{ backgroundColor: i === 0 ? VIOLET : BORDER_WHITE }}
           />
         ))}
       </View>
-      <Text className="text-xs mb-4" style={{ color: INK_FAINT }}>
+      <Text className="text-xs mb-4" style={{ color: TEXT_MUTED }}>
         Step 1 of 4 — Personal details
       </Text>
 
       {/* Heading */}
-      <Text className="text-ink text-base font-bold mb-1">Create your account</Text>
-      <Text className="text-xs mb-4" style={{ color: INK_MUTED, lineHeight: 18 }}>
+      <Text className="text-base font-bold mb-1" style={{ color: TEXT }}>Create your account</Text>
+      <Text className="text-xs mb-4" style={{ color: TEXT_MUTED, lineHeight: 18 }}>
         Start with your basic information
       </Text>
 
       {/* Social sign-up */}
       <TouchableOpacity
         className="w-full flex-row items-center justify-center gap-2 py-2.5 rounded-xl mb-2"
-        style={{ borderWidth: 1, borderColor: BORDER_MID, backgroundColor: SURFACE }}
+        style={{ borderWidth: 1, borderColor: BORDER_WHITE, backgroundColor: FROSTED_DARK }}
         onPress={handleGoogleSignUp}
         disabled={isGooglePending}
       >
         {isGooglePending ? (
-          <ActivityIndicator size="small" color={INK} />
+          <ActivityIndicator size="small" color={TEXT} />
         ) : (
           <View className="w-4 h-4 rounded-full" style={{ backgroundColor: '#4285F4' }} />
         )}
-        <Text className="text-xs font-medium" style={{ color: INK }}>
+        <Text className="text-xs font-medium" style={{ color: TEXT }}>
           {isGooglePending ? 'Signing up...' : 'Sign up with Google'}
         </Text>
       </TouchableOpacity>
 
       {/* Divider */}
       <View className="flex-row items-center gap-3 mb-4">
-        <View className="flex-1 h-px" style={{ backgroundColor: BORDER_MID }} />
-        <Text className="text-xs" style={{ color: INK_FAINT }}>or fill in manually</Text>
-        <View className="flex-1 h-px" style={{ backgroundColor: BORDER_MID }} />
+        <View className="flex-1 h-px" style={{ backgroundColor: BORDER_WHITE }} />
+        <Text className="text-xs" style={{ color: TEXT_MUTED }}>or fill in manually</Text>
+        <View className="flex-1 h-px" style={{ backgroundColor: BORDER_WHITE }} />
       </View>
 
       {/* Email */}
-      <Text className="text-xs font-medium mb-1" style={{ color: INK_SOFT }}>
+      <Text className="text-xs font-medium mb-1" style={{ color: TEXT_MUTED }}>
         Email address
       </Text>
       <Controller
@@ -224,16 +236,16 @@ export default function RegisterStep1() {
           <TextInput
             className="border rounded-xl p-2.5 text-sm mb-2"
             style={{
-              borderColor: errors.email ? '#EF4444' : BORDER_MID,
-              color: INK,
-              backgroundColor: SURFACE,
+              borderColor: errors.email ? '#EF4444' : BORDER_WHITE,
+              color: TEXT,
+              backgroundColor: FROSTED_DARK,
             }}
             onChangeText={onChange}
             value={value}
             placeholder="you@email.com"
             keyboardType="email-address"
             autoCapitalize="none"
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor={TEXT_MUTED}
           />
         )}
       />
@@ -242,7 +254,7 @@ export default function RegisterStep1() {
       {/* First & Last name row */}
       <View className="flex-row gap-2">
         <View className="flex-1">
-          <Text className="text-xs font-medium mb-1" style={{ color: INK_SOFT }}>
+          <Text className="text-xs font-medium mb-1" style={{ color: TEXT_MUTED }}>
             First name
           </Text>
           <Controller
@@ -252,21 +264,21 @@ export default function RegisterStep1() {
               <TextInput
                 className="border rounded-xl p-2.5 text-sm mb-2"
                 style={{
-                  borderColor: errors.first_name ? '#EF4444' : BORDER_MID,
-                  color: INK,
-                  backgroundColor: SURFACE,
+                  borderColor: errors.first_name ? '#EF4444' : BORDER_WHITE,
+                  color: TEXT,
+                  backgroundColor: FROSTED_DARK,
                 }}
                 onChangeText={onChange}
                 value={value}
                 placeholder="James"
-                placeholderTextColor="#9CA3AF"
+                placeholderTextColor={TEXT_MUTED}
               />
             )}
           />
           {errors.first_name && <Text className="text-red-500 text-xs mb-1">{errors.first_name.message}</Text>}
         </View>
         <View className="flex-1">
-          <Text className="text-xs font-medium mb-1" style={{ color: INK_SOFT }}>
+          <Text className="text-xs font-medium mb-1" style={{ color: TEXT_MUTED }}>
             Last name
           </Text>
           <Controller
@@ -276,14 +288,14 @@ export default function RegisterStep1() {
               <TextInput
                 className="border rounded-xl p-2.5 text-sm mb-2"
                 style={{
-                  borderColor: errors.last_name ? '#EF4444' : BORDER_MID,
-                  color: INK,
-                  backgroundColor: SURFACE,
+                  borderColor: errors.last_name ? '#EF4444' : BORDER_WHITE,
+                  color: TEXT,
+                  backgroundColor: FROSTED_DARK,
                 }}
                 onChangeText={onChange}
                 value={value}
                 placeholder="Kamau"
-                placeholderTextColor="#9CA3AF"
+                placeholderTextColor={TEXT_MUTED}
               />
             )}
           />
@@ -292,7 +304,7 @@ export default function RegisterStep1() {
       </View>
 
       {/* Phone */}
-      <Text className="text-xs font-medium mb-1" style={{ color: INK_SOFT }}>
+      <Text className="text-xs font-medium mb-1" style={{ color: TEXT_MUTED }}>
         Phone (M-Pesa number)
       </Text>
       <Controller
@@ -302,22 +314,22 @@ export default function RegisterStep1() {
           <TextInput
             className="border rounded-xl p-2.5 text-sm mb-2"
             style={{
-              borderColor: errors.phone_number ? '#EF4444' : BORDER_MID,
-              color: INK,
-              backgroundColor: SURFACE,
+              borderColor: errors.phone_number ? '#EF4444' : BORDER_WHITE,
+              color: TEXT,
+              backgroundColor: FROSTED_DARK,
             }}
             onChangeText={onChange}
             value={value}
             placeholder="254712345678"
             keyboardType="phone-pad"
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor={TEXT_MUTED}
           />
         )}
       />
       {errors.phone_number && <Text className="text-red-500 text-xs mb-1">{errors.phone_number.message}</Text>}
 
       {/* Password */}
-      <Text className="text-xs font-medium mb-1" style={{ color: INK_SOFT }}>
+      <Text className="text-xs font-medium mb-1" style={{ color: TEXT_MUTED }}>
         Password
       </Text>
       <Controller
@@ -326,16 +338,16 @@ export default function RegisterStep1() {
         render={({ field: { onChange, value } }) => (
           <View
             className="flex-row items-center border rounded-xl mb-1"
-            style={{ borderColor: errors.password ? '#EF4444' : BORDER_MID }}
+            style={{ borderColor: errors.password ? '#EF4444' : BORDER_WHITE, backgroundColor: FROSTED_DARK }}
           >
             <TextInput
               className="flex-1 p-2.5 pr-2 text-sm"
-              style={{ color: INK }}
+              style={{ color: TEXT }}
               onChangeText={onChange}
               value={value}
               placeholder="8+ chars, upper, lower, number"
               secureTextEntry={!showPassword}
-              placeholderTextColor="#9CA3AF"
+              placeholderTextColor={TEXT_MUTED}
             />
             <TouchableOpacity
               className="px-3 py-2.5"
@@ -358,16 +370,16 @@ export default function RegisterStep1() {
           <View
             key={i}
             className="flex-1 h-0.5 rounded"
-            style={{ backgroundColor: i < passwordStrength ? strengthColors[passwordStrength - 1] : BORDER }}
+            style={{ backgroundColor: i < passwordStrength ? strengthColors[passwordStrength - 1] : BORDER_WHITE }}
           />
         ))}
       </View>
-      <Text className="text-xs mb-3" style={{ color: passwordStrength > 0 ? strengthColors[passwordStrength - 1] : INK_MUTED }}>
+      <Text className="text-xs mb-3" style={{ color: passwordStrength > 0 ? strengthColors[passwordStrength - 1] : TEXT_MUTED }}>
         {passwordStrength > 0 ? strengthLabels[passwordStrength - 1] : 'Password strength'}
       </Text>
 
       {/* Confirm password */}
-      <Text className="text-xs font-medium mb-1" style={{ color: INK_SOFT }}>
+      <Text className="text-xs font-medium mb-1" style={{ color: TEXT_MUTED }}>
         Confirm password
       </Text>
       <Controller
@@ -376,16 +388,16 @@ export default function RegisterStep1() {
         render={({ field: { onChange, value } }) => (
           <View
             className="flex-row items-center border rounded-xl mb-1"
-            style={{ borderColor: errors.password2 ? '#EF4444' : BORDER_MID }}
+            style={{ borderColor: errors.password2 ? '#EF4444' : BORDER_WHITE, backgroundColor: FROSTED_DARK }}
           >
             <TextInput
               className="flex-1 p-2.5 pr-2 text-sm"
-              style={{ color: INK }}
+              style={{ color: TEXT }}
               onChangeText={onChange}
               value={value}
               placeholder="Repeat password"
               secureTextEntry={!showConfirmPassword}
-              placeholderTextColor="#9CA3AF"
+              placeholderTextColor={TEXT_MUTED}
             />
             <TouchableOpacity
               className="px-3 py-2.5"
@@ -404,13 +416,13 @@ export default function RegisterStep1() {
 
       {/* API error display */}
       {registrationError && (
-        <View className="border rounded-xl p-3 mb-4 mt-1" style={{ backgroundColor: '#FEF2F2', borderColor: '#FEE2E2' }}>
-          <Text className="text-xs leading-4" style={{ color: '#DC2626' }}>{registrationError}</Text>
+        <View className="border rounded-xl p-3 mb-4 mt-1" style={{ backgroundColor: 'rgba(220, 38, 38, 0.15)', borderColor: '#EF4444' }}>
+          <Text className="text-xs leading-4" style={{ color: '#FCA5A5' }}>{registrationError}</Text>
         </View>
       )}
 
       {/* Terms */}
-      <Text className="text-xs leading-5 mb-4" style={{ color: INK_FAINT }}>
+      <Text className="text-xs leading-5 mb-4" style={{ color: TEXT_MUTED }}>
         By continuing you agree to our{' '}
         <Text style={{ color: VIOLET, fontWeight: '600' }}>Terms of Service</Text> and{' '}
         <Text style={{ color: VIOLET, fontWeight: '600' }}>Privacy Policy</Text>.
@@ -430,6 +442,7 @@ export default function RegisterStep1() {
         )}
       </TouchableOpacity>
     </ScrollView>
+    </SafeAreaView>
   )
 }
 

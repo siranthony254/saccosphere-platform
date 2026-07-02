@@ -2,23 +2,25 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { Tabs } from 'expo-router'
 import { Text, View } from 'react-native'
 
+const BACKGROUND = '#06091A'
 const VIOLET = '#6D28D9'
+const BORDER_WHITE = 'rgba(255, 255, 255, 0.1)'
 
 export default function MemberTabLayout() {
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }} edges={['top', 'bottom']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: BACKGROUND }} edges={['top', 'bottom']}>
       <Tabs
         screenOptions={{
           headerShown: false,
           tabBarActiveTintColor: VIOLET,
-          tabBarInactiveTintColor: '#9ca3af',
-          tabBarStyle: { 
-            borderTopColor: '#e5e7eb',
-            borderTopWidth: 1,
+          tabBarInactiveTintColor: 'rgba(248, 250, 252, 0.5)',
+          tabBarStyle: {
+            borderTopColor: BORDER_WHITE,
+            borderTopWidth: 0.5,
             paddingBottom: 6,
             paddingTop: 6,
             height: 65,
-            backgroundColor: '#fff',
+            backgroundColor: BACKGROUND,
             elevation: 8,
             shadowColor: '#000',
             shadowOpacity: 0.08,
