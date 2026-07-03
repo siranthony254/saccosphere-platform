@@ -1,10 +1,8 @@
 import { useSaccoAdminDashboard, useDisbursementsDashboard, useContributionsDashboard } from '../hooks/useSaccoAdminDashboard'
 import { useSacco } from '../hooks/useSacco'
-import { useApplications } from '../hooks/useApplications'
-import { useAdminLoans } from '../hooks/useLoans'
-import { useKycQueue } from '../hooks/useKyc'
 
 function MetricCard({ label, value, delta, deltaColor = 'text-mint-600' }: { label: string; value: string; delta?: string; deltaColor?: string }) {
+
   return (
     <div className="bg-white border border-[#e5ede9] rounded-[10px] p-[14px_16px]">
       <div className="text-[10px] text-ink-muted mb-1.5 font-medium uppercase tracking-widest">{label}</div>
@@ -20,11 +18,8 @@ export function Dashboard() {
   const { data: contributions } = useContributionsDashboard()
   const { data: sacco } = useSacco()
 
-  const { data: applications } = useApplications({ status: 'PENDING' })
-  const { data: loans } = useAdminLoans()
-  const { data: kycQueue } = useKycQueue({ status: 'PENDING' })
-
   if (isLoading) return (
+
     <div className="p-5">
       <div className="text-sm text-ink-muted">Loading dashboard...</div>
       {[1,2,3,4].map(i => <div key={i} className="h-20 bg-ink-faint rounded-[10px] mb-3" />)}
@@ -44,11 +39,12 @@ export function Dashboard() {
   const fmt = (n: number) => n >= 1e9 ? `KES ${(n/1e9).toFixed(1)}B` : n >= 1e6 ? `KES ${(n/1e6).toFixed(1)}M` : `KES ${n.toLocaleString()}`
 
   const pendingActions = [
-    { bg: 'bg-amber-50', text: `${applications?.count ?? 0} new membership applications awaiting review`, borderColor: 'border-l-amber-500', textColor: 'text-amber-700' },
-    { bg: 'bg-amber-50', text: `${loans?.count ?? 0} loan applications awaiting approval`, borderColor: 'border-l-amber-500', textColor: 'text-amber-700' },
-    { bg: 'bg-red-50', text: `${d.members_in_arrears} members in 90+ day default — escalation required`, borderColor: 'border-l-red-500', textColor: 'text-red-700' },
-    { bg: 'bg-blue-50', text: `${kycQueue?.length ?? 0} KYC documents submitted for review`, borderColor: 'border-l-blue-500', textColor: 'text-blue-700' },
+    { bg: 'bg-amber-50', text: `${d.pending_applications} membership applications awaiting review`, borderColor: 'border-l-amber-500', textColor: 'text-amber-700', path: '/applications' },
+    { bg: 'bg-amber-50', text: `${d.pending_loan_approvals} loans awaiting final approval`, borderColor: 'border-l-amber-500', textColor: 'text-amber-700', path: '/loans' },
+    { bg: 'bg-red-50', text: `${d.members_in_arrears} members in arrears — review required`, borderColor: 'border-l-red-500', textColor: 'text-red-700', path: '/members?status=suspended' },
+    { bg: 'bg-blue-50', text: `${d.pending_kyc_reviews} KYC documents pending verification`, borderColor: 'border-l-blue-500', textColor: 'text-blue-700', path: '/kyc' },
   ]
+
 
   // Portfolio health breakdown should come from backend.
   // If the backend endpoint is not available yet, render an empty state rather than hardcoded percentages.

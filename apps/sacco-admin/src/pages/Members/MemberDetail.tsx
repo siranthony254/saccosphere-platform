@@ -1,11 +1,16 @@
 import { useParams, useNavigate } from 'react-router-dom'
+import { useState } from 'react'
 import { useMemberDetail } from '../../hooks/useMembers'
 import { useUserRoles } from '../../hooks/useRoles'
+import { useReviewApplication } from '../../hooks/useApplications'
 
 export function MemberDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { data: member, isLoading, error } = useMemberDetail(id!)
+  const { mutate: reviewApplication } = useReviewApplication()
+  const [reviewNotes, setReviewNotes] = useState('')
+
 
   // Fetch all roles for this user (they may be both a member AND a SACCO admin)
   // user_id is populated from the backend member.user.id field
@@ -14,6 +19,23 @@ export function MemberDetail() {
   if (isLoading) return <div className="p-5 text-ink-muted text-sm">Loading member...</div>
   if (error) return <div className="p-5 text-red-600 text-sm">Failed to load member. Please try again.</div>
   if (!member) return <div className="p-5 text-ink-muted text-sm">Member not found.</div>
+
+  const isPending = member.membership_status === 'applied' || member.membership_status === 'under_review'
+
+  const handleReview = (status: 'APPROVED' | 'REJECTED') => {
+    // NOTE: This assumes the membership ID can be used for review,
+    // or that we've found the associated application.
+    reviewApplication({ id: member.id, status, review_notes: reviewNotes }, {
+      onSuccess: () => {
+        alert(`Membership ${status.toLowerCase()} successfully`)
+        setReviewNotes('')
+      },
+      onError: (err) => {
+        console.error(err)
+        alert('Failed to update membership status. Application ID may be different.')
+      }
+    })
+  }
 
   const roleColors: Record<string, { bg: string; color: string }> = {
     SACCO_ADMIN:   { bg: 'bg-violet-50', color: 'text-violet-700' },
@@ -24,21 +46,44 @@ export function MemberDetail() {
   return (
     <div className="p-5">
       {/* Breadcrumb */}
-      <div className="flex items-center gap-2.5 mb-5">
-        <button
-          onClick={() => navigate(-1)}
-          className="bg-transparent border-none cursor-pointer text-ink-muted text-sm hover:text-ink transition-colors"
-        >
-          ← Members
-        </button>
-        <span className="text-ink-faint">|</span>
-        <div>
-          <div className="text-lg font-semibold text-ink">{member.first_name} {member.last_name}</div>
-          <div className="text-xs text-ink-muted">
-            {member.member_number} · Active since {member.joined_at ? new Date(member.joined_at).getFullYear() : '—'}
+      <div className="flex justify-between items-center mb-5">
+        <div className="flex items-center gap-2.5">
+          <button
+            onClick={() => navigate(-1)}
+            className="bg-transparent border-none cursor-pointer text-ink-muted text-sm hover:text-ink transition-colors"
+          >
+            ← Members
+          </button>
+          <span className="text-ink-faint">|</span>
+          <div>
+            <div className="text-lg font-semibold text-ink">{member.first_name} {member.last_name}</div>
+            <div className="text-xs text-ink-muted">
+              {member.member_number || 'PENDING'} · {member.membership_status === 'active' ? `Active since ${member.joined_at ? new Date(member.joined_at).getFullYear() : '—'}` : 'Application Pending'}
+            </div>
           </div>
         </div>
+
+        {isPending && (
+          <div className="flex gap-2">
+            <button className="px-3.5 py-1.5 rounded-lg border border-red-200 bg-white text-red-700 text-sm font-medium hover:bg-red-50" onClick={() => handleReview('REJECTED')}>Reject</button>
+            <button className="px-3.5 py-1.5 rounded-lg bg-mint-600 text-white text-sm font-medium hover:bg-mint-700 shadow-sm" onClick={() => handleReview('APPROVED')}>Approve Member</button>
+          </div>
+        )}
       </div>
+
+      {isPending && (
+        <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-xl">
+          <div className="text-sm font-semibold text-amber-800 mb-2">Review membership application</div>
+          <textarea
+            className="w-full p-3 border border-amber-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-amber-500 mb-3"
+            placeholder="Add internal review notes here..."
+            value={reviewNotes}
+            onChange={e => setReviewNotes(e.target.value)}
+          />
+          <p className="text-[11px] text-amber-700">Approving will notify the user and generate their member number.</p>
+        </div>
+      )}
+
 
       {/* Profile card */}
       <div className="bg-mint-50 rounded-[10px] p-4 mb-4 flex items-center gap-3.5">

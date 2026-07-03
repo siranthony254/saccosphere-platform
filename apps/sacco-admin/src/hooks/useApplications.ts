@@ -5,10 +5,10 @@ export function useApplications(params?: { status?: string }) {
   return useQuery({
     queryKey: ['admin-applications', params?.status],
     queryFn: () => api.saccoAdmin.getApplications(params),
-    staleTime: 0,
-    refetchInterval: 30_000,
+    staleTime: 30_000,
   })
 }
+
 
 export function useReviewApplication() {
   const qc = useQueryClient()

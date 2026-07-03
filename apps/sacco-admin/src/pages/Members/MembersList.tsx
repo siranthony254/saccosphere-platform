@@ -119,6 +119,8 @@ export function MembersList() {
               ) : (
                 (data?.results ?? []).map((m: AdminMember, ri: number) => {
                   const sc = statusColors[m.membership_status] ?? statusColors.active
+                  const isPending = m.membership_status === 'applied' || m.membership_status === 'under_review'
+
                   return (
                     <tr key={m.id} className={`${ri % 2 === 0 ? 'bg-white' : 'bg-surface-2'} border-b border-surface-3 cursor-pointer hover:bg-violet-50/30 transition-colors`}
                       onClick={() => navigate(`/members/${m.id}`)}>
@@ -127,7 +129,10 @@ export function MembersList() {
                           <div className="w-7 h-7 rounded-full bg-mint-600 flex items-center justify-center text-[10px] font-bold text-white shrink-0">
                             {(m.first_name?.[0] || 'M')}{(m.last_name?.[0] || '')}
                           </div>
-                          {m.first_name} {m.last_name}
+                          <div>
+                            <div className="font-medium text-ink">{m.first_name} {m.last_name}</div>
+                            <div className="text-[10px] text-ink-muted">{m.email}</div>
+                          </div>
                         </div>
                       </td>
                       <td className="px-3 py-2.5 text-xs text-ink-muted font-mono">{m.member_number || '—'}</td>
@@ -144,10 +149,25 @@ export function MembersList() {
                           {m.membership_status}
                         </span>
                       </td>
-                      <td className="px-3 py-2.5 text-mint-600 font-medium text-xs">View →</td>
+                      <td className="px-3 py-2.5">
+                        {isPending ? (
+                          <button
+                            className="px-2 py-1 rounded bg-violet-600 text-white text-[10px] font-bold uppercase hover:bg-violet-700"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              navigate(`/applications?user=${m.user_id}`)
+                            }}
+                          >
+                            Review App
+                          </button>
+                        ) : (
+                          <span className="text-mint-600 font-medium text-xs">Details →</span>
+                        )}
+                      </td>
                     </tr>
                   )
                 })
+
               )}
             </tbody>
           </table>

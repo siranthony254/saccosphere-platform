@@ -1,15 +1,19 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useApplications, useReviewApplication } from '../../hooks/useApplications'
 
 const STATUS_COLORS: Record<string, { bg: string; color: string }> = {
-  PENDING: { bg: 'bg-amber-50', color: 'text-amber-700' },
-  APPROVED: { bg: 'bg-mint-50', color: 'text-mint-700' },
-  REJECTED: { bg: 'bg-red-50', color: 'text-red-700' },
+  applied: { bg: 'bg-amber-50', color: 'text-amber-700' },
+  under_review: { bg: 'bg-blue-50', color: 'text-blue-700' },
+  active: { bg: 'bg-mint-50', color: 'text-mint-700' },
+  withdrawn: { bg: 'bg-red-50', color: 'text-red-700' },
 }
 
 export function ApplicationsList() {
-  const [statusFilter, setStatusFilter] = useState('PENDING')
-  const { data, isLoading } = useApplications({ status: statusFilter === 'all' ? undefined : statusFilter })
+  const navigate = useNavigate()
+  const [statusFilter, setStatusFilter] = useState('applied')
+
+  const { data, isLoading } = useApplications({ status: statusFilter === 'all' ? undefined : (statusFilter === 'applied' ? 'PENDING' : statusFilter.toUpperCase()) })
   const { mutate: reviewApplication, isPending } = useReviewApplication()
   const [reviewingId, setReviewingId] = useState<string | null>(null)
   const [reviewNotes, setReviewNotes] = useState('')
@@ -22,13 +26,16 @@ export function ApplicationsList() {
 
   const handleReview = async (id: string, status: 'APPROVED' | 'REJECTED') => {
     try {
+      // NOTE: reviewApplication currently expects a SaccoApplication ID.
+      // Since we are using Membership ID as application_id in the fallback,
+      // this might need verification if the backend supports membership ID for review.
       await reviewApplication({ id, status, review_notes: reviewNotes })
       setReviewingId(null)
       setReviewNotes('')
       showAlert('success', `Application ${status.toLowerCase()} successfully`)
     } catch (error) {
       console.error('Failed to review application:', error)
-      showAlert('error', 'Failed to review application. Please try again.')
+      showAlert('error', 'Failed to review application. Backend review requires SaccoApplication ID.')
     }
   }
 
@@ -43,121 +50,117 @@ export function ApplicationsList() {
         <div>
           <div className="text-lg font-semibold text-ink">Membership applications</div>
           <div className="text-xs text-ink-muted">
-            {data?.count ?? 0} total · {data?.results.filter((a: any) => a.status === 'PENDING').length ?? 0} pending review
+            {data?.count ?? 0} total applications matching filter
           </div>
         </div>
         <select
-          className="px-3 py-1.5 border border-ink-faint rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+          className="px-3 py-1.5 border border-ink-faint rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 bg-white"
           value={statusFilter}
           onChange={e => setStatusFilter(e.target.value)}
         >
           <option value="all">All statuses</option>
-          <option value="PENDING">Pending</option>
-          <option value="APPROVED">Approved</option>
-          <option value="REJECTED">Rejected</option>
+          <option value="applied">Applied (Pending)</option>
+          <option value="under_review">Under review</option>
+          <option value="active">Approved</option>
         </select>
       </div>
 
       {!isLoading && (data?.results ?? []).length === 0 && (
         <div className="bg-amber-50 border border-amber-200 rounded-lg p-10 text-center text-sm text-amber-800">
-          No membership applications found.
+          No membership applications found for this filter.
         </div>
       )}
 
       {isLoading ? (
-        [1, 2, 3].map(i => <div key={i} className="h-[120px] bg-ink-faint rounded-[10px] mb-2.5" />)
+        [1, 2, 3].map(i => <div key={i} className="h-[80px] bg-ink-faint/10 animate-pulse rounded-[10px] mb-2.5" />)
       ) : (
         (data?.results ?? []).map((app: any) => {
-          const sc = STATUS_COLORS[app.status] ?? STATUS_COLORS.PENDING
+          const sc = STATUS_COLORS[app.status] ?? STATUS_COLORS.applied
           const isExpanded = reviewingId === app.id
 
           return (
-            <div key={app.id} className="bg-white border border-[#e5ede9] rounded-[10px] p-4 mb-3">
-              <div className="grid grid-cols-[2fr_1.5fr_1fr_1fr_auto] gap-2.5 items-center mb-3">
+            <div key={app.id} className="bg-white border border-[#e5ede9] rounded-[10px] p-4 mb-3 hover:shadow-md transition-shadow">
+              <div className="grid grid-cols-[2fr_1fr_1fr_auto] gap-4 items-center">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-full bg-violet-500 flex items-center justify-center text-[10px] font-bold text-white shrink-0">
+                  <div className="w-10 h-10 rounded-full bg-violet-600 flex items-center justify-center text-xs font-bold text-white shrink-0 shadow-sm">
                     {(app.full_name || 'U').split(' ').map((n: string) => n[0]).join('')}
                   </div>
                   <div>
-                    <div className="font-medium text-sm">{app.full_name || 'Unknown'}</div>
-                    <div className="text-[10px] text-ink-faint">{app.email || app.phone_number || '—'}</div>
+                    <div className="font-semibold text-sm text-ink">{app.full_name || 'Unknown User'}</div>
+                    <div className="text-[11px] text-ink-muted">{app.email || app.phone_number || 'No contact info'}</div>
                   </div>
                 </div>
-                <div className="text-sm">{app.employer_name || '—'}</div>
-                <div className="text-sm font-semibold">KES {app.monthly_income?.toLocaleString() || '0'}</div>
-                <div>
-                  <span className={`${sc.bg} ${sc.color} px-2 py-0.5 rounded-full text-[11px] font-semibold`}>
+                <div className="text-[11px] text-ink-soft bg-surface-2 px-2 py-1 rounded-md border border-surface-3">
+                   Applied {new Date(app.submitted_at).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}
+                </div>
+                <div className="flex justify-center">
+                  <span className={`${sc.bg} ${sc.color} px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-tighter border border-current/10 shadow-sm`}>
                     {app.status}
                   </span>
                 </div>
-                <div>
-                  {app.status === 'PENDING' ? (
+                <div className="flex gap-2">
+                  <button
+                    className="px-4 py-1.5 rounded-lg border border-violet-200 bg-violet-50 text-violet-700 text-xs font-bold cursor-pointer hover:bg-violet-100 transition-colors"
+                    onClick={() => navigate(`/members/${app.user_id}`)}
+                  >
+                    Details
+                  </button>
+                  {(app.status === 'applied' || app.status === 'under_review') && (
                     <button
-                      className="px-3 py-1 rounded-[6px] border-none bg-mint-600 text-white text-xs font-semibold cursor-pointer hover:bg-mint-700 transition-colors"
+                      className="px-4 py-1.5 rounded-lg border-none bg-mint-600 text-white text-xs font-bold cursor-pointer hover:bg-mint-700 transition-colors shadow-sm"
                       onClick={() => {
                         setReviewingId(isExpanded ? null : app.id)
                         setReviewNotes('')
                       }}
                     >
-                      {isExpanded ? 'Close' : 'Review'}
+                      {isExpanded ? 'Close' : 'Approve →'}
                     </button>
-                  ) : (
-                    <span className="text-xs text-ink-faint">—</span>
                   )}
                 </div>
               </div>
 
               {isExpanded && (
-                <div className="border-t border-surface-3 pt-3.5">
-                  <div className="grid grid-cols-2 gap-3 mb-3">
-                    <div className="bg-surface-2 rounded-lg p-3">
-                      <div className="font-semibold text-xs text-ink-soft mb-2 uppercase tracking-wider">Application details</div>
-                      {[
-                        { l: 'National ID', v: app.national_id || '—' },
-                        { l: 'Employment status', v: app.employment_status || '—' },
-                        { l: 'Employer', v: app.employer_name || '—' },
-                        { l: 'Monthly income', v: `KES ${app.monthly_income?.toLocaleString() || '0'}` },
-                        { l: 'Monthly contribution', v: `KES ${app.monthly_contribution?.toLocaleString() || '0'}` },
-                        ...(Object.entries(app.custom_fields || {}).map(([k, v]) => ({ l: k, v: String(v) }))),
-                        { l: 'Submitted', v: app.submitted_at ? new Date(app.submitted_at).toLocaleDateString() : '—' },
-                      ].map((row, idx) => (
-                        <div key={`${row.l}-${idx}`} className="flex justify-between py-1 border-b border-ink-faint text-xs last:border-0">
-                          <span className="text-ink-muted capitalize">{row.l.replace(/([A-Z])/g, ' $1').trim()}</span>
-                          <span className="font-medium text-ink text-right max-w-[60%] truncate" title={row.v}>{row.v}</span>
-                        </div>
-                      ))}
-                    </div>
-                    <div>
-                      <textarea
-                        className="w-full p-2.5 border border-ink-faint rounded-lg text-sm resize-y min-h-[80px] box-border mb-2.5 focus:outline-none focus:ring-2 focus:ring-violet-500"
-                        placeholder="Review notes (optional)..."
-                        value={reviewNotes}
-                        onChange={e => setReviewNotes(e.target.value)}
-                      />
-                      <div className="flex gap-2">
-                        <button
-                          className={`flex-1 py-2 rounded-lg border-none bg-mint-600 text-white text-sm font-semibold cursor-pointer hover:bg-mint-700 transition-colors ${isPending ? 'opacity-60' : ''}`}
-                          onClick={() => handleReview(app.id, 'APPROVED')}
-                          disabled={isPending}
-                        >
-                          {isPending ? 'Processing...' : '✓ Approve'}
-                        </button>
-                        <button
-                          className="flex-1 py-2 rounded-lg border-none bg-red-50 text-red-700 text-sm font-semibold cursor-pointer hover:bg-red-100 transition-colors"
-                          onClick={() => handleReview(app.id, 'REJECTED')}
-                          disabled={isPending}
-                        >
-                          ✗ Reject
-                        </button>
-                      </div>
+                <div className="mt-4 pt-4 border-t border-surface-3">
+                  <div className="bg-amber-50 border-l-4 border-amber-400 rounded-r-lg p-3 mb-4">
+                    <div className="text-[11px] font-bold text-amber-800 uppercase mb-1">Pending Application Review</div>
+                    <p className="text-xs text-amber-700 leading-relaxed">
+                      You are about to review the membership for <strong>{app.full_name}</strong>.
+                      Approving will generate a member number and activate their portfolio.
+                    </p>
+                  </div>
+
+                  <div className="flex flex-col gap-3">
+                    <textarea
+                      className="w-full p-3 border border-ink-faint rounded-xl text-sm min-h-[100px] focus:ring-2 focus:ring-violet-500 focus:outline-none bg-surface-2 transition-all"
+                      placeholder="Add an internal note or message to the member (optional)..."
+                      value={reviewNotes}
+                      onChange={e => setReviewNotes(e.target.value)}
+                    />
+                    <div className="flex gap-3">
+                      <button
+                        className={`flex-1 py-3 rounded-xl border-none bg-mint-600 text-white text-sm font-bold cursor-pointer hover:bg-mint-700 transition-all shadow-lg active:scale-[0.98] ${isPending ? 'opacity-60' : ''}`}
+                        onClick={() => handleReview(app.id, 'APPROVED')}
+                        disabled={isPending}
+                      >
+                        {isPending ? 'Processing Approval...' : '✓ Confirm Approval'}
+                      </button>
+                      <button
+                        className="flex-1 py-3 rounded-xl border border-red-200 bg-red-50 text-red-700 text-sm font-bold cursor-pointer hover:bg-red-100 transition-all active:scale-[0.98]"
+                        onClick={() => handleReview(app.id, 'REJECTED')}
+                        disabled={isPending}
+                      >
+                        ✗ Decline Application
+                      </button>
                     </div>
                   </div>
                 </div>
               )}
             </div>
           )
+
         })
       )}
     </div>
   )
 }
+

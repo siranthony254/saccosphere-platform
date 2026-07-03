@@ -14,7 +14,7 @@ export function Compliance() {
   const { data: saccosData, isLoading: saccosLoading } = useAllSaccos()
 
   const pendingKycCount = kycQueue?.length ?? 0
-  const kycVerifiedPct = overview?.kyc_verified_pct ?? 0
+  const kycVerifiedPct = 0 // Backend doesn't provide this field
 
   return (
     <div className="p-5">
@@ -38,8 +38,8 @@ export function Compliance() {
         />
         <MetricCard
           label="System alerts"
-          value={(overview?.system_alerts ?? 0).toString()}
-          delta="From platform overview"
+          value="0"
+          delta="Not provided by backend"
         />
       </div>
 

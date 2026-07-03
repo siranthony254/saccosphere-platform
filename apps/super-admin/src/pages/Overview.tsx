@@ -218,7 +218,6 @@ export function Overview() {
                     </span>
                   ),
                 },
-                { key: 'fee', header: 'Fee', render: (row: any) => <span className="text-ink-muted">KES {row.platform_fee}</span> },
                 {
                   key: 'status',
                   header: 'Status',

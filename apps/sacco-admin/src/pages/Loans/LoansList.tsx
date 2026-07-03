@@ -44,7 +44,7 @@ export function LoansList() {
 
   const handleDisburse = (loan: any) => {
     disburseLoan(
-      { loanId: loan.loan_id, amount: loan.amount, phone_number: loan.phone_number, remarks: notes },
+      { loanId: loan.loan_id, notes },
       {
         onSuccess: () => {
           setActiveId(null)
@@ -58,6 +58,7 @@ export function LoansList() {
       }
     )
   }
+
 
   return (
     <div className="p-5 relative">

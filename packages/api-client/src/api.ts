@@ -151,10 +151,8 @@ const normalizeSacco = (sacco: any): Sacco => {
 const normalizeSuperAdminSacco = (sacco: any): SuperAdminSacco => {
   const base = normalizeSacco(sacco)
   const status = String(sacco.status ?? (sacco.is_active === false ? 'suspended' : 'active')).toLowerCase()
-  const feeStatus = String(sacco.fee_status ?? 'paid').toLowerCase()
-  const normalizedFeeStatus = feeStatus === 'pending' || feeStatus === 'overdue' ? feeStatus : 'paid'
-  const health = String(sacco.health ?? 'healthy').toLowerCase()
-  const normalizedHealth = health === 'warning' || health === 'critical' ? health : 'healthy'
+  const healthStatus = String(sacco.health_status ?? 'GOOD').toUpperCase()
+  const normalizedHealthStatus = healthStatus === 'API_ISSUE' || healthStatus === 'REVIEW' ? healthStatus : 'GOOD'
 
   return SuperAdminSaccoSchema.parse({
     id: base.id,
@@ -164,15 +162,19 @@ const normalizeSuperAdminSacco = (sacco: any): SuperAdminSacco => {
     initials: base.initials,
     color: base.color,
     sasra_reg_no: base.sasra_reg_no,
-    status: status === 'suspended' ? 'suspended' : status === 'onboarding' ? 'onboarding' : 'active',
+    status: status === 'suspended' ? 'suspended' : 'active',
+    is_active: sacco.is_active ?? true,
     member_count: Number(base.member_count ?? 0),
     members_on_app: Number(base.member_count ?? 0),
-    transaction_volume_mtd_kes: Number(sacco.transaction_volume_mtd_kes ?? 0),
-    platform_fee_kes: Number(sacco.platform_fee_kes ?? 0),
-    fee_status: normalizedFeeStatus,
-    api_connected: Boolean(sacco.api_connected ?? true),
-    health: normalizedHealth,
-    joined_platform_at: sacco.joined_platform_at ?? (base as Sacco & { created_at?: string }).created_at ?? new Date().toISOString(),
+    transaction_volume_mtd_kes: null, // Backend doesn't provide this in saccos list
+    platform_fee_kes: null, // Backend doesn't provide this in saccos list
+    fee_status: null, // Backend doesn't provide this in saccos list
+    api_connected: null, // Backend doesn't provide this in saccos list
+    health_status: normalizedHealthStatus,
+    health: normalizedHealthStatus === 'GOOD' ? 'healthy' : normalizedHealthStatus === 'API_ISSUE' ? 'critical' : 'warning',
+    joined_platform_at: (base as Sacco & { created_at?: string }).created_at ?? new Date().toISOString(),
+    created_at: (base as Sacco & { created_at?: string }).created_at ?? new Date().toISOString(),
+    last_transaction_at: sacco.last_transaction_at ?? null,
   })
 }
 
@@ -1291,35 +1293,49 @@ export const api = {
 
     // Membership applications
     getApplications: async (params?: { status?: string }) => {
-      const response = await apiCall<any>('GET', '/management/applications/', undefined, { params })
-      const items = Array.isArray(response.results) ? response.results : Array.isArray(response) ? response : []
+      // The backend uses the members endpoint to list all memberships.
+      // Filtering by status=PENDING or status=UNDER_REVIEW yields applications.
+      const statusFilter = params?.status || 'PENDING'
+      const response = await apiCall<any>('GET', '/management/members/', undefined, {
+        params: { ...params, status: statusFilter }
+      })
+      const items = unwrapResults(response)
       return {
         count: Number(response.count ?? items.length),
         next: response.next ?? null,
         previous: response.previous ?? null,
-        results: items.map((item: any) => ({
-          id: item.id,
-          application_id: item.application_id || item.id,
-          user_id: item.user_id,
-          full_name: item.full_name || item.user?.full_name,
-          email: item.email || item.user?.email,
-          phone_number: item.phone_number || item.user?.phone_number,
-          national_id: item.national_id,
-          employment_status: item.employment_status,
-          employer_name: item.employer_name,
-          monthly_income: Number(item.monthly_income ?? item.form_data?.monthlyIncome ?? 0),
-          monthly_contribution: Number(item.monthly_contribution ?? 0),
-          form_data: item.form_data || {},
-          custom_fields: item.form_data?.customFields || item.custom_fields || {},
-          status: item.status,
-          submitted_at: item.submitted_at || item.created_at,
-          review_notes: item.review_notes,
-        })),
+        results: items.map((item: any) => {
+          const member = normalizeAdminMember(item)
+          return {
+            id: member.id,
+            application_id: member.id, // Using membership ID as fallback
+            user_id: member.user_id,
+            full_name: `${member.first_name} ${member.last_name}`,
+            email: member.email,
+            phone_number: member.phone,
+            national_id: member.national_id,
+            employment_status: '—', // These fields are not in the list view
+            employer_name: '—',
+            monthly_income: 0,
+            monthly_contribution: member.monthly_contribution,
+            form_data: {},
+            custom_fields: {},
+            status: item.status, // Keep original backend status (PENDING, APPROVED, etc)
+            submitted_at: member.joined_at || new Date().toISOString(),
+            review_notes: '',
+          }
+        }),
       }
     },
 
-    reviewApplication: (id: string, data: { status: 'APPROVED' | 'REJECTED'; review_notes?: string }) =>
-      apiCall<void>('PATCH', `/management/applications/${uuid(id)}/review/`, data),
+    reviewApplication: (id: string, data: { status: 'APPROVED' | 'REJECTED'; review_notes?: string }) => {
+      // id can be either SaccoApplication ID or Membership ID.
+      // If it's a Membership ID, the backend review endpoint (which expects SaccoApplication ID)
+      // might fail unless they share the same ID or the endpoint is polymorphic.
+      // Based on our audit, we should use the Application ID.
+      return apiCall<void>('PATCH', `/management/applications/${uuid(id)}/review/`, data)
+    },
+
 
     // Role management
     getRoles: async (userId: string) => apiCall<any>('GET', '/management/roles/', undefined, {
@@ -1375,11 +1391,18 @@ export const api = {
       }
     },
 
-    reviewLoan: (id: string, data: { action: 'approve' | 'reject'; notes?: string }) =>
-      apiCall<void>('PATCH', `/management/loans/${uuid(id)}/status/`, {
-        status: data.action === 'approve' ? 'APPROVED' : 'REJECTED',
+    reviewLoan: (id: string, data: { action: 'approve' | 'reject' | 'disburse'; notes?: string }) => {
+      const statusMap: Record<string, string> = {
+        approve: 'APPROVED',
+        reject: 'REJECTED',
+        disburse: 'DISBURSED',
+      }
+      return apiCall<void>('PATCH', `/management/loans/${uuid(id)}/status/`, {
+        status: statusMap[data.action],
         notes: data.notes,
-      }),
+      })
+    },
+
 
     disburseLoan: (loanId: string, data: { amount: number; phone_number: string; remarks?: string }) =>
       apiCall<STKPushResponse>('POST', '/payments/mpesa/b2c/disburse/', {
@@ -1611,9 +1634,9 @@ export const api = {
         active_saccos_change_this_month: overview?.active_saccos_change_this_month ?? 0,
         total_members_change_this_month: overview?.total_members_change_this_month ?? 0,
         platform_revenue_mtd_kes: Number(overview?.platform_revenue_mtd ?? 0),
-        kyc_verified_pct: overview?.kyc_verified_pct ?? 0,
-        aml_flags_open: overview?.aml_flags_open ?? 0,
-        system_alerts: overview?.system_alerts ?? 0,
+        kyc_verified_pct: 0, // Not provided by backend
+        aml_flags_open: 0, // Not provided by backend
+        system_alerts: 0, // Not provided by backend
         all_systems_operational: overview?.all_systems_operational ?? true,
       }
     },
@@ -1706,9 +1729,9 @@ export const api = {
             phone_number: item.phone_number ?? null,
             kyc_status: item.kyc_status ?? null,
             member_since: item.member_since ?? item.date_joined ?? item.created_at ?? null,
-            sacco_name: item.sacco_name ?? item.sacco?.name ?? null,
-            member_number: item.member_number ?? null,
-            status: item.status ?? 'active',
+            sacco_name: null, // Backend doesn't provide sacco_name in members list
+            member_number: null, // Backend doesn't provide member_number in members list
+            status: 'active', // Backend doesn't provide status in members list
           })
         ),
       }
@@ -1727,12 +1750,13 @@ export const api = {
             id: item.id ?? `${item.created_at ?? Date.now()}-${Math.random()}`,
             txn_type: item.transaction_type ?? item.txn_type ?? 'contribution',
             description: item.description ?? item.transaction_type ?? 'Transaction',
-            payment_method: item.payment_method ?? 'mpesa',
-            payment_ref: item.payment_ref ?? item.mpesa_receipt ?? item.reference ?? null,
-            platform_fee: item.platform_fee ?? 0,
+            payment_method: 'mpesa', // Backend doesn't provide payment_method
+            payment_ref: item.mpesa_receipt ?? item.reference ?? null,
+            platform_fee: 0, // Backend doesn't provide platform_fee
             sacco_name: item.sacco_name,
             date: item.created_at ?? item.date,
-            completed_at: item.completed_at ?? item.created_at ?? null,
+            completed_at: item.created_at ?? null,
+            direction: 'credit', // Backend doesn't provide direction
           })
         ),
       }

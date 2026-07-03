@@ -10,21 +10,11 @@ export function SaccosList() {
   const navigate = useNavigate()
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState('all')
-  const [sector, setSector] = useState('all')
 
   const { data, isLoading } = useAllSaccos({
     search: search || undefined,
     status: status === 'all' ? undefined : status,
-    sector: sector === 'all' ? undefined : sector,
   })
-
-  const sectors = useMemo(() => {
-    const set = new Set<string>()
-    ;(data?.results ?? []).forEach((s: SuperAdminSacco) => {
-      if (s.sector) set.add(s.sector)
-    })
-    return Array.from(set).sort()
-  }, [data?.results])
 
   return (
     <div className="p-5">
@@ -48,19 +38,6 @@ export function SaccosList() {
           <option value="all">All statuses</option>
           <option value="active">Active</option>
           <option value="suspended">Suspended</option>
-          <option value="onboarding">Onboarding</option>
-        </select>
-        <select
-          className="py-2 px-3 border border-mid rounded-lg text-[13px] outline-none bg-surface"
-          value={sector}
-          onChange={(e) => setSector(e.target.value)}
-        >
-          <option value="all">All sectors</option>
-          {sectors.map((s) => (
-            <option key={s} value={s}>
-              {s}
-            </option>
-          ))}
         </select>
       </div>
 
@@ -79,21 +56,11 @@ export function SaccosList() {
               </div>
             ),
           },
-          { key: 'sector', header: 'Sector', render: (row: SuperAdminSacco) => row.sector || '—' },
+          { key: 'sector', header: 'Sector', render: (row: SuperAdminSacco) => row.sector || 'SACCO' },
           {
             key: 'member_count',
             header: 'Members',
             render: (row: SuperAdminSacco) => row.member_count.toLocaleString(),
-          },
-          {
-            key: 'platform_fee_kes',
-            header: 'Platform fee',
-            render: (row: SuperAdminSacco) => `KES ${(row.platform_fee_kes ?? 0).toLocaleString()}`,
-          },
-          {
-            key: 'fee_status',
-            header: 'Fee status',
-            render: (row: SuperAdminSacco) => <SaccoFeeBadge status={row.fee_status} />,
           },
           {
             key: 'status',

@@ -21,8 +21,7 @@ export function TransactionsFeed() {
     })
   }, [feed, range])
 
-  const totalVol = filtered.reduce((s: number, t: any) => s + (t.direction === 'debit' ? -t.amount : t.amount), 0)
-  const totalFees = filtered.reduce((s: number, t: any) => s + t.platform_fee, 0)
+  const totalVol = filtered.reduce((s: number, t: any) => s + t.amount, 0)
   const failed = filtered.filter((t: any) => t.status === 'failed').length
   const successful = filtered.filter((t: any) => t.status === 'completed').length
 
@@ -46,7 +45,7 @@ export function TransactionsFeed() {
           delta={`${filtered.length} transactions`}
           accent
         />
-        <MetricCard label="Platform fees earned" value={`KES ${totalFees.toLocaleString()}`} delta="~1% take rate" />
+        <MetricCard label="Platform fees earned" value="N/A" delta="Not provided by backend" />
         <MetricCard label="Successful" value={successful.toString()} delta="All SACCOs" />
         <MetricCard
           label="Failed transactions"
@@ -81,13 +80,12 @@ export function TransactionsFeed() {
             key: 'amount',
             header: 'Amount (KES)',
             render: (row: any) => (
-              <span className={`font-semibold ${row.status === 'failed' ? 'text-red-700' : row.direction === 'debit' ? 'text-red-700' : 'text-mint-700'}`}>
-                {row.direction === 'debit' ? '-' : '+'}{row.amount.toLocaleString()}
+              <span className={`font-semibold ${row.status === 'failed' ? 'text-red-700' : 'text-mint-700'}`}>
+                +{row.amount.toLocaleString()}
               </span>
             ),
           },
-          { key: 'method', header: 'Method', render: (row: any) => <span className="capitalize">{row.method}</span> },
-          { key: 'platform_fee', header: 'Platform fee', render: (row: any) => <span className="text-ink-muted">KES {row.platform_fee}</span> },
+          { key: 'method', header: 'Method', render: (row: any) => <span className="capitalize">M-Pesa</span> },
           {
             key: 'status',
             header: 'Status',

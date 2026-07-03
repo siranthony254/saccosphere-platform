@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { useAdminLoans, useDisburseLoan, useDisbursementHistory, useB2CStatus } from '../../hooks/useLoans'
+import { useAdminLoans, useManualDisburseLoan, useDisbursementHistory, useB2CStatus } from '../../hooks/useLoans'
 import { useDisbursementsDashboard } from '../../hooks/useSaccoAdminDashboard'
 
 function B2CStatusBadge({ conversationId }: { conversationId: string }) {
@@ -26,7 +26,8 @@ export function DisbursementsList() {
   const { data: dashboard } = useDisbursementsDashboard()
   const { data: loansData, isLoading: loadingLoans } = useAdminLoans({ status: 'approved' })
   const { data: historyData, isLoading: loadingHistory } = useDisbursementHistory()
-  const { mutate: disburse, isPending: disbursing } = useDisburseLoan()
+  const { mutate: disburse, isPending: disbursing } = useManualDisburseLoan()
+
   
   const [activeId, setActiveId] = useState<string | null>(null)
   const [phone, setPhone] = useState('')

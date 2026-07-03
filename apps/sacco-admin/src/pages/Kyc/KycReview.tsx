@@ -69,24 +69,38 @@ export function KycReview() {
               </span>
             </div>
 
-            <div className="grid grid-cols-2 gap-2.5 mb-3 bg-surface-2 rounded-lg p-3">
+            <div className="grid grid-cols-2 gap-4 mb-4">
               <div>
-                <div className="text-[10px] text-ink-faint mb-0.5">ID Type</div>
-                <div className="text-sm font-medium text-ink-soft">{kyc.id_type || 'National ID'}</div>
+                <div className="text-[10px] text-ink-faint mb-1 uppercase tracking-wider">ID Front</div>
+                {kyc.id_front ? (
+                  <img src={kyc.id_front} className="w-full h-32 object-cover rounded-lg border border-surface-3 bg-surface-2" alt="ID Front" />
+                ) : (
+                  <div className="w-full h-32 rounded-lg bg-surface-2 flex items-center justify-center border border-dashed border-ink-faint text-ink-faint text-xs">No image</div>
+                )}
               </div>
+              <div>
+                <div className="text-[10px] text-ink-faint mb-1 uppercase tracking-wider">ID Back</div>
+                {kyc.id_back ? (
+                  <img src={kyc.id_back} className="w-full h-32 object-cover rounded-lg border border-surface-3 bg-surface-2" alt="ID Back" />
+                ) : (
+                  <div className="w-full h-32 rounded-lg bg-surface-2 flex items-center justify-center border border-dashed border-ink-faint text-ink-faint text-xs">No image</div>
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2.5 mb-3 bg-surface-2 rounded-lg p-3">
               <div>
                 <div className="text-[10px] text-ink-faint mb-0.5">ID Number</div>
                 <div className="text-sm font-medium text-ink-soft">{kyc.id_number || '—'}</div>
               </div>
               <div>
-                <div className="text-[10px] text-ink-faint mb-0.5">Submitted</div>
-                <div className="text-sm font-medium text-ink-soft">{kyc.submitted_at ? new Date(kyc.submitted_at).toLocaleDateString() : '—'}</div>
-              </div>
-              <div>
-                <div className="text-[10px] text-ink-faint mb-0.5">IPRS Status</div>
-                <div className="text-sm font-medium text-ink-soft">{kyc.iprs_status || '—'}</div>
+                <div className="text-[10px] text-ink-faint mb-0.5">IPRS Verified</div>
+                <div className={`text-sm font-bold ${kyc.iprs_verified ? 'text-mint-600' : 'text-amber-600'}`}>
+                  {kyc.iprs_verified ? '✓ Yes' : '✗ No'}
+                </div>
               </div>
             </div>
+
 
             {reviewingId === kyc.id ? (
               <div>

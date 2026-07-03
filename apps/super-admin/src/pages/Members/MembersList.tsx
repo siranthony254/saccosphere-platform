@@ -1,10 +1,9 @@
 import { useState, useMemo } from 'react'
 import { useAllMembers } from '../../hooks/usePlatformData'
-import { useAllSaccos } from '../../hooks/usePlatformData'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { DataTable } from '../../components/ui/DataTable'
 import { Badge } from '../../components/ui/Badge'
-import type { PlatformMember, SuperAdminSacco } from '@saccosphere/schemas'
+import type { PlatformMember } from '@saccosphere/schemas'
 
 function kycVariant(status: string | null | undefined): 'success' | 'warning' | 'error' | 'neutral' {
   const s = String(status ?? 'unknown').toLowerCase()
@@ -14,26 +13,14 @@ function kycVariant(status: string | null | undefined): 'success' | 'warning' | 
   return 'neutral'
 }
 
-function statusVariant(status: string | null | undefined): 'success' | 'warning' | 'error' | 'neutral' {
-  const s = String(status ?? 'unknown').toLowerCase()
-  if (s === 'active' || s === 'approved') return 'success'
-  if (s === 'pending' || s === 'under_review' || s === 'awaiting_sacco') return 'warning'
-  if (s === 'suspended' || s === 'rejected') return 'error'
-  return 'neutral'
-}
-
 export function MembersList() {
   const [search, setSearch] = useState('')
-  const [saccoFilter, setSaccoFilter] = useState('all')
   const [kycFilter, setKycFilter] = useState('all')
 
   const { data, isLoading, isError, refetch } = useAllMembers({
     search: search || undefined,
-    sacco: saccoFilter === 'all' ? undefined : saccoFilter,
     kyc_status: kycFilter === 'all' ? undefined : kycFilter,
   })
-
-  const { data: saccosData } = useAllSaccos()
 
   const kycOptions = useMemo(() => {
     const set = new Set<string>()
@@ -47,7 +34,7 @@ export function MembersList() {
     <div className="p-5">
       <PageHeader
         title="All members"
-        subtitle={`${data?.count ?? 0} total across ${saccosData?.count ?? 0} SACCOs`}
+        subtitle={`${data?.count ?? 0} total members`}
       />
 
       <div className="flex gap-2.5 mb-4">
@@ -57,18 +44,6 @@ export function MembersList() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
-        <select
-          className="py-2 px-3 border border-mid rounded-lg text-[13px] outline-none bg-surface"
-          value={saccoFilter}
-          onChange={(e) => setSaccoFilter(e.target.value)}
-        >
-          <option value="all">All SACCOs</option>
-          {(saccosData?.results ?? []).map((sacco: SuperAdminSacco) => (
-            <option key={sacco.id} value={sacco.id}>
-              {sacco.name}
-            </option>
-          ))}
-        </select>
         <select
           className="py-2 px-3 border border-mid rounded-lg text-[13px] outline-none bg-surface"
           value={kycFilter}
@@ -104,16 +79,6 @@ export function MembersList() {
               ),
             },
             {
-              key: 'sacco',
-              header: 'SACCO',
-              render: (row: PlatformMember) => <span className="text-ink-muted">{row.sacco_name ?? '—'}</span>,
-            },
-            {
-              key: 'member_number',
-              header: 'Member No.',
-              render: (row: PlatformMember) => <span className="text-ink-muted font-mono text-xs">{row.member_number ?? '—'}</span>,
-            },
-            {
               key: 'kyc_status',
               header: 'KYC',
               render: (row: PlatformMember) => <Badge variant={kycVariant(row.kyc_status)}>{row.kyc_status ?? 'Unknown'}</Badge>,
@@ -124,15 +89,10 @@ export function MembersList() {
               render: (row: PlatformMember) =>
                 row.member_since ? new Date(row.member_since).toLocaleDateString() : '—',
             },
-            {
-              key: 'status',
-              header: 'Status',
-              render: (row: PlatformMember) => <Badge variant={statusVariant(row.status)}>{row.status}</Badge>,
-            },
           ]}
           data={data?.results ?? []}
           loading={isLoading}
-          emptyMessage={search || saccoFilter !== 'all' || kycFilter !== 'all' ? 'No members match your filters.' : 'No members found on the platform.'}
+          emptyMessage={search || kycFilter !== 'all' ? 'No members match your filters.' : 'No members found on the platform.'}
           keyExtractor={(row: PlatformMember) => row.id}
         />
       )}

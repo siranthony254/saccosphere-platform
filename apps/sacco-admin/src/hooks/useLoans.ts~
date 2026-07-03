@@ -21,27 +21,18 @@ export function useReviewLoan() {
 export function useDisburseLoan() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ loanId, notes }: { loanId: string; notes?: string }) =>
-      api.saccoAdmin.reviewLoan(loanId, { action: 'disburse' as any, notes }),
+    mutationFn: ({ loanId, amount, phone_number, remarks }: {
+      loanId: string
+      amount: number
+      phone_number: string
+      remarks?: string
+    }) => api.saccoAdmin.disburseLoan(loanId, { amount, phone_number, remarks }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: QueryKeys.adminLoans() })
       qc.invalidateQueries({ queryKey: ['disbursement-history'] })
     },
   })
 }
-
-export function useManualDisburseLoan() {
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: (data: { loanId: string; amount: number; phone_number: string; remarks?: string }) =>
-      api.saccoAdmin.disburseLoan(data.loanId, data),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: QueryKeys.adminLoans() })
-      qc.invalidateQueries({ queryKey: ['disbursement-history'] })
-    },
-  })
-}
-
 
 
 
