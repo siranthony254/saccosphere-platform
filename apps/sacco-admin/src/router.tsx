@@ -17,7 +17,6 @@ import { KycReview } from './pages/Kyc/KycReview'
 import { Roles } from './pages/Roles/Roles'
 import { Import } from './pages/Import/Import'
 import { ExternalGuarantors } from './pages/ExternalGuarantors'
-import { AuditLogs } from './pages/AuditLogs'
 
 export const router = createBrowserRouter([
   {
@@ -47,8 +46,8 @@ export const router = createBrowserRouter([
       { path: 'roles', element: <Roles /> },
       { path: 'import', element: <Import /> },
       { path: 'external-guarantors', element: <ExternalGuarantors /> },
-      { path: 'audit-logs', element: <AuditLogs /> },
     ],
   },
   { path: '*', element: <Navigate to="/" replace /> },
 ])
+

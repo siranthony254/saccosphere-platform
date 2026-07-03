@@ -35,11 +35,11 @@ import {
   SuperAdminSaccoSchema,
   TransactionSchema,
   UserSchema,
-  PlatformMemberSchema,
   RevenueChartSchema,
   TopSaccosSchema,
   PlatformAlertSchema,
 } from '@saccosphere/schemas'
+
 import { z } from 'zod'
 
 const RefreshResponseSchema = z.object({ access: z.string() })
@@ -1603,20 +1603,24 @@ export const api = {
       }
     },
 
-    // SACCO settings
     getSettings: async () => {
       const response = await apiCall<any>('GET', '/management/settings/')
       return {
-        registration_fee: Number(response.registration_fee ?? 0),
+        min_loan_amount: Number(response.min_loan_amount ?? 1000),
+        max_loan_amount: Number(response.max_loan_amount ?? 500000),
         loan_multiplier: Number(response.loan_multiplier ?? 3),
-        interest_rate: Number(response.interest_rate ?? 12),
-        max_repayment_period: Number(response.max_repayment_period ?? 48),
-        min_guarantors: Number(response.min_guarantors ?? 2),
+        requires_guarantor: Boolean(response.requires_guarantor ?? true),
+        guarantor_type_allowed: String(response.guarantor_type_allowed ?? 'BOTH'),
+        registration_fee: Number(response.registration_fee ?? 0),
+        monthly_contribution_amount: Number(response.monthly_contribution_amount ?? 0),
+        updated_at: response.updated_at,
       }
     },
 
+
     updateSettings: async (settings: any) =>
       apiCall<void>('PATCH', '/management/settings/', settings),
+
   },
 
   // ─── SUPER ADMIN ───────────────────────────────────────────────────────────
@@ -1625,25 +1629,28 @@ export const api = {
     getDashboard: async () => {
       const overview = await apiCall<any>('GET', '/management/superadmin/overview/').catch(() => null)
       return {
-        total_saccos: overview?.active_saccos_count ?? 0,
-        active_saccos: overview?.active_saccos_count ?? 0,
-        total_members: overview?.total_members ?? 0,
-        total_members_on_app: overview?.total_members ?? 0,
+        total_saccos: Number(overview?.active_saccos_count ?? 0),
+        active_saccos: Number(overview?.active_saccos_count ?? 0),
+        total_members: Number(overview?.total_members ?? 0),
+        total_members_on_app: Number(overview?.total_members ?? 0),
         transaction_volume_mtd_kes: Number(overview?.platform_transaction_volume_mtd ?? 0),
-        transaction_volume_change_pct: overview?.platform_transaction_volume_change_pct ?? null,
-        active_saccos_change_this_month: overview?.active_saccos_change_this_month ?? 0,
-        total_members_change_this_month: overview?.total_members_change_this_month ?? 0,
+        transaction_volume_change_pct: overview?.platform_transaction_volume_change_pct != null
+          ? Number(overview.platform_transaction_volume_change_pct)
+          : null,
+        active_saccos_change_this_month: Number(overview?.active_saccos_change_this_month ?? 0),
+        total_members_change_this_month: Number(overview?.total_members_change_this_month ?? 0),
         platform_revenue_mtd_kes: Number(overview?.platform_revenue_mtd ?? 0),
-        kyc_verified_pct: 0, // Not provided by backend
-        aml_flags_open: 0, // Not provided by backend
-        system_alerts: 0, // Not provided by backend
-        all_systems_operational: overview?.all_systems_operational ?? true,
+        kyc_verified_pct: 0,
+        aml_flags_open: 0,
+        system_alerts: 0,
+        all_systems_operational: Boolean(overview?.all_systems_operational ?? true),
       }
     },
 
     getSaccos: async (params?: { status?: string; sector?: string; search?: string }) => {
-      const response = await apiCall<any>('GET', '/management/superadmin/saccos/').catch(() => ({ results: [] }))
-      let items = response.results || response
+      const response = await apiCall<any>('GET', '/management/superadmin/saccos/')
+      let items = Array.isArray(response) ? response : response.results ?? []
+
       if (params?.search) {
         items = items.filter((item: any) =>
           item.name?.toLowerCase().includes(params.search!.toLowerCase())
@@ -1652,35 +1659,37 @@ export const api = {
       if (params?.status) {
         items = items.filter((item: any) =>
           (params.status === 'active' && item.is_active) ||
-          (params.status === 'suspended' && !item.is_active) ||
-          (params.status === 'onboarding' && item.status?.toLowerCase() === 'onboarding')
+          (params.status === 'suspended' && !item.is_active)
         )
       }
-      if (params?.sector) {
-        items = items.filter((item: any) =>
-          String(item.sector ?? '').toLowerCase() === params.sector!.toLowerCase()
-        )
-      }
+
       return {
         count: items.length,
         next: null,
         previous: null,
-        results: items.map((item: any) => normalizeSuperAdminSacco(item)),
+        results: items.map((item: any) => ({
+          id: item.id,
+          name: item.name,
+          slug: item.slug ?? item.name.toLowerCase().replace(/ /g, '-'),
+          member_count: item.member_count ?? 0,
+          is_active: item.is_active ?? true,
+          status: item.is_active ? 'active' : 'suspended',
+          health_status: item.health_status ?? 'GOOD',
+          last_transaction_at: item.last_transaction_at,
+          created_at: item.created_at,
+          sector: null,
+          initials: null,
+          color: null,
+          sasra_reg_no: null,
+        })),
       }
     },
 
     getSacco: async (id: string) => {
-      let sacco: Sacco | null = null
-      try {
-        sacco = await api.saccos.get(id)
-      } catch {
-        // Fallback to super-admin SACCO list if public detail fails
-        const all = await api.superAdmin.getSaccos()
-        sacco = (all.results.find((s: SuperAdminSacco) => s.id === id || s.slug === id) as Sacco | undefined) ?? null
-      }
-      if (!sacco) throw { code: 'NOT_FOUND', message: 'SACCO not found.' }
-
+      // Sacco detail is not a single endpoint in superadmin, we mix public and private data
+      const sacco = await api.saccos.get(id)
       const stats = await apiCall<any>('GET', '/management/stats/', undefined, { params: { sacco_id: id } }).catch(() => null)
+
       return {
         ...normalizeSuperAdminSacco({
           ...sacco,
@@ -1709,58 +1718,50 @@ export const api = {
       apiCall<any[]>('GET', '/management/roles/', undefined, { params: { user_id: userId } }),
 
     getAllMembers: async (params?: { sacco?: string; kyc_status?: string; search?: string; cursor?: string }) => {
-      const queryParams: Record<string, string> = {}
-      if (params?.sacco) queryParams.sacco_id = params.sacco
-      if (params?.search) queryParams.search = params.search
-      if (params?.cursor) queryParams.cursor = params.cursor
-      if (params?.kyc_status) queryParams.kyc_status = params.kyc_status
+      const response = await apiCall<any>('GET', '/management/superadmin/members/', undefined, { params })
+      const items = response.results ?? []
 
-      const response = await apiCall<any>('GET', '/management/superadmin/members/', undefined, { params: queryParams })
-      const items = response.results || []
       return {
-        count: Number(response.count || items.length),
+        count: Number(response.count ?? items.length),
         next: response.next || null,
         previous: response.previous || null,
-        results: items.map((item: any) =>
-          PlatformMemberSchema.parse({
-            id: item.id,
-            full_name: item.full_name ?? `${item.first_name ?? ''} ${item.last_name ?? ''}`.trim(),
-            email: item.email,
-            phone_number: item.phone_number ?? null,
-            kyc_status: item.kyc_status ?? null,
-            member_since: item.member_since ?? item.date_joined ?? item.created_at ?? null,
-            sacco_name: null, // Backend doesn't provide sacco_name in members list
-            member_number: null, // Backend doesn't provide member_number in members list
-            status: 'active', // Backend doesn't provide status in members list
-          })
-        ),
+        results: items.map((item: any) => ({
+          id: item.id,
+          full_name: item.full_name,
+          email: item.email,
+          phone_number: item.phone_number,
+          kyc_status: item.kyc_status,
+          member_since: item.member_since,
+          sacco_name: '—', // List view doesn't provide this
+          member_number: '—', // List view doesn't provide this
+          status: 'active',
+        })),
       }
     },
 
     getTransactions: async () => {
       const response = await apiCall<any>('GET', '/management/superadmin/transactions/live/')
       const results = Array.isArray(response) ? response : response.results || []
+
       return {
         count: results.length,
         next: null,
         previous: null,
-        results: results.map((item: any) =>
-          normalizeTransaction({
-            ...item,
-            id: item.id ?? `${item.created_at ?? Date.now()}-${Math.random()}`,
-            txn_type: item.transaction_type ?? item.txn_type ?? 'contribution',
-            description: item.description ?? item.transaction_type ?? 'Transaction',
-            payment_method: 'mpesa', // Backend doesn't provide payment_method
-            payment_ref: item.mpesa_receipt ?? item.reference ?? null,
-            platform_fee: 0, // Backend doesn't provide platform_fee
-            sacco_name: item.sacco_name,
-            date: item.created_at ?? item.date,
-            completed_at: item.created_at ?? null,
-            direction: 'credit', // Backend doesn't provide direction
-          })
-        ),
+        results: results.map((item: any) => ({
+          id: `${item.created_at}-${item.user_name}`,
+          date: item.created_at,
+          member_name: item.user_name,
+          sacco_name: item.sacco_name,
+          txn_type: item.transaction_type,
+          amount: Number(item.amount),
+          status: item.stk_status === '0' ? 'completed' : 'pending',
+          direction: 'credit',
+          payment_method: 'mpesa',
+          platform_fee: 0,
+        })),
       }
     },
+
 
     getRevenueChart: async () => {
       const response = await apiCall<any>('GET', '/management/superadmin/revenue-chart/')

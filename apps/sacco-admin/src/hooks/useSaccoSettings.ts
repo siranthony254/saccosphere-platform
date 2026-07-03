@@ -14,13 +14,18 @@ type SettingsUiModel = {
     member_count?: number
   } | null
   settings: {
-    registration_fee?: number
+    min_loan_amount?: number
+    max_loan_amount?: number
     loan_multiplier?: number
-    interest_rate?: number
-    max_repayment_period?: number
-    min_guarantors?: number
+    requires_guarantor?: boolean
+    guarantor_type_allowed?: string
+    registration_fee?: number
+    monthly_contribution_amount?: number
+    updated_at?: string
   }
 }
+
+
 
 export function useSaccoSettings() {
   const queryClient = useQueryClient()

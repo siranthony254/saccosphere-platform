@@ -13,34 +13,26 @@ export function Compliance() {
   const { data: saccosData, isLoading: saccosLoading } = useAllSaccos()
 
   const pendingKycCount = kycQueue?.length ?? 0
-  const kycVerifiedPct = 0 // Backend doesn't provide this field
 
   return (
+
     <div className="p-5">
       <PageHeader title="Compliance & KYC" subtitle="Platform-wide regulatory monitoring" />
 
-      <div className="grid grid-cols-4 gap-3 mb-5">
-        <MetricCard
-          label="KYC verified members"
-          value={kycVerifiedPct > 0 ? `${kycVerifiedPct.toFixed(1)}%` : '—'}
-          delta={kycVerifiedPct > 0 ? 'From platform stats' : 'Not reported by backend yet'}
-        />
+      <div className="grid grid-cols-2 gap-3 mb-5">
         <MetricCard
           label="KYC pending review"
           value={pendingKycCount.toString()}
-          delta="From KYC review queue"
+          delta="From platform-wide KYC queue"
         />
         <MetricCard
-          label="AML flags / alerts"
+          label="Active AML flags / alerts"
           value={(flags?.length ?? 0).toString()}
-          delta={flags?.length ? `${flags.length} open alerts` : 'No open alerts'}
-        />
-        <MetricCard
-          label="System alerts"
-          value="0"
-          delta="Not provided by backend"
+          delta={flags?.length ? `${flags.length} open alerts requiring action` : 'No open alerts'}
+          accent={!!flags?.length}
         />
       </div>
+
 
       {flags && flags.length > 0 && (
         <div className="bg-red-50 border-l-4 border-red-500 rounded-r-lg p-2.5 mb-2.5 text-xs text-red-900">

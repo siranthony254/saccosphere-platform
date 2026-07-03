@@ -48,14 +48,15 @@ export function SaccosList() {
             header: 'SACCO',
             render: (row: SuperAdminSacco) => (
               <div className="flex items-center gap-2.5">
-                <SaccoAvatar name={row.name} color={row.color} initials={row.initials} />
+                <SaccoAvatar name={row.name} color={row.color || '#6D28D9'} initials={row.initials || row.name.slice(0, 2).toUpperCase()} />
                 <div>
                   <div className="font-medium">{row.name}</div>
-                  <div className="text-[10px] text-ink-faint">{row.sasra_reg_no || 'No SASRA reg'}</div>
+                  <div className="text-[10px] text-ink-faint">Active since {row.created_at ? new Date(row.created_at).getFullYear() : '—'}</div>
                 </div>
               </div>
             ),
           },
+
           { key: 'sector', header: 'Sector', render: (row: SuperAdminSacco) => row.sector || 'SACCO' },
           {
             key: 'member_count',

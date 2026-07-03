@@ -56,25 +56,30 @@ export function AuditLogs() {
               </tr>
             ) : (
               logs.map((log: any) => (
-                <tr key={log.id} className="border-b border-surface-2">
-                  <td className="py-2.5 px-3 text-ink-muted text-xs">
-                    {log.timestamp ? new Date(log.timestamp).toLocaleString() : '—'}
-                  </td>
-                  <td className="py-2.5 px-3 font-medium">
-                    {log.user?.email || log.user?.first_name || 'System'}
+                <tr key={log.id} className="border-b border-surface-2 hover:bg-surface-2 transition-colors">
+                  <td className="py-2.5 px-3 text-ink-muted text-[11px] font-mono">
+                    {log.created_at ? new Date(log.created_at).toLocaleString('en-KE') : '—'}
                   </td>
                   <td className="py-2.5 px-3">
-                    <span className="px-2 py-0.5 rounded bg-violet-50 text-violet-700 text-[10px] font-semibold">
+                    <div className="font-medium text-xs">{log.user_email || 'System'}</div>
+                    <div className="text-[9px] text-ink-faint font-mono">{log.ip_address}</div>
+                  </td>
+                  <td className="py-2.5 px-3">
+                    <span className="px-2 py-0.5 rounded bg-violet-100 text-violet-700 text-[10px] font-bold uppercase tracking-wider">
                       {log.action}
                     </span>
                   </td>
-                  <td className="py-2.5 px-3 text-ink-muted text-xs">{log.resource_type || '—'}</td>
+                  <td className="py-2.5 px-3 text-ink-soft text-xs">
+                    {log.resource_type}
+                    <span className="text-[9px] text-ink-faint block font-mono">{log.resource_id}</span>
+                  </td>
                   <td className="py-2.5 px-3 text-ink-muted text-xs max-w-xs truncate">
-                    {log.details || '—'}
+                    {JSON.stringify(log.new_values || log.details) || '—'}
                   </td>
                 </tr>
               ))
             )}
+
           </tbody>
         </table>
       </div>

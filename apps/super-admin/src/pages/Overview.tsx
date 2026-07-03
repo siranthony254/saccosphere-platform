@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom'
 import {
   usePlatformOverview,
   usePlatformLiveFeed,
@@ -5,6 +6,7 @@ import {
   usePlatformAlerts,
   useRevenueChart,
 } from '../hooks/usePlatformData'
+
 import { PageHeader } from '../components/ui/PageHeader'
 import { MetricCard } from '../components/ui/MetricCard'
 import { Card } from '../components/ui/Card'
@@ -22,7 +24,9 @@ function formatKes(value: number): string {
 }
 
 export function Overview() {
+  const navigate = useNavigate()
   const { data: overview, isLoading: overviewLoading, error: overviewError } = usePlatformOverview()
+
   const { feed, connected } = usePlatformLiveFeed()
   const { data: topSaccos, isLoading: topLoading } = useTopSaccos()
   const { data: alerts, isLoading: alertsLoading } = usePlatformAlerts()
@@ -152,7 +156,7 @@ export function Overview() {
         <div className="space-y-4">
           <Card
             title="Top SACCOs by transaction volume"
-            action={<span className="text-[11px] text-violet-500 font-medium cursor-pointer">All SACCOs →</span>}
+            action={<span className="text-[11px] text-violet-500 font-medium cursor-pointer" onClick={() => navigate('/saccos')}>All SACCOs →</span>}
           >
             {topLoading ? (
               <div className="text-xs text-ink-muted">Loading top SACCOs...</div>
@@ -174,7 +178,7 @@ export function Overview() {
                   { key: 'member_count', header: 'Members', render: (row: TopSaccos) => row.member_count.toLocaleString() },
                   {
                     key: 'txn_volume_this_month',
-                    header: 'Txn volume (Apr)',
+                    header: 'Txn volume',
                     render: (row: TopSaccos) => formatKes(row.txn_volume_this_month),
                   },
                   {
@@ -190,9 +194,11 @@ export function Overview() {
                 ]}
                 data={topSaccos ?? []}
                 keyExtractor={(row: TopSaccos) => row.sacco_id}
+                onRowClick={(row: TopSaccos) => navigate(`/saccos/${row.sacco_id}`)}
               />
             )}
           </Card>
+
 
           <Card
             title="Live transaction feed — all SACCOs"

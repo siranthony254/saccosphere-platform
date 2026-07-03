@@ -152,11 +152,9 @@ export const PlatformOverviewSchema = z.object({
   active_saccos_change_this_month: z.number(),
   total_members_change_this_month: z.number(),
   platform_revenue_mtd_kes: z.number(),
-  kyc_verified_pct: z.number(),
-  aml_flags_open: z.number(),
-  system_alerts: z.number(),
   all_systems_operational: z.boolean(),
 })
+
 export type PlatformOverview = z.infer<typeof PlatformOverviewSchema>
 
 export const SuperAdminSaccoSchema = z.object({
@@ -177,10 +175,14 @@ export const SuperAdminSaccoSchema = z.object({
   api_connected: z.boolean().nullable(),
   health_status: z.enum(['GOOD', 'REVIEW', 'API_ISSUE']),
   health: z.enum(['healthy', 'warning', 'critical']).nullable(),
-  joined_platform_at: z.string().datetime().nullable(),
-  created_at: z.string().datetime().nullable(),
-  last_transaction_at: z.string().datetime().nullable(),
+  joined_platform_at: z.string().nullable(),
+  created_at: z.string().nullable(),
+  last_transaction_at: z.string().nullable(),
+  email: z.string().email().nullable().optional(),
+  phone: z.string().nullable().optional(),
+  website: z.string().url().nullable().optional(),
 })
+
 export type SuperAdminSacco = z.infer<typeof SuperAdminSaccoSchema>
 
 export const PlatformTransactionSchema = TransactionSchema.extend({
@@ -239,10 +241,10 @@ export const PlatformMemberSchema = z.object({
   email: z.string().email(),
   phone_number: z.string().nullable(),
   kyc_status: z.string().nullable(),
-  member_since: z.string().datetime().nullable(),
-  sacco_name: z.string().nullable(),
-  member_number: z.string().nullable(),
-  status: z.string(),
+  member_since: z.string().nullable(),
+  sacco_name: z.string().nullable().optional(),
+  member_number: z.string().nullable().optional(),
+  status: z.string().optional(),
 })
 export type PlatformMember = z.infer<typeof PlatformMemberSchema>
 

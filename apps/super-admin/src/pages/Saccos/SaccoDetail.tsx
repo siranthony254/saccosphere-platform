@@ -22,26 +22,20 @@ export function SaccoDetail() {
         actions={
           <div className="flex gap-2">
             <button
-              className="py-1.5 px-3.5 rounded-lg border-none bg-red-50 text-red-800 text-[13px] font-semibold cursor-not-allowed opacity-60"
-              title="SACCO suspension is not supported by the current backend"
-              disabled
-            >
-              Suspend SACCO
-            </button>
-            <button
               className="py-1.5 px-3.5 rounded-lg border border-mid bg-surface text-[13px] cursor-pointer hover:bg-surface-2 transition-colors"
-              onClick={() => alert('Contact admin requires backend endpoint')}
+              onClick={() => window.location.href = `mailto:${sacco.email || ''}`}
             >
-              Contact admin
+              Contact SACCO
             </button>
             <button
               className="py-1.5 px-3.5 rounded-lg bg-violet-500 hover:bg-violet-600 text-white text-[13px] font-semibold cursor-pointer transition-colors"
-              onClick={() => alert('Edit settings requires backend endpoint')}
+              onClick={() => alert('Global SACCO configuration is managed via platform settings')}
             >
-              Edit settings
+              Sacco Settings
             </button>
           </div>
         }
+
       />
 
       {/* Profile banner */}

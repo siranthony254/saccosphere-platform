@@ -39,7 +39,9 @@ export function SystemHealth() {
   }
 
   const services = (health.services ?? []) as ServiceItem[]
-  const readiness = health.readiness ?? { status: 'unknown', checks: {} }
+  const readiness = (health.readiness as { status: string; checks?: Record<string, boolean> }) ?? { status: 'unknown', checks: {} }
+  const checks = readiness.checks ?? {}
+
   const operationalCount = services.filter((s) =>
     String(s.status).toLowerCase().includes('operational') ||
     String(s.status).toLowerCase() === 'healthy'
@@ -86,57 +88,34 @@ export function SystemHealth() {
       </div>
 
       <div className="grid grid-cols-3 gap-4 mb-5">
-        <Card title="Payment integrations">
-          {services.length === 0 ? (
-            <div className="text-xs text-ink-muted">No integration data returned by the backend.</div>
-          ) : (
-            <div className="space-y-2">
-              {services
-                .filter((s) => String(s.category ?? '').toLowerCase() === 'payment')
-                .map((service) => (
-                  <div key={service.name} className="flex justify-between items-center py-2 border-b border-surface-2 last:border-0 text-xs">
-                    <span className="text-ink-muted">{service.name}</span>
-                    <HealthDot status={service.status} />
-                  </div>
-                ))}
-            </div>
-          )}
+        <Card title="Core Infrastructure">
+          <div className="space-y-2">
+            {Object.entries(checks).map(([name, status]) => (
+              <div key={name} className="flex justify-between items-center py-2 border-b border-surface-2 last:border-0 text-xs">
+                <span className="text-ink-muted capitalize">{name}</span>
+                <HealthDot status={status ? 'healthy' : 'critical'} />
+              </div>
+            ))}
+            {Object.keys(checks).length === 0 && (
+              <div className="text-xs text-ink-muted">No infrastructure checks reported.</div>
+            )}
+          </div>
         </Card>
 
-        <Card title="SACCO API connections">
-          {services.length === 0 ? (
-            <div className="text-xs text-ink-muted">No SACCO connection data returned by the backend.</div>
-          ) : (
-            <div className="space-y-2">
-              {services
-                .filter((s) => String(s.category ?? '').toLowerCase() === 'sacco')
-                .map((service) => (
-                  <div key={service.name} className="flex justify-between items-center py-2 border-b border-surface-2 last:border-0 text-xs">
-                    <span className="text-ink-muted">{service.name}</span>
-                    <HealthDot status={service.status} />
-                  </div>
-                ))}
-            </div>
-          )}
+
+        <Card title="External Integrations">
+          <div className="text-xs text-ink-muted py-4 px-2">
+            External service health (M-Pesa, SMS, IPRS) is monitored via transaction success rates and system alerts.
+          </div>
         </Card>
 
-        <Card title="Identity / compliance APIs">
-          {services.length === 0 ? (
-            <div className="text-xs text-ink-muted">No compliance API data returned by the backend.</div>
-          ) : (
-            <div className="space-y-2">
-              {services
-                .filter((s) => String(s.category ?? '').toLowerCase() === 'compliance')
-                .map((service) => (
-                  <div key={service.name} className="flex justify-between items-center py-2 border-b border-surface-2 last:border-0 text-xs">
-                    <span className="text-ink-muted">{service.name}</span>
-                    <HealthDot status={service.status} />
-                  </div>
-                ))}
-            </div>
-          )}
+        <Card title="SACCO API Status">
+          <div className="text-xs text-ink-muted py-4 px-2">
+            Individual SACCO API health is visible in the SACCO Directory and Top SACCOs dashboard.
+          </div>
         </Card>
       </div>
+
 
       {events.length > 0 && (
         <Card title="Recent system events">
