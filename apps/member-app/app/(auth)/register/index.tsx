@@ -100,14 +100,15 @@ export default function RegisterStep1() {
       // User will be registered in the final step
       setStep1({
         email: userInfo.user.email,
-        first_name: userInfo.user.givenName || '',
-        last_name: userInfo.user.familyName || '',
+        first_name: userInfo.user.name?.split(' ')[0] || '',
+        last_name: userInfo.user.name?.split(' ').slice(1).join(' ') || '',
         phone_number: '254',
         password: '',
         password2: '',
         google_id_token: idToken, // Store for final registration
       })
       router.push('/(auth)/register/otp')
+
     } catch (error: any) {
       if (error.code === statusCodes.SIGN_IN_CANCELLED) {
         // User cancelled the sign-in

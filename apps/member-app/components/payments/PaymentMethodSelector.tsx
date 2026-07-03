@@ -230,9 +230,10 @@ export default function PaymentMethodSelector({
               alignItems: 'center',
             }}
           >
-            <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 13, fontWeight: '700', textTransform: 'uppercase', tracking: 1.5 }}>Cancel Transaction</Text>
+            <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 13, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.5 }}>Cancel Transaction</Text>
           </TouchableOpacity>
         </View>
+
       </ScrollView>
     </DeepSpaceBackground>
   )

@@ -43,7 +43,7 @@ type IdSide = 'front' | 'back'
 
 export default function RegisterKYC() {
   const insets = useSafeAreaInsets()
-  const { step1, otpVerified, setKYCDocumentUris } = useRegistrationStore()
+  const { step1, otpVerified, setKYCDocuments } = useRegistrationStore()
   const [idFront, setIdFront] = useState<PickedDocument | null>(null)
   const [idBack, setIdBack] = useState<PickedDocument | null>(null)
   const [loading, setLoading] = useState(false)
@@ -88,14 +88,15 @@ export default function RegisterKYC() {
   const handleContinue = async () => {
     if (!step1 || !idFront || !idBack) return
     
-    // Store document URIs locally for upload during final registration
-    setKYCDocumentUris({
-      front: idFront.uri,
-      back: idBack.uri,
+    // Store document info locally for upload during final registration
+    setKYCDocuments({
+      front: { uri: idFront.uri, name: idFront.name, type: idFront.type },
+      back: { uri: idBack.uri, name: idBack.name, type: idBack.type },
     })
     
     router.push('/(auth)/register/link-saccos')
   }
+
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: BACKGROUND }} edges={['bottom', 'left', 'right']}>

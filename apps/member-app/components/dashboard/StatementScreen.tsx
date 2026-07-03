@@ -205,27 +205,3 @@ function toIsoDate(date: Date) {
   return `${year}-${month}-${day}`
 }
 
-
-function startOfMonth(date: Date) {
-  return new Date(date.getFullYear(), date.getMonth(), 1)
-}
-
-function addMonths(date: Date, months: number) {
-  return new Date(date.getFullYear(), date.getMonth() + months, 1)
-}
-
-function getMonthRange(date: Date) {
-  const first = new Date(date.getFullYear(), date.getMonth(), 1)
-  const last = new Date(date.getFullYear(), date.getMonth() + 1, 0)
-  return {
-    from: toIsoDate(first),
-    to: toIsoDate(last),
-  }
-}
-
-function toIsoDate(date: Date) {
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
-}

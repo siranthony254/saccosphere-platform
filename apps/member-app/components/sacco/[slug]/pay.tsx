@@ -237,7 +237,7 @@ export default function PayScreen() {
           disabled={!numericAmount}
           onPress={() => setMethodStep('method')}
         >
-          <Text style={{ color: '#fff', fontSize: 14, fontWeight: '800', uppercase: true }}>Continue to Payment →</Text>
+          <Text style={{ color: '#fff', fontSize: 14, fontWeight: '800' }}>CONTINUE TO PAYMENT →</Text>
         </TouchableOpacity>
       </ScrollView>
     </DeepSpaceBackground>
@@ -253,12 +253,3 @@ function BankRow({ label, value }: { label: string; value: string }) {
   )
 }
 
-
-function BankRow({ label, value }: { label: string; value: string }) {
-  return (
-    <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8, borderBottomWidth: 0.5, borderBottomColor: BORDER }}>
-      <Text style={{ color: INK_MUTED, fontSize: 12 }}>{label}</Text>
-      <Text style={{ color: INK, fontSize: 12, fontWeight: '600', flexShrink: 1, textAlign: 'right' }}>{value}</Text>
-    </View>
-  )
-}

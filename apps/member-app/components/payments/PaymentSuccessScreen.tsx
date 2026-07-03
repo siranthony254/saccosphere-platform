@@ -139,7 +139,7 @@ export default function PaymentSuccessScreen({
             marginBottom: 12,
           }}
         >
-          <Text style={{ color: '#fff', fontSize: 14, fontWeight: '800', textTransform: 'uppercase', tracking: 1 }}>Back to Dashboard</Text>
+          <Text style={{ color: '#fff', fontSize: 14, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 1 }}>Back to Dashboard</Text>
         </TouchableOpacity>
 
         {onViewReceipt && (
@@ -147,9 +147,10 @@ export default function PaymentSuccessScreen({
             onPress={onViewReceipt}
             style={{ alignItems: 'center', paddingVertical: 10 }}
           >
-            <Text style={{ color: 'rgba(255,255,255,0.4)', fontSize: 12, fontWeight: '700', textTransform: 'uppercase', tracking: 1.5 }}>View Digital Receipt</Text>
+            <Text style={{ color: 'rgba(255,255,255,0.4)', fontSize: 12, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.5 }}>View Digital Receipt</Text>
           </TouchableOpacity>
         )}
+
       </ScrollView>
     </DeepSpaceBackground>
   )

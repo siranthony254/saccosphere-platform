@@ -51,8 +51,9 @@ export default function LoanStep1() {
       {
         onSuccess: (loan) => {
           setLoanId(loan.id)
-          router.push({ pathname: '/sacco/[slug]/loans/apply/guarantors', params: { slug } })
+          router.push({ pathname: '/sacco/[slug]/loans/apply/external-guarantors', params: { slug } })
         },
+
         onError: (err) => Alert.alert('Error', err.message),
       }
     )

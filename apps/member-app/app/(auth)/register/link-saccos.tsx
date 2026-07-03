@@ -17,6 +17,7 @@ import { useSaccos } from '../../../hooks/useSaccos'
 import { useIsAuthenticated } from '../../../store/useAuthStore'
 import { useLinkMembership } from '../../../hooks/useLinkMembership'
 import { useMemberships } from '../../../hooks/useMembership'
+import { useRegister, useGoogleAuth } from '../../../hooks/useAuth'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 const PADDING_H = Math.max(16, Math.min(24, SCREEN_WIDTH * 0.05))
@@ -45,9 +46,11 @@ export default function LinkSaccos() {
   const [search, setSearch] = useState('')
   const {
     step1,
+    kycDocuments,
     setLinkedSaccos,
     selectedSaccoSlug: selectedSlugFromStore,
     setSelectedSaccoSlug,
+    reset: resetRegistrationStore,
   } = useRegistrationStore()
   const [selected, setSelected] = useState<string[]>(
     selectedSlugFromStore ? [selectedSlugFromStore] : []
@@ -55,9 +58,11 @@ export default function LinkSaccos() {
   const { data: saccos = [], isLoading: saccosLoading } = useSaccos({
     search: search || undefined,
   })
+  const { mutateAsync: register, isPending: isRegistering } = useRegister()
+  const { mutateAsync: googleAuth, isPending: isGooglePending } = useGoogleAuth()
   const { mutate: linkMembership, isPending: isLinkPending } = useLinkMembership()
   const isAuthenticated = useIsAuthenticated()
-  const { data: memberships = [] } = useMemberships()
+  const { data: memberships = [], refetch: refetchMemberships } = useMemberships()
 
   // Merge already-membership data into results for lookup
   const existingSlugs = useMemo(
@@ -79,8 +84,9 @@ export default function LinkSaccos() {
     }
 
     try {
-      const myMemberships = memberships.length > 0 ? memberships : await api.member.getMemberships()
-      const existingMembership = myMemberships.find((m) => m.sacco_slug === slug)
+      const { data: myMemberships } = await refetchMemberships()
+      const list = myMemberships || []
+      const existingMembership = list.find((m) => m.sacco_slug === slug)
       if (existingMembership) {
         setLinkedSaccos([slug])
         router.replace('/(member)')
@@ -92,46 +98,104 @@ export default function LinkSaccos() {
     }
   }
 
-  const handleFinish = () => {
-    if (!step1) return
-    setLinkedSaccos(selected)
-
-    if (!isAuthenticated) {
-      Alert.alert('Session not ready', 'Please sign in, then continue linking your SACCO.')
-      router.replace('/(auth)/login')
+  const handleFinish = async () => {
+    if (!step1) {
+      Alert.alert('Missing information', 'Registration data is missing. Please start again.')
+      router.replace('/(auth)/register')
       return
     }
 
-    if (selected.length > 0 && selected[0]) {
-      // Try linking membership for the selected SACCO
-      linkMembership(
-        { sacco_slug: selected[0], member_number: '' },
-        {
-          onSuccess: () => router.replace('/(member)'),
-          onError: () => routeAfterRegister(),
+    try {
+      // 1. PERFORM REGISTRATION (ONLY AT THIS FINAL STEP)
+      if (!isAuthenticated) {
+        if (step1.google_id_token) {
+          await googleAuth({ id_token: step1.google_id_token, flow: 'signup' })
+        } else {
+          await register(step1)
         }
-      )
+      }
+
+      // 2. UPLOAD KYC DOCUMENTS
+      if (kycDocuments.front && kycDocuments.back) {
+        try {
+          await Promise.all([
+            api.kyc.uploadDocument({
+              document_type: 'id_front',
+              file: { uri: kycDocuments.front.uri, name: kycDocuments.front.name, type: kycDocuments.front.type }
+            }),
+            api.kyc.uploadDocument({
+              document_type: 'id_back',
+              file: { uri: kycDocuments.back.uri, name: kycDocuments.back.name, type: kycDocuments.back.type }
+            }),
+          ])
+        } catch (kycErr) {
+          console.warn('KYC upload failed after registration', kycErr)
+          // We don't block completion if KYC upload fails,
+          // user can re-upload in settings.
+        }
+      }
+
+      // 3. PROCEED TO LINK SACCO OR DASHBOARD
+      setLinkedSaccos(selected)
+
+      if (selected.length > 0 && selected[0]) {
+        linkMembership(
+          { sacco_slug: selected[0], member_number: '' },
+          {
+            onSuccess: () => {
+              resetRegistrationStore()
+              router.replace('/(member)')
+            },
+            onError: () => routeAfterRegister(),
+          }
+        )
+      } else {
+        await routeAfterRegister()
+        resetRegistrationStore()
+      }
+    } catch (err: any) {
+      Alert.alert('Setup failed', err.message || 'Unable to complete account setup.')
+    }
+  }
+
+  const handleContinueWithoutSacco = async () => {
+    if (!step1) {
+      router.replace('/(member)')
       return
     }
 
-    routeAfterRegister()
-  }
+    try {
+      if (!isAuthenticated) {
+        if (step1.google_id_token) {
+          await googleAuth({ id_token: step1.google_id_token, flow: 'signup' })
+        } else {
+          await register(step1)
+        }
+      }
 
-  const handleContinueWithoutSacco = () => {
-    setSelected([])
-    setSelectedSaccoSlug(null)
-    setLinkedSaccos([])
+      // Upload KYC even if skipping SACCO link
+      if (kycDocuments.front && kycDocuments.back) {
+        api.kyc.uploadDocument({
+          document_type: 'id_front',
+          file: { uri: kycDocuments.front.uri, name: kycDocuments.front.name, type: kycDocuments.front.type }
+        }).catch(console.warn)
+        api.kyc.uploadDocument({
+          document_type: 'id_back',
+          file: { uri: kycDocuments.back.uri, name: kycDocuments.back.name, type: kycDocuments.back.type }
+        }).catch(console.warn)
+      }
 
-    if (!isAuthenticated) {
-      Alert.alert('Session not ready', 'Please sign in, then continue.')
-      router.replace('/(auth)/login')
-      return
+      setSelected([])
+      setSelectedSaccoSlug(null)
+      setLinkedSaccos([])
+      resetRegistrationStore()
+      router.replace('/(member)')
+    } catch (err: any) {
+      Alert.alert('Setup failed', err.message || 'Unable to complete account setup.')
     }
-
-    router.replace('/(member)')
   }
 
-  const pending = isLinkPending
+  const pending = isLinkPending || isRegistering || isGooglePending
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: BACKGROUND }} edges={['bottom', 'left', 'right']}>
@@ -145,6 +209,7 @@ export default function LinkSaccos() {
         }}
         keyboardShouldPersistTaps="handled"
       >
+
       {/* Step progress bar */}
       <View className="flex-row gap-1 mb-1.5">
         {[0, 1, 2, 3].map((i) => (

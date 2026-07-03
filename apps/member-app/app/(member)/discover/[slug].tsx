@@ -79,9 +79,10 @@ export default function SaccoProfileScreen() {
         <View className="flex-row gap-2 mx-4 mt-4">
           {[
             { label: 'Members', value: sacco.member_count?.toLocaleString() ?? '—' },
-            { label: 'Rate p.a.', value: sacco.default_interest_rate ? `${sacco.default_interest_rate}%` : '—' },
+            { label: 'Rate p.a.', value: sacco.loan_rate_pct ? `${sacco.loan_rate_pct}%` : '—' },
             { label: 'Loan limit', value: sacco.loan_multiplier ? `${sacco.loan_multiplier}×` : '—' },
           ].map((stat) => (
+
             <View key={stat.label} className="flex-1 bg-white/5 rounded-xl py-3 items-center border border-white/5">
               <Text className="text-white text-sm font-bold">{stat.value}</Text>
               <Text className="text-white/60 text-xs mt-0.5">{stat.label}</Text>
