@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
-import { ActivityIndicator, Alert, Text, TextInput, TouchableOpacity, View } from 'react-native'
+import { ActivityIndicator, Alert, Text, TextInput, TouchableOpacity, View, ScrollView } from 'react-native'
 import { router, useLocalSearchParams } from 'expo-router'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useQuery } from '@tanstack/react-query'
 import { api } from '@saccosphere/api-client'
 import { useLoans } from '../../../hooks/useLoans'
@@ -11,16 +12,13 @@ import { useCurrentUser } from '../../../store/useAuthStore'
 import PaymentMethodSelector from '../../payments/PaymentMethodSelector'
 import PaymentSuccessScreen from '../../payments/PaymentSuccessScreen'
 import PaymentProcessingScreen from '../../payments/PaymentProcessingScreen'
+import { DeepSpaceBackground } from '../../DeepSpaceBackground'
 
 const VIOLET = '#6D28D9'
-const SURFACE = '#FFFFFF'
-const SURFACE2 = '#F8FAFC'
-const INK = '#111827'
-const INK_MUTED = '#6B7280'
-const BORDER = 'rgba(0,0,0,0.07)'
 
 export default function PayScreen() {
   const { slug, type, loanId, step } = useLocalSearchParams<{ slug: string; type?: string; loanId?: string; step?: string }>()
+  const insets = useSafeAreaInsets()
   const isRepayment = type === 'repayment'
   const { data: membership, isLoading: membershipLoading } = useMembershipBySacco(slug)
   const { data: config } = useSaccoConfig(slug)
@@ -29,8 +27,8 @@ export default function PayScreen() {
     queryKey: ['savings', slug, membership?.sacco_id],
     queryFn: () => api.savings.list({ sacco: membership?.sacco_id ?? slug, status: 'active' }),
     enabled: Boolean(membership?.sacco_id || slug),
-    staleTime: 60_000, // 1 minute
-    gcTime: 300_000, // Keep in cache for 5 minutes
+    staleTime: 60_000,
+    gcTime: 300_000,
   })
   const { mutate: initiatePayment, isPending } = useInitiatePayment()
   const user = useCurrentUser()
@@ -46,7 +44,7 @@ export default function PayScreen() {
   const [checkoutRequestId, setCheckoutRequestId] = useState<string | null>(null)
 
   const numericAmount = Number(String(amount || defaultAmount || 0).replace(/[^0-9.]/g, ''))
-  const platformFee = Math.round(numericAmount * 0.02) // 2% platform fee from backend
+  const platformFee = Math.round(numericAmount * 0.02)
   const saccoName = membership?.sacco_name ?? selectedLoan?.sacco_name ?? slug
   const phoneNumber = user?.phone_number ?? user?.phone ?? ''
   const primarySaving = savingsQuery.data?.[0]
@@ -76,13 +74,6 @@ export default function PayScreen() {
       Alert.alert('Enter amount', 'The amount must be at least KES 10.')
       return
     }
-    if (isRepayment && !selectedLoan?.id) {
-      router.replace('/(member)/loan-repayment')
-      return
-    }
-    if (!isRepayment && !primarySaving?.id) {
-      console.warn('No active savings account found, proceeding without saving_id')
-    }
     setMethodStep('processing')
   }
 
@@ -111,7 +102,7 @@ export default function PayScreen() {
     )
   }
 
-  const handlePaymentComplete = (success: boolean, transactionId?: string) => {
+  const handlePaymentComplete = (success: boolean) => {
     if (success) {
       setMethodStep('success')
     } else {
@@ -128,10 +119,12 @@ export default function PayScreen() {
 
   if (membershipLoading) {
     return (
-      <View style={{ flex: 1, backgroundColor: SURFACE, alignItems: 'center', justifyContent: 'center' }}>
-        <ActivityIndicator color={VIOLET} />
-        <Text style={{ color: INK_MUTED, fontSize: 12, marginTop: 10 }}>Loading payment details...</Text>
-      </View>
+      <DeepSpaceBackground>
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+          <ActivityIndicator color={VIOLET} />
+          <Text style={{ color: 'rgba(255,255,255,0.4)', fontSize: 12, marginTop: 10 }}>Loading payment details...</Text>
+        </View>
+      </DeepSpaceBackground>
     )
   }
 
@@ -184,52 +177,82 @@ export default function PayScreen() {
 
   if (methodStep === 'bank') {
     return (
-      <View style={{ flex: 1, backgroundColor: SURFACE2, padding: 18 }}>
-        <Text style={{ color: INK, fontSize: 20, fontWeight: '700', marginBottom: 6 }}>Bank transfer</Text>
-        <Text style={{ color: INK_MUTED, fontSize: 12, lineHeight: 18, marginBottom: 16 }}>
-          Use your SACCO bank instructions to complete this payment. The app will reflect the payment after the SACCO posts it.
-        </Text>
-        <View style={{ backgroundColor: SURFACE, borderRadius: 14, borderWidth: 1, borderColor: BORDER, padding: 14, marginBottom: 16 }}>
-          <BankRow label="SACCO" value={saccoName} />
-          <BankRow label="Payment type" value={isRepayment ? 'Loan repayment' : 'Contribution'} />
-          <BankRow label="Amount" value={`KES ${numericAmount.toLocaleString()}`} />
-          {isRepayment && selectedLoan ? <BankRow label="Loan" value={selectedLoan.ref} /> : null}
+      <DeepSpaceBackground>
+        <View style={{ flex: 1, padding: 20, paddingTop: insets.top }}>
+          <Text style={{ color: '#fff', fontSize: 22, fontWeight: '700', marginBottom: 6 }}>Bank transfer</Text>
+          <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 13, lineHeight: 20, marginBottom: 24 }}>
+            Use your SACCO bank instructions to complete this payment. The app will reflect the payment after the SACCO posts it.
+          </Text>
+          <View style={{ backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', padding: 16, marginBottom: 24 }}>
+            <BankRow label="SACCO" value={saccoName} />
+            <BankRow label="Payment type" value={isRepayment ? 'Loan repayment' : 'Contribution'} />
+            <BankRow label="Amount" value={`KES ${numericAmount.toLocaleString()}`} />
+            {isRepayment && selectedLoan ? <BankRow label="Loan Reference" value={selectedLoan.ref} /> : null}
+          </View>
+          <TouchableOpacity
+            style={{ backgroundColor: VIOLET, borderRadius: 16, paddingVertical: 14, alignItems: 'center' }}
+            onPress={() => setMethodStep('method')}
+          >
+            <Text style={{ color: '#fff', fontSize: 14, fontWeight: '700' }}>Back to methods</Text>
+          </TouchableOpacity>
         </View>
-        <TouchableOpacity style={{ backgroundColor: VIOLET, borderRadius: 12, paddingVertical: 13, alignItems: 'center' }} onPress={() => setMethodStep('method')}>
-          <Text style={{ color: '#fff', fontSize: 13, fontWeight: '600' }}>Choose another method</Text>
-        </TouchableOpacity>
-      </View>
+      </DeepSpaceBackground>
     )
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: SURFACE, padding: 20 }}>
-      <Text style={{ color: INK, fontSize: 20, fontWeight: '700', marginBottom: 4 }}>{title}</Text>
-      <Text style={{ color: INK_MUTED, fontSize: 12, marginBottom: 24 }}>{subtitle}</Text>
-      <Text style={{ color: INK_MUTED, fontSize: 12, fontWeight: '600', marginBottom: 8 }}>Amount (KES)</Text>
-      <TextInput
-        style={{ color: INK, fontSize: 36, fontWeight: '700', borderBottomWidth: 2, borderBottomColor: VIOLET, paddingBottom: 8, marginBottom: 18 }}
-        value={amount}
-        onChangeText={setAmount}
-        placeholder={defaultAmount ? String(Math.round(defaultAmount)) : '0'}
-        placeholderTextColor="#9CA3AF"
-        keyboardType="number-pad"
-      />
-      <View style={{ backgroundColor: SURFACE2, borderRadius: 14, padding: 14, marginBottom: 20 }}>
-        <BankRow label="SACCO" value={saccoName} />
-        <BankRow label="Payment type" value={isRepayment ? 'Loan repayment' : 'Contribution'} />
-        <BankRow label="Accepted methods" value={acceptedMethods.map(m => m === 'mpesa' ? 'M-Pesa' : m === 'bank_transfer' ? 'Bank' : m).join(', ')} />
-      </View>
-      <TouchableOpacity
-        style={{ backgroundColor: VIOLET, borderRadius: 12, paddingVertical: 14, alignItems: 'center', opacity: numericAmount ? 1 : 0.5 }}
-        disabled={!numericAmount}
-        onPress={() => setMethodStep('method')}
+    <DeepSpaceBackground>
+      <ScrollView
+        className="flex-1"
+        contentContainerStyle={{ padding: 20, paddingTop: insets.top, paddingBottom: insets.bottom + 40 }}
       >
-        <Text style={{ color: '#fff', fontSize: 13, fontWeight: '700' }}>Continue</Text>
-      </TouchableOpacity>
+        <View className="flex-row items-center mb-6">
+          <TouchableOpacity onPress={() => router.back()} className="mr-3">
+            <Text className="text-white/60 text-lg">←</Text>
+          </TouchableOpacity>
+          <View>
+            <Text className="text-white text-xl font-bold">{title}</Text>
+            <Text className="text-white/40 text-[10px] font-bold uppercase tracking-wider">{subtitle}</Text>
+          </View>
+        </View>
+
+        <Text className="text-white/60 text-[10px] font-bold uppercase mb-3 ml-1">Enter Amount (KES)</Text>
+        <TextInput
+          style={{ color: '#fff', fontSize: 42, fontWeight: '800', borderBottomWidth: 2, borderBottomColor: VIOLET, paddingBottom: 12, marginBottom: 32 }}
+          value={amount}
+          onChangeText={setAmount}
+          placeholder={defaultAmount ? String(Math.round(defaultAmount)) : '0'}
+          placeholderTextColor="rgba(255,255,255,0.2)"
+          keyboardType="number-pad"
+        />
+
+        <View style={{ backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 20, padding: 16, marginBottom: 32, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
+          <BankRow label="SACCO" value={saccoName} />
+          <BankRow label="Purpose" value={isRepayment ? 'Loan Repayment' : 'Saving Contribution'} />
+          <BankRow label="Accepted Methods" value={acceptedMethods.map(m => m === 'mpesa' ? 'M-Pesa' : m === 'bank_transfer' ? 'Bank' : m).join(', ')} />
+        </View>
+
+        <TouchableOpacity
+          style={{ backgroundColor: VIOLET, borderRadius: 16, paddingVertical: 16, alignItems: 'center', opacity: numericAmount ? 1 : 0.5 }}
+          disabled={!numericAmount}
+          onPress={() => setMethodStep('method')}
+        >
+          <Text style={{ color: '#fff', fontSize: 14, fontWeight: '800', uppercase: true }}>Continue to Payment →</Text>
+        </TouchableOpacity>
+      </ScrollView>
+    </DeepSpaceBackground>
+  )
+}
+
+function BankRow({ label, value }: { label: string; value: string }) {
+  return (
+    <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.05)' }}>
+      <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12 }}>{label}</Text>
+      <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700', flexShrink: 1, textAlign: 'right' }}>{value}</Text>
     </View>
   )
 }
+
 
 function BankRow({ label, value }: { label: string; value: string }) {
   return (

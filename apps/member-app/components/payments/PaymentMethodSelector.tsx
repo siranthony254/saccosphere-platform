@@ -1,15 +1,9 @@
-import { View, Text, TouchableOpacity } from 'react-native'
+import { View, Text, TouchableOpacity, ScrollView } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { DeepSpaceBackground } from '../DeepSpaceBackground'
 
 const BRAND_VIOLET = '#6D28D9'
 const BRAND_MINT = '#10B981'
-const SURFACE = '#FFFFFF'
-const SURFACE2 = '#F8FAFC'
-const SURFACE3 = '#F1F5F9'
-const INK = '#111827'
-const INK_SOFT = '#374151'
-const INK_MUTED = '#6B7280'
-const INK_FAINT = '#9CA3AF'
-const BORDER = 'rgba(0,0,0,0.07)'
 
 interface PaymentMethodSelectorProps {
   title: string
@@ -38,230 +32,209 @@ export default function PaymentMethodSelector({
   onSelectBank,
   onCancel,
 }: PaymentMethodSelectorProps) {
+  const insets = useSafeAreaInsets()
+
   return (
-    <View style={{ flex: 1, backgroundColor: SURFACE2 }}>
-      {/* Header */}
-      <View
-        style={{
-          paddingHorizontal: 20,
-          paddingTop: 20,
-          paddingBottom: 16,
-          backgroundColor: SURFACE,
-          borderBottomWidth: 0.5,
-          borderBottomColor: BORDER,
+    <DeepSpaceBackground>
+      <ScrollView
+        contentContainerStyle={{
+          flexGrow: 1,
+          paddingTop: insets.top,
+          paddingBottom: insets.bottom + 20,
         }}
       >
-        <View
-          style={{
-            width: 40,
-            height: 40,
-            borderRadius: 12,
-            backgroundColor: 'rgba(109, 40, 217, 0.1)',
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginBottom: 10,
-          }}
-        >
-          <Text style={{ fontSize: 18 }}>{title.includes('Contribute') ? '💰' : title.includes('Loan') ? '📋' : '💳'}</Text>
+        {/* Header Section */}
+        <View style={{ paddingHorizontal: 20, paddingTop: 24, paddingBottom: 20 }}>
+          <View
+            style={{
+              width: 52,
+              height: 52,
+              borderRadius: 16,
+              backgroundColor: 'rgba(109, 40, 217, 0.15)',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: 16,
+              borderWidth: 1,
+              borderColor: 'rgba(109, 40, 217, 0.2)',
+            }}
+          >
+            <Text style={{ fontSize: 24 }}>{title.includes('Contribute') ? '💰' : title.includes('Loan') ? '📋' : '💳'}</Text>
+          </View>
+          <Text style={{ fontSize: 24, fontWeight: '800', color: '#fff' }}>{title}</Text>
+          <Text style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', marginTop: 6, lineHeight: 20 }}>
+            {subtitle}
+          </Text>
         </View>
-        <Text style={{ fontSize: 17, fontWeight: '700', color: INK }}>{title}</Text>
-        <Text style={{ fontSize: 12, color: INK_MUTED, marginTop: 4, lineHeight: 18 }}>
-          {subtitle}
-        </Text>
-      </View>
 
-      {/* SACCO context */}
-      <View style={{ paddingHorizontal: 16, paddingTop: 16 }}>
-        <View
-          style={{
-            backgroundColor: SURFACE,
-            borderWidth: 1,
-            borderColor: BORDER,
-            borderRadius: 14,
-            padding: 14,
-            marginBottom: 16,
-          }}
-        >
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+        {/* Amount Summary Card */}
+        <View style={{ paddingHorizontal: 20 }}>
+          <View
+            style={{
+              backgroundColor: 'rgba(255,255,255,0.05)',
+              borderWidth: 1,
+              borderColor: 'rgba(255,255,255,0.1)',
+              borderRadius: 20,
+              padding: 16,
+              marginBottom: 24,
+            }}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+              <View
+                style={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: 12,
+                  backgroundColor: BRAND_VIOLET,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Text style={{ color: '#fff', fontSize: 14, fontWeight: '800' }}>
+                  {saccoName.slice(0, 2).toUpperCase()}
+                </Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 14, fontWeight: '700', color: '#fff' }}>{saccoName}</Text>
+                <Text style={{ fontSize: 12, color: BRAND_MINT, fontWeight: '700', marginTop: 2 }}>
+                  {amount ? `KES ${Number(amount).toLocaleString()}` : '—'}
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          <Text
+            style={{
+              fontSize: 10,
+              fontWeight: '800',
+              letterSpacing: 1.2,
+              color: 'rgba(255,255,255,0.3)',
+              marginBottom: 16,
+              marginLeft: 4,
+              textTransform: 'uppercase',
+            }}
+          >
+            Select Payment Method
+          </Text>
+
+          {/* M-Pesa Option */}
+          <TouchableOpacity
+            onPress={onSelectMpesa}
+            disabled={mpesaDisabled}
+            activeOpacity={0.7}
+            style={{
+              backgroundColor: 'rgba(255,255,255,0.05)',
+              borderWidth: 1,
+              borderColor: mpesaDisabled ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.1)',
+              borderRadius: 20,
+              padding: 20,
+              marginBottom: 12,
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 16,
+              opacity: mpesaDisabled ? 0.4 : 1,
+            }}
+          >
             <View
               style={{
-                width: 38,
-                height: 38,
-                borderRadius: 10,
-                backgroundColor: BRAND_VIOLET,
+                width: 52,
+                height: 52,
+                borderRadius: 14,
+                backgroundColor: '#00a550',
                 alignItems: 'center',
                 justifyContent: 'center',
               }}
             >
-              <Text style={{ color: '#fff', fontSize: 13, fontWeight: '700' }}>
-                {saccoName.slice(0, 2).toUpperCase()}
-              </Text>
+              <Text style={{ color: '#fff', fontSize: 24, fontWeight: '900' }}>M</Text>
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 13, fontWeight: '600', color: INK }}>{saccoName}</Text>
-              <Text style={{ fontSize: 10, color: INK_FAINT }}>
-                {amount ? `Amount: KES ${Number(amount).toLocaleString()}` : 'Select an amount to continue'}
+              <Text style={{ fontSize: 15, fontWeight: '700', color: '#fff' }}>M-Pesa</Text>
+              <Text style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginTop: 4 }}>
+                Instant STK Push
               </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8 }}>
+                <View style={{ backgroundColor: 'rgba(16, 185, 129, 0.2)', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 }}>
+                  <Text style={{ fontSize: 9, color: BRAND_MINT, fontWeight: '800', textTransform: 'uppercase' }}>
+                    {mpesaDisabled ? 'Unavailable' : 'Instant'}
+                  </Text>
+                </View>
+                {!mpesaDisabled && mpesaFee > 0 && (
+                  <Text style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', fontWeight: '500' }}>+ KES {mpesaFee} fee</Text>
+                )}
+              </View>
             </View>
-          </View>
+            <Text style={{ color: 'rgba(255,255,255,0.2)', fontSize: 20 }}>›</Text>
+          </TouchableOpacity>
+
+          {/* Bank Option */}
+          <TouchableOpacity
+            onPress={onSelectBank}
+            disabled={bankDisabled}
+            activeOpacity={0.7}
+            style={{
+              backgroundColor: 'rgba(255,255,255,0.05)',
+              borderWidth: 1,
+              borderColor: bankDisabled ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.1)',
+              borderRadius: 20,
+              padding: 20,
+              marginBottom: 20,
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 16,
+              opacity: bankDisabled ? 0.4 : 1,
+            }}
+          >
+            <View
+              style={{
+                width: 52,
+                height: 52,
+                borderRadius: 14,
+                backgroundColor: 'rgba(59, 130, 246, 0.15)',
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderWidth: 1,
+                borderColor: 'rgba(59, 130, 246, 0.2)',
+              }}
+            >
+              <Text style={{ fontSize: 24 }}>🏦</Text>
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 15, fontWeight: '700', color: '#fff' }}>Bank Transfer</Text>
+              <Text style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginTop: 4 }}>
+                Direct bank deposit
+              </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8 }}>
+                <View style={{ backgroundColor: 'rgba(245, 158, 11, 0.2)', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 }}>
+                  <Text style={{ fontSize: 9, color: '#fbbf24', fontWeight: '800', textTransform: 'uppercase' }}>
+                    {bankDisabled ? 'Unavailable' : '1-2 Days'}
+                  </Text>
+                </View>
+                {!bankDisabled && (
+                  <Text style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', fontWeight: '500' }}>
+                    {bankFee > 0 ? `+ KES ${bankFee} fee` : 'Zero fee'}
+                  </Text>
+                )}
+              </View>
+            </View>
+            <Text style={{ color: 'rgba(255,255,255,0.2)', fontSize: 20 }}>›</Text>
+          </TouchableOpacity>
         </View>
 
-        <Text
-          style={{
-            fontSize: 10,
-            fontWeight: '600',
-            letterSpacing: 0.6,
-            color: INK_FAINT,
-            marginBottom: 12,
-            textTransform: 'uppercase',
-          }}
-        >
-          Choose payment method
-        </Text>
-
-        {/* M-Pesa option */}
-        <TouchableOpacity
-          onPress={onSelectMpesa}
-          disabled={mpesaDisabled}
-          activeOpacity={0.7}
-          style={{
-            backgroundColor: SURFACE,
-            borderWidth: 1.5,
-            borderColor: BORDER,
-            borderRadius: 16,
-            padding: 18,
-            marginBottom: 10,
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: 14,
-            opacity: mpesaDisabled ? 0.55 : 1,
-          }}
-        >
-          <View
+        {/* Footer / Cancel */}
+        <View style={{ paddingHorizontal: 20, marginTop: 'auto', paddingBottom: 24 }}>
+          <TouchableOpacity
+            onPress={onCancel}
             style={{
-              width: 48,
-              height: 48,
-              borderRadius: 14,
-              backgroundColor: '#00a550',
+              backgroundColor: 'rgba(255,255,255,0.08)',
+              borderRadius: 16,
+              paddingVertical: 14,
               alignItems: 'center',
-              justifyContent: 'center',
             }}
           >
-            <Text style={{ color: '#fff', fontSize: 20, fontWeight: '700' }}>M</Text>
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={{ fontSize: 14, fontWeight: '600', color: INK }}>M-Pesa</Text>
-            <Text style={{ fontSize: 11, color: INK_MUTED, marginTop: 2 }}>
-              Pay instantly via M-Pesa STK Push
-            </Text>
-            <View
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                gap: 4,
-                marginTop: 4,
-              }}
-            >
-              <View
-                style={{
-                  backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                  paddingHorizontal: 6,
-                  paddingVertical: 1,
-                  borderRadius: 4,
-                }}
-              >
-                <Text style={{ fontSize: 9, color: BRAND_MINT, fontWeight: '600' }}>
-                  {mpesaDisabled ? 'Unavailable' : 'Instant'}
-                </Text>
-              </View>
-              {!mpesaDisabled && mpesaFee > 0 ? (
-                <Text style={{ fontSize: 9, color: INK_FAINT }}>+ KES {mpesaFee} fee</Text>
-              ) : null}
-            </View>
-          </View>
-          <Text style={{ color: INK_FAINT, fontSize: 18 }}>{'>'}</Text>
-        </TouchableOpacity>
-
-        {/* Bank option */}
-        <TouchableOpacity
-          onPress={onSelectBank}
-          disabled={bankDisabled}
-          activeOpacity={0.7}
-          style={{
-            backgroundColor: SURFACE,
-            borderWidth: 1.5,
-            borderColor: BORDER,
-            borderRadius: 16,
-            padding: 18,
-            marginBottom: 10,
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: 14,
-            opacity: bankDisabled ? 0.55 : 1,
-          }}
-        >
-          <View
-            style={{
-              width: 48,
-              height: 48,
-              borderRadius: 14,
-              backgroundColor: 'rgba(37, 99, 235, 0.1)',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <Text style={{ fontSize: 20 }}>🏦</Text>
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={{ fontSize: 14, fontWeight: '600', color: INK }}>Bank transfer</Text>
-            <Text style={{ fontSize: 11, color: INK_MUTED, marginTop: 2 }}>
-              Transfer from your bank account
-            </Text>
-            <View
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                gap: 4,
-                marginTop: 4,
-              }}
-            >
-              <View
-                style={{
-                  backgroundColor: 'rgba(245, 158, 11, 0.1)',
-                  paddingHorizontal: 6,
-                  paddingVertical: 1,
-                  borderRadius: 4,
-                }}
-              >
-                <Text style={{ fontSize: 9, color: '#D97706', fontWeight: '600' }}>
-                  {bankDisabled ? 'Unavailable' : '1-3 days'}
-                </Text>
-              </View>
-              {!bankDisabled ? (
-                <Text style={{ fontSize: 9, color: INK_FAINT }}>
-                  {bankFee > 0 ? `+ KES ${bankFee} fee` : 'No additional fee'}
-                </Text>
-              ) : null}
-            </View>
-          </View>
-          <Text style={{ color: INK_FAINT, fontSize: 18 }}>{'>'}</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Cancel */}
-      <View style={{ paddingHorizontal: 16, marginTop: 'auto', paddingBottom: 24 }}>
-        <TouchableOpacity
-          onPress={onCancel}
-          style={{
-            backgroundColor: SURFACE3,
-            borderRadius: 12,
-            paddingVertical: 12,
-            alignItems: 'center',
-          }}
-        >
-          <Text style={{ color: INK_SOFT, fontSize: 12, fontWeight: '600' }}>Cancel</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
+            <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 13, fontWeight: '700', textTransform: 'uppercase', tracking: 1.5 }}>Cancel Transaction</Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    </DeepSpaceBackground>
   )
 }
+

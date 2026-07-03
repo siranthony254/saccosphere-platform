@@ -20,6 +20,10 @@ import {
   statusCodes,
   isGoogleSignInAvailable,
 } from '../../lib/googleAuth'
+import * as SecureStore from 'expo-secure-store'
+import * as LocalAuthentication from 'expo-local-authentication'
+import { api, setAccessToken } from '@saccosphere/api-client'
+import { useAuthStore } from '../../store/useAuthStore'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 const PADDING_H = Math.max(16, Math.min(24, SCREEN_WIDTH * 0.05))
@@ -57,6 +61,11 @@ export default function LoginScreen() {
   const { mutate: login, isPending } = useLogin()
   const { mutate: googleAuth, isPending: isGooglePending } = useGoogleAuth()
   const [showPassword, setShowPassword] = useState(false)
+  const { setAuth } = useAuthStore()
+
+  const [biometricAvailable, setBiometricAvailable] = useState(false)
+  const [biometricToken, setBiometricToken] = useState<string | null>(null)
+  const [isBiometricPending, setIsBiometricPending] = useState(false)
 
   const { control, handleSubmit, formState: { errors } } = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
@@ -64,12 +73,56 @@ export default function LoginScreen() {
   })
 
   useEffect(() => {
+    checkBiometrics()
     if (!isGoogleSignInAvailable() || !GoogleSignin) return
     GoogleSignin.configure({
       webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || '',
       offlineAccess: true,
     })
   }, [])
+
+  const checkBiometrics = async () => {
+    try {
+      const compatible = await LocalAuthentication.hasHardwareAsync()
+      const enrolled = await LocalAuthentication.isEnrolledAsync()
+      if (compatible && enrolled) {
+        const stored = await SecureStore.getItemAsync('saccosphere_biometric_refresh_token')
+        if (stored) {
+          setBiometricToken(stored)
+          setBiometricAvailable(true)
+        }
+      }
+    } catch (e) {
+      console.warn('Biometric check failed', e)
+    }
+  }
+
+  const handleBiometricLogin = async () => {
+    if (!biometricToken) return
+    try {
+      const result = await LocalAuthentication.authenticateAsync({
+        promptMessage: 'Log in to Saccosphere',
+      })
+      if (result.success) {
+        setIsBiometricPending(true)
+        try {
+          const res = await api.auth.refresh(biometricToken)
+          setAccessToken(res.access)
+          const user = await api.member.getProfile()
+          setAuth({ token: res.access, user })
+          router.replace('/(member)')
+        } catch (e) {
+          Alert.alert('Error', 'Session expired. Please log in with password.')
+          SecureStore.deleteItemAsync('saccosphere_biometric_refresh_token')
+          setBiometricAvailable(false)
+        } finally {
+          setIsBiometricPending(false)
+        }
+      }
+    } catch (e) {
+      console.error(e)
+    }
+  }
 
   const handleGoogleSignIn = async () => {
     if (!isGoogleSignInAvailable() || !GoogleSignin) {
@@ -249,21 +302,37 @@ export default function LoginScreen() {
       {errors.password && <Text className="text-red-500 text-xs mb-1">{errors.password.message}</Text>}
 
       {/* Submit */}
-      <TouchableOpacity
-        className="rounded-xl py-3.5 px-4 items-center mt-3 mb-4"
-        style={{ backgroundColor: VIOLET, opacity: isPending ? 0.6 : 1 }}
-        onPress={onSubmit}
-        disabled={isPending}
-      >
-        {isPending ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <Text className="text-white text-xs font-semibold">Sign in</Text>
-        )}
-      </TouchableOpacity>
+          <TouchableOpacity 
+            className={`bg-violet-500 rounded-xl p-3.5 items-center mt-2 ${isPending || isBiometricPending ? 'opacity-80' : ''}`}
+            onPress={onSubmit}
+            disabled={isPending || isBiometricPending}
+          >
+            {isPending ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text className="text-white text-sm font-semibold">Sign in</Text>
+            )}
+          </TouchableOpacity>
+
+          {biometricAvailable && (
+            <TouchableOpacity 
+              className={`bg-mint-600 rounded-xl p-3.5 items-center mt-4 flex-row justify-center gap-2 ${isPending || isBiometricPending ? 'opacity-80' : ''}`}
+              onPress={handleBiometricLogin}
+              disabled={isPending || isBiometricPending}
+            >
+              {isBiometricPending ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <>
+                  <Text style={{ fontSize: 18 }}>🔐</Text>
+                  <Text className="text-white text-sm font-semibold">Log in with Biometrics</Text>
+                </>
+              )}
+            </TouchableOpacity>
+          )}
 
       {/* Create account prompt */}
-      <View className="flex-row justify-center">
+      <View className="flex-row justify-center mt-6">
         <Text className="text-xs" style={{ color: TEXT_MUTED }}>
           No account?{' '}
         </Text>

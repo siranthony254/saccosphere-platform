@@ -6,8 +6,9 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useState, useEffect } from 'react'
 import { useRegistrationStore } from '../../../store/useRegistrationStore'
-import { useRegister, useGoogleAuth } from '../../../hooks/useAuth'
+
 import type { ApiError } from '@saccosphere/api-client'
+
 import {
   GoogleSignin,
   statusCodes,
@@ -53,21 +54,22 @@ const BORDER_MID = 'rgba(0,0,0,0.13)'
 
 export default function RegisterStep1() {
   const insets = useSafeAreaInsets()
-  const { step1, setStep1, setOtpVerified } = useRegistrationStore()
-  const { mutate: register, isPending: isRegistering } = useRegister()
-  const { mutate: googleAuth, isPending: isGooglePending } = useGoogleAuth()
+  const { setStep1 } = useRegistrationStore()
+
   const [registrationError, setRegistrationError] = useState<string | null>(null)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
   const { control, handleSubmit, formState: { errors }, watch } = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: step1 ?? { email: '', first_name: '', last_name: '', phone_number: '254', password: '', password2: '' },
+    defaultValues: { email: '', first_name: '', last_name: '', phone_number: '254', password: '', password2: '' },
   })
+
 
   const password = watch('password')
 
   useEffect(() => {
+
     if (!isGoogleSignInAvailable() || !GoogleSignin) return
     GoogleSignin.configure({
       webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || '',
@@ -94,31 +96,18 @@ export default function RegisterStep1() {
         return
       }
 
-      googleAuth(
-        { id_token: idToken, flow: 'signup' },
-        {
-          onSuccess: (data) => {
-            // If user already exists, backend returns is_existing_user: true
-            if (data.is_existing_user) {
-              Alert.alert('Account exists', 'An account with this Google account already exists. You have been logged in.')
-              router.replace('/(member)')
-            } else {
-              // New user created, proceed to registration flow
-              setStep1({
-                email: data.user.email,
-                first_name: data.user.first_name,
-                last_name: data.user.last_name,
-                phone_number: '254',
-                password: '',
-                password2: '',
-              })
-              setOtpVerified(false)
-              router.push('/(auth)/register/otp')
-            }
-          },
-          onError: (err) => Alert.alert('Google sign-up failed', err.message),
-        }
-      )
+      // Store Google data locally without backend registration
+      // User will be registered in the final step
+      setStep1({
+        email: userInfo.user.email,
+        first_name: userInfo.user.givenName || '',
+        last_name: userInfo.user.familyName || '',
+        phone_number: '254',
+        password: '',
+        password2: '',
+        google_id_token: idToken, // Store for final registration
+      })
+      router.push('/(auth)/register/otp')
     } catch (error: any) {
       if (error.code === statusCodes.SIGN_IN_CANCELLED) {
         // User cancelled the sign-in
@@ -149,20 +138,13 @@ export default function RegisterStep1() {
   const strengthLabels = ['Weak', 'Fair', 'Good', 'Strong', 'Very Strong']
 
   const onNext = handleSubmit((data) => {
+    // Do not create a backend user yet.
+    // We only persist the signup data locally and proceed to OTP verification.
     setStep1(data)
     setRegistrationError(null)
-    register(data, {
-      onSuccess: () => {
-        setOtpVerified(false)
-        router.push('/(auth)/register/otp')
-      },
-      onError: (error) => {
-        const message = getRegistrationErrorMessage(error)
-        setRegistrationError(message)
-        Alert.alert('Registration failed', message)
-      },
-    })
+    router.push('/(auth)/register/otp')
   })
+
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: BACKGROUND }} edges={['bottom', 'left', 'right']}>
@@ -206,17 +188,13 @@ export default function RegisterStep1() {
         className="w-full flex-row items-center justify-center gap-2 py-2.5 rounded-xl mb-2"
         style={{ borderWidth: 1, borderColor: BORDER_WHITE, backgroundColor: FROSTED_DARK }}
         onPress={handleGoogleSignUp}
-        disabled={isGooglePending}
       >
-        {isGooglePending ? (
-          <ActivityIndicator size="small" color={TEXT} />
-        ) : (
-          <View className="w-4 h-4 rounded-full" style={{ backgroundColor: '#4285F4' }} />
-        )}
+        <View className="w-4 h-4 rounded-full" style={{ backgroundColor: '#4285F4' }} />
         <Text className="text-xs font-medium" style={{ color: TEXT }}>
-          {isGooglePending ? 'Signing up...' : 'Sign up with Google'}
+          Sign up with Google
         </Text>
       </TouchableOpacity>
+
 
       {/* Divider */}
       <View className="flex-row items-center gap-3 mb-4">
@@ -431,16 +409,12 @@ export default function RegisterStep1() {
       {/* Submit */}
       <TouchableOpacity
         className="rounded-xl py-3.5 items-center"
-        style={{ backgroundColor: VIOLET, opacity: isRegistering ? 0.5 : 1 }}
+        style={{ backgroundColor: VIOLET, opacity: 1 }}
         onPress={onNext}
-        disabled={isRegistering}
       >
-        {isRegistering ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <Text className="text-white text-xs font-semibold">Continue →</Text>
-        )}
+        <Text className="text-white text-xs font-semibold">Continue →</Text>
       </TouchableOpacity>
+
     </ScrollView>
     </SafeAreaView>
   )

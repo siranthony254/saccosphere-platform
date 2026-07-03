@@ -3,11 +3,10 @@ import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Dimensions
 import { router } from 'expo-router'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import * as ImagePicker from 'expo-image-picker'
-import { api } from '@saccosphere/api-client'
 import { useRegistrationStore } from '../../../store/useRegistrationStore'
-import { useIsAuthenticated } from '../../../store/useAuthStore'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
+
 const PADDING_H = Math.max(16, Math.min(24, SCREEN_WIDTH * 0.05))
 
 const BACKGROUND = '#06091A'
@@ -44,15 +43,14 @@ type IdSide = 'front' | 'back'
 
 export default function RegisterKYC() {
   const insets = useSafeAreaInsets()
-  const { step1, otpVerified, addKYCDocument } = useRegistrationStore()
-  const isAuthenticated = useIsAuthenticated()
+  const { step1, otpVerified, setKYCDocumentUris } = useRegistrationStore()
   const [idFront, setIdFront] = useState<PickedDocument | null>(null)
   const [idBack, setIdBack] = useState<PickedDocument | null>(null)
   const [loading, setLoading] = useState(false)
 
   const canContinue = idFront && idBack
 
-  if (!step1 || !isAuthenticated || !otpVerified) {
+  if (!step1 || !otpVerified) {
     if (!step1) router.replace('/(auth)/register')
     else router.replace('/(auth)/register/otp')
     return null
@@ -87,28 +85,16 @@ export default function RegisterKYC() {
     else setIdBack(document)
   }
 
-  const uploadPickedDocument = async (document_type: 'id_front' | 'id_back', document: PickedDocument) => {
-    const uploaded = await api.kyc.uploadDocument({
-      document_type,
-      file: document as unknown as Blob,
-    })
-    if (uploaded?.id) addKYCDocument(uploaded.id)
-  }
-
   const handleContinue = async () => {
     if (!step1 || !idFront || !idBack) return
-    if (!isAuthenticated) {
-      router.replace('/(auth)/register/otp')
-      return
-    }
-    setLoading(true)
-    try {
-      await uploadPickedDocument('id_front', idFront)
-      await uploadPickedDocument('id_back', idBack)
-      router.push('/(auth)/register/link-saccos')
-    } finally {
-      setLoading(false)
-    }
+    
+    // Store document URIs locally for upload during final registration
+    setKYCDocumentUris({
+      front: idFront.uri,
+      back: idBack.uri,
+    })
+    
+    router.push('/(auth)/register/link-saccos')
   }
 
   return (

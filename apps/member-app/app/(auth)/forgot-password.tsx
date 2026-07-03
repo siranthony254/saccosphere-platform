@@ -26,6 +26,9 @@ export default function ForgotPassword() {
     try {
       await api.auth.requestPasswordReset(value)
       setSent(true)
+      setTimeout(() => {
+        router.push({ pathname: '/(auth)/reset-password', params: { identifier: value } })
+      }, 2000)
     } finally {
       setLoading(false)
     }
@@ -57,7 +60,7 @@ export default function ForgotPassword() {
       {sent && (
         <View style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)', borderRadius: 12, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: MINT }}>
           <Text style={{ color: MINT, fontSize: 12, fontWeight: '600', marginBottom: 6 }}>📧  Check your inbox</Text>
-          <Text style={{ color: TEXT_MUTED, fontSize: 12, lineHeight: 18 }}>A reset link was sent to {value}. Link expires in 15 minutes.</Text>
+          <Text style={{ color: TEXT_MUTED, fontSize: 12, lineHeight: 18 }}>A reset link was sent to {value}. Redirecting to reset page...</Text>
         </View>
       )}
 

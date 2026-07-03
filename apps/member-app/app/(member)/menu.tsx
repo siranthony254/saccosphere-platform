@@ -75,6 +75,12 @@ export default function MenuScreen() {
       icon: '✨',
       action: () => setWhatsNewVisible(true),
     },
+    {
+      label: "Security & Settings",
+      helper: 'Manage biometrics and account security',
+      icon: '⚙️',
+      action: () => router.push('/(member)/settings'),
+    },
   ]
 
   const handleCopyReferral = () => {

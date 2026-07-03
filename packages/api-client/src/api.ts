@@ -576,6 +576,15 @@ export const api = {
         },
         { responseSchema: PasswordResetResponseSchema }
       ),
+
+    registerDevice: (data: { device_id: string; platform: string; push_token?: string; biometric_enabled: boolean }) =>
+      apiCall<any>('POST', '/accounts/device/register/', data),
+
+    getDevices: () =>
+      apiCall<any[]>('GET', '/accounts/devices/'),
+
+    revokeDevice: (deviceId: string) =>
+      apiCall<void>('DELETE', `/accounts/device/${deviceId}/`),
   },
 
   //  MEMBER PROFILE and DASHBOARD

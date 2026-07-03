@@ -1,12 +1,9 @@
-import { View, Text, TouchableOpacity } from 'react-native'
+import { View, Text, TouchableOpacity, ScrollView } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { DeepSpaceBackground } from '../DeepSpaceBackground'
 
 const BRAND_MINT = '#10B981'
 const BRAND_VIOLET = '#6D28D9'
-const SURFACE = '#FFFFFF'
-const SURFACE2 = '#F8FAFC'
-const INK = '#111827'
-const INK_FAINT = '#9CA3AF'
-const BORDER = 'rgba(0,0,0,0.07)'
 
 interface PaymentSuccessScreenProps {
   amount: number
@@ -29,124 +26,132 @@ export default function PaymentSuccessScreen({
   onBackToDashboard,
   onViewReceipt,
 }: PaymentSuccessScreenProps) {
+  const insets = useSafeAreaInsets()
   const purposeLabel = purpose === 'LOAN_REPAYMENT' ? 'Loan repayment' : 'Contribution'
   const isContribution = purpose === 'SAVING_DEPOSIT'
 
   return (
-    <View
-      style={{
-        flex: 1,
-        backgroundColor: SURFACE,
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: 24,
-      }}
-    >
-      {/* Success ring */}
-      <View
-        style={{
-          width: 72,
-          height: 72,
-          borderRadius: 36,
-          backgroundColor: 'rgba(16, 185, 129, 0.1)',
-          alignItems: 'center',
+    <DeepSpaceBackground>
+      <ScrollView
+        contentContainerStyle={{
+          flexGrow: 1,
           justifyContent: 'center',
-          marginBottom: 18,
+          alignItems: 'center',
+          padding: 24,
+          paddingTop: insets.top + 20,
+          paddingBottom: insets.bottom + 20,
         }}
       >
+        {/* Success ring */}
         <View
           style={{
-            width: 40,
-            height: 40,
-            borderRadius: 20,
-            backgroundColor: BRAND_MINT,
+            width: 80,
+            height: 80,
+            borderRadius: 40,
+            backgroundColor: 'rgba(16, 185, 129, 0.1)',
             alignItems: 'center',
             justifyContent: 'center',
+            marginBottom: 20,
+            borderWidth: 1,
+            borderColor: 'rgba(16, 185, 129, 0.2)',
           }}
         >
-          <Text style={{ color: '#fff', fontSize: 20, fontWeight: '700' }}>✓</Text>
+          <View
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: 22,
+              backgroundColor: BRAND_MINT,
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Text style={{ color: '#fff', fontSize: 22, fontWeight: '800' }}>✓</Text>
+          </View>
         </View>
-      </View>
 
-      {/* Title */}
-      <Text style={{ fontSize: 18, fontWeight: '700', color: INK, marginBottom: 6 }}>
-        Payment successful
-      </Text>
-      <Text
-        style={{
-          fontSize: 13,
-          color: '#6B7280',
-          textAlign: 'center',
-          lineHeight: 20,
-          marginBottom: 20,
-          paddingHorizontal: 20,
-        }}
-      >
-        KES {amount.toLocaleString()} {isContribution ? 'contributed to' : 'repayment to'} {saccoName}.{' '}
-        {newBalance !== undefined && `Your updated balance is KES ${newBalance.toLocaleString()}.`}
-      </Text>
-
-      {/* Details card */}
-      <View
-        style={{
-          backgroundColor: SURFACE2,
-          borderRadius: 14,
-          padding: 14,
-          width: '100%',
-          marginBottom: 16,
-        }}
-      >
-        <SuccessRow label="Amount paid" value={`KES ${amount.toLocaleString()}`} valueColor={BRAND_MINT} />
-        <SuccessRow label="M-Pesa ref" value={mpesaRef} monospace />
-        <SuccessRow label="Saccosphere ref" value={saccosphereRef} monospace />
-        <SuccessRow label="Time" value={new Date().toLocaleTimeString('en-KE', { hour: '2-digit', minute: '2-digit' })} />
-        {newBalance !== undefined && (
-          <SuccessRow label={`New ${saccoName} balance`} value={`KES ${newBalance.toLocaleString()}`} valueColor={BRAND_MINT} />
-        )}
-      </View>
-
-      {/* Alert */}
-      <View
-        style={{
-          backgroundColor: 'rgba(16, 185, 129, 0.08)',
-          borderLeftWidth: 3,
-          borderLeftColor: BRAND_MINT,
-          borderRadius: 8,
-          padding: 10,
-          width: '100%',
-          marginBottom: 20,
-        }}
-      >
-        <Text style={{ fontSize: 11, color: '#064E3B', lineHeight: 16 }}>
-          Your {purposeLabel.toLowerCase()} receipt has been saved. You can find it in Statements anytime.
+        {/* Title */}
+        <Text style={{ fontSize: 22, fontWeight: '800', color: '#fff', marginBottom: 8 }}>
+          Payment Successful
         </Text>
-      </View>
-
-      {/* Actions */}
-      <TouchableOpacity
-        onPress={onBackToDashboard}
-        activeOpacity={0.8}
-        style={{
-          backgroundColor: BRAND_VIOLET,
-          borderRadius: 12,
-          paddingVertical: 13,
-          alignItems: 'center',
-          width: '100%',
-          marginBottom: 8,
-        }}
-      >
-        <Text style={{ color: '#fff', fontSize: 13, fontWeight: '600' }}>Back to dashboard</Text>
-      </TouchableOpacity>
-
-      {onViewReceipt && (
-        <TouchableOpacity
-          onPress={onViewReceipt}
-          style={{ alignItems: 'center', paddingVertical: 8 }}
+        <Text
+          style={{
+            fontSize: 14,
+            color: 'rgba(255,255,255,0.6)',
+            textAlign: 'center',
+            lineHeight: 22,
+            marginBottom: 32,
+            paddingHorizontal: 10,
+          }}
         >
-          <Text style={{ color: '#6B7280', fontSize: 12, fontWeight: '500' }}>View receipt</Text>
+          KES {amount.toLocaleString()} {isContribution ? 'contributed to' : 'repaid to'} {saccoName}.{' '}
+          {newBalance !== undefined && `Your new balance is KES ${newBalance.toLocaleString()}.`}
+        </Text>
+
+        {/* Details card */}
+        <View
+          style={{
+            backgroundColor: 'rgba(255,255,255,0.05)',
+            borderRadius: 20,
+            padding: 20,
+            width: '100%',
+            marginBottom: 20,
+            borderWidth: 1,
+            borderColor: 'rgba(255,255,255,0.1)',
+          }}
+        >
+          <SuccessRow label="Amount Paid" value={`KES ${amount.toLocaleString()}`} valueColor={BRAND_MINT} />
+          <SuccessRow label="M-Pesa Reference" value={mpesaRef} monospace />
+          <SuccessRow label="Saccosphere Ref" value={saccosphereRef} monospace />
+          <SuccessRow label="Transaction Time" value={new Date().toLocaleTimeString('en-KE', { hour: '2-digit', minute: '2-digit' })} />
+          {newBalance !== undefined && (
+            <SuccessRow label={`New ${saccoName} Balance`} value={`KES ${newBalance.toLocaleString()}`} valueColor={BRAND_MINT} />
+          )}
+        </View>
+
+        {/* Info Alert */}
+        <View
+          style={{
+            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+            borderLeftWidth: 4,
+            borderLeftColor: BRAND_MINT,
+            borderRadius: 12,
+            padding: 14,
+            width: '100%',
+            marginBottom: 32,
+          }}
+        >
+          <Text style={{ fontSize: 12, color: '#4ade80', lineHeight: 18, fontWeight: '500' }}>
+            Your {purposeLabel.toLowerCase()} receipt has been generated and saved to your statements.
+          </Text>
+        </View>
+
+        {/* Actions */}
+        <TouchableOpacity
+          onPress={onBackToDashboard}
+          activeOpacity={0.8}
+          style={{
+            backgroundColor: BRAND_VIOLET,
+            borderRadius: 16,
+            paddingVertical: 16,
+            alignItems: 'center',
+            width: '100%',
+            marginBottom: 12,
+          }}
+        >
+          <Text style={{ color: '#fff', fontSize: 14, fontWeight: '800', textTransform: 'uppercase', tracking: 1 }}>Back to Dashboard</Text>
         </TouchableOpacity>
-      )}
-    </View>
+
+        {onViewReceipt && (
+          <TouchableOpacity
+            onPress={onViewReceipt}
+            style={{ alignItems: 'center', paddingVertical: 10 }}
+          >
+            <Text style={{ color: 'rgba(255,255,255,0.4)', fontSize: 12, fontWeight: '700', textTransform: 'uppercase', tracking: 1.5 }}>View Digital Receipt</Text>
+          </TouchableOpacity>
+        )}
+      </ScrollView>
+    </DeepSpaceBackground>
   )
 }
 
@@ -167,16 +172,16 @@ function SuccessRow({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        paddingVertical: 6,
-        borderBottomWidth: 0.5,
-        borderBottomColor: BORDER,
+        paddingVertical: 10,
+        borderBottomWidth: 1,
+        borderBottomColor: 'rgba(255,255,255,0.05)',
       }}
     >
-      <Text style={{ fontSize: 11, color: '#6B7280' }}>{label}</Text>
+      <Text style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)' }}>{label}</Text>
       <Text
         style={[
-          { fontSize: 11, fontWeight: '600', color: valueColor || INK },
-          monospace && { fontFamily: 'monospace', fontSize: 10 },
+          { fontSize: 12, fontWeight: '700', color: valueColor || '#fff' },
+          monospace && { fontFamily: 'monospace', fontSize: 11, letterSpacing: 0.5 },
         ]}
       >
         {value}
@@ -184,3 +189,4 @@ function SuccessRow({
     </View>
   )
 }
+
