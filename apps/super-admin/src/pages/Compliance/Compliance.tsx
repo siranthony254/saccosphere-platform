@@ -9,7 +9,6 @@ import type { SuperAdminSacco, PlatformAlert } from '@saccosphere/schemas'
 
 export function Compliance() {
   const { data: flags, isLoading: flagsLoading } = usePlatformAlerts()
-  const { data: overview } = usePlatformOverview()
   const { data: kycQueue } = useKycQueue()
   const { data: saccosData, isLoading: saccosLoading } = useAllSaccos()
 

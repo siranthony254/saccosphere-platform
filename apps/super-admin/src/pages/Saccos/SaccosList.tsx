@@ -1,9 +1,9 @@
-import { useState, useMemo } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAllSaccos } from '../../hooks/usePlatformData'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { DataTable } from '../../components/ui/DataTable'
-import { SaccoAvatar, SaccoFeeBadge, SaccoHealthDot, SaccoStatusBadge } from '../../components/saccos'
+import { SaccoAvatar, SaccoHealthDot, SaccoStatusBadge } from '../../components/saccos'
 import type { SuperAdminSacco } from '@saccosphere/schemas'
 
 export function SaccosList() {

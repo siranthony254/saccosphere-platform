@@ -85,7 +85,7 @@ export function TransactionsFeed() {
               </span>
             ),
           },
-          { key: 'method', header: 'Method', render: (row: any) => <span className="capitalize">M-Pesa</span> },
+          { key: 'method', header: 'Method', render: () => <span className="capitalize">M-Pesa</span> },
           {
             key: 'status',
             header: 'Status',
