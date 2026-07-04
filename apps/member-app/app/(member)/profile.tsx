@@ -47,13 +47,11 @@ export default function ProfileScreen() {
   }
 
   const settings = [
-    { icon: '📱', label: 'M-Pesa number', value: user?.phone ?? '+254 712 ···', action: () => {} },
-    { icon: '🏦', label: 'Linked bank account', value: 'None', action: () => {} },
-    { icon: '👆', label: 'Biometric login', toggle: true, action: () => console.log('Biometric - backend endpoint to be implemented') },
-    { icon: '🔔', label: 'Push notifications', toggle: true, action: () => {} },
+    { icon: '📱', label: 'M-Pesa number', value: user?.phone_number || user?.phone || 'Not set', action: () => {} },
     { icon: '🔒', label: 'Change password', action: () => router.push('/(auth)/forgot-password') },
     { icon: '📄', label: 'Download all statements', action: handleDownloadStatements },
   ]
+
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: BACKGROUND }} edges={['bottom', 'left', 'right']}>
@@ -68,12 +66,15 @@ export default function ProfileScreen() {
           <Text style={{ color: '#fff', fontSize: 24, fontWeight: '700' }}>{initials}</Text>
         </View>
         <Text style={{ color: TEXT, fontSize: 16, fontWeight: '600', marginBottom: 2 }}>{user?.first_name} {user?.last_name}</Text>
-        <Text style={{ color: TEXT_MUTED, fontSize: 12, marginBottom: 10 }}>SS-2024-00891 · Member since Apr 2024</Text>
-        <View style={{ paddingHorizontal: 12, paddingVertical: 4, borderRadius: 20, backgroundColor: user?.kyc_status === 'verified' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)' }}>
-          <Text style={{ fontSize: 12, fontWeight: '600', color: user?.kyc_status === 'verified' ? MINT : '#F59E0B' }}>
-            {user?.kyc_status === 'verified' ? '✓ KYC Verified' : '⏳ KYC Pending'}
+        <Text style={{ color: TEXT_MUTED, fontSize: 12, marginBottom: 10 }}>
+          {user?.id ? `ID: ${user.id.slice(0, 8).toUpperCase()}` : ''} · Joined {user?.created_at ? new Date(user.created_at).toLocaleDateString(undefined, { month: 'short', year: 'numeric' }) : 'recently'}
+        </Text>
+        <View style={{ paddingHorizontal: 12, paddingVertical: 4, borderRadius: 20, backgroundColor: user?.kyc_status === 'verified' ? 'rgba(16, 185, 129, 0.15)' : user?.kyc_status === 'rejected' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(245, 158, 11, 0.15)' }}>
+          <Text style={{ fontSize: 12, fontWeight: '600', color: user?.kyc_status === 'verified' ? MINT : user?.kyc_status === 'rejected' ? '#F87171' : '#F59E0B' }}>
+            {user?.kyc_status === 'verified' ? '✓ KYC Verified' : user?.kyc_status === 'rejected' ? '✗ KYC Rejected' : user?.kyc_status === 'pending' || user?.kyc_status === 'under_review' ? '⏳ KYC Under Review' : '⚠ KYC Not Started'}
           </Text>
         </View>
+
       </View>
 
       {/* SACCO memberships summary */}

@@ -90,15 +90,15 @@ export default function SaccoProfileScreen() {
           ))}
         </View>
 
-        {/* Membership requirements - from config */}
+        {/* Membership requirements - from config and sacco detail */}
         <View className="mx-4 mt-4 bg-white/5 border border-white/10 rounded-xl p-3.5">
           <Text className="text-white/90 text-xs font-semibold mb-2">Membership requirements</Text>
           {[
-            { label: 'Min. age', value: '18 years' },
-            { label: 'Monthly contribution', value: `KES ${config?.membership.min_monthly_contribution_kes?.toLocaleString() ?? '1,000'} min` },
-            { label: 'Registration fee', value: `KES ${config?.membership.registration_fee_kes?.toLocaleString() ?? '1,000'}` },
-            { label: 'Share capital', value: `KES ${config?.membership.min_share_capital_kes?.toLocaleString() ?? '5,000'} min` },
-            { label: 'KYC docs required', value: 'ID + photo + payslip' },
+            { label: 'Min. age', value: sacco.min_age ? `${sacco.min_age} years` : '18 years' },
+            { label: 'Monthly contribution', value: sacco.min_monthly_contribution ? `KES ${sacco.min_monthly_contribution.toLocaleString()} min` : 'Not specified' },
+            { label: 'Registration fee', value: sacco.registration_fee ? `KES ${sacco.registration_fee.toLocaleString()}` : 'Free' },
+            { label: 'Share capital', value: sacco.min_share_capital ? `KES ${sacco.min_share_capital.toLocaleString()} min` : 'Not specified' },
+            { label: 'KYC docs required', value: 'ID verification' },
           ].map((req) => (
             <View
               key={req.label}
@@ -109,6 +109,7 @@ export default function SaccoProfileScreen() {
             </View>
           ))}
         </View>
+
 
         {/* Apply button */}
         <View className="mx-4 mt-5">

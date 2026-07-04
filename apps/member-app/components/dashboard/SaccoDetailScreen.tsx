@@ -80,8 +80,8 @@ export default function SaccoDetailScreen() {
             { label: 'BOSA savings', value: membership.bosa_balance || 0 },
             { label: 'FOSA savings', value: membership.fosa_balance || 0 },
             { label: 'Share capital', value: membership.share_capital || 0 },
-            { label: 'Dividends (2023)', value: membership.total_dividends || 0 },
           ].map((row, i, arr) => (
+
             <View key={row.label} className={`flex-row justify-between py-2.5 ${i !== arr.length - 1 ? 'border-b border-white/5' : ''}`}>
               <Text className="text-white/60 text-xs">{row.label}</Text>
               <Text className="text-white text-xs font-semibold">KES {row.value.toLocaleString()}</Text>

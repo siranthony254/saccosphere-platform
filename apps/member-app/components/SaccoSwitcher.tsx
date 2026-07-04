@@ -5,23 +5,8 @@ import { useMemberships } from '../hooks/useMembership'
 import { router } from 'expo-router'
 import { getActiveMemberships } from '../lib/membership'
 
-const SACCO_COLORS: Record<string, string> = {
-  'stima-sacco': '#0070ba',
-  'teachers-sacco': '#7c3aed',
-  'unaitas-sacco': '#16a085',
-  'kenya-police-sacco': '#c0392b',
-  'imarika-sacco': '#2980b9',
-}
-
-const SACCO_INITIALS: Record<string, string> = {
-  'stima-sacco': 'ST',
-  'teachers-sacco': 'TS',
-  'unaitas-sacco': 'UN',
-  'kenya-police-sacco': 'KP',
-  'imarika-sacco': 'IK',
-}
-
 interface SaccoSwitcherProps {
+
   visible: boolean
   onClose: () => void
   currentSacco?: string
@@ -73,12 +58,13 @@ export default function SaccoSwitcher({ visible, onClose, currentSacco }: SaccoS
                   >
                     <View
                       className="w-10 h-10 rounded-lg justify-center items-center"
-                      style={{ backgroundColor: SACCO_COLORS[membership.sacco_slug] || '#6D28D9' }}
+                      style={{ backgroundColor: membership.sacco_color || '#6D28D9' }}
                     >
                       <Text className="text-white text-xs font-bold">
-                        {SACCO_INITIALS[membership.sacco_slug] || '?'}
+                        {membership.sacco_initials || 'SA'}
                       </Text>
                     </View>
+
                     <View className="flex-1">
                       <Text className="text-ink text-xs font-medium">{membership.sacco_name}</Text>
                       <Text className="text-ink-faint text-xs">{membership.member_number}</Text>

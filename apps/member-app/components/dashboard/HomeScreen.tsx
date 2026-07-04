@@ -250,8 +250,7 @@ export default function HomeScreen() {
 // ═══════════════════════════════════════════════════════════════════════════
 
 function NoSaccoDashboard({ publicStats }: { publicStats: { total_saccos?: number; total_members_on_app?: number } | undefined }) {
-  const saccoCount = publicStats?.total_saccos ?? 237
-  publicStats?.total_members_on_app // available for future use
+  const saccoCount = publicStats?.total_saccos ?? 0
 
   return (
     <View>
@@ -288,7 +287,7 @@ function NoSaccoDashboard({ publicStats }: { publicStats: { total_saccos?: numbe
             textAlign: 'center', marginBottom: 20, paddingHorizontal: 8,
           }}
         >
-          Join a SACCO to start saving, get loans, and grow your money. Saccosphere connects you to {saccoCount.toLocaleString()} registered SACCOs.
+          Join a SACCO to start saving, get loans, and grow your money. Saccosphere connects you to {saccoCount > 0 ? saccoCount.toLocaleString() : 'registered'} SACCOs.
         </Text>
         <TouchableOpacity
           onPress={() => router.push('/(member)/discover')}
@@ -314,79 +313,14 @@ function NoSaccoDashboard({ publicStats }: { publicStats: { total_saccos?: numbe
           </Text>
         </TouchableOpacity>
       </View>
-
-      {/* ── Why join benefit cards ── */}
-      <Text
-        style={{
-          fontSize: 10, fontWeight: '600', letterSpacing: 0.6,
-          color: TEXT_MUTED, marginBottom: 10, textTransform: 'uppercase',
-        }}
-      >
-        Why join a SACCO?
-      </Text>
-      <BenefitCard
-        icon="💰"
-        title="Borrow up to 3× your savings"
-        subtitle="At rates as low as 10.5% p.a. — far below banks"
-        bgColor="rgba(16, 185, 129, 0.15)"
-        titleColor={MINT}
-        subtitleColor={MINT}
-      />
-      <BenefitCard
-        icon="📈"
-        title="Earn annual dividends"
-        subtitle="Your shares grow in value every year"
-        bgColor="rgba(37, 99, 235, 0.15)"
-        titleColor="#60A5FA"
-        subtitleColor="#3B82F6"
-      />
-      <BenefitCard
-        icon="🤝"
-        title="Member-owned & trusted"
-        subtitle={`All ${saccoCount.toLocaleString()} SACCOs are SASRA regulated`}
-        bgColor="rgba(245, 158, 11, 0.15)"
-        titleColor="#FDBA74"
-        subtitleColor="#F59E0B"
-      />
     </View>
   )
 }
 
-function BenefitCard({
-  icon, title, subtitle, bgColor, titleColor, subtitleColor,
-}: {
-  icon: string
-  title: string
-  subtitle: string
-  bgColor: string
-  titleColor: string
-  subtitleColor: string
-}) {
-  return (
-    <View
-      style={{
-        backgroundColor: bgColor,
-        borderRadius: 12,
-        padding: 12,
-        marginBottom: 8,
-        flexDirection: 'row',
-        gap: 10,
-        alignItems: 'flex-start',
-      }}
-    >
-      <Text style={{ fontSize: 18 }}>{icon}</Text>
-      <View style={{ flex: 1 }}>
-        <Text style={{ fontSize: 12, fontWeight: '600', color: titleColor, marginBottom: 2 }}>
-          {title}
-        </Text>
-        <Text style={{ fontSize: 11, color: subtitleColor }}>{subtitle}</Text>
-      </View>
-    </View>
-  )
-}
 
 // ═══════════════════════════════════════════════════════════════════════════
 //  PENDING ONLY
+
 // ═══════════════════════════════════════════════════════════════════════════
 
 function PendingOnlyDashboard({ pendingMemberships }: { pendingMemberships: Membership[] }) {
@@ -575,7 +509,7 @@ function SingleSaccoDashboard({
         <InfoRow label="BOSA savings" value={money(membership.bosa_balance)} />
         <InfoRow label="FOSA savings" value={money(membership.fosa_balance)} />
         <InfoRow label="Share capital" value={money(membership.share_capital)} />
-        <InfoRow label="Dividends credited" value={money(membership.total_dividends)} />
+
         <InfoRow
           label="Loan limit"
           value={money(membership.loan_limit)}
@@ -870,12 +804,10 @@ function SaccoRow({ membership, onPress }: { membership: Membership; onPress: ()
       <View style={{ flex: 1 }}>
         <Text style={{ fontSize: 13, fontWeight: '600', color: TEXT }}>{membership.sacco_name}</Text>
         <Text style={{ fontSize: 10, color: TEXT_MUTED }}>
-          {membership.sacco_slug.includes('stima') ? 'Energy sector' :
-           membership.sacco_slug.includes('teacher') ? 'Education sector' :
-           membership.sacco_slug.includes('unaitas') ? 'Community' :
-           membership.sacco_slug.includes('police') ? 'Government' : ''} · Member {membership.member_number || membership.status}
+          Member No. {membership.member_number || 'Pending'}
         </Text>
       </View>
+
       <View style={{ alignItems: 'flex-end' }}>
         <Text style={{ fontSize: 13, fontWeight: '600', color: TEXT }}>{money(totalSavings)}</Text>
         <Text style={{ fontSize: 9, color: TEXT_MUTED }}>Savings</Text>

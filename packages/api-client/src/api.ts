@@ -441,10 +441,13 @@ export const api = {
 
       setAccessToken(payload.access)
 
+      // Fetch KYC status immediately after login to ensure store accuracy
+      const kyc = await apiCall<any>('GET', '/accounts/kyc/status/').catch(() => ({ status: 'not_started' }))
+
       return AuthTokensSchema.parse({
         access: payload.access,
         refresh: payload.refresh,
-        user: normalizeUser(payload.user),
+        user: normalizeUser({ ...payload.user, kyc_status: kyc.status }),
       })
     },
 
@@ -456,12 +459,16 @@ export const api = {
 
       setAccessToken(payload.access)
 
+      // Fetch KYC status immediately after login
+      const kyc = await apiCall<any>('GET', '/accounts/kyc/status/').catch(() => ({ status: 'not_started' }))
+
       return AuthTokensSchema.parse({
         access: payload.access,
         refresh: payload.refresh,
-        user: normalizeUser(payload.user),
+        user: normalizeUser({ ...payload.user, kyc_status: kyc.status }),
       })
     },
+
 
     register: async (data: RegisterInput) => {
       const input = parseInput(RegisterInputSchema, data)
@@ -592,7 +599,15 @@ export const api = {
   //  MEMBER PROFILE and DASHBOARD
 
   member: {
-    getProfile: async () => normalizeUser(await apiCall<any>('GET', '/accounts/me/')),
+    getProfile: async () => {
+      const [user, kyc] = await Promise.all([
+        apiCall<any>('GET', '/accounts/me/'),
+        apiCall<any>('GET', '/accounts/kyc/status/').catch(() => ({ status: 'not_started' })),
+      ])
+      // Use kyc.status to populate the user.kyc_status field for the member app
+      return normalizeUser({ ...user, kyc_status: kyc.status })
+    },
+
 
     updateProfile: (data: Partial<User>) =>
       apiCall<User>('PATCH', '/accounts/me/', data, { responseSchema: UserSchema }),
@@ -600,21 +615,64 @@ export const api = {
     getDashboard: async () => {
       const portfolio = await apiCall<any>('GET', '/dashboard/portfolio/')
       const memberships = await api.member.getMemberships()
+
+      const totalSavings = Number(portfolio.total_savings ?? 0)
+      const shareCapital = Number(portfolio.total_share_capital ?? 0)
+
       return DashboardSchema.parse({
-        total_balance: Number(portfolio.total_balance ?? portfolio.total_savings ?? 0),
-        total_savings: Number(portfolio.total_savings ?? 0),
-        active_loans_balance: Number(portfolio.active_loans_balance ?? portfolio.total_loans ?? portfolio.total_active_loans ?? 0),
-        sacco_count: Number(portfolio.sacco_count ?? portfolio.total_saccos ?? portfolio.saccos?.length ?? memberships.length),
+        total_balance: totalSavings + shareCapital,
+        total_savings: totalSavings,
+        active_loans_balance: Number(portfolio.total_active_loans ?? 0),
+        sacco_count: Number(portfolio.total_saccos ?? memberships.length),
         memberships,
         recent_transactions: (portfolio.recent_transactions ?? []).map(normalizeTransaction),
       })
     },
 
-    getMemberships: async () =>
-      unwrapResults(await apiCall<any[] | PaginatedResponse<any>>('GET', '/members/memberships/')).map(normalizeMembership),
 
-    getMembership: async (id: string) =>
-      normalizeMembership(await apiCall<any>('GET', `/members/memberships/${uuid(id)}/`)),
+    getMemberships: async () => {
+      const [membershipsResp, portfolio] = await Promise.all([
+        apiCall<any[] | PaginatedResponse<any>>('GET', '/members/memberships/'),
+        apiCall<any>('GET', '/dashboard/portfolio/').catch(() => ({ saccos: [] })),
+      ])
+
+      const memberships = unwrapResults(membershipsResp)
+      const portfolioSaccos = portfolio.saccos ?? []
+
+      return memberships.map((m: any) => {
+        // Find matching sacco info in portfolio to get real balances
+        const saccoInfo = portfolioSaccos.find((s: any) => s.sacco_id === String(m.sacco?.id ?? m.sacco))
+        return normalizeMembership({
+          ...m,
+          bosa_balance: saccoInfo?.bosa_total ?? 0,
+          fosa_balance: saccoInfo?.fosa_total ?? 0,
+          share_capital: saccoInfo?.share_capital_total ?? 0,
+          loan_limit: saccoInfo?.loan_limit ?? 0, // Note: backend doesn't seem to return loan_limit in portfolio yet, might need calculation
+        })
+      })
+    },
+
+
+    getMembership: async (id: string) => {
+      const membership = await apiCall<any>('GET', `/members/memberships/${uuid(id)}/`)
+      const saccoId = String(membership.sacco?.id ?? membership.sacco)
+
+      const [breakdown, eligibility] = await Promise.all([
+        apiCall<any>('GET', '/services/savings/breakdown/', undefined, { params: { sacco_id: saccoId } }).catch(() => null),
+        apiCall<any>('GET', '/services/loans/eligibility/', undefined, { params: { sacco_id: saccoId } }).catch(() => null),
+      ])
+
+      const bd = breakdown?.data ?? breakdown ?? {}
+
+      return normalizeMembership({
+        ...membership,
+        bosa_balance: bd.bosa_total ?? 0,
+        fosa_balance: bd.fosa_total ?? 0,
+        share_capital: bd.share_capital_total ?? 0,
+        loan_limit: eligibility?.max_amount ?? 0,
+      })
+    },
+
 
     leaveMembership: async (id: string) =>
       apiCall<void>('POST', `/members/memberships/${uuid(id)}/leave/`),
