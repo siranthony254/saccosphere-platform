@@ -33,8 +33,9 @@ export function useMembershipBySacco(saccoSlug: string) {
       const list = await api.member.getMemberships()
       return list.find((m) => m.sacco_slug === saccoSlug) ?? null
     },
-    staleTime: STALE_TIMES.dashboard,
+    staleTime: 30_000, // 30 seconds - real-time membership data
     gcTime: 300_000,
+    refetchInterval: 60_000, // Refetch every minute
     enabled: isAuthenticated && !!saccoSlug, // Only fetch when authenticated and has slug
   })
 }

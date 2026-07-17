@@ -7,7 +7,7 @@ import { StatusBar } from 'expo-status-bar'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { api, setAccessToken, clearTokens } from '@saccosphere/api-client'
 import { useAuthStore } from '../store/useAuthStore'
-import { clearStoredRefreshToken, loadRefreshToken } from '../hooks/useAuth'
+import { clearStoredRefreshToken, loadRefreshToken, saveRefreshToken } from '../hooks/useAuth'
 // @ts-ignore: Allow side-effect CSS import without type declarations
 import '../global.css'
 
@@ -26,6 +26,16 @@ export default function RootLayout() {
   const initialPathname = useRef(pathname)
 
   useEffect(() => {
+    // Listen for token rotation from api-client
+    const handleTokenRotated = (event: any) => {
+      const { refreshToken } = event.detail
+      saveRefreshToken(refreshToken)
+    }
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('saccosphere:token_rotated' as any, handleTokenRotated)
+    }
+
     const initAuth = async () => {
       const startupPathname = initialPathname.current
 
@@ -37,19 +47,24 @@ export default function RootLayout() {
           return
         }
 
-        const { access } = await api.auth.refresh(refresh)
-        setAccessToken(access)
+        const tokens = await api.auth.refresh(refresh)
+        setAccessToken(tokens.access)
+        if ('refresh' in tokens && typeof tokens.refresh === 'string') {
+          await saveRefreshToken(tokens.refresh)
+        }
+
         const user = await api.member.getProfile()
 
         if (user.role !== 'member') {
           throw new Error('Only member accounts may use the member app.')
         }
 
-        setAuth({ token: access, user })
+        setAuth({ token: tokens.access, user })
         if (!isRegistrationPath(startupPathname)) {
           router.replace('/(member)')
         }
-      } catch {
+      } catch (error) {
+        console.warn('Auth initialization failed:', error)
         clearTokens()
         await clearStoredRefreshToken()
         clearAuth()
@@ -61,6 +76,12 @@ export default function RootLayout() {
     }
 
     initAuth()
+
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('saccosphere:token_rotated' as any, handleTokenRotated)
+      }
+    }
   }, [clearAuth, setAuth, setAuthReady])
 
   useEffect(() => {

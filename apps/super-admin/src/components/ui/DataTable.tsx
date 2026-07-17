@@ -66,7 +66,9 @@ export function DataTable<T>({
               >
                 {columns.map((col) => (
                   <td key={col.key} className="py-2.5 px-3 align-middle">
-                    {col.render ? col.render(row, index) : (row as Record<string, ReactNode>)[col.key]}
+                    {col.render ? col.render(row, index) : (
+                      <span>{String((row as any)[col.key] ?? '')}</span>
+                    )}
                   </td>
                 ))}
               </tr>

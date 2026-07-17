@@ -42,7 +42,10 @@ import {
 
 import { z } from 'zod'
 
-const RefreshResponseSchema = z.object({ access: z.string() })
+const RefreshResponseSchema = z.object({
+  access: z.string(),
+  refresh: z.string().optional(),
+})
 const PasswordResetResponseSchema = z.object({ message: z.string() })
 const OTPResponseSchema = z.object({ message: z.string() })
 const KycDocumentTypeSchema = z.enum(['id_front', 'id_back', 'passport', 'huduma'])
@@ -72,11 +75,19 @@ const normalizeStkPushResponse = (payload: any): STKPushResponse => ({
 const normalizeUser = (user: any, roleOverrides?: { role?: User['role']; sacco_id?: string | null; sacco_slug?: string | null }): User => {
   const createdAt = user.created_at ?? user.date_joined ?? new Date().toISOString()
   const kycStatus = String(user.kyc_status ?? user.status ?? 'not_started').toLowerCase()
+
+  // Map backend roles (uppercase) to frontend roles (lowercase)
+  const rawRole = (roleOverrides?.role ?? user.role ?? 'member').toLowerCase()
+  let role: User['role'] = 'member'
+  if (rawRole === 'superadmin' || rawRole === 'super_admin') role = 'superadmin'
+  else if (rawRole === 'sacco_admin') role = 'sacco_admin'
+  else if (rawRole === 'member') role = 'member'
+
   return UserSchema.parse({
     ...user,
     phone: user.phone ?? user.phone_number ?? '',
     phone_number: user.phone_number ?? user.phone ?? '',
-    role: roleOverrides?.role ?? 'member',
+    role,
     kyc_status: kycStatus === 'approved' ? 'verified' : kycStatus,
     national_id: user.national_id ?? null,
     sacco_id: roleOverrides?.sacco_id ?? user.sacco_id ?? null,
@@ -87,20 +98,35 @@ const normalizeUser = (user: any, roleOverrides?: { role?: User['role']; sacco_i
 
 
 const normalizeKenyanPhoneNumber = (phone: string) => {
-  const cleaned = String(phone).trim().replace(/[\s-()]+/g, '')
+  let cleaned = String(phone).trim().replace(/[\s-()]+/g, '')
+
   if (cleaned.startsWith('+')) {
-    return `+${cleaned.slice(1).replace(/[^0-9]/g, '')}`
+    cleaned = cleaned.slice(1)
   }
-  if (cleaned.startsWith('254') && cleaned.length === 12) {
-    return `+${cleaned}`
+
+  // Remove non-digits
+  cleaned = cleaned.replace(/[^0-9]/g, '')
+
+  // Handle 25407... or 2547...
+  if (cleaned.startsWith('254')) {
+    const rest = cleaned.slice(3)
+    if (rest.startsWith('0')) {
+      return `+254${rest.slice(1)}`
+    }
+    return `+254${rest}`
   }
-  if (cleaned.startsWith('07') && cleaned.length === 10) {
+
+  // Handle 07...
+  if (cleaned.startsWith('0')) {
     return `+254${cleaned.slice(1)}`
   }
-  if (cleaned.startsWith('7') && cleaned.length === 9) {
+
+  // Handle 7...
+  if (cleaned.length === 9) {
     return `+254${cleaned}`
   }
-  return cleaned
+
+  return `+${cleaned}`
 }
 
 const normalizeSacco = (sacco: any): Sacco => {
@@ -166,10 +192,6 @@ const normalizeSuperAdminSacco = (sacco: any): SuperAdminSacco => {
     is_active: sacco.is_active ?? true,
     member_count: Number(base.member_count ?? 0),
     members_on_app: Number(base.member_count ?? 0),
-    transaction_volume_mtd_kes: null, // Backend doesn't provide this in saccos list
-    platform_fee_kes: null, // Backend doesn't provide this in saccos list
-    fee_status: null, // Backend doesn't provide this in saccos list
-    api_connected: null, // Backend doesn't provide this in saccos list
     health_status: normalizedHealthStatus,
     health: normalizedHealthStatus === 'GOOD' ? 'healthy' : normalizedHealthStatus === 'API_ISSUE' ? 'critical' : 'warning',
     joined_platform_at: (base as Sacco & { created_at?: string }).created_at ?? new Date().toISOString(),
@@ -263,7 +285,6 @@ const normalizeAdminDashboard = (dashboard: any): SaccoAdminDashboard => {
 }
 
 const normalizeAdminMember = (member: any): AdminMember => {
-  // Handle both nested user object and flat structure
   const user = member.user ?? member
   const fullName = String(user.full_name || [user.first_name, user.last_name].filter(Boolean).join(' ')).trim()
   const [first_name, ...rest] = fullName.split(' ')
@@ -279,6 +300,8 @@ const normalizeAdminMember = (member: any): AdminMember => {
   const kycStatus = String(user.kyc_status ?? member.kyc_status ?? 'pending').toLowerCase()
   const membershipStatus = statusMap[String(member.status ?? user.status ?? 'PENDING').toUpperCase()] ?? 'applied'
   const recentTransactions = Array.isArray(member.recent_transactions) ? member.recent_transactions : []
+  const savingsBreakdown = Array.isArray(member.savings_breakdown) ? member.savings_breakdown : []
+  const activeLoans = Array.isArray(member.active_loans) ? member.active_loans : []
 
   return AdminMemberSchema.parse({
     id: String(member.id ?? user.id ?? ''),
@@ -302,12 +325,42 @@ const normalizeAdminMember = (member: any): AdminMember => {
     bosa_balance: Number(member.savings_total ?? member.bosa_balance ?? 0),
     fosa_balance: Number(member.fosa_balance ?? 0),
     share_capital: Number(member.share_capital ?? 0),
-    active_loans_count: Number(member.active_loans?.length ?? member.active_loans_count ?? 0),
+    active_loans_count: Number(activeLoans.length ?? member.active_loans_count ?? 0),
     active_loans_kes: Number(member.outstanding_loans ?? member.active_loans_kes ?? 0),
     monthly_contribution: Number(member.monthly_contribution ?? 0),
     repayment_rate_pct: Number(member.repayment_rate_pct ?? 0),
     joined_at: member.approved_date ?? member.application_date ?? member.joined_at ?? null,
     last_active: recentTransactions[0]?.created_at ?? null,
+    // Backend AdminMemberDetailSerializer fields
+    sacco: member.sacco ? { id: String(member.sacco.id), name: member.sacco.name } : null,
+    application_date: member.application_date ?? null,
+    approved_date: member.approved_date ?? null,
+    savings_breakdown: savingsBreakdown.map((s: any) => ({
+      savings_type: s.savings_type,
+      amount: Number(s.amount ?? 0),
+      total_contributions: Number(s.total_contributions ?? 0),
+      total_withdrawals: Number(s.total_withdrawals ?? 0),
+      status: s.status,
+    })),
+    active_loans: activeLoans.map((l: any) => ({
+      id: String(l.id),
+      loan_type: l.loan_type,
+      amount: Number(l.amount ?? 0),
+      interest_rate: Number(l.interest_rate ?? 0),
+      term_months: l.term_months,
+      outstanding_balance: Number(l.outstanding_balance ?? 0),
+      status: l.status,
+      created_at: l.created_at,
+    })),
+    recent_transactions: recentTransactions.map((t: any) => ({
+      id: String(t.id),
+      reference: t.reference,
+      transaction_type: t.transaction_type,
+      amount: Number(t.amount ?? 0),
+      status: t.status,
+      description: t.description,
+      created_at: t.created_at,
+    })),
   })
 }
 
@@ -397,9 +450,11 @@ const normalizeLoanStatus = (status: unknown): LoanApplication['status'] => {
   const statusMap: Record<string, LoanApplication['status']> = {
     pending: 'submitted',
     guarantors_pending: 'guarantors_pending',
+    pending_approval: 'under_review',
     board_review: 'under_review',
     approved: 'approved',
     disbursement_pending: 'disbursement_pending',
+    disbursed: 'disbursed',
     active: 'active',
     completed: 'closed',
     rejected: 'rejected',
@@ -420,7 +475,6 @@ const normalizeSaving = (saving: any) => ({
   status: String(saving.status ?? '').toLowerCase(),
 })
 
-// PAGINATED RESPONSE 
 
 export interface PaginatedResponse<T> {
   results: T[]
@@ -451,9 +505,9 @@ export const api = {
       })
     },
 
-    googleAuth: async (data: { id_token: string; flow: 'login' | 'signup' }) => {
+    googleAuth: async (data: { token?: string; id_token?: string; code?: string; flow: 'login' | 'signup' }) => {
       const payload = await apiCall<any>('POST', '/accounts/oauth/google/callback/', {
-        id_token: data.id_token,
+        code: data.code || data.token || data.id_token,
         flow: data.flow,
       })
 
@@ -498,8 +552,8 @@ export const api = {
         responseSchema: RefreshResponseSchema,
       }),
 
-    logout: () =>
-      apiCall<void>('POST', '/accounts/logout/'),
+    logout: (refreshToken?: string) =>
+      apiCall<void>('POST', '/accounts/logout/', refreshToken ? { refresh: refreshToken } : undefined),
 
     sendOTP: (phone: string, purpose: 'PHONE_VERIFY' | 'PASSWORD_RESET' | 'LOGIN' = 'PHONE_VERIFY') => {
       const normalizedPhone = normalizeKenyanPhoneNumber(phone)
@@ -516,17 +570,17 @@ export const api = {
       )
     },
 
-    verifyOTP: async (phone: string, code: string) => {
+    verifyOTP: async (phone: string, code: string, _purpose: 'PHONE_VERIFY' | 'PASSWORD_RESET' | 'LOGIN' = 'PHONE_VERIFY') => {
       const normalizedPhone = normalizeKenyanPhoneNumber(phone)
-      const payload = await apiCall<any>(
+      return apiCall<{ message: string }>(
         'POST',
         '/accounts/otp/verify/',
         {
           phone_number: z.string().min(10).parse(normalizedPhone),
           code: z.string().length(6).parse(code),
-        }
+        },
+        { responseSchema: OTPResponseSchema }
       )
-      return normalizeUser(payload)
     },
 
     resendOTP: (phone: string, purpose: 'PHONE_VERIFY' | 'PASSWORD_RESET' | 'LOGIN' = 'PHONE_VERIFY') => {
@@ -604,7 +658,6 @@ export const api = {
         apiCall<any>('GET', '/accounts/me/'),
         apiCall<any>('GET', '/accounts/kyc/status/').catch(() => ({ status: 'not_started' })),
       ])
-      // Use kyc.status to populate the user.kyc_status field for the member app
       return normalizeUser({ ...user, kyc_status: kyc.status })
     },
 
@@ -640,14 +693,13 @@ export const api = {
       const portfolioSaccos = portfolio.saccos ?? []
 
       return memberships.map((m: any) => {
-        // Find matching sacco info in portfolio to get real balances
         const saccoInfo = portfolioSaccos.find((s: any) => s.sacco_id === String(m.sacco?.id ?? m.sacco))
         return normalizeMembership({
           ...m,
           bosa_balance: saccoInfo?.bosa_total ?? 0,
           fosa_balance: saccoInfo?.fosa_total ?? 0,
           share_capital: saccoInfo?.share_capital_total ?? 0,
-          loan_limit: saccoInfo?.loan_limit ?? 0, // Note: backend doesn't seem to return loan_limit in portfolio yet, might need calculation
+          loan_limit: saccoInfo?.loan_limit ?? 0, 
         })
       })
     },
@@ -655,11 +707,21 @@ export const api = {
 
     getMembership: async (id: string) => {
       const membership = await apiCall<any>('GET', `/members/memberships/${uuid(id)}/`)
-      const saccoId = String(membership.sacco?.id ?? membership.sacco)
+      const saccoId = membership.sacco?.id ?? (typeof membership.sacco === 'string' ? membership.sacco : null)
+
+      if (!saccoId) {
+        return normalizeMembership({
+          ...membership,
+          bosa_balance: 0,
+          fosa_balance: 0,
+          share_capital: membership.share_capital ?? 0,
+          loan_limit: 0,
+        })
+      }
 
       const [breakdown, eligibility] = await Promise.all([
-        apiCall<any>('GET', '/services/savings/breakdown/', undefined, { params: { sacco_id: saccoId } }).catch(() => null),
-        apiCall<any>('GET', '/services/loans/eligibility/', undefined, { params: { sacco_id: saccoId } }).catch(() => null),
+        apiCall<any>('GET', '/services/savings/breakdown/', undefined, { params: { sacco_id: String(saccoId) } }).catch(() => null),
+        apiCall<any>('GET', '/services/loans/eligibility/', undefined, { params: { sacco_id: String(saccoId) } }).catch(() => null),
       ])
 
       const bd = breakdown?.data ?? breakdown ?? {}
@@ -777,12 +839,10 @@ export const api = {
 
     get: async (saccoId: string) => {
       const key = requiredString(saccoId)
-      // If it's a UUID, use it directly as sacco_id
       if (/^[0-9a-f-]{36}$/i.test(key)) {
         return normalizeSacco(await apiCall<any>('GET', `/accounts/saccos/${key}/`))
       }
-      // Otherwise, search by slug and return the first match
-      // The backend API searches by name, so replace hyphens with spaces to match the name.
+
       const saccos = await api.saccos.list({ search: key.replace(/-/g, ' ') })
       const sacco = saccos.find((item) => item.slug === key) ?? saccos[0]
       if (!sacco) throw { code: 'NOT_FOUND', message: 'SACCO not found.' }
@@ -825,6 +885,7 @@ export const api = {
           min_months: Number(loanType.min_term_months ?? 1),
           max_months: Number(loanType.max_term_months ?? 1),
           min_guarantors: Number(loanType.min_guarantors ?? 0),
+          requires_guarantors: Boolean(loanType.requires_guarantors ?? false),
           processing_fee_pct: Number(loanType.processing_fee_pct ?? 0),
           disbursement_options: ['mpesa', 'fosa', 'bank'],
         })),
@@ -861,22 +922,16 @@ export const api = {
       monthly_contribution: number
     }) => {
       const sacco = await api.saccos.get(data.sacco_slug)
-      
-      // Map custom fields from form_data to backend format
-      // The frontend stores custom fields in data.form_data.customFields
       const customFieldsObj = (data.form_data?.customFields as Record<string, unknown>) ?? {}
       const customFields = Object.entries(customFieldsObj).map(([field_id, value]) => ({
         field_id,
         value: String(value ?? ''),
       }))
       
-      // Extract employment fields from form_data
       let employmentStatus = String(data.form_data?.employmentType ?? 'Employed')
       if (employmentStatus === 'Employed — salaried') employmentStatus = 'Employed'
       
       const employerName = String(data.form_data?.employer ?? '')
-      
-      // Strip commas from monthlyIncome before parsing as Number
       const rawIncome = String(data.form_data?.monthlyIncome ?? '0').replace(/[^0-9.]/g, '')
       const monthlyIncome = Number(rawIncome) || 0
       
@@ -929,10 +984,25 @@ export const api = {
     payRegistrationFee: (_id: string) =>
       Promise.reject(new Error('Registration-fee STK push is not supported by the current backend contract.')),
 
-    uploadDocument: async (applicationId: string, documentType: string, file: File) => {
+    uploadDocument: async (applicationId: string, documentType: string, file: File | Blob | any, notes?: string) => {
       const formData = new FormData()
+      formData.append('application_id', uuid(applicationId))
       formData.append('document_type', documentType)
-      formData.append('file', file)
+
+      if (file && typeof file === 'object' && 'uri' in file) {
+        formData.append('file', {
+          uri: file.uri,
+          name: file.name,
+          type: file.type,
+        } as any)
+      } else {
+        formData.append('file', file)
+      }
+
+      if (notes) {
+        formData.append('notes', notes)
+      }
+
       return apiCall<any>('POST', `/members/applications/${uuid(applicationId)}/documents/`, formData)
     },
 
@@ -977,11 +1047,16 @@ export const api = {
       const response = await apiCall<any>('GET', '/services/savings/breakdown/', undefined, {
         params: { sacco_id: saccoId },
       })
-      return Array.isArray(response) ? response.map((item: any) => ({
-        type: item.savings_type ?? item.type,
-        amount: Number(item.amount ?? 0),
-        percentage: Number(item.percentage ?? 0),
-      })) : []
+      const data = response.data ?? response
+      return {
+        sacco_id: data.sacco_id ?? '',
+        sacco_name: data.sacco_name ?? '',
+        bosa_total: Number(data.bosa_total ?? 0),
+        fosa_total: Number(data.fosa_total ?? 0),
+        share_capital_total: Number(data.share_capital_total ?? 0),
+        dividend_eligible_total: Number(data.dividend_eligible_total ?? 0),
+        total: Number(data.total ?? 0),
+      }
     },
   },
 
@@ -1041,15 +1116,18 @@ export const api = {
     get: (id: string) =>
       api.loans.list().then((loans) => loans.find((loan) => loan.id === id) as LoanApplication),
 
-    getEligibility: async (membershipId: string) => {
+    getEligibility: async (saccoId: string) => {
       const response = await apiCall<any>('GET', '/services/loans/eligibility/', undefined, {
-        params: { membership_id: membershipId },
+        params: { sacco_id: saccoId },
       })
       return {
+        eligible: Boolean(response.eligible ?? false),
         max_amount: Number(response.max_amount ?? 0),
-        max_term_months: Number(response.max_term_months ?? 0),
-        available_multiplier: Number(response.available_multiplier ?? 1),
-        reasons: response.reasons ?? [],
+        total_savings: Number(response.total_savings ?? 0),
+        existing_balance: Number(response.existing_balance ?? 0),
+        months_active: Number(response.months_active ?? 0),
+        guarantors_required: Number(response.guarantors_required ?? 0),
+        reason: response.reason ?? null,
       }
     },
 
@@ -1070,9 +1148,9 @@ export const api = {
       const membership = await api.member.getMembership(data.membership_id).catch(() => null)
       const loan = await apiCall<any>('POST', '/services/loans/apply/', {
         loan_type: data.loan_product_key,
-        amount: data.amount_requested,
-        term_months: data.period_months,
-        application_notes: data.purpose,
+        amount: Number(data.amount_requested),
+        term_months: Number(data.period_months),
+        application_notes: data.purpose || '',
       })
 
       return LoanApplicationSchema.parse({
@@ -1160,16 +1238,24 @@ export const api = {
         guarantee_amount: amount,
       }),
 
-    submitExternalGuarantor: (loanId: string, data: { full_name: string; phone_number: string; email?: string; guarantee_amount?: number }) =>
+    submitExternalGuarantor: (loanId: string, data: { full_name: string; phone_number: string; id_number: string; employment_status?: string; monthly_income?: number; guarantee_amount?: number }) =>
       apiCall<void>('POST', `/services/loans/${uuid(loanId)}/external-guarantors/`, {
         full_name: data.full_name,
         phone_number: data.phone_number,
-        email: data.email,
+        id_number: data.id_number,
+        employment_status: data.employment_status,
+        monthly_income: data.monthly_income,
         guarantee_amount: data.guarantee_amount,
       }),
 
     getExternalGuarantors: (loanId: string) =>
       apiCall<any[]>('GET', `/services/loans/${uuid(loanId)}/external-guarantors/`),
+
+    respondToExternalGuarantorRequest: (responseToken: string, action: 'accept' | 'decline', notes?: string) =>
+      apiCall<void>('POST', `/guarantors/external/respond/${responseToken}/`, {
+        action: action === 'accept' ? 'ACCEPT' : 'DECLINE',
+        notes: notes,
+      }),
 
     respondToGuarantorRequest: (id: string, action: 'approve' | 'decline') => {
       const [loanId, guarantorId] = id.split(':')
@@ -1226,12 +1312,13 @@ export const api = {
         documents: Array<{ doc_type: string; status: string }>
       }>('GET', '/accounts/kyc/status/'),
 
-    submitId: (data: { national_id: string }) =>
+    submitId: (data: { id_number: string; date_of_birth: string }) =>
       apiCall<{ message: string; status: string }>(
         'POST',
         '/accounts/kyc/submit-id/',
         {
-          national_id: z.string().min(1).parse(data.national_id),
+          id_number: z.string().min(1).parse(data.id_number),
+          date_of_birth: z.string().min(1).parse(data.date_of_birth),
         },
         { responseSchema: OTPResponseSchema }
       ),
@@ -1250,10 +1337,28 @@ export const api = {
 
     uploadDocument: (data: { document_type: KycDocumentType; file: KycUploadFile }) => {
       const documentType = KycDocumentTypeSchema.parse(data.document_type)
-      const file = 'file' in data.file && data.file.file ? data.file.file : data.file
       const form = new FormData()
       form.append('document_type', documentType)
-      form.append('file', file as Blob)
+
+      if ('uri' in data.file) {
+        // Native or Web object fallback
+        const fileObj = data.file
+        if (fileObj.file) {
+          // Web File/Blob
+          form.append('file', fileObj.file, fileObj.name)
+        } else {
+          // Native object
+          form.append('file', {
+            uri: fileObj.uri,
+            name: fileObj.name,
+            type: fileObj.type,
+          } as any)
+        }
+      } else {
+        // Direct Blob/File
+        form.append('file', data.file)
+      }
+
       return apiCall<any>('POST', '/accounts/kyc/upload/', form).then((payload) => ({
         ...payload,
         id: payload.id ?? payload.document_id,
@@ -1326,6 +1431,15 @@ export const api = {
       }
     },
 
+    getSettings: async () => {
+      const response = await apiCall<any>('GET', '/management/settings/')
+      return response.data ?? response
+    },
+
+    updateSettings: async (data: any) => {
+      return apiCall<any>('PATCH', '/management/settings/', data)
+    },
+
     getMembers: async (params?: {
       status?: string
       search?: string
@@ -1351,8 +1465,6 @@ export const api = {
 
     // Membership applications
     getApplications: async (params?: { status?: string }) => {
-      // The backend uses the members endpoint to list all memberships.
-      // Filtering by status=PENDING or status=UNDER_REVIEW yields applications.
       const statusFilter = params?.status || 'PENDING'
       const response = await apiCall<any>('GET', '/management/members/', undefined, {
         params: { ...params, status: statusFilter }
@@ -1366,7 +1478,7 @@ export const api = {
           const member = normalizeAdminMember(item)
           return {
             id: member.id,
-            application_id: member.id, // Using membership ID as fallback
+            application_id: member.id, 
             user_id: member.user_id,
             full_name: `${member.first_name} ${member.last_name}`,
             email: member.email,
@@ -1386,11 +1498,10 @@ export const api = {
       }
     },
 
+    getApplicationDetail: async (id: string) =>
+      apiCall<any>('GET', `/management/applications/${uuid(id)}/review/`),
+
     reviewApplication: (id: string, data: { status: 'APPROVED' | 'REJECTED'; review_notes?: string }) => {
-      // id can be either SaccoApplication ID or Membership ID.
-      // If it's a Membership ID, the backend review endpoint (which expects SaccoApplication ID)
-      // might fail unless they share the same ID or the endpoint is polymorphic.
-      // Based on our audit, we should use the Application ID.
       return apiCall<void>('PATCH', `/management/applications/${uuid(id)}/review/`, data)
     },
 
@@ -1424,13 +1535,17 @@ export const api = {
           applied_at: item.applied_at,
           status: item.status,
           phone_number: item.phone_number || item.member_phone || '',
-          guarantors_summary: item.guarantors_summary,
+          guarantors_summary: item.guarantors_summary ? {
+            internal_approved: Number(item.guarantors_summary.internal_approved ?? 0),
+            external_approved: Number(item.guarantors_summary.external_approved ?? 0),
+            total_coverage: Number(item.guarantors_summary.total_coverage ?? 0),
+          } : null,
           required_documents: item.required_documents,
         })),
       }
     },
 
-    // General loan list (if needed for other views)
+    // General loan list 
     getLoans: async (params?: { status?: string; cursor?: string }) => {
       const requestParams: Record<string, string> = {}
       if (params?.status) requestParams.status = params.status.toUpperCase()
@@ -1530,18 +1645,19 @@ export const api = {
       }
     },
 
-    getReports: async () => apiCall<Record<string, unknown>>('GET', '/management/stats/'),
+    getReports: async (params: { type: 'loans' | 'contributions' | 'members'; from_date?: string; to_date?: string }) =>
+      apiCall<any>('GET', '/management/reports/', undefined, { params }),
 
-    downloadReport: async (format: 'csv' | 'pdf' = 'pdf') => {
-      const response = await axiosInstance.get('/management/stats/', {
-        params: { format },
+    downloadReport: async (params: { type: 'loans' | 'contributions' | 'members'; from_date?: string; to_date?: string; format?: 'csv' | 'pdf' }) => {
+      const response = await axiosInstance.get('/management/reports/', {
+        params: { ...params, format: params.format || 'pdf' },
         responseType: 'blob',
       })
       const disposition = String(response.headers?.['content-disposition'] ?? '')
       const filenameMatch = disposition.match(/filename="?([^";]+)"?/i)
       return {
         blob: response.data as Blob,
-        filename: filenameMatch?.[1] ?? `sacco_report.${format}`,
+        filename: filenameMatch?.[1] ?? `sacco_report_${params.type}.${params.format || 'pdf'}`,
       }
     },
 
@@ -1564,13 +1680,18 @@ export const api = {
     getImportJobStatus: async (jobId: string) => {
       const response = await apiCall<any>('GET', `/management/import/${uuid(jobId)}/`)
       return {
-        job_id: response.job_id,
+        job_id: response.id,
         status: response.status,
-        progress: Number(response.progress ?? 0),
-        total_records: Number(response.total_records ?? 0),
-        processed_records: Number(response.processed_records ?? 0),
-        failed_records: Number(response.failed_records ?? 0),
-        error_summary: response.error_summary ?? [],
+        progress_pct: Number(response.progress_pct ?? 0),
+        total_rows: Number(response.total_rows ?? 0),
+        processed_rows: Number(response.processed_rows ?? 0),
+        success_rows: Number(response.success_rows ?? 0),
+        error_rows: Number(response.error_rows ?? 0),
+        errors: response.errors ?? [],
+        errors_summary: response.errors_summary ?? { count: 0, items: [] },
+        started_at: response.started_at,
+        completed_at: response.completed_at,
+        created_at: response.created_at,
       }
     },
 
@@ -1599,7 +1720,7 @@ export const api = {
     reviewExternalGuarantor: (id: string, data: { action: 'approve' | 'reject'; notes?: string }) =>
       apiCall<void>('PATCH', `/management/external-guarantors/${uuid(id)}/review/`, {
         status: data.action === 'approve' ? 'APPROVED' : 'REJECTED',
-        review_notes: data.notes,
+        admin_notes: data.notes,
       }),
 
     // Audit logs
@@ -1638,6 +1759,7 @@ export const api = {
           status: String(item.status ?? 'pending').toLowerCase(),
           due_date: item.due_date,
           paid_date: item.paid_date,
+          sacco: item.sacco,
         })),
       }
     },
@@ -1661,31 +1783,13 @@ export const api = {
       }
     },
 
-    getSettings: async () => {
-      const response = await apiCall<any>('GET', '/management/settings/')
-      return {
-        min_loan_amount: Number(response.min_loan_amount ?? 1000),
-        max_loan_amount: Number(response.max_loan_amount ?? 500000),
-        loan_multiplier: Number(response.loan_multiplier ?? 3),
-        requires_guarantor: Boolean(response.requires_guarantor ?? true),
-        guarantor_type_allowed: String(response.guarantor_type_allowed ?? 'BOTH'),
-        registration_fee: Number(response.registration_fee ?? 0),
-        monthly_contribution_amount: Number(response.monthly_contribution_amount ?? 0),
-        updated_at: response.updated_at,
-      }
-    },
-
-
-    updateSettings: async (settings: any) =>
-      apiCall<void>('PATCH', '/management/settings/', settings),
-
   },
 
   // ─── SUPER ADMIN ───────────────────────────────────────────────────────────
 
   superAdmin: {
     getDashboard: async () => {
-      const overview = await apiCall<any>('GET', '/management/superadmin/overview/').catch(() => null)
+      const overview = await apiCall<any>('GET', '/management/superadmin/overview/')
       return {
         total_saccos: Number(overview?.active_saccos_count ?? 0),
         active_saccos: Number(overview?.active_saccos_count ?? 0),
@@ -1698,14 +1802,11 @@ export const api = {
         active_saccos_change_this_month: Number(overview?.active_saccos_change_this_month ?? 0),
         total_members_change_this_month: Number(overview?.total_members_change_this_month ?? 0),
         platform_revenue_mtd_kes: Number(overview?.platform_revenue_mtd ?? 0),
-        kyc_verified_pct: 0,
-        aml_flags_open: 0,
-        system_alerts: 0,
         all_systems_operational: Boolean(overview?.all_systems_operational ?? true),
       }
     },
 
-    getSaccos: async (params?: { status?: string; sector?: string; search?: string }) => {
+    getSaccos: async (params?: { status?: string; search?: string }) => {
       const response = await apiCall<any>('GET', '/management/superadmin/saccos/')
       let items = Array.isArray(response) ? response : response.results ?? []
 
@@ -1735,18 +1836,15 @@ export const api = {
           health_status: item.health_status ?? 'GOOD',
           last_transaction_at: item.last_transaction_at,
           created_at: item.created_at,
-          sector: null,
-          initials: null,
-          color: null,
-          sasra_reg_no: null,
         })),
       }
     },
 
     getSacco: async (id: string) => {
-      // Sacco detail is not a single endpoint in superadmin, we mix public and private data
       const sacco = await api.saccos.get(id)
-      const stats = await apiCall<any>('GET', '/management/stats/', undefined, { params: { sacco_id: id } }).catch(() => null)
+      const stats = await apiCall<any>('GET', '/management/stats/', undefined, {
+        params: { sacco_id: sacco.id }
+      }).catch(() => null)
 
       return {
         ...normalizeSuperAdminSacco({
@@ -1758,14 +1856,6 @@ export const api = {
       }
     },
 
-    // NOTE: These endpoints are not present in the documented API collection.
-    // They are retained for API compatibility but will return 404 until the backend exposes them.
-    suspendSacco: (id: string) =>
-      apiCall<void>('PATCH', `/super-admin/saccos/${uuid(id)}/suspend/`),
-
-    unsuspendSacco: (id: string) =>
-      apiCall<void>('PATCH', `/super-admin/saccos/${uuid(id)}/unsuspend/`),
-
     assignRole: (data: { user_id: string; role_name: string; sacco_id?: string | null }) =>
       apiCall<any>('POST', '/management/roles/assign/', data),
 
@@ -1775,8 +1865,14 @@ export const api = {
     getUserRoles: (userId: string) =>
       apiCall<any[]>('GET', '/management/roles/', undefined, { params: { user_id: userId } }),
 
-    getAllMembers: async (params?: { sacco?: string; kyc_status?: string; search?: string; cursor?: string }) => {
-      const response = await apiCall<any>('GET', '/management/superadmin/members/', undefined, { params })
+    getAllMembers: async (params?: { sacco?: string; search?: string; cursor?: string }) => {
+      const response = await apiCall<any>('GET', '/management/superadmin/members/', undefined, {
+        params: {
+          sacco_id: params?.sacco,
+          search: params?.search,
+          cursor: params?.cursor,
+        }
+      })
       const items = response.results ?? []
 
       return {
@@ -1790,9 +1886,6 @@ export const api = {
           phone_number: item.phone_number,
           kyc_status: item.kyc_status,
           member_since: item.member_since,
-          sacco_name: '—', // List view doesn't provide this
-          member_number: '—', // List view doesn't provide this
-          status: 'active',
         })),
       }
     },
@@ -1801,21 +1894,25 @@ export const api = {
       const response = await apiCall<any>('GET', '/management/superadmin/transactions/live/')
       const results = Array.isArray(response) ? response : response.results || []
 
+      // M-Pesa result codes: 0 = success, 1032 = cancelled, 1037 = duplicate, etc.
+      const isSuccess = (stkStatus: string | undefined) => {
+        if (!stkStatus) return false
+        return stkStatus === '0' || stkStatus === 'SUCCESS' || stkStatus === '200'
+      }
+
       return {
         count: results.length,
         next: null,
         previous: null,
-        results: results.map((item: any) => ({
-          id: `${item.created_at}-${item.user_name}`,
+        results: results.map((item: any, i: number) => ({
+          id: item.id || `txn-${i}-${item.created_at}`,
           date: item.created_at,
           member_name: item.user_name,
           sacco_name: item.sacco_name,
-          txn_type: item.transaction_type,
-          amount: Number(item.amount),
-          status: item.stk_status === '0' ? 'completed' : 'pending',
-          direction: 'credit',
-          payment_method: 'mpesa',
-          platform_fee: 0,
+          txn_type: item.transaction_type || 'transaction',
+          amount: Number(item.amount || 0),
+          status: isSuccess(item.stk_status) ? 'completed' : 'failed',
+          payment_method: 'M-Pesa',
         })),
       }
     },
@@ -1844,7 +1941,7 @@ export const api = {
           member_count: Number(item.member_count || 0),
           txn_volume_this_month: Number(item.txn_volume_this_month || 0),
           platform_fee_this_month: Number(item.platform_fee_this_month || 0),
-          health_status: item.health_status ?? 'GOOD',
+          health_status: String(item.health_status ?? 'GOOD').toLowerCase(),
         })
       )
     },
@@ -1860,9 +1957,6 @@ export const api = {
           description: item.description,
           severity: item.severity,
           created_at: item.created_at,
-          risk_level: item.severity === 'CRITICAL' ? 'high' : item.severity === 'HIGH' ? 'medium' : 'low',
-          flag_reason: item.description,
-          member_name: item.member_name ?? '—',
         })
       )
     },

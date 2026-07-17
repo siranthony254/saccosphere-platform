@@ -14,9 +14,11 @@ export function Login() {
     event.preventDefault()
     try {
       await loginMutation.mutateAsync({ email, password })
+      // Use window.location for a clean redirect if React Router unmounting is crashing
+      // but let's try the Router navigate first with a small delay or check
       navigate(from, { replace: true })
     } catch {
-      // Error is already tracked in loginMutation.error — no extra handling needed
+      // Error is already tracked in loginMutation.error
     }
   }
 

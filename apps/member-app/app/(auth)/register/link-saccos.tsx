@@ -115,17 +115,36 @@ export default function LinkSaccos() {
         }
       }
 
-      // 2. UPLOAD KYC DOCUMENTS
+      // 2. SUBMIT ID NUMBER (REQUIRED BEFORE DOCUMENT UPLOAD)
+      const { idNumber, dateOfBirth } = useRegistrationStore.getState()
+      if (idNumber && dateOfBirth) {
+        try {
+          await api.kyc.submitId({ id_number: idNumber, date_of_birth: dateOfBirth })
+        } catch (idErr) {
+          console.warn('ID submission failed', idErr)
+          // Continue anyway, documents might still work if record exists
+        }
+      }
+
+      // 3. UPLOAD KYC DOCUMENTS
       if (kycDocuments.front && kycDocuments.back) {
         try {
           await Promise.all([
             api.kyc.uploadDocument({
               document_type: 'id_front',
-              file: { uri: kycDocuments.front.uri, name: kycDocuments.front.name, type: kycDocuments.front.type }
+              file: {
+                uri: kycDocuments.front.uri,
+                name: kycDocuments.front.name,
+                type: kycDocuments.front.type,
+              }
             }),
             api.kyc.uploadDocument({
               document_type: 'id_back',
-              file: { uri: kycDocuments.back.uri, name: kycDocuments.back.name, type: kycDocuments.back.type }
+              file: {
+                uri: kycDocuments.back.uri,
+                name: kycDocuments.back.name,
+                type: kycDocuments.back.type,
+              }
             }),
           ])
         } catch (kycErr) {
@@ -246,7 +265,7 @@ export default function LinkSaccos() {
         style={{ borderColor: BORDER_WHITE, backgroundColor: FROSTED_DARK }}
       >
         <Text className="text-xs" style={{ color: TEXT_MUTED }}>
-          🔍 Search {saccos.length || 237} SACCOs...
+          🔍 Search {saccos.length} SACCOs...
         </Text>
       </View>
       <TextInput
@@ -318,16 +337,6 @@ export default function LinkSaccos() {
           )
         })
       )}
-
-      {/* My SACCO isn't listed */}
-      <TouchableOpacity className="mt-2 mb-4">
-        <Text
-          className="text-xs font-semibold text-center"
-          style={{ color: VIOLET }}
-        >
-          My SACCO isn't listed →
-        </Text>
-      </TouchableOpacity>
 
       {/* Finish */}
       <TouchableOpacity

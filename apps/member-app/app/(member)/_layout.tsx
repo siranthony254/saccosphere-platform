@@ -68,6 +68,7 @@ export default function MemberTabLayout() {
         <Tabs.Screen name="loan-repayment" options={{ href: null }} />
         <Tabs.Screen name="notifications" options={{ href: null }} />
         <Tabs.Screen name="profile" options={{ href: null }} />
+        <Tabs.Screen name="settings" options={{ href: null }} />
         <Tabs.Screen name="discover/[slug]" options={{ href: null }} />
         <Tabs.Screen name="discover/[slug]/apply" options={{ href: null }} />
       </Tabs>

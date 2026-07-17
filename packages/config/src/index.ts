@@ -65,12 +65,14 @@ export const QueryKeys = {
   loanDetail: (id: string) => ['loan', id] as const,
   loanComparison: (amount: number, months: number) =>
     ['loan-comparison', amount, months] as const,
+  guarantorSearch: (loanId: string, query: string) =>
+    ['guarantor-search', loanId, query] as const,
   notifications: () => ['notifications'] as const,
   applications: () => ['applications'] as const,
   kyc: () => ['kyc'] as const,
   savings: (params?: object) => ['savings', params] as const,
-
-
+  paymentStatus: (ref: string) => ['payment-status', ref] as const,
+  profile: () => ['profile'] as const,
 
   // SACCO admin
   saccoAdminDashboard: () => ['sacco-admin-dashboard'] as const,
@@ -90,6 +92,7 @@ export const QueryKeys = {
   amlFlags: () => ['aml-flags'] as const,
 } as const
 
+
 // ─── CONSTANTS ───────────────────────────────────────────────────────────────
 
 export const PLATFORM_NAME = 'Saccosphere'
@@ -108,5 +111,3 @@ export const STALE_TIMES = {
   kycStatus: 30_000,
   paymentStatus: 15_000,
 } as const
-
-export * from './mock'

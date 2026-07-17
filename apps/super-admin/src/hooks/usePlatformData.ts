@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { QueryKeys, STALE_TIMES } from '@saccosphere/config'
 import { api } from '@saccosphere/api-client'
 
@@ -9,9 +9,7 @@ type LiveTransaction = {
   sacco: string
   type: string
   amount: number
-  direction: string
   method: string
-  platform_fee: number
   status: string
 }
 
@@ -22,9 +20,7 @@ const toLiveTransaction = (txn: {
   sacco_name: string
   txn_type: string
   amount: number
-  direction: string
   payment_method: string
-  platform_fee: number
   status: string
 }): LiveTransaction => ({
   id: txn.id,
@@ -38,9 +34,7 @@ const toLiveTransaction = (txn: {
   sacco: txn.sacco_name,
   type: txn.txn_type.replace(/_/g, ' '),
   amount: txn.amount,
-  direction: txn.direction,
   method: txn.payment_method,
-  platform_fee: txn.platform_fee,
   status: txn.status,
 })
 
@@ -77,7 +71,7 @@ export function usePlatformAlerts() {
   })
 }
 
-export function useAllSaccos(filters?: { status?: string; sector?: string; search?: string }) {
+export function useAllSaccos(filters?: { status?: string; search?: string }) {
   return useQuery({
     queryKey: QueryKeys.allSaccos(filters),
     queryFn: () => api.superAdmin.getSaccos(filters),
@@ -90,14 +84,6 @@ export function useSaccoDetail(id: string) {
     queryKey: QueryKeys.superSaccoDetail(id),
     queryFn: () => api.superAdmin.getSacco(id),
     refetchInterval: 30_000,
-  })
-}
-
-export function useSuspendSacco() {
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: (id: string) => api.superAdmin.suspendSacco(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: QueryKeys.allSaccos() }),
   })
 }
 
@@ -115,7 +101,7 @@ export function useKycQueue() {
   })
 }
 
-export function useAllMembers(params?: { sacco?: string; kyc_status?: string; search?: string }) {
+export function useAllMembers(params?: { sacco?: string; search?: string }) {
   return useQuery({
     queryKey: QueryKeys.allMembers(params),
     queryFn: () => api.superAdmin.getAllMembers(params),
@@ -140,9 +126,7 @@ export function usePlatformLiveFeed() {
     sacco_name: string
     txn_type: string
     amount: number
-    direction: string
     payment_method: string
-    platform_fee: number
     status: string
   }
 
@@ -158,9 +142,7 @@ export function usePlatformLiveFeed() {
           sacco_name: txn.sacco_name,
           txn_type: txn.txn_type,
           amount: txn.amount,
-          direction: txn.direction,
           payment_method: txn.payment_method,
-          platform_fee: txn.platform_fee,
           status: txn.status,
         })
       )

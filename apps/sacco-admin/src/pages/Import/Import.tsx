@@ -75,21 +75,25 @@ export function Import() {
               </div>
               <div className="flex justify-between py-2 border-b border-surface-3">
                 <span className="text-xs text-ink-muted">Progress</span>
-                <span className="text-xs font-semibold text-ink">{jobStatus.progress}%</span>
+                <span className="text-xs font-semibold text-ink">{jobStatus.progress_pct}%</span>
               </div>
               <div className="flex justify-between py-2 border-b border-surface-3">
                 <span className="text-xs text-ink-muted">Processed</span>
-                <span className="text-xs font-semibold text-ink">{jobStatus.processed_records} / {jobStatus.total_records}</span>
+                <span className="text-xs font-semibold text-ink">{jobStatus.processed_rows} / {jobStatus.total_rows}</span>
+              </div>
+              <div className="flex justify-between py-2 border-b border-surface-3">
+                <span className="text-xs text-ink-muted">Successful</span>
+                <span className="text-xs font-semibold text-mint-600">{jobStatus.success_rows}</span>
               </div>
               <div className="flex justify-between py-2">
                 <span className="text-xs text-ink-muted">Failed</span>
-                <span className="text-xs font-semibold text-red-700">{jobStatus.failed_records}</span>
+                <span className="text-xs font-semibold text-red-700">{jobStatus.error_rows}</span>
               </div>
-              {jobStatus.error_summary && jobStatus.error_summary.length > 0 && (
+              {jobStatus.errors_summary && jobStatus.errors_summary.items && jobStatus.errors_summary.items.length > 0 && (
                 <div className="mt-3">
-                  <div className="text-xs text-ink-muted mb-1">Errors:</div>
+                  <div className="text-xs text-ink-muted mb-1">Errors ({jobStatus.errors_summary.count} total):</div>
                   <div className="text-xs text-red-700 max-h-20 overflow-y-auto">
-                    {jobStatus.error_summary.map((err: string, i: number) => (
+                    {jobStatus.errors_summary.items.map((err: string, i: number) => (
                       <div key={i} className="py-0.5">{err}</div>
                     ))}
                   </div>

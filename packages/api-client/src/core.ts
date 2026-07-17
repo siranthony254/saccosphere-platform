@@ -5,7 +5,6 @@
  * - Access token attachment on every request
  * - 401 → silent refresh → retry (once)
  * - Response envelope unwrapping { success, data, error }
- * - Idempotency key injection for payment calls
  */
 
 import axios, { AxiosInstance, AxiosRequestConfig } from 'axios'
@@ -13,7 +12,6 @@ import { getApiUrl, ErrorCode } from '@saccosphere/config'
 import type { ZodType } from 'zod'
 
 // ─── IN-MEMORY TOKEN STORE ────────────────────────────────────────────────────
-// Access token lives here ONLY — never in localStorage or sessionStorage.
 
 let _accessToken: string | null = null
 let _refreshToken: string | null = null
@@ -56,7 +54,7 @@ const normalizeBaseUrl = (url: string): string => {
 
 export const axiosInstance: AxiosInstance = axios.create({
   baseURL: normalizeBaseUrl(getApiUrl()),
-  withCredentials: true, // sends httpOnly refresh token cookie automatically
+  withCredentials: true, 
   headers: {
     'Content-Type': 'application/json',
     Accept: 'application/json',
@@ -71,11 +69,9 @@ axiosInstance.interceptors.request.use(
     if (_accessToken) {
       config.headers.Authorization = `Bearer ${_accessToken}`
     }
-    // Add X-Sacco-ID header for SACCO admin multi-tenancy
     if (_saccoId) {
       config.headers['X-Sacco-ID'] = _saccoId
     }
-    // Add a unique request ID for tracing (helpful in Sentry)
     config.headers['X-Request-ID'] = generateRequestId()
     return config
   },
@@ -120,22 +116,30 @@ axiosInstance.interceptors.response.use(
         })
         const payload = data.data !== undefined ? data.data : data
         const newToken: string = payload.access
-        setAccessToken(newToken)
+        const newRefreshToken: string | undefined = payload.refresh
 
-        // Drain the queue
+        setAccessToken(newToken)
+        if (newRefreshToken) {
+          setRefreshToken(newRefreshToken)
+          // Also need to save it to persistent storage if on mobile/web
+          // However, core.ts shouldn't know about SecureStore/localStorage directly
+          // We can dispatch an event or use a callback
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('saccosphere:token_rotated', {
+              detail: { refreshToken: newRefreshToken }
+            }))
+          }
+        }
+
         refreshQueue.forEach((cb) => cb(newToken))
         refreshQueue = []
 
-        // Retry original
         original.headers = original.headers ?? {}
         original.headers.Authorization = `Bearer ${newToken}`
         return axiosInstance(original)
       } catch (refreshError) {
-        // Refresh failed — force logout
         clearTokens()
         refreshQueue = []
-
-        // Dispatch event with reason so auth stores can clear localStorage
         if (typeof window !== 'undefined') {
           window.dispatchEvent(new CustomEvent('saccosphere:logout', {
             detail: { reason: 'token_refresh_failed' }
@@ -181,14 +185,14 @@ export async function apiCall<T>(
   if (typeof FormData !== 'undefined' && payload instanceof FormData) {
     config.headers = {
       ...config.headers,
-      'Content-Type': 'multipart/form-data',
+      'Content-Type': undefined,
     }
   }
 
   if (options?.idempotent) {
     config.headers = {
       ...config.headers,
-      'Idempotency-Key': generateRequestId(), // UUID v4
+      'Idempotency-Key': generateRequestId(), 
     }
   }
 
@@ -219,7 +223,6 @@ export async function apiCall<T>(
       }
       throw apiError
     }
-    // Network error (no response)
     const networkError: ApiError = {
       code: ErrorCode.NETWORK_ERROR,
       message: 'Unable to reach the server. Check your connection.',
@@ -233,7 +236,6 @@ function generateRequestId(): string {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) {
     return crypto.randomUUID()
   }
-  // Fallback for environments without crypto.randomUUID
   return Math.random().toString(36).substring(2) + Date.now().toString(36)
 }
 

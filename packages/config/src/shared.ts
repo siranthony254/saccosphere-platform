@@ -2,8 +2,7 @@
  * Shared config constants that do not depend on a runtime environment API.
  */
 
-// App error codes. The frontend uses these codes, not error messages, to decide
-// what to show. Match these exactly with the Django backend.
+
 export const ErrorCode = {
   // Auth
   AUTH_TOKEN_EXPIRED: 'AUTH_TOKEN_EXPIRED',
@@ -50,6 +49,8 @@ export const QueryKeys = {
     ['loan-comparison', amount, months] as const,
   notifications: () => ['notifications'] as const,
   applications: () => ['applications'] as const,
+  kyc: () => ['kyc'] as const,
+  savings: (params?: object) => ['savings', params] as const,
   profile: () => ['profile'] as const,
   kycStatus: () => ['kyc-status'] as const,
   paymentStatus: (reference: string) => ['payment-status', reference] as const,
@@ -60,7 +61,7 @@ export const QueryKeys = {
   adminMembers: (filters?: object) => ['admin-members', filters] as const,
   adminMember: (id: string) => ['admin-member', id] as const,
   adminLoans: (filters?: object) => ['admin-loans', filters] as const,
-  adminApplications: () => ['admin-applications'] as const,
+  adminApplications: (filters?: object) => ['admin-applications', filters] as const,
   adminContributions: (filters?: object) => ['admin-contributions', filters] as const,
 
   // Super admin
@@ -80,6 +81,7 @@ export const SUPPORT_EMAIL = 'support@saccosphere.co.ke'
 export const STALE_TIMES = {
   dashboard: 60_000,
   saccoConfig: 300_000,
+  saccos: 300_000,
   transactions: 30_000,
   adminDashboard: 30_000,
   platformOverview: 60_000,

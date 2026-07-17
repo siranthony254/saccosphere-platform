@@ -13,7 +13,8 @@ const ACTION_COLORS: Record<string, { bg: string; color: string }> = {
 export function AuditLogs() {
   const [actionFilter, setActionFilter] = useState('')
   const [resourceFilter, setResourceFilter] = useState('')
-  const { data, isLoading } = useAuditLogs({ action: actionFilter || undefined, resource_type: resourceFilter || undefined })
+  const [userFilter, setUserFilter] = useState('')
+  const { data, isLoading } = useAuditLogs({ action: actionFilter || undefined, resource_type: resourceFilter || undefined, user: userFilter || undefined })
 
   return (
     <div className="p-5">
@@ -37,6 +38,13 @@ export function AuditLogs() {
             placeholder="Filter by resource..."
             value={resourceFilter}
             onChange={(e) => setResourceFilter(e.target.value)}
+            className="px-3 py-1.5 border border-ink-faint rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+          />
+          <input
+            type="text"
+            placeholder="Filter by user email..."
+            value={userFilter}
+            onChange={(e) => setUserFilter(e.target.value)}
             className="px-3 py-1.5 border border-ink-faint rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
           />
         </div>

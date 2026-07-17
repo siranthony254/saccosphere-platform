@@ -3,7 +3,7 @@ import { useSaccoDetail } from '../../hooks/usePlatformData'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { Card } from '../../components/ui/Card'
 import { Badge } from '../../components/ui/Badge'
-import { SaccoAvatar, SaccoFeeBadge } from '../../components/saccos'
+import { SaccoAvatar } from '../../components/saccos'
 
 export function SaccoDetail() {
   const { id } = useParams<{ id: string }>()
@@ -11,8 +11,6 @@ export function SaccoDetail() {
 
   if (isLoading) return <div className="p-6 text-ink-muted">Loading SACCO details...</div>
   if (!sacco) return <div className="p-6">SACCO not found.</div>
-
-  const formatKes = (value: number) => `KES ${value.toLocaleString()}`
 
   return (
     <div className="p-5">
@@ -27,12 +25,6 @@ export function SaccoDetail() {
             >
               Contact SACCO
             </button>
-            <button
-              className="py-1.5 px-3.5 rounded-lg bg-violet-500 hover:bg-violet-600 text-white text-[13px] font-semibold cursor-pointer transition-colors"
-              onClick={() => alert('Global SACCO configuration is managed via platform settings')}
-            >
-              Sacco Settings
-            </button>
           </div>
         }
 
@@ -43,74 +35,38 @@ export function SaccoDetail() {
         <SaccoAvatar name={sacco.name} color={sacco.color} initials={sacco.initials} size="lg" />
         <div className="flex-1">
           <div className="text-base font-semibold text-ink">{sacco.name}</div>
-          <div className="text-xs text-ink-muted mb-2">{sacco.sector} · {sacco.sasra_reg_no || 'No SASRA reg'}</div>
+          <div className="text-xs text-ink-muted mb-2">{sacco.sector}</div>
           <div className="flex gap-1.5">
-            <Badge variant={sacco.is_active ? 'success' : 'error'}>{sacco.status}</Badge>
-            <Badge variant={sacco.api_connected ? 'success' : 'error'}>
-              {sacco.api_connected ? 'API connected' : 'API disconnected'}
-            </Badge>
-            <SaccoFeeBadge status={sacco.fee_status} />
+            <Badge variant={sacco.is_active ? 'success' : 'error'}>{sacco.is_active ? 'Active' : 'Suspended'}</Badge>
           </div>
-        </div>
-        <div className="text-right">
-          <div className="text-[10px] text-ink-muted mb-1">Platform fee this month</div>
-          <div className="text-lg font-bold text-ink mb-1">{formatKes(sacco.platform_fee_kes ?? 0)}</div>
-          <SaccoFeeBadge status={sacco.fee_status} />
         </div>
       </div>
 
       {/* Stats grid */}
-      <div className="grid grid-cols-3 gap-4 mb-5">
-        <Card title="On platform">
-          <div className="flex justify-between py-2 border-b border-surface-2 text-xs last:border-0">
-            <span className="text-ink-muted">Members on app</span>
-            <span className="font-semibold text-ink">{(sacco.members_on_app ?? 0).toLocaleString()}</span>
-          </div>
-          <div className="flex justify-between py-2 border-b border-surface-2 text-xs last:border-0">
-            <span className="text-ink-muted">% of total members</span>
-            <span className="font-semibold text-ink">
-              {sacco.member_count > 0 ? `${(((sacco.members_on_app ?? 0) / sacco.member_count) * 100).toFixed(1)}%` : '0%'}
-            </span>
-          </div>
-          <div className="flex justify-between py-2 border-b border-surface-2 text-xs last:border-0">
-            <span className="text-ink-muted">Txn volume (MTD)</span>
-            <span className="font-semibold text-ink">{formatKes(sacco.transaction_volume_mtd_kes ?? 0)}</span>
-          </div>
-        </Card>
-
-        <Card title="Health">
+      <div className="grid grid-cols-2 gap-4 mb-5">
+        <Card title="SACCO details">
           <div className="flex justify-between py-2 border-b border-surface-2 text-xs last:border-0">
             <span className="text-ink-muted">Total members</span>
             <span className="font-semibold text-ink">{sacco.member_count.toLocaleString()}</span>
           </div>
           <div className="flex justify-between py-2 border-b border-surface-2 text-xs last:border-0">
-            <span className="text-ink-muted">API status</span>
-            <span className={`font-semibold ${sacco.api_connected ? 'text-mint-700' : 'text-red-800'}`}>
-              {sacco.api_connected ? 'Connected' : 'Disconnected'}
-            </span>
-          </div>
-          <div className="flex justify-between py-2 border-b border-surface-2 text-xs last:border-0">
-            <span className="text-ink-muted">Overall health</span>
-            <span className="font-semibold capitalize">{sacco.health ?? 'Unknown'}</span>
+            <span className="text-ink-muted">Health status</span>
+            <span className="font-semibold text-ink">{sacco.health_status}</span>
           </div>
         </Card>
 
-        <Card title="Revenue contribution">
+        <Card title="Contact info">
           <div className="flex justify-between py-2 border-b border-surface-2 text-xs last:border-0">
-            <span className="text-ink-muted">SaaS fee</span>
-            <span className="font-semibold text-ink">{formatKes(sacco.platform_fee_kes ?? 0)}/mo</span>
+            <span className="text-ink-muted">Email</span>
+            <span className="font-semibold text-ink">{sacco.email || '—'}</span>
           </div>
           <div className="flex justify-between py-2 border-b border-surface-2 text-xs last:border-0">
-            <span className="text-ink-muted">Transaction fees (est.)</span>
-            <span className="font-semibold text-ink">
-              {formatKes(Math.round((sacco.transaction_volume_mtd_kes ?? 0) * 0.01))}
-            </span>
+            <span className="text-ink-muted">Phone</span>
+            <span className="font-semibold text-ink">{sacco.phone || '—'}</span>
           </div>
           <div className="flex justify-between py-2 border-b border-surface-2 text-xs last:border-0">
-            <span className="text-ink-muted">Total MTD</span>
-            <span className="font-semibold text-ink">
-              {formatKes((sacco.platform_fee_kes ?? 0) + Math.round((sacco.transaction_volume_mtd_kes ?? 0) * 0.01))}
-            </span>
+            <span className="text-ink-muted">Website</span>
+            <a href={sacco.website || '#'} className="font-semibold text-violet-600 hover:underline">{sacco.website ? 'Visit website' : '—'}</a>
           </div>
         </Card>
       </div>

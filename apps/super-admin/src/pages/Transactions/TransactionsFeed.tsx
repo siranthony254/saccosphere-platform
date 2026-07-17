@@ -15,6 +15,8 @@ export function TransactionsFeed() {
     const now = new Date()
     return feed.filter((t: any) => {
       const d = new Date(t.date)
+      if (isNaN(d.getTime())) return false // Skip invalid dates
+
       if (range === 'today') return d.toISOString().slice(0, 10) === today
       if (range === 'week') return now.getTime() - d.getTime() <= 7 * 24 * 60 * 60 * 1000
       return now.getTime() - d.getTime() <= 30 * 24 * 60 * 60 * 1000
@@ -85,7 +87,7 @@ export function TransactionsFeed() {
               </span>
             ),
           },
-          { key: 'method', header: 'Method', render: () => <span className="capitalize">M-Pesa</span> },
+          { key: 'method', header: 'Method', render: (row: any) => <span className="capitalize">{row.method}</span> },
           {
             key: 'status',
             header: 'Status',

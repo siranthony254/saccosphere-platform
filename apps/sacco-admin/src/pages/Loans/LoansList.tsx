@@ -10,6 +10,16 @@ const STATUS_COLORS: Record<string, { bg: string; color: string }> = {
   BOARD_REVIEW: { bg: 'bg-violet-50', color: 'text-violet-700' },
 }
 
+// Backend status transition rules
+const VALID_TRANSITIONS: Record<string, { canApprove: boolean; canReject: boolean; canDisburse: boolean; nextStatus: string }> = {
+  PENDING_APPROVAL: { canApprove: true, canReject: true, canDisburse: false, nextStatus: 'UNDER_REVIEW' },
+  UNDER_REVIEW: { canApprove: true, canReject: true, canDisburse: false, nextStatus: 'APPROVED' },
+  APPROVED: { canApprove: false, canReject: false, canDisburse: true, nextStatus: 'DISBURSED' },
+  REJECTED: { canApprove: false, canReject: false, canDisburse: false, nextStatus: '' },
+  DISBURSED: { canApprove: false, canReject: false, canDisburse: false, nextStatus: '' },
+  BOARD_REVIEW: { canApprove: true, canReject: true, canDisburse: false, nextStatus: 'UNDER_REVIEW' },
+}
+
 export function LoansList() {
   const [statusFilter, setStatusFilter] = useState('all')
   const { data, isLoading } = useAdminLoans({ status: statusFilter === 'all' ? undefined : statusFilter })
@@ -152,6 +162,7 @@ export function LoansList() {
                     <div className="bg-surface-2 rounded-lg p-3">
                       <div className="font-semibold text-xs text-ink-soft mb-2">Loan summary</div>
                       {[
+                        { l: 'Current status', v: loan.status },
                         { l: 'Loan type', v: loan.loan_type_name || '—' },
                         { l: 'Term', v: `${loan.term_months} months` },
                         { l: 'Applied at', v: loan.applied_at ? new Date(loan.applied_at).toLocaleDateString() : '—' },
@@ -164,6 +175,13 @@ export function LoansList() {
                       ))}
                     </div>
                     <div>
+                      <div className="text-xs text-ink-muted mb-2">
+                        {VALID_TRANSITIONS[loan.status]?.canDisburse
+                          ? `Will change status to: DISBURSED`
+                          : VALID_TRANSITIONS[loan.status]?.canApprove
+                          ? `Will change status to: ${VALID_TRANSITIONS[loan.status].nextStatus}`
+                          : 'No valid transitions available'}
+                      </div>
                       <textarea
                         className="w-full p-2.5 border border-ink-faint rounded-lg text-sm resize-y min-h-[80px] box-border mb-2.5 focus:outline-none focus:ring-2 focus:ring-violet-500"
                         placeholder="Review notes (optional)..."
@@ -171,7 +189,7 @@ export function LoansList() {
                         onChange={(e) => setNotes(e.target.value)}
                       />
                       <div className="flex gap-2">
-                        {loan.status === 'APPROVED' ? (
+                        {VALID_TRANSITIONS[loan.status]?.canDisburse ? (
                           <button
                             className={`flex-1 py-2 rounded-lg border-none bg-blue-600 text-white text-sm font-semibold cursor-pointer hover:bg-blue-700 transition-colors ${disbursing ? 'opacity-60' : ''}`}
                             onClick={() => handleDisburse(loan)}
@@ -182,16 +200,20 @@ export function LoansList() {
                         ) : (
                           <>
                             <button
-                              className={`flex-1 py-2 rounded-lg border-none bg-mint-600 text-white text-sm font-semibold cursor-pointer hover:bg-mint-700 transition-colors ${reviewing ? 'opacity-60' : ''}`}
-                              onClick={() => handleReview(loan.loan_id, 'approve')}
-                              disabled={reviewing}
+                              className={`flex-1 py-2 rounded-lg border-none text-white text-sm font-semibold cursor-pointer transition-colors ${
+                                VALID_TRANSITIONS[loan.status]?.canApprove ? 'bg-mint-600 hover:bg-mint-700' : 'bg-ink-faint cursor-not-allowed'
+                              }`}
+                              onClick={() => VALID_TRANSITIONS[loan.status]?.canApprove && handleReview(loan.loan_id, 'approve')}
+                              disabled={reviewing || !VALID_TRANSITIONS[loan.status]?.canApprove}
                             >
                               {reviewing ? 'Processing...' : '✓ Approve'}
                             </button>
                             <button
-                              className="flex-1 py-2 rounded-lg border-none bg-red-50 text-red-700 text-sm font-semibold cursor-pointer hover:bg-red-100 transition-colors"
-                              onClick={() => handleReview(loan.loan_id, 'reject')}
-                              disabled={reviewing}
+                              className={`flex-1 py-2 rounded-lg border-none text-sm font-semibold cursor-pointer transition-colors ${
+                                VALID_TRANSITIONS[loan.status]?.canReject ? 'bg-red-50 text-red-700 hover:bg-red-100' : 'bg-ink-faint text-ink-muted cursor-not-allowed'
+                              }`}
+                              onClick={() => VALID_TRANSITIONS[loan.status]?.canReject && handleReview(loan.loan_id, 'reject')}
+                              disabled={reviewing || !VALID_TRANSITIONS[loan.status]?.canReject}
                             >
                               ✗ Reject
                             </button>

@@ -1,12 +1,13 @@
 import { View, Text, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, Alert } from 'react-native'
 import { useLocalSearchParams, router } from 'expo-router'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useSaccoConfig } from '../../../../../hooks/useSaccoConfig'
 import { useMembershipBySacco } from '../../../../../hooks/useMembership'
 import { useLoanApplicationStore } from '../../../../../store/useLoanApplicationStore'
 import { useSubmitLoanApplication } from '../../../../../hooks/useLoanApplication'
 import { useCurrentUser } from '../../../../../store/useAuthStore'
+import { useLoanEligibility } from '../../../../../hooks/useLoans'
 import { DeepSpaceBackground } from '../../../../DeepSpaceBackground'
 
 export default function LoanStep1() {
@@ -18,6 +19,7 @@ export default function LoanStep1() {
   const { mutate: applyLoan, isPending } = useSubmitLoanApplication()
   const user = useCurrentUser()
   const phoneNumber = user?.phone_number ?? user?.phone ?? ''
+  const { data: eligibility } = useLoanEligibility(membership?.sacco_id ?? '')
 
   const [productKey, setProductKey] = useState(step1?.loan_product_key ?? '')
   const [amount, setAmount] = useState(step1?.amount_requested?.toString() ?? '100000')
@@ -25,8 +27,17 @@ export default function LoanStep1() {
   const [purpose, setPurpose] = useState(step1?.purpose ?? '')
   const [disburse, setDisburse] = useState<'mpesa' | 'fosa' | 'bank'>(step1?.disbursement_method ?? 'mpesa')
 
-  const selectedProduct = config?.loan_products.find(p => p.key === productKey) ?? config?.loan_products[0]
-  const maxAmount = membership ? membership.bosa_balance * (selectedProduct?.max_multiplier ?? 3) : 0
+  // Initialize product key when config loads
+  useEffect(() => {
+    if (config && config.loan_products && config.loan_products.length > 0 && !productKey) {
+      setProductKey(config.loan_products[0].key)
+    }
+  }, [config, productKey])
+
+  const selectedProduct = config?.loan_products.find(p => p.key === productKey) ?? config?.loan_products?.[0]
+  console.log('Config state:', { config, loanProducts: config?.loan_products, productKey, selectedProduct })
+  // Use real-time eligibility data for max amount
+  const maxAmount = eligibility?.max_amount ?? 0
   const monthlyRate = (selectedProduct?.interest_rate_pct ?? 12) / 100 / 12
   const n = parseInt(months)
   const instalment = monthlyRate > 0
@@ -34,15 +45,40 @@ export default function LoanStep1() {
     : parseFloat(amount) / n
 
   const handleNext = () => {
-    if (!membership) return
+    console.log('handleNext called', { membership, selectedProduct, purpose, amount, months, eligibility })
+    if (!membership) {
+      console.log('No membership')
+      return
+    }
+    if (!selectedProduct?.key) {
+      console.log('No selected product')
+      Alert.alert('Error', 'Please select a loan product')
+      return
+    }
+    // Check eligibility
+    if (!eligibility?.eligible) {
+      const reason = eligibility?.reason ?? 'You are not eligible for a loan at this time'
+      Alert.alert('Not Eligible', reason)
+      return
+    }
+    if (eligibility?.max_amount === 0) {
+      Alert.alert('No Loan Limit', 'Your current loan limit is KES 0. Please build your savings to increase your limit.')
+      return
+    }
+    const requestedAmount = parseFloat(amount)
+    if (requestedAmount > eligibility.max_amount) {
+      Alert.alert('Amount Exceeds Limit', `Your maximum loan limit is KES ${eligibility.max_amount.toLocaleString()}. Please reduce your loan amount.`)
+      return
+    }
     const step1Data = {
-      loan_product_key: selectedProduct?.key ?? '',
-      amount_requested: parseFloat(amount),
+      loan_product_key: selectedProduct.key,
+      amount_requested: requestedAmount,
       period_months: n,
       purpose,
       disbursement_method: disburse,
       disbursement_account: phoneNumber,
     }
+    console.log('Submitting loan application:', step1Data)
     setContext(membership.id, slug)
     setStep1(step1Data)
 
@@ -50,11 +86,15 @@ export default function LoanStep1() {
       { membership_id: membership.id, ...step1Data, guarantor_membership_ids: [] },
       {
         onSuccess: (loan) => {
+          console.log('Loan application successful:', loan)
           setLoanId(loan.id)
           router.push({ pathname: '/sacco/[slug]/loans/apply/external-guarantors', params: { slug } })
         },
 
-        onError: (err) => Alert.alert('Error', err.message),
+        onError: (err) => {
+          console.error('Loan application error:', err)
+          Alert.alert('Error', err.message)
+        },
       }
     )
   }
@@ -67,6 +107,59 @@ export default function LoanStep1() {
       </View>
     </DeepSpaceBackground>
   )
+
+  // Check eligibility and show error if not eligible or limit is zero
+  if (eligibility && !eligibility.eligible) {
+    return (
+      <DeepSpaceBackground>
+        <ScrollView
+          className="flex-1"
+          contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 40, paddingTop: insets.top }}
+        >
+          <View className="flex-row items-center mb-6">
+            <TouchableOpacity onPress={() => router.back()} className="mr-3">
+              <Text className="text-white/60 text-lg">←</Text>
+            </TouchableOpacity>
+            <View>
+              <Text className="text-white text-xl font-bold">Apply for loan</Text>
+            </View>
+          </View>
+
+          <View className="bg-red-500/10 border border-red-500/30 rounded-2xl p-6 items-center">
+            <Text className="text-red-400 text-2xl mb-3">⚠️</Text>
+            <Text className="text-white text-lg font-bold mb-2">Not Eligible</Text>
+            <Text className="text-white/60 text-sm text-center">{eligibility.reason ?? 'You are not eligible for a loan at this time'}</Text>
+          </View>
+        </ScrollView>
+      </DeepSpaceBackground>
+    )
+  }
+
+  if (eligibility && eligibility.max_amount === 0) {
+    return (
+      <DeepSpaceBackground>
+        <ScrollView
+          className="flex-1"
+          contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 40, paddingTop: insets.top }}
+        >
+          <View className="flex-row items-center mb-6">
+            <TouchableOpacity onPress={() => router.back()} className="mr-3">
+              <Text className="text-white/60 text-lg">←</Text>
+            </TouchableOpacity>
+            <View>
+              <Text className="text-white text-xl font-bold">Apply for loan</Text>
+            </View>
+          </View>
+
+          <View className="bg-yellow-500/10 border border-yellow-500/30 rounded-2xl p-6 items-center">
+            <Text className="text-yellow-400 text-2xl mb-3">💰</Text>
+            <Text className="text-white text-lg font-bold mb-2">No Loan Limit</Text>
+            <Text className="text-white/60 text-sm text-center">Your current loan limit is KES 0. Please build your savings to increase your limit.</Text>
+          </View>
+        </ScrollView>
+      </DeepSpaceBackground>
+    )
+  }
 
   return (
     <DeepSpaceBackground>

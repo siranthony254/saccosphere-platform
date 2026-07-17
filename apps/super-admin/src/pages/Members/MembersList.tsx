@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react'
-import { useAllMembers } from '../../hooks/usePlatformData'
+import { useState } from 'react'
+import { useAllMembers, useAllSaccos } from '../../hooks/usePlatformData'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { DataTable } from '../../components/ui/DataTable'
 import { Badge } from '../../components/ui/Badge'
@@ -15,20 +15,13 @@ function kycVariant(status: string | null | undefined): 'success' | 'warning' | 
 
 export function MembersList() {
   const [search, setSearch] = useState('')
-  const [kycFilter, setKycFilter] = useState('all')
+  const [saccoFilter, setSaccoFilter] = useState('')
 
   const { data, isLoading, isError, refetch } = useAllMembers({
     search: search || undefined,
-    kyc_status: kycFilter === 'all' ? undefined : kycFilter,
+    sacco: saccoFilter || undefined,
   })
-
-  const kycOptions = useMemo(() => {
-    const set = new Set<string>()
-    ;(data?.results ?? []).forEach((m: PlatformMember) => {
-      if (m.kyc_status) set.add(m.kyc_status)
-    })
-    return Array.from(set).sort()
-  }, [data?.results])
+  const { data: saccosData } = useAllSaccos()
 
   return (
     <div className="p-5">
@@ -40,19 +33,19 @@ export function MembersList() {
       <div className="flex gap-2.5 mb-4">
         <input
           className="flex-1 py-2 px-3 border border-mid rounded-lg text-[13px] outline-none"
-          placeholder="Search by name, ID, phone, email..."
+          placeholder="Search by name or email..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
         <select
           className="py-2 px-3 border border-mid rounded-lg text-[13px] outline-none bg-surface"
-          value={kycFilter}
-          onChange={(e) => setKycFilter(e.target.value)}
+          value={saccoFilter}
+          onChange={(e) => setSaccoFilter(e.target.value)}
         >
-          <option value="all">All KYC statuses</option>
-          {kycOptions.map((status) => (
-            <option key={status} value={status}>
-              {status}
+          <option value="">All SACCOs</option>
+          {(saccosData?.results ?? []).map((sacco: any) => (
+            <option key={sacco.id} value={sacco.id}>
+              {sacco.name}
             </option>
           ))}
         </select>
@@ -92,7 +85,11 @@ export function MembersList() {
           ]}
           data={data?.results ?? []}
           loading={isLoading}
-          emptyMessage={search || kycFilter !== 'all' ? 'No members match your filters.' : 'No members found on the platform.'}
+          emptyMessage={
+            search
+              ? 'No members match your search.'
+              : 'No approved members found. Check back once members are approved by their respective SACCOs.'
+          }
           keyExtractor={(row: PlatformMember) => row.id}
         />
       )}

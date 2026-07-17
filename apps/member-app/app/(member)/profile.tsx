@@ -104,7 +104,8 @@ export default function ProfileScreen() {
           <TouchableOpacity key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, borderBottomWidth: 0.5, borderBottomColor: i === settings.length - 1 ? 'transparent' : BORDER_WHITE }} onPress={s.action}>
             <View style={{ width: 34, height: 34, borderRadius: 8, backgroundColor: FROSTED, alignItems: 'center', justifyContent: 'center' }}><Text>{s.icon}</Text></View>
             <Text style={{ flex: 1, color: TEXT, fontSize: 12, fontWeight: '500' }}>{s.label}</Text>
-            {s.toggle ? (
+            {('toggle' in s && s.toggle) ? (
+
               <View style={{ width: 38, height: 22, borderRadius: 11, backgroundColor: VIOLET }} />
             ) : (
               <>

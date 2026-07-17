@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Dimensions, Alert } from 'react-native'
+import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Dimensions, Alert, TextInput } from 'react-native'
 import { router } from 'expo-router'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import * as ImagePicker from 'expo-image-picker'
@@ -43,12 +43,14 @@ type IdSide = 'front' | 'back'
 
 export default function RegisterKYC() {
   const insets = useSafeAreaInsets()
-  const { step1, otpVerified, setKYCDocuments } = useRegistrationStore()
+  const { step1, otpVerified, setKYCDocuments, setIDInfo, idNumber: initialIdNumber, dateOfBirth: initialDob } = useRegistrationStore()
   const [idFront, setIdFront] = useState<PickedDocument | null>(null)
   const [idBack, setIdBack] = useState<PickedDocument | null>(null)
+  const [idNumber, setIdNumber] = useState(initialIdNumber || '')
+  const [dob, setDob] = useState(initialDob || '')
   const [loading, setLoading] = useState(false)
 
-  const canContinue = idFront && idBack
+  const canContinue = idFront && idBack && idNumber.length >= 7 && dob.length === 10
 
   if (!step1 || !otpVerified) {
     if (!step1) router.replace('/(auth)/register')
@@ -78,7 +80,6 @@ export default function RegisterKYC() {
       uri: asset.uri,
       name: fileName,
       type: mimeType,
-      file: asset.file,
     }
 
     if (side === 'front') setIdFront(document)
@@ -88,6 +89,9 @@ export default function RegisterKYC() {
   const handleContinue = async () => {
     if (!step1 || !idFront || !idBack) return
     
+    // Store ID info
+    setIDInfo(idNumber, dob)
+
     // Store document info locally for upload during final registration
     setKYCDocuments({
       front: { uri: idFront.uri, name: idFront.name, type: idFront.type },
@@ -135,6 +139,41 @@ export default function RegisterKYC() {
         Required by SASRA regulations. Your documents are encrypted and never shared.
       </Text>
 
+      {/* ID Number */}
+      <Text className="text-xs font-medium mb-1.5" style={{ color: TEXT_MUTED }}>
+        National ID Number
+      </Text>
+      <TextInput
+        className="border rounded-xl p-3 text-sm mb-3"
+        style={{
+          borderColor: BORDER_WHITE,
+          color: TEXT,
+          backgroundColor: FROSTED_DARK,
+        }}
+        value={idNumber}
+        onChangeText={setIdNumber}
+        placeholder="12345678"
+        keyboardType="number-pad"
+        placeholderTextColor={TEXT_MUTED}
+      />
+
+      {/* Date of Birth */}
+      <Text className="text-xs font-medium mb-1.5" style={{ color: TEXT_MUTED }}>
+        Date of Birth (YYYY-MM-DD)
+      </Text>
+      <TextInput
+        className="border rounded-xl p-3 text-sm mb-4"
+        style={{
+          borderColor: BORDER_WHITE,
+          color: TEXT,
+          backgroundColor: FROSTED_DARK,
+        }}
+        value={dob}
+        onChangeText={setDob}
+        placeholder="1990-01-01"
+        placeholderTextColor={TEXT_MUTED}
+      />
+
       {/* ID Front - uploaded state */}
       {idFront ? (
         <View className="flex-row items-center gap-3 rounded-xl p-3 mb-2.5" style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)', borderWidth: 1, borderColor: MINT }}>
@@ -169,7 +208,7 @@ export default function RegisterKYC() {
             Upload ID — Front
           </Text>
           <Text className="text-xs" style={{ color: TEXT_MUTED }}>
-            JPG, PNG or PDF · Max 5MB
+            JPG or PNG · Max 5MB
           </Text>
         </TouchableOpacity>
       )}
@@ -205,7 +244,7 @@ export default function RegisterKYC() {
             Upload ID — Back
           </Text>
           <Text className="text-xs" style={{ color: TEXT_MUTED }}>
-            JPG, PNG or PDF · Max 5MB
+            JPG or PNG · Max 5MB
           </Text>
         </TouchableOpacity>
       )}
@@ -221,10 +260,7 @@ export default function RegisterKYC() {
       >
         <Text className="text-xs leading-5" style={{ color: '#FDBA74' }}>
           Why we need this: SASRA requires all SACCO platform operators to verify member
-          identity before processing transactions.{' '}
-          <Text className="font-semibold" style={{ color: '#D97706' }}>
-            Learn more
-          </Text>
+          identity before processing transactions.
         </Text>
       </View>
 

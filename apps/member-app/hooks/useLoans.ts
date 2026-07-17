@@ -42,14 +42,14 @@ export function useSearchGuarantors(loanId: string, query: string) {
   })
 }
 
-export function useLoanEligibility(membershipId: string) {
+export function useLoanEligibility(saccoId: string) {
   const isAuthenticated = useIsAuthenticated()
   return useQuery({
-    queryKey: ['loan-eligibility', membershipId],
-    queryFn: () => api.loans.getEligibility(membershipId),
-    staleTime: 60_000,
+    queryKey: ['loan-eligibility', saccoId],
+    queryFn: () => api.loans.getEligibility(saccoId),
+    staleTime: 30_000, // 30 seconds - real-time eligibility
     gcTime: 300_000,
-    enabled: isAuthenticated && !!membershipId, // Only fetch when authenticated and has membership ID
+    enabled: isAuthenticated && !!saccoId, // Only fetch when authenticated and has sacco ID
   })
 }
 

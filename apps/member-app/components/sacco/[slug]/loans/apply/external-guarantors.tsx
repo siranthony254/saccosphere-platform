@@ -11,7 +11,9 @@ export default function ExternalGuarantorsScreen() {
 
   const [fullName, setFullName] = useState('')
   const [phone, setPhone] = useState('')
-  const [email, setEmail] = useState('')
+  const [idNumber, setIdNumber] = useState('')
+  const [employmentStatus, setEmploymentStatus] = useState('')
+  const [monthlyIncome, setMonthlyIncome] = useState('')
   const [amount, setAmount] = useState('')
 
   if (!loanId) {
@@ -24,20 +26,24 @@ export default function ExternalGuarantorsScreen() {
       api.loans.submitExternalGuarantor(loanId, {
         full_name: fullName,
         phone_number: phone,
-        email: email || undefined,
+        id_number: idNumber,
+        employment_status: employmentStatus,
+        monthly_income: monthlyIncome ? parseFloat(monthlyIncome) : undefined,
         guarantee_amount: amount ? parseFloat(amount) : undefined,
       }),
     onSuccess: () => {
       Alert.alert('Success', 'External guarantor request submitted!')
       setFullName('')
       setPhone('')
-      setEmail('')
+      setIdNumber('')
+      setEmploymentStatus('')
+      setMonthlyIncome('')
       setAmount('')
     },
     onError: (err: any) => Alert.alert('Error', err.message),
   })
 
-  const isValid = fullName.length > 2 && phone.length > 8
+  const isValid = fullName.length > 2 && phone.length > 8 && idNumber.length === 8
 
   return (
     <ScrollView className="bg-surface" contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
@@ -78,15 +84,38 @@ export default function ExternalGuarantorsScreen() {
         </View>
 
         <View>
-          <Text className="text-ink-soft text-xs font-medium mb-1.5">Email Address (Optional)</Text>
+          <Text className="text-ink-soft text-xs font-medium mb-1.5">ID Number <Text className="text-red-500">*</Text></Text>
           <TextInput
             className="bg-surface2 border border-border rounded-xl p-3 text-ink text-xs"
-            placeholder="john@example.com"
+            placeholder="8-digit ID number"
             placeholderTextColor="#9CA3AF"
-            keyboardType="email-address"
-            autoCapitalize="none"
-            value={email}
-            onChangeText={setEmail}
+            keyboardType="numeric"
+            maxLength={8}
+            value={idNumber}
+            onChangeText={setIdNumber}
+          />
+        </View>
+
+        <View>
+          <Text className="text-ink-soft text-xs font-medium mb-1.5">Employment Status</Text>
+          <TextInput
+            className="bg-surface2 border border-border rounded-xl p-3 text-ink text-xs"
+            placeholder="e.g. Employed, Self-employed"
+            placeholderTextColor="#9CA3AF"
+            value={employmentStatus}
+            onChangeText={setEmploymentStatus}
+          />
+        </View>
+
+        <View>
+          <Text className="text-ink-soft text-xs font-medium mb-1.5">Monthly Income</Text>
+          <TextInput
+            className="bg-surface2 border border-border rounded-xl p-3 text-ink text-xs"
+            placeholder="e.g. 50000"
+            placeholderTextColor="#9CA3AF"
+            keyboardType="numeric"
+            value={monthlyIncome}
+            onChangeText={setMonthlyIncome}
           />
         </View>
 

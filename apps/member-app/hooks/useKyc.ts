@@ -12,7 +12,7 @@ export function useKycStatus() {
 
 export function useSubmitKycId() {
   return useMutation({
-    mutationFn: (data: { national_id: string }) => api.kyc.submitId(data),
+    mutationFn: (data: { id_number: string; date_of_birth: string }) => api.kyc.submitId(data),
   })
 }
 

@@ -218,7 +218,7 @@ export const STKPushInputSchema = z.object({
   phone_number: z.string().min(10),
   amount: z.number().positive(),
   purpose: z.enum(['SAVING_DEPOSIT', 'LOAN_REPAYMENT']),
-  sacco_id: z.string().uuid().optional(),
+  sacco_id: z.string().uuid(),
   saving_id: z.string().uuid().optional(),
   loan_id: z.string().uuid().optional(),
   instalment_number: z.number().int().positive().optional(),

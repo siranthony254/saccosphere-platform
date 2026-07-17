@@ -103,7 +103,8 @@ export function useLogout() {
   return useMutation({
     mutationFn: async () => {
       try {
-        await api.auth.logout()
+        const refreshToken = await loadRefreshToken()
+        await api.auth.logout(refreshToken || undefined)
       } catch (error) {
         // Ignore 401 errors - token may already be expired
         // Still proceed to clear local state
@@ -125,8 +126,8 @@ export function useSendOTP() {
 
 export function useVerifyOTP() {
   return useMutation({
-    mutationFn: ({ phone, code }: { phone: string; code: string }) =>
-      api.auth.verifyOTP(phone, code),
+    mutationFn: ({ phone, code, purpose }: { phone: string; code: string; purpose?: 'PHONE_VERIFY' | 'PASSWORD_RESET' | 'LOGIN' }) =>
+      api.auth.verifyOTP(phone, code, purpose),
   })
 }
 

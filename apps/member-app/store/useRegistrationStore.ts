@@ -14,6 +14,8 @@ interface KYCDocuments {
 
 interface RegistrationState {
   step1: RegisterInput & { google_id_token?: string } | null
+  idNumber: string
+  dateOfBirth: string
   otpVerified: boolean
   kycDocumentIds: string[]
   kycDocuments: KYCDocuments
@@ -21,6 +23,7 @@ interface RegistrationState {
   selectedSaccoSlug: string | null
 
   setStep1: (data: RegisterInput & { google_id_token?: string }) => void
+  setIDInfo: (idNumber: string, dateOfBirth: string) => void
   setOtpVerified: (verified: boolean) => void
   addKYCDocument: (id: string) => void
   setKYCDocuments: (docs: KYCDocuments) => void
@@ -31,6 +34,8 @@ interface RegistrationState {
 
 export const useRegistrationStore = create<RegistrationState>((set) => ({
   step1: null,
+  idNumber: '',
+  dateOfBirth: '',
   otpVerified: false,
   kycDocumentIds: [],
   kycDocuments: { front: null, back: null },
@@ -38,11 +43,11 @@ export const useRegistrationStore = create<RegistrationState>((set) => ({
   selectedSaccoSlug: null,
 
   setStep1: (data) => set({ step1: data }),
+  setIDInfo: (idNumber, dateOfBirth) => set({ idNumber, dateOfBirth }),
   setOtpVerified: (verified) => set({ otpVerified: verified }),
   addKYCDocument: (id) => set((s) => ({ kycDocumentIds: [...s.kycDocumentIds, id] })),
   setKYCDocuments: (docs) => set({ kycDocuments: docs }),
   setLinkedSaccos: (slugs) => set({ linkedSaccoSlugs: slugs }),
   setSelectedSaccoSlug: (slug) => set({ selectedSaccoSlug: slug }),
-  reset: () => set({ step1: null, otpVerified: false, kycDocumentIds: [], kycDocuments: { front: null, back: null }, linkedSaccoSlugs: [], selectedSaccoSlug: null }),
+  reset: () => set({ step1: null, idNumber: '', dateOfBirth: '', otpVerified: false, kycDocumentIds: [], kycDocuments: { front: null, back: null }, linkedSaccoSlugs: [], selectedSaccoSlug: null }),
 }))
-

@@ -14,12 +14,13 @@ export function Reports() {
   const { data: analytics, isLoading } = useSaccoAdminDashboard()
   const downloadReport = useDownloadReport()
   const [format, setFormat] = useState<'csv' | 'pdf'>('pdf')
+  const [reportType, setReportType] = useState<'loans' | 'contributions' | 'members'>('contributions')
 
   const fmt = (n: number) => n >= 1e9 ? `KES ${(n/1e9).toFixed(1)}B` : n >= 1e6 ? `KES ${(n/1e6).toFixed(1)}M` : `KES ${n.toLocaleString()}`
 
   const handleDownload = async () => {
     try {
-      const { blob, filename } = await downloadReport.mutateAsync(format)
+      const { blob, filename } = await downloadReport.mutateAsync({ type: reportType, format })
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
@@ -42,6 +43,15 @@ export function Reports() {
           <div className="text-xs text-ink-muted">Financial & membership analytics</div>
         </div>
         <div className="flex gap-2">
+          <select
+            className="px-3 py-1.5 border border-ink-faint rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+            value={reportType}
+            onChange={e => setReportType(e.target.value as 'loans' | 'contributions' | 'members')}
+          >
+            <option value="contributions">Contributions</option>
+            <option value="loans">Loans</option>
+            <option value="members">Members</option>
+          </select>
           <select
             className="px-3 py-1.5 border border-ink-faint rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
             value={format}

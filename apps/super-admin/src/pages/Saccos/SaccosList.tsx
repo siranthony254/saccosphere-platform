@@ -48,7 +48,7 @@ export function SaccosList() {
             header: 'SACCO',
             render: (row: SuperAdminSacco) => (
               <div className="flex items-center gap-2.5">
-                <SaccoAvatar name={row.name} color={row.color || '#6D28D9'} initials={row.initials || row.name.slice(0, 2).toUpperCase()} />
+                <SaccoAvatar name={row.name} initials={row.name.slice(0, 2).toUpperCase()} />
                 <div>
                   <div className="font-medium">{row.name}</div>
                   <div className="text-[10px] text-ink-faint">Active since {row.created_at ? new Date(row.created_at).getFullYear() : '—'}</div>
@@ -56,8 +56,6 @@ export function SaccosList() {
               </div>
             ),
           },
-
-          { key: 'sector', header: 'Sector', render: (row: SuperAdminSacco) => row.sector || 'SACCO' },
           {
             key: 'member_count',
             header: 'Members',
@@ -82,7 +80,7 @@ export function SaccosList() {
         ]}
         data={data?.results ?? []}
         loading={isLoading}
-        emptyMessage="No SACCOs match your filters."
+        emptyMessage={search ? "No SACCOs match your search." : "No SACCOs registered on the platform yet."}
         keyExtractor={(row: SuperAdminSacco) => row.id}
         onRowClick={(row: SuperAdminSacco) => navigate(`/saccos/${row.id}`)}
       />

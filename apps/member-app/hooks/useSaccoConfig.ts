@@ -6,9 +6,9 @@ export function useSaccoConfig(slug: string, options?: { refetchInterval?: numbe
   return useQuery({
     queryKey: QueryKeys.saccoConfig(slug),
     queryFn: () => api.saccos.getConfig(slug),
-    staleTime: options?.staleTime ?? STALE_TIMES.saccoConfig,
-    gcTime: 600_000, // Keep in cache for 10 minutes
-    refetchInterval: options?.refetchInterval,
+    staleTime: options?.staleTime ?? 30_000, // 30 seconds - real-time config
+    gcTime: 300_000, // Keep in cache for 5 minutes
+    refetchInterval: options?.refetchInterval ?? 60_000, // Refetch every minute by default
     enabled: !!slug, // Fetch when slug is provided (SACCO config may be public for discovery)
   })
 }
