@@ -1715,7 +1715,7 @@ export const api = {
 
     reviewExternalGuarantor: (id: string, data: { action: 'approve' | 'reject'; notes?: string }) =>
       apiCall<void>('PATCH', `/management/external-guarantors/${uuid(id)}/review/`, {
-        status: data.action === 'approve' ? 'APPROVED' : 'REJECTED',
+        action: data.action === 'approve' ? 'APPROVE' : 'REJECT',
         admin_notes: data.notes,
       }),
 
