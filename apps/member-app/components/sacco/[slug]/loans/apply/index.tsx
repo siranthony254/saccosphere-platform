@@ -25,7 +25,7 @@ export default function LoanStep1() {
   const [amount, setAmount] = useState(step1?.amount_requested?.toString() ?? '100000')
   const [months, setMonths] = useState(step1?.period_months?.toString() ?? '24')
   const [purpose, setPurpose] = useState(step1?.purpose ?? '')
-  const [disburse, setDisburse] = useState<'mpesa' | 'fosa' | 'bank'>(step1?.disbursement_method ?? 'mpesa')
+
 
   // Initialize product key when config loads
   useEffect(() => {
@@ -35,7 +35,6 @@ export default function LoanStep1() {
   }, [config, productKey])
 
   const selectedProduct = config?.loan_products.find(p => p.key === productKey) ?? config?.loan_products?.[0]
-  console.log('Config state:', { config, loanProducts: config?.loan_products, productKey, selectedProduct })
   // Use real-time eligibility data for max amount
   const maxAmount = eligibility?.max_amount ?? 0
   const monthlyRate = (selectedProduct?.interest_rate_pct ?? 12) / 100 / 12
@@ -45,13 +44,10 @@ export default function LoanStep1() {
     : parseFloat(amount) / n
 
   const handleNext = () => {
-    console.log('handleNext called', { membership, selectedProduct, purpose, amount, months, eligibility })
     if (!membership) {
-      console.log('No membership')
       return
     }
     if (!selectedProduct?.key) {
-      console.log('No selected product')
       Alert.alert('Error', 'Please select a loan product')
       return
     }
@@ -75,18 +71,14 @@ export default function LoanStep1() {
       amount_requested: requestedAmount,
       period_months: n,
       purpose,
-      disbursement_method: disburse,
-      disbursement_account: phoneNumber,
     }
-    console.log('Submitting loan application:', step1Data)
     setContext(membership.id, slug)
-    setStep1(step1Data)
+    setStep1(step1Data as any)
 
     applyLoan(
-      { membership_id: membership.id, ...step1Data, guarantor_membership_ids: [] },
+      { membership_id: membership.id, ...step1Data },
       {
         onSuccess: (loan) => {
-          console.log('Loan application successful:', loan)
           setLoanId(loan.id)
           router.push({ pathname: '/sacco/[slug]/loans/apply/external-guarantors', params: { slug } })
         },
@@ -233,21 +225,7 @@ export default function LoanStep1() {
           placeholderTextColor="rgba(255,255,255,0.3)"
         />
 
-        {/* Disbursement */}
-        <Text className="text-white/60 text-[10px] font-bold uppercase mb-2 ml-1">Disbursement to</Text>
-        <View className="flex-row flex-wrap gap-2 mb-6">
-          {(selectedProduct?.disbursement_options ?? []).map(opt => (
-            <TouchableOpacity
-              key={opt}
-              className={`px-5 py-2.5 rounded-xl border ${disburse === opt ? 'bg-violet-500 border-violet-500' : 'bg-white/5 border-white/10'}`}
-              onPress={() => setDisburse(opt)}
-            >
-              <Text className={`text-xs font-bold ${disburse === opt ? 'text-white' : 'text-white/40'}`}>
-                {opt === 'mpesa' ? 'M-Pesa' : opt === 'fosa' ? 'FOSA' : 'Bank'}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+
 
         {/* Summary */}
         <View className="bg-white/5 border border-white/10 rounded-2xl p-4 mb-8">

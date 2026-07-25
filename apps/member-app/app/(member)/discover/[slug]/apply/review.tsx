@@ -49,7 +49,6 @@ export default function ApplyReviewScreen() {
       await submitApplication({
         sacco_slug: saccoSlug,
         form_data: formData,
-        monthly_contribution: monthlyContribution,
       })
       reset()
       router.replace(`/(member)/discover/${slug}/apply/success`)

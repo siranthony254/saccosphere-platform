@@ -109,7 +109,7 @@ export default function DiscoverBrowse() {
                 <Text className="text-ink-faint text-xs">Members</Text>
               </View>
               <View className="bg-surface2 rounded-lg p-1.5 text-center">
-                <Text className="text-ink text-xs font-semibold">{sacco.loan_rate_pct}%</Text>
+                <Text className="text-ink text-xs font-semibold">{sacco.default_interest_rate}%</Text>
                 <Text className="text-ink-faint text-xs">Rate p.a.</Text>
               </View>
               <View className="bg-surface2 rounded-lg p-1.5 text-center">

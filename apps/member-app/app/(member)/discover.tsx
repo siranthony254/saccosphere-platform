@@ -135,7 +135,7 @@ export default function DiscoverScreen() {
                 <Text style={{ color: TEXT_MUTED, fontSize: 12, marginTop: 2 }}>Members</Text>
               </View>
               <View style={{ alignItems: 'center' }}>
-                <Text style={{ color: TEXT, fontSize: 12, fontWeight: '700' }}>{sacco.loan_rate_pct}%</Text>
+                <Text style={{ color: TEXT, fontSize: 12, fontWeight: '700' }}>{sacco.default_interest_rate}%</Text>
                 <Text style={{ color: TEXT_MUTED, fontSize: 12, marginTop: 2 }}>Rate p.a.</Text>
               </View>
 

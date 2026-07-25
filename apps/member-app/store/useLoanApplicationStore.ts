@@ -44,14 +44,13 @@ export const useLoanApplicationStore = create<LoanApplicationState>((set, get) =
   setGuarantors: (ids) => set({ guarantorIds: ids }),
 
   getFullInput: (): LoanApplicationInput | null => {
-    const { membershipId, step1, guarantorIds } = get()
+    const { membershipId, step1 } = get()
     if (!membershipId || !step1) return null
     return {
       membership_id: get().membershipId!,
       ...get().step1!,
-      guarantor_membership_ids: get().guarantorIds,
     }
   },
 
-  reset: () => set({ membershipId: null, saccoSlug: null, step1: null, guarantorIds: [], loanId: null }),
+  reset: () => set({ membershipId: null, saccoSlug: null, step1: null, loanId: null }),
 }))

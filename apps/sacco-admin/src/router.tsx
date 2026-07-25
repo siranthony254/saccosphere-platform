@@ -11,6 +11,9 @@ import { ApplicationsList } from './pages/Applications/ApplicationsList'
 import { LoansList } from './pages/Loans/LoansList'
 import { DisbursementsList } from './pages/Disbursements/DisbursementsList'
 import { ContributionsFeed } from './pages/Contributions/ContributionsFeed'
+import { Dividends } from './pages/Dividends/Dividends'
+import { BulkSMS } from './pages/BulkSMS/BulkSMS'
+import { Billing } from './pages/Billing/Billing'
 import { Reports } from './pages/Reports/Reports'
 import { Settings } from './pages/Settings/Settings'
 import { KycReview } from './pages/Kyc/KycReview'
@@ -40,6 +43,9 @@ export const router = createBrowserRouter([
       { path: 'loans', element: <LoansList /> },
       { path: 'disbursements', element: <DisbursementsList /> },
       { path: 'contributions', element: <ContributionsFeed /> },
+      { path: 'dividends', element: <Dividends /> },
+      { path: 'sms', element: <BulkSMS /> },
+      { path: 'billing', element: <Billing /> },
       { path: 'reports', element: <Reports /> },
       { path: 'settings', element: <Settings /> },
       { path: 'kyc', element: <KycReview /> },
@@ -50,4 +56,5 @@ export const router = createBrowserRouter([
   },
   { path: '*', element: <Navigate to="/" replace /> },
 ])
+
 

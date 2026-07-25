@@ -74,7 +74,7 @@ export default function SaccoProfile() {
           <Text className="text-ink-faint text-xs">Members</Text>
         </View>
         <View className="bg-surface2 rounded-xl p-2.5 text-center">
-          <Text className="text-mint-600 text-base font-bold">{sacco.loan_rate_pct}%</Text>
+          <Text className="text-mint-600 text-base font-bold">{sacco.default_interest_rate}%</Text>
           <Text className="text-ink-faint text-xs">Rate p.a.</Text>
         </View>
         <View className="bg-surface2 rounded-xl p-2.5 text-center">

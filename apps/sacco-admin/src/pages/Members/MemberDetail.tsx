@@ -23,16 +23,14 @@ export function MemberDetail() {
   const isPending = member.membership_status === 'applied' || member.membership_status === 'under_review'
 
   const handleReview = (status: 'APPROVED' | 'REJECTED') => {
-    // NOTE: This assumes the membership ID can be used for review,
-    // or that we've found the associated application.
     reviewApplication({ id: member.id, status, review_notes: reviewNotes }, {
       onSuccess: () => {
-        alert(`Membership ${status.toLowerCase()} successfully`)
+        alert(`Membership application ${status.toLowerCase()} successfully.`)
         setReviewNotes('')
+        navigate('/applications')
       },
-      onError: (err) => {
-        console.error(err)
-        alert('Failed to update membership status. Application ID may be different.')
+      onError: () => {
+        navigate(`/applications?user=${member.user_id}`)
       }
     })
   }

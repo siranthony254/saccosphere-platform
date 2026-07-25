@@ -18,7 +18,8 @@
       "supportsTablet": false,
       "bundleIdentifier": "co.ke.saccosphere.member",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSFaceIDUsageDescription": "Saccosphere needs Face ID to securely authenticate you."
       }
     },
     "android": {
@@ -29,8 +30,6 @@
       "package": "co.ke.saccosphere.member",
       "permissions": [
         "android.permission.CAMERA",
-        "android.permission.READ_EXTERNAL_STORAGE",
-        "android.permission.WRITE_EXTERNAL_STORAGE",
         "android.permission.INTERNET",
         "android.permission.ACCESS_NETWORK_STATE"
       ]

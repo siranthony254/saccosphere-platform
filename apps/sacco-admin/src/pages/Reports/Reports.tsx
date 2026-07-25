@@ -2,14 +2,6 @@ import { useState } from 'react'
 import { useSaccoAdminDashboard } from '../../hooks/useSaccoAdminDashboard'
 import { useDownloadReport } from '../../hooks/useReports'
 
-function Bar({ pct, color }: { pct: number; color: string }) {
-  return (
-    <div className="h-1.5 bg-[#e5ede9] rounded-[3px] overflow-hidden mt-1">
-      <div className="h-full rounded-[3px]" style={{ width: `${pct}%`, background: color }} />
-    </div>
-  )
-}
-
 export function Reports() {
   const { data: analytics, isLoading } = useSaccoAdminDashboard()
   const downloadReport = useDownloadReport()
@@ -112,30 +104,36 @@ export function Reports() {
           )}
         </div>
 
-        {/* Loan portfolio health */}
+        {/* SASRA Regulatory Returns Card */}
         <div className="bg-white border border-[#e5ede9] rounded-[10px] p-4">
-          <div className="font-semibold text-sm text-ink mb-3.5">Loan portfolio health</div>
-          {isLoading ? (
-            <div className="text-sm text-ink-muted py-4">Loading...</div>
-          ) : (
-            <div className="space-y-2.5">
+          <div className="font-semibold text-sm text-ink mb-1">SASRA Regulatory Compliance Returns</div>
+          <div className="text-xs text-ink-muted mb-3.5">Generate SASRA Form 1 (Capital Adequacy) & Form 2 (Liquidity Statement)</div>
+          <div className="space-y-2">
+            <div className="flex justify-between items-center py-2 border-b border-surface-3">
               <div>
-                <div className="flex justify-between mb-1">
-                  <span className="text-xs text-ink-muted">Default rate</span>
-                  <span className="text-xs font-semibold text-ink">{analytics?.default_rate_pct?.toFixed(1) ?? 0}%</span>
-                </div>
-                <Bar pct={analytics?.default_rate_pct ?? 0} color={(analytics?.default_rate_pct ?? 0) > 5 ? '#DC2626' : '#10B981'} />
+                <div className="text-xs font-medium text-ink">SASRA Form 1 — Capital Adequacy Return</div>
+                <div className="text-[10px] text-ink-muted">Core capital to assets ratio & statutory reserves</div>
               </div>
-              <div className="flex justify-between py-2 border-b border-surface-3">
-                <span className="text-xs text-ink-muted">Active loans</span>
-                <span className="text-xs font-semibold text-ink">{analytics?.active_loans_count ?? 0}</span>
-              </div>
-              <div className="flex justify-between py-2">
-                <span className="text-xs text-ink-muted">Outstanding balance</span>
-                <span className="text-xs font-semibold text-ink">{fmt(analytics?.active_loans_kes ?? 0)}</span>
-              </div>
+              <button
+                onClick={handleDownload}
+                className="px-2.5 py-1 rounded bg-violet-600 text-white text-[11px] font-medium hover:bg-violet-700"
+              >
+                Export Form 1
+              </button>
             </div>
-          )}
+            <div className="flex justify-between items-center py-2">
+              <div>
+                <div className="text-xs font-medium text-ink">SASRA Form 2 — Liquidity Statement</div>
+                <div className="text-[10px] text-ink-muted">Liquid assets to short-term liabilities report</div>
+              </div>
+              <button
+                onClick={handleDownload}
+                className="px-2.5 py-1 rounded bg-mint-600 text-white text-[11px] font-medium hover:bg-mint-700"
+              >
+                Export Form 2
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>

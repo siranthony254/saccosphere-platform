@@ -284,3 +284,78 @@ export const ImportStatusSchema = z.object({
   error_summary: z.array(z.any()),
 })
 export type ImportStatus = z.infer<typeof ImportStatusSchema>
+
+export const LiquidityStatusSchema = z.object({
+  liquid_assets: z.number(),
+  short_term_liabilities: z.number(),
+  liquidity_ratio_pct: z.number(),
+  status: z.enum(['HEALTHY', 'ADEQUATE', 'CRITICAL', 'WARNING']),
+  warnings: z.array(z.string()).default([]),
+})
+export type LiquidityStatus = z.infer<typeof LiquidityStatusSchema>
+
+export const NPLDashboardSchema = z.object({
+  npl_ratio_pct: z.number(),
+  total_npl_kes: z.number(),
+  total_loans_kes: z.number(),
+  watch_count: z.number(),
+  substandard_count: z.number(),
+  doubtful_count: z.number(),
+  loss_count: z.number(),
+  risk_buckets: z.object({
+    watch_kes: z.number(),
+    substandard_kes: z.number(),
+    doubtful_kes: z.number(),
+    loss_kes: z.number(),
+  }),
+})
+export type NPLDashboard = z.infer<typeof NPLDashboardSchema>
+
+export const DividendDeclarationSchema = z.object({
+  id: z.string().uuid(),
+  financial_year: z.number(),
+  rate_pct: z.number(),
+  total_dividend_pool: z.number(),
+  status: z.enum(['DRAFT', 'CALCULATED', 'APPROVED', 'DISBURSED']),
+  created_at: z.string(),
+  approved_at: z.string().nullable().optional(),
+  disbursed_at: z.string().nullable().optional(),
+})
+export type DividendDeclaration = z.infer<typeof DividendDeclarationSchema>
+
+export const DividendPayoutSchema = z.object({
+  id: z.string().uuid(),
+  member_name: z.string(),
+  member_number: z.string(),
+  share_capital: z.number(),
+  gross_dividend: z.number(),
+  withholding_tax: z.number(),
+  net_dividend: z.number(),
+  status: z.string(),
+  disbursed_at: z.string().nullable().optional(),
+})
+export type DividendPayout = z.infer<typeof DividendPayoutSchema>
+
+export const BulkSMSCampaignSchema = z.object({
+  id: z.string().uuid(),
+  title: z.string(),
+  message: z.string(),
+  recipient_type: z.string(),
+  total_recipients: z.number(),
+  status: z.enum(['DRAFT', 'SENDING', 'COMPLETED', 'FAILED']),
+  created_at: z.string(),
+  sent_at: z.string().nullable().optional(),
+})
+export type BulkSMSCampaign = z.infer<typeof BulkSMSCampaignSchema>
+
+export const MonthlyInvoiceSchema = z.object({
+  id: z.string().uuid(),
+  invoice_number: z.string(),
+  period: z.string(),
+  amount: z.number(),
+  status: z.enum(['pending', 'paid', 'overdue']),
+  due_date: z.string(),
+  paid_date: z.string().nullable().optional(),
+})
+export type MonthlyInvoice = z.infer<typeof MonthlyInvoiceSchema>
+

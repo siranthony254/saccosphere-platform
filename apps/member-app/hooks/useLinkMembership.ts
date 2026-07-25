@@ -24,7 +24,6 @@ export function useLinkMembership() {
           existing_member_number: data.member_number,
           is_existing_member_link: true,
         },
-        monthly_contribution: 0,
       })
       return result
     },
@@ -107,7 +106,6 @@ export function useSyncMemberships() {
             is_existing_member_link: true,
             sync_portfolio: true,
           },
-          monthly_contribution: 0,
         })
       )
       const results = await Promise.allSettled(submissions)

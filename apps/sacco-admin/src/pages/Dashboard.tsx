@@ -1,8 +1,8 @@
 import { useSaccoAdminDashboard, useDisbursementsDashboard, useContributionsDashboard } from '../hooks/useSaccoAdminDashboard'
+import { useLiquidityStatus, useNPLDashboard } from '../hooks/useLiquidityNpl'
 import { useSacco } from '../hooks/useSacco'
 
 function MetricCard({ label, value, delta, deltaColor = 'text-mint-600' }: { label: string; value: string; delta?: string; deltaColor?: string }) {
-
   return (
     <div className="bg-white border border-[#e5ede9] rounded-[10px] p-[14px_16px]">
       <div className="text-[10px] text-ink-muted mb-1.5 font-medium uppercase tracking-widest">{label}</div>
@@ -16,10 +16,11 @@ export function Dashboard() {
   const { data, isLoading, error } = useSaccoAdminDashboard()
   const { data: disbursements } = useDisbursementsDashboard()
   const { data: contributions } = useContributionsDashboard()
+  const { data: liquidity } = useLiquidityStatus()
+  const { data: npl } = useNPLDashboard()
   const { data: sacco } = useSacco()
 
   if (isLoading) return (
-
     <div className="p-5">
       <div className="text-sm text-ink-muted">Loading dashboard...</div>
       {[1,2,3,4].map(i => <div key={i} className="h-20 bg-ink-faint rounded-[10px] mb-3" />)}
@@ -45,43 +46,89 @@ export function Dashboard() {
     { bg: 'bg-blue-50', text: `${d.pending_kyc_reviews} KYC documents pending verification`, borderColor: 'border-l-blue-500', textColor: 'text-blue-700', path: '/kyc' },
   ]
 
-
-  // Portfolio health breakdown should come from backend.
-  // If the backend endpoint is not available yet, render an empty state rather than hardcoded percentages.
-  const portfolioHealth = [] as Array<{
-    label: string
-    value: string
-    width: string
-    barColor: string
-    textColor: string
-  }>
-
-
   return (
     <div className="p-5">
       {/* Top bar */}
       <div className="flex justify-between items-center mb-5">
         <div>
           <div className="text-lg font-semibold text-ink">{sacco?.name || 'Dashboard'}</div>
-          <div className="text-xs text-ink-muted">{ new Date().toLocaleDateString('en-KE', { day: 'numeric', month: 'long', year: 'numeric' })} · Live data · {new Date().toLocaleDateString('en-KE', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
+          <div className="text-xs text-ink-muted">Live SACCO Admin Data · {new Date().toLocaleDateString('en-KE', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
         </div>
         <div className="flex gap-2">
           <div className="flex items-center gap-1.5 text-xs text-mint-600 bg-mint-50 px-2.5 py-1 rounded-md">
             <div className="w-1.5 h-1.5 rounded-full bg-mint-600" />
             Live
           </div>
-          <button className="px-3.5 py-1.5 rounded-lg border border-ink-faint bg-white text-sm cursor-pointer hover:bg-surface-2 transition-colors">
-            Export report
-          </button>
         </div>
       </div>
 
-      {/* Metrics */}
+      {/* Primary Metrics */}
       <div className="grid grid-cols-4 gap-3 mb-5">
         <MetricCard label="Total members" value={d.total_members.toLocaleString()} />
-        <MetricCard label="Total savings" value={fmt(d.total_savings_kes)} delta={``} />
+        <MetricCard label="Total savings" value={fmt(d.total_savings_kes)} />
         <MetricCard label="Active loans" value={d.active_loans_count.toLocaleString()} delta={`${fmt(d.active_loans_kes)} outstanding`} deltaColor="text-amber-600" />
-        <MetricCard label="Default rate" value={`${d.default_rate_pct}%`} delta={``} deltaColor="text-red-700" />
+        <MetricCard label="Default rate" value={`${d.default_rate_pct}%`} deltaColor="text-red-700" />
+      </div>
+
+      {/* Liquidity & NPL Analytics Widgets */}
+      <div className="grid grid-cols-2 gap-4 mb-5">
+        {/* Liquidity Status Card */}
+        <div className="bg-white border border-[#e5ede9] rounded-[10px] p-4">
+          <div className="flex justify-between items-center mb-3">
+            <div className="font-semibold text-sm text-ink">Liquidity Status & Reserves</div>
+            {liquidity && (
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                liquidity.status === 'HEALTHY' ? 'bg-mint-50 text-mint-700' : 'bg-amber-50 text-amber-700'
+              }`}>
+                {liquidity.status || 'HEALTHY'}
+              </span>
+            )}
+          </div>
+          <div className="space-y-2">
+            <div className="flex justify-between py-1 border-b border-surface-3">
+              <span className="text-xs text-ink-muted">Liquid Assets</span>
+              <span className="text-xs font-semibold text-ink">{fmt(liquidity?.liquid_assets ?? 0)}</span>
+            </div>
+            <div className="flex justify-between py-1 border-b border-surface-3">
+              <span className="text-xs text-ink-muted">Short-Term Liabilities</span>
+              <span className="text-xs font-semibold text-ink-muted">{fmt(liquidity?.short_term_liabilities ?? 0)}</span>
+            </div>
+            <div className="flex justify-between py-1">
+              <span className="text-xs text-ink-muted">Liquidity Ratio</span>
+              <span className="text-xs font-bold text-mint-700">
+                {liquidity?.liquidity_ratio_pct ? `${liquidity.liquidity_ratio_pct}%` : '—'}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* NPL Non-Performing Loans Classification */}
+        <div className="bg-white border border-[#e5ede9] rounded-[10px] p-4">
+          <div className="flex justify-between items-center mb-3">
+            <div className="font-semibold text-sm text-ink">Non-Performing Loans (NPL)</div>
+            <span className="text-xs font-bold text-red-700">
+              NPL Ratio: {npl?.npl_ratio_pct ? `${npl.npl_ratio_pct}%` : '0%'}
+            </span>
+          </div>
+          <div className="grid grid-cols-4 gap-2 text-center">
+            <div className="bg-amber-50 p-2 rounded-lg">
+              <div className="text-[10px] text-amber-800 font-medium uppercase">Watch</div>
+              <div className="text-sm font-bold text-amber-900">{npl?.watch_count ?? 0}</div>
+            </div>
+            <div className="bg-orange-50 p-2 rounded-lg">
+              <div className="text-[10px] text-orange-800 font-medium uppercase">Substandard</div>
+              <div className="text-sm font-bold text-orange-900">{npl?.substandard_count ?? 0}</div>
+            </div>
+            <div className="bg-red-50 p-2 rounded-lg">
+              <div className="text-[10px] text-red-800 font-medium uppercase">Doubtful</div>
+              <div className="text-sm font-bold text-red-900">{npl?.doubtful_count ?? 0}</div>
+            </div>
+            <div className="bg-red-100 p-2 rounded-lg">
+              <div className="text-[10px] text-red-900 font-medium uppercase">Loss</div>
+              <div className="text-sm font-bold text-red-950">{npl?.loss_count ?? 0}</div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Disbursements & Contributions */}
@@ -137,35 +184,13 @@ export function Dashboard() {
       </div>
 
       {/* Pending actions */}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="bg-white border border-[#e5ede9] rounded-[10px] p-4">
-          <div className="font-semibold text-sm text-ink mb-3">Pending actions</div>
-          {pendingActions.map((a, i) => (
-            <div key={i} className={`${a.bg} rounded-lg px-3 py-2 mb-2 text-sm ${a.textColor} ${a.borderColor} border-l-4`}>
-              {a.text}
-            </div>
-          ))}
-        </div>
-
-        <div className="bg-white border border-[#e5ede9] rounded-[10px] p-4">
-          <div className="font-semibold text-sm text-ink mb-3">Portfolio health</div>
-          {portfolioHealth.length > 0 ? (
-            portfolioHealth.map((row, i) => (
-              <div key={i} className="mb-2.5">
-                <div className="flex justify-between mb-1">
-                  <span className="text-xs text-ink-muted">{row.label}</span>
-                  <span className={`text-xs font-semibold ${row.textColor}`}>{row.value}</span>
-                </div>
-                <div className="h-1.5 bg-[#e5ede9] rounded-[3px] overflow-hidden">
-                  <div className={`h-full rounded-[3px] ${row.barColor}`} style={{ width: row.width }} />
-                </div>
-              </div>
-            ))
-          ) : (
-            <div className="text-xs text-ink-muted py-2">No portfolio health data available.</div>
-          )}
-        </div>
-
+      <div className="bg-white border border-[#e5ede9] rounded-[10px] p-4">
+        <div className="font-semibold text-sm text-ink mb-3">Pending actions</div>
+        {pendingActions.map((a, i) => (
+          <div key={i} className={`${a.bg} rounded-lg px-3 py-2 mb-2 text-sm ${a.textColor} ${a.borderColor} border-l-4`}>
+            {a.text}
+          </div>
+        ))}
       </div>
     </div>
   )

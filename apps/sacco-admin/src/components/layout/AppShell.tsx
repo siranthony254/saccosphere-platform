@@ -34,12 +34,16 @@ export function AppShell() {
     { path: '/loans', label: 'Loan approvals', icon: '💰', badge: pendingLoansCount > 0 ? String(pendingLoansCount) : null },
     { path: '/disbursements', label: 'Disbursements', icon: '💸', badge: null },
     { path: '/contributions', label: 'Contributions', icon: '📥', badge: null },
+    { path: '/dividends', label: 'Dividends', icon: '💎', badge: null },
+    { path: '/sms', label: 'Bulk SMS', icon: '💬', badge: null },
     { path: '/reports', label: 'Reports', icon: '📈', badge: null },
+    { path: '/billing', label: 'SaaS Billing', icon: '🧾', badge: null },
     { path: '/kyc', label: 'KYC Review', icon: '🔍', badge: pendingKycCount > 0 ? String(pendingKycCount) : null },
     { path: '/roles', label: 'Roles', icon: '👤', badge: null },
     { path: '/import', label: 'Import', icon: '📤', badge: null },
     { path: '/settings', label: 'Settings', icon: '⚙️', badge: null },
   ]
+
 
   return (
     <div className="flex h-screen font-sans bg-surface-2 text-ink">

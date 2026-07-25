@@ -108,7 +108,6 @@ export function useLogout() {
       } catch (error) {
         // Ignore 401 errors - token may already be expired
         // Still proceed to clear local state
-        console.log('Logout API call failed, clearing local state anyway')
       }
       clearTokens()
       await clearStoredRefreshToken()

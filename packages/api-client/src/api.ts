@@ -161,7 +161,7 @@ const normalizeSacco = (sacco: any): Sacco => {
     county: sacco.county ?? '',
     logo_url,
     member_count: Number(sacco.member_count ?? 0),
-    loan_rate_pct: Number(sacco.loan_rate_pct ?? sacco.default_interest_rate ?? 0),
+    default_interest_rate: Number(sacco.default_interest_rate ?? sacco.loan_rate_pct ?? 0),
     loan_multiplier: Number(sacco.loan_multiplier ?? 0),
     description: sacco.description ?? undefined,
     established_year: sacco.established_year != null ? Number(sacco.established_year) : undefined,
@@ -169,7 +169,7 @@ const normalizeSacco = (sacco: any): Sacco => {
     min_monthly_contribution: sacco.min_monthly_contribution != null ? Number(sacco.min_monthly_contribution) : undefined,
     registration_fee: sacco.registration_fee != null ? Number(sacco.registration_fee) : undefined,
     min_share_capital: sacco.min_share_capital != null ? Number(sacco.min_share_capital) : undefined,
-    is_open_to_new_members: sacco.is_open_to_new_members ?? undefined,
+    membership_open: sacco.membership_open ?? sacco.is_open_to_new_members ?? undefined,
     application_review_days: sacco.application_review_days ?? undefined,
   })
 }
@@ -919,7 +919,6 @@ export const api = {
     submit: async (data: {
       sacco_slug: string
       form_data: Record<string, unknown>
-      monthly_contribution: number
     }) => {
       const sacco = await api.saccos.get(data.sacco_slug)
       const customFieldsObj = (data.form_data?.customFields as Record<string, unknown>) ?? {}
@@ -941,7 +940,6 @@ export const api = {
         employment_status: employmentStatus,
         employer_name: employerName,
         monthly_income: monthlyIncome,
-        monthly_contribution: data.monthly_contribution,
       })
       return {
         id: membership.id,
@@ -1166,8 +1164,6 @@ export const api = {
         monthly_instalment: Number(loan.monthly_instalment ?? 0),
         total_repayable: Number(loan.total_repayable ?? loan.amount ?? data.amount_requested),
         purpose: loan.application_notes ?? data.purpose,
-        disbursement_method: data.disbursement_method,
-        disbursement_account: data.disbursement_account,
         status: normalizeLoanStatus(loan.status),
         submitted_at: loan.created_at ?? new Date().toISOString(),
         approved_at: null,
@@ -1782,6 +1778,90 @@ export const api = {
         filename: filenameMatch?.[1] ?? `invoice_${id}.${format}`,
       }
     },
+
+    // Liquidity & NPL Analytics
+    getLiquidityStatus: () =>
+      apiCall<any>('GET', '/management/liquidity/'),
+
+    getNPLDashboard: () =>
+      apiCall<any>('GET', '/management/npl/'),
+
+    // Dividends Management
+    getDividendDeclarations: async () => {
+      const response = await apiCall<any>('GET', '/management/dividends/declarations/')
+      const items = Array.isArray(response) ? response : response.results ?? []
+      return items.map((item: any) => ({
+        id: item.id,
+        financial_year: Number(item.financial_year ?? new Date().getFullYear()),
+        rate_pct: Number(item.rate_pct ?? item.dividend_rate ?? 0),
+        total_dividend_pool: Number(item.total_dividend_pool ?? item.total_amount ?? 0),
+        status: item.status ?? 'DRAFT',
+        created_at: item.created_at ?? new Date().toISOString(),
+        approved_at: item.approved_at ?? null,
+        disbursed_at: item.disbursed_at ?? null,
+      }))
+    },
+
+    createDividendDeclaration: (data: { financial_year: number; rate_pct: number }) =>
+      apiCall<any>('POST', '/management/dividends/declarations/', data),
+
+    getDividendDeclaration: (id: string) =>
+      apiCall<any>('GET', `/management/dividends/declarations/${uuid(id)}/`),
+
+    calculateDividend: (id: string) =>
+      apiCall<any>('POST', `/management/dividends/declarations/${uuid(id)}/calculate/`),
+
+    approveDividend: (id: string) =>
+      apiCall<any>('POST', `/management/dividends/declarations/${uuid(id)}/approve/`),
+
+    disburseDividend: (id: string) =>
+      apiCall<any>('POST', `/management/dividends/declarations/${uuid(id)}/disburse/`),
+
+    getDividendPayouts: async () => {
+      const response = await apiCall<any>('GET', '/management/dividends/payouts/')
+      const items = Array.isArray(response) ? response : response.results ?? []
+      return items.map((item: any) => ({
+        id: item.id,
+        member_name: item.member_name ?? item.member?.full_name ?? '—',
+        member_number: item.member_number ?? item.member?.member_number ?? '—',
+        share_capital: Number(item.share_capital ?? 0),
+        gross_dividend: Number(item.gross_dividend ?? 0),
+        withholding_tax: Number(item.withholding_tax ?? 0),
+        net_dividend: Number(item.net_dividend ?? 0),
+        status: item.status ?? 'PENDING',
+        disbursed_at: item.disbursed_at ?? null,
+      }))
+    },
+
+    // Bulk SMS Campaigns
+    getSMSCampaigns: async () => {
+      const response = await apiCall<any>('GET', '/management/sms/campaigns/')
+      const items = Array.isArray(response) ? response : response.results ?? []
+      return items.map((item: any) => ({
+        id: item.id,
+        title: item.title ?? 'Campaign',
+        message: item.message ?? '',
+        recipient_type: item.recipient_type ?? 'ALL_MEMBERS',
+        total_recipients: Number(item.total_recipients ?? item.recipient_count ?? 0),
+        status: item.status ?? 'DRAFT',
+        created_at: item.created_at ?? new Date().toISOString(),
+        sent_at: item.sent_at ?? null,
+      }))
+    },
+
+    createSMSCampaign: (data: { title: string; message: string; recipient_type: string }) =>
+      apiCall<any>('POST', '/management/sms/campaigns/', data),
+
+    getSMSCampaign: (id: string) =>
+      apiCall<any>('GET', `/management/sms/campaigns/${uuid(id)}/`),
+
+    sendSMSCampaign: (id: string) =>
+      apiCall<any>('POST', `/management/sms/campaigns/${uuid(id)}/send/`),
+
+    // SASRA Returns
+    getSASRAReturns: async (params?: { report_type?: 'form1' | 'form2'; period?: string }) =>
+      apiCall<any>('GET', '/management/reports/sasra/', undefined, { params }),
+
 
   },
 

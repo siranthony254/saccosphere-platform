@@ -36,7 +36,6 @@ export default function SaccoApplicationReview() {
       await submitApplication({
         sacco_slug: saccoSlug,
         form_data: formData,
-        monthly_contribution: monthlyContribution,
       })
       router.push(`/(member)/discover/${slug}/apply/success`)
     } catch (error: unknown) {

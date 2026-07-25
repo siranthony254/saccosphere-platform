@@ -105,7 +105,7 @@ export const SaccoSchema = z.object({
   logo_url: z.string().url().optional(),
   // Discovery stats
   member_count: z.number(),
-  loan_rate_pct: z.number(),
+  default_interest_rate: z.number(),
   loan_multiplier: z.number(),
   established_year: z.number().optional(),
   // Membership requirements (optional as they may come from config endpoint)
@@ -113,7 +113,7 @@ export const SaccoSchema = z.object({
   min_monthly_contribution: z.number().optional(),
   registration_fee: z.number().optional(),
   min_share_capital: z.number().optional(),
-  is_open_to_new_members: z.boolean().optional(),
+  membership_open: z.boolean().optional(),
   application_review_days: z.string().optional(),
 })
 export type Sacco = z.infer<typeof SaccoSchema>

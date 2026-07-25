@@ -70,7 +70,7 @@ export default function SaccoProfileScreen() {
         <View className="ml-3">
           <Text className="text-ink text-sm font-semibold">{sacco.name}</Text>
           <Text className="text-ink-faint text-xs">
-            {sacco.sector || 'SACCO'} · {sacco.is_open_to_new_members ? 'Open membership' : 'Closed membership'}
+            {sacco.sector || 'SACCO'} · {sacco.membership_open ? 'Open membership' : 'Closed membership'}
           </Text>
         </View>
       </View>
@@ -102,7 +102,7 @@ export default function SaccoProfileScreen() {
           <Text className="text-ink-faint text-xs">Members</Text>
         </View>
         <View className="bg-surface2 rounded-xl p-2.5 items-center">
-          <Text className="text-mint-500 text-sm font-semibold">{sacco.loan_rate_pct}%</Text>
+          <Text className="text-mint-500 text-sm font-semibold">{sacco.default_interest_rate}%</Text>
           <Text className="text-ink-faint text-xs">Rate p.a.</Text>
         </View>
         <View className="bg-surface2 rounded-xl p-2.5 items-center">
@@ -133,6 +133,22 @@ export default function SaccoProfileScreen() {
         <View className="flex-row justify-between py-2 border-b border-border">
           <Text className="text-ink-muted text-xs">Share capital</Text>
           <Text className="text-ink text-xs font-semibold">{formatKes(sacco.min_share_capital ?? 5000)} min</Text>
+          {sacco.membership_open === false && (
+            <View className="mb-8 p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-2xl">
+              <Text className="text-yellow-500 font-bold mb-1">Closed to new members</Text>
+              <Text className="text-yellow-500/80 text-sm">This SACCO is currently not accepting new membership applications.</Text>
+            </View>
+          )}
+
+          <TouchableOpacity
+            className={`w-full py-4 rounded-xl items-center shadow-lg ${(sacco.membership_open === false) ? 'bg-surface2' : 'bg-mint-500 shadow-mint-500/20'}`}
+            onPress={() => router.push(`/(member)/discover/${sacco.slug}/apply`)}
+            disabled={sacco.membership_open === false}
+          >
+            <Text className={`font-bold text-lg ${(sacco.membership_open === false) ? 'text-ink-faint' : 'text-slate-900'}`}>
+              {sacco.membership_open === false ? 'Not accepting applications' : 'Apply for membership'}
+            </Text>
+          </TouchableOpacity>
         </View>
         
         <View className="flex-row justify-between py-2">
@@ -140,17 +156,6 @@ export default function SaccoProfileScreen() {
           <Text className="text-ink text-xs font-semibold">ID + photo + payslip</Text>
         </View>
       </View>
-
-      {/* Apply Button */}
-      <TouchableOpacity
-        className={`w-full py-3 rounded-xl items-center mb-2 ${!sacco.is_open_to_new_members ? 'bg-surface2' : 'bg-violet-500'}`}
-        onPress={handleApply}
-        disabled={!sacco.is_open_to_new_members}
-      >
-        <Text className={`text-xs font-semibold ${!sacco.is_open_to_new_members ? 'text-ink-muted' : 'text-white'}`}>
-          {sacco.is_open_to_new_members ? 'Apply to join →' : 'Not accepting new members'}
-        </Text>
-      </TouchableOpacity>
 
       <Text className="text-ink-faint text-xs text-center">
         Applications reviewed within {sacco.application_review_days ?? '5-7'} business days

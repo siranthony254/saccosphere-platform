@@ -2,9 +2,11 @@
  * Screen 23 — Member profile & settings
  */
 
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native'
+import { View, Text, ScrollView, TouchableOpacity, Alert } from 'react-native'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { router } from 'expo-router'
+import { File, Paths } from 'expo-file-system'
+import * as Sharing from 'expo-sharing'
 import { useCurrentUser } from '../../store/useAuthStore'
 import { useLogout } from '../../hooks/useAuth'
 import { useMemberships } from '../../hooks/useMembership'
@@ -38,11 +40,29 @@ export default function ProfileScreen() {
           from_date: '2024-01-01', // Default to current year
           to_date: new Date().toISOString().split('T')[0],
         })
-        // Handle blob download - this would need platform-specific implementation
-        console.log(`Downloaded ${filename} for ${membership.sacco_name}`)
+        
+        const reader = new FileReader()
+        reader.onload = async () => {
+          try {
+            const base64Data = (reader.result as string).split(',')[1]
+            const file = new File(Paths.document, filename)
+            file.write(base64Data, { encoding: 'base64' })
+            
+            if (await Sharing.isAvailableAsync()) {
+              await Sharing.shareAsync(file.uri)
+            } else {
+              Alert.alert('Success', `Statement downloaded: ${filename}`)
+            }
+          } catch (e) {
+            console.error('File write error:', e)
+            Alert.alert('Error', 'Failed to save statement.')
+          }
+        }
+        reader.readAsDataURL(blob)
       }
     } catch (error) {
       console.error('Failed to download statements:', error)
+      Alert.alert('Error', 'Failed to download statements. Please try again.')
     }
   }
 

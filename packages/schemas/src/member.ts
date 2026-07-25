@@ -93,8 +93,6 @@ export const LoanApplicationSchema = z.object({
   monthly_instalment: z.number(),
   total_repayable: z.number(),
   purpose: z.string(),
-  disbursement_method: z.enum(['mpesa', 'fosa', 'bank']),
-  disbursement_account: z.string(),
   status: LoanStatusSchema,
   submitted_at: z.string().datetime().nullable(),
   approved_at: z.string().datetime().nullable(),
@@ -111,9 +109,6 @@ export const LoanApplicationInputSchema = z.object({
   amount_requested: z.number().positive(),
   period_months: z.number().int().positive(),
   purpose: z.string().min(10),
-  disbursement_method: z.enum(['mpesa', 'fosa', 'bank']),
-  disbursement_account: z.string(),
-  guarantor_membership_ids: z.array(z.string().uuid()),
 })
 export type LoanApplicationInput = z.infer<typeof LoanApplicationInputSchema>
 

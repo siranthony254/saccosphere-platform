@@ -15,13 +15,17 @@ export const UserSchema = z.object({
   phone_number: z.string().optional(),
   first_name: z.string(),
   last_name: z.string(),
-  role: UserRoleSchema.default('member'),
-  kyc_status: KYCStatusSchema.default('not_started'),
+  role: UserRoleSchema.default('member').optional(),
+  kyc_status: KYCStatusSchema.default('not_started').optional(),
   national_id: z.string().nullable().default(null),
   sacco_id: z.string().uuid().nullable().default(null), // non-null for sacco_admin
-  sacco_slug: z.string().nullable().default(null),
-  created_at: z.string().datetime({ offset: true }),
+  sacco_slug: z.string().nullable().default(null).optional(),
+  created_at: z.string().datetime({ offset: true }).optional(),
   date_joined: z.string().datetime({ offset: true }).optional(),
+  profile_picture: z.string().nullable().optional(),
+  date_of_birth: z.string().nullable().optional(),
+  sacco_context: z.any().optional(),
+  biometric_login_enabled: z.boolean().optional(),
 })
 export type User = z.infer<typeof UserSchema>
 
