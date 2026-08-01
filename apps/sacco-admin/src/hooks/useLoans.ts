@@ -12,8 +12,8 @@ export function useAdminLoans(filters?: { status?: string }) {
 export function useReviewLoan() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, action, notes }: { id: string; action: 'approve' | 'reject'; notes?: string }) =>
-      api.saccoAdmin.reviewLoan(id, { action, notes }),
+    mutationFn: ({ id, action, notes, override_reason }: { id: string; action: 'under_review' | 'approve' | 'reject'; notes?: string; override_reason?: string }) =>
+      api.saccoAdmin.reviewLoan(id, { action, notes, override_reason }),
     onSuccess: () => qc.invalidateQueries({ queryKey: QueryKeys.adminLoans() }),
   })
 }

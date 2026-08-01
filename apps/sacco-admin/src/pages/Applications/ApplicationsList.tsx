@@ -24,18 +24,16 @@ export function ApplicationsList() {
     setTimeout(() => setAlertInfo(null), 3000)
   }
 
-  const handleReview = async (id: string, status: 'APPROVED' | 'REJECTED') => {
+  const handleReview = async (app: any, status: 'APPROVED' | 'REJECTED') => {
+    const targetId = app.application_id || app.id
     try {
-      // NOTE: reviewApplication currently expects a SaccoApplication ID.
-      // Since we are using Membership ID as application_id in the fallback,
-      // this might need verification if the backend supports membership ID for review.
-      await reviewApplication({ id, status, review_notes: reviewNotes })
+      await reviewApplication({ id: targetId, status, review_notes: reviewNotes })
       setReviewingId(null)
       setReviewNotes('')
       showAlert('success', `Application ${status.toLowerCase()} successfully`)
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to review application:', error)
-      showAlert('error', 'Failed to review application. Backend review requires SaccoApplication ID.')
+      showAlert('error', error?.message || 'Failed to review application. Please try again.')
     }
   }
 
@@ -139,14 +137,14 @@ export function ApplicationsList() {
                     <div className="flex gap-3">
                       <button
                         className={`flex-1 py-3 rounded-xl border-none bg-mint-600 text-white text-sm font-bold cursor-pointer hover:bg-mint-700 transition-all shadow-lg active:scale-[0.98] ${isPending ? 'opacity-60' : ''}`}
-                        onClick={() => handleReview(app.id, 'APPROVED')}
+                        onClick={() => handleReview(app, 'APPROVED')}
                         disabled={isPending}
                       >
                         {isPending ? 'Processing Approval...' : '✓ Confirm Approval'}
                       </button>
                       <button
                         className="flex-1 py-3 rounded-xl border border-red-200 bg-red-50 text-red-700 text-sm font-bold cursor-pointer hover:bg-red-100 transition-all active:scale-[0.98]"
-                        onClick={() => handleReview(app.id, 'REJECTED')}
+                        onClick={() => handleReview(app, 'REJECTED')}
                         disabled={isPending}
                       >
                         ✗ Decline Application

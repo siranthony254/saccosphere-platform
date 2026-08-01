@@ -1474,21 +1474,21 @@ export const api = {
           const member = normalizeAdminMember(item)
           return {
             id: member.id,
-            application_id: member.id, 
+            application_id: item.application_id ?? item.id ?? member.id, 
             user_id: member.user_id,
             full_name: `${member.first_name} ${member.last_name}`,
             email: member.email,
             phone_number: member.phone,
             national_id: member.national_id,
-            employment_status: '—', // These fields are not in the list view
-            employer_name: '—',
-            monthly_income: 0,
+            employment_status: item.employment_status ?? '—',
+            employer_name: item.employer_name ?? '—',
+            monthly_income: Number(item.monthly_income ?? 0),
             monthly_contribution: member.monthly_contribution,
-            form_data: {},
-            custom_fields: {},
-            status: item.status, // Keep original backend status (PENDING, APPROVED, etc)
+            form_data: item.form_data ?? {},
+            custom_fields: item.custom_fields ?? {},
+            status: item.status,
             submitted_at: member.joined_at || new Date().toISOString(),
-            review_notes: '',
+            review_notes: item.review_notes ?? '',
           }
         }),
       }
@@ -1537,6 +1537,10 @@ export const api = {
             total_coverage: Number(item.guarantors_summary.total_coverage ?? 0),
           } : null,
           required_documents: item.required_documents,
+          crb_status: item.crb_status ?? null,
+          crb_score: item.crb_score != null ? Number(item.crb_score) : null,
+          crb_checked_at: item.crb_checked_at ?? null,
+          crb_listed_negative: Boolean(item.crb_listed_negative),
         })),
       }
     },
@@ -1560,8 +1564,9 @@ export const api = {
       }
     },
 
-    reviewLoan: (id: string, data: { action: 'approve' | 'reject' | 'disburse'; notes?: string }) => {
+    reviewLoan: (id: string, data: { action: 'under_review' | 'approve' | 'reject' | 'disburse'; notes?: string; override_reason?: string }) => {
       const statusMap: Record<string, string> = {
+        under_review: 'UNDER_REVIEW',
         approve: 'APPROVED',
         reject: 'REJECTED',
         disburse: 'DISBURSED',
@@ -1569,6 +1574,7 @@ export const api = {
       return apiCall<void>('PATCH', `/management/loans/${uuid(id)}/status/`, {
         status: statusMap[data.action],
         notes: data.notes,
+        override_reason: data.override_reason,
       })
     },
 
@@ -1584,24 +1590,27 @@ export const api = {
       }),
 
     getContributions: async (_params?: { date?: string; member?: string }) => {
-      const stats = await apiCall<any>('GET', '/management/stats/')
-      const results = Array.isArray(stats.recent_transactions) ? stats.recent_transactions.map((item: any) => ({
-        id: item.id,
-        date: item.created_at,
+      const dashboard = await api.saccoAdmin.getContributionsDashboard()
+      const results = (dashboard.recent_contributions || []).map((item: any, idx: number) => ({
+        id: item.id || `contrib-${idx}`,
+        date: item.date,
         amount: Number(item.amount ?? 0),
-        payment_method: String(item.transaction_type ?? 'internal').toLowerCase(),
-        payment_ref: item.reference ?? '',
+        payment_method: 'mpesa',
+        payment_ref: item.member_number ?? '',
         platform_fee: 0,
-        description: item.description ?? '',
-        status: String(item.status ?? 'completed').toLowerCase(),
+        description: `Contribution from ${item.member_name} (${item.savings_type || 'Savings'})`,
+        status: 'completed',
         balance_after: 0,
-        ref: item.reference ?? '',
+        ref: item.member_number ?? '',
         txn_type: 'contribution',
         direction: 'credit' as const,
         sacco_name: '',
         sacco_slug: '',
-        completed_at: item.created_at ?? null,
-      })) : []
+        completed_at: item.date ?? null,
+        member_name: item.member_name,
+        member_number: item.member_number,
+        savings_type: item.savings_type,
+      }))
       return {
         count: results.length,
         next: null,

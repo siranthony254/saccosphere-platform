@@ -4,7 +4,7 @@ import { useSaccoSettings } from '../../hooks/useSaccoSettings'
 export function Settings() {
   const { data, isLoading, error, isPending, save } = useSaccoSettings()
 
-  // Form state
+  // Form state — mirrors every field the backend SaccoSettings model exposes
   const [formData, setFormData] = useState({
     min_loan_amount: '',
     max_loan_amount: '',
@@ -13,6 +13,8 @@ export function Settings() {
     guarantor_type_allowed: 'BOTH',
     registration_fee: '',
     monthly_contribution_amount: '',
+    liquidity_threshold_percentage: '',
+    sms_daily_limit: '',
   })
 
   // Sync initial data to form
@@ -26,6 +28,8 @@ export function Settings() {
         guarantor_type_allowed: data.settings.guarantor_type_allowed ?? 'BOTH',
         registration_fee: String(data.settings.registration_fee ?? 0),
         monthly_contribution_amount: String(data.settings.monthly_contribution_amount ?? 0),
+        liquidity_threshold_percentage: String(data.settings.liquidity_threshold_percentage ?? 80),
+        sms_daily_limit: String(data.settings.sms_daily_limit ?? 1000),
       })
     }
   }, [data])
@@ -38,13 +42,33 @@ export function Settings() {
       loan_multiplier: Number(formData.loan_multiplier),
       registration_fee: Number(formData.registration_fee),
       monthly_contribution_amount: Number(formData.monthly_contribution_amount),
+      liquidity_threshold_percentage: Number(formData.liquidity_threshold_percentage),
+      sms_daily_limit: Number(formData.sms_daily_limit),
     })
   }
+
+  const field = (
+    label: string,
+    key: keyof typeof formData,
+    type: 'number' | 'text' = 'number',
+    hint?: string
+  ) => (
+    <div>
+      <label className="text-xs text-ink-muted mb-1.5 block">{label}</label>
+      <input
+        type={type}
+        className="w-full p-2.5 border border-[#e5ede9] rounded-lg text-sm focus:ring-2 focus:ring-violet-500 focus:outline-none"
+        value={formData[key] as string}
+        onChange={e => setFormData(prev => ({ ...prev, [key]: e.target.value }))}
+      />
+      {hint && <p className="text-[10px] text-ink-faint mt-1">{hint}</p>}
+    </div>
+  )
 
   return (
     <div className="p-5">
       <div className="text-lg font-semibold text-ink mb-1">SACCO settings</div>
-      <div className="text-xs text-ink-muted mb-6">SACCO configuration & policy</div>
+      <div className="text-xs text-ink-muted mb-6">SACCO configuration &amp; policy</div>
 
       <div className="grid grid-cols-2 gap-5">
         {/* SACCO Profile */}
@@ -85,61 +109,20 @@ export function Settings() {
         <div className="bg-white border border-[#e5ede9] rounded-[10px] p-5">
           <div className="font-semibold text-sm text-ink mb-4">Membership policy</div>
           <div className="space-y-4">
-            <div>
-              <label className="text-xs text-ink-muted mb-1.5 block">Registration fee (KES)</label>
-              <input
-                type="number"
-                className="w-full p-2.5 border border-[#e5ede9] rounded-lg text-sm focus:ring-2 focus:ring-violet-500 focus:outline-none"
-                value={formData.registration_fee}
-                onChange={e => setFormData(prev => ({ ...prev, registration_fee: e.target.value }))}
-              />
-            </div>
-            <div>
-              <label className="text-xs text-ink-muted mb-1.5 block">Default monthly contribution (KES)</label>
-              <input
-                type="number"
-                className="w-full p-2.5 border border-[#e5ede9] rounded-lg text-sm focus:ring-2 focus:ring-violet-500 focus:outline-none"
-                value={formData.monthly_contribution_amount}
-                onChange={e => setFormData(prev => ({ ...prev, monthly_contribution_amount: e.target.value }))}
-              />
-            </div>
+            {field('Registration fee (KES)', 'registration_fee')}
+            {field('Default monthly contribution (KES)', 'monthly_contribution_amount')}
           </div>
         </div>
       </div>
-
 
       {/* Loan Policy */}
       <div className="bg-white border border-[#e5ede9] rounded-[10px] p-5 mt-5">
         <div className="font-semibold text-sm text-ink mb-4 border-b border-surface-3 pb-3">Loan configuration</div>
 
         <div className="grid grid-cols-3 gap-6 mb-6">
-          <div>
-            <label className="text-xs text-ink-muted mb-1.5 block">Max loan multiplier (× savings)</label>
-            <input
-              type="number"
-              className="w-full p-2.5 border border-[#e5ede9] rounded-lg text-sm focus:ring-2 focus:ring-violet-500 focus:outline-none"
-              value={formData.loan_multiplier}
-              onChange={e => setFormData(prev => ({ ...prev, loan_multiplier: e.target.value }))}
-            />
-          </div>
-          <div>
-            <label className="text-xs text-ink-muted mb-1.5 block">Min loan amount (KES)</label>
-            <input
-              type="number"
-              className="w-full p-2.5 border border-[#e5ede9] rounded-lg text-sm focus:ring-2 focus:ring-violet-500 focus:outline-none"
-              value={formData.min_loan_amount}
-              onChange={e => setFormData(prev => ({ ...prev, min_loan_amount: e.target.value }))}
-            />
-          </div>
-          <div>
-            <label className="text-xs text-ink-muted mb-1.5 block">Max loan amount (KES)</label>
-            <input
-              type="number"
-              className="w-full p-2.5 border border-[#e5ede9] rounded-lg text-sm focus:ring-2 focus:ring-violet-500 focus:outline-none"
-              value={formData.max_loan_amount}
-              onChange={e => setFormData(prev => ({ ...prev, max_loan_amount: e.target.value }))}
-            />
-          </div>
+          {field('Max loan multiplier (× savings)', 'loan_multiplier')}
+          {field('Min loan amount (KES)', 'min_loan_amount')}
+          {field('Max loan amount (KES)', 'max_loan_amount')}
         </div>
 
         <div className="grid grid-cols-2 gap-6 p-4 bg-surface-2 rounded-xl">
@@ -163,9 +146,30 @@ export function Settings() {
             >
               <option value="MEMBER_ONLY">Internal members only</option>
               <option value="EXTERNAL_ONLY">External only</option>
-              <option value="BOTH">Both Internal & External</option>
+              <option value="BOTH">Both Internal &amp; External</option>
             </select>
           </div>
+        </div>
+      </div>
+
+      {/* Operational Limits — sms_daily_limit + liquidity_threshold_percentage */}
+      <div className="bg-white border border-[#e5ede9] rounded-[10px] p-5 mt-5">
+        <div className="font-semibold text-sm text-ink mb-1 border-b border-surface-3 pb-3">Operational limits</div>
+        <p className="text-xs text-ink-muted mb-4">Controls cost and risk guardrails for the SACCO.</p>
+
+        <div className="grid grid-cols-2 gap-6">
+          {field(
+            'SMS daily send limit',
+            'sms_daily_limit',
+            'number',
+            'Maximum number of SMS messages that can be sent in a single day. Prevents runaway costs.',
+          )}
+          {field(
+            'Liquidity utilisation warning threshold (%)',
+            'liquidity_threshold_percentage',
+            'number',
+            'A liquidity warning fires when loan disbursements exceed this percentage of total savings. Default: 80%.',
+          )}
         </div>
       </div>
 
@@ -182,3 +186,5 @@ export function Settings() {
     </div>
   )
 }
+
+

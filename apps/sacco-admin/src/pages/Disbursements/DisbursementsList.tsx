@@ -109,10 +109,16 @@ export function DisbursementsList() {
                 <tr><td colSpan={7} className="p-10 text-center text-ink-muted italic text-sm">No approved loans awaiting disbursement.</td></tr>
               ) : (
                 (loansData?.results ?? []).map((loan: any) => {
-                  const isExpanded = activeId === loan.id
-                  const initials = loan.member_name.split(' ').map((n: any) => n[0]).join('')
+                  const loanId = loan.loan_id || loan.id
+                  const loanAmount = loan.amount ?? loan.amount_requested ?? 0
+                  const loanPhone = loan.phone_number || loan.member_phone || ''
+                  const isExpanded = activeId === loanId
+                  const initials = (loan.member_name || 'M').split(' ').map((n: any) => n[0]).join('')
+                  const productLabel = loan.loan_type_name || loan.loan_product_label || 'Loan'
+                  const termMonths = loan.term_months || loan.period_months || 0
+
                   return (
-                    <React.Fragment key={loan.id}>
+                    <React.Fragment key={loanId}>
                       <tr className="border-b border-surface-3 last:border-0 hover:bg-surface-1 transition-colors">
                         <td className="px-5 py-3">
                           <div className="flex items-center gap-2.5">
@@ -122,22 +128,22 @@ export function DisbursementsList() {
                             <span className="font-medium">{loan.member_name}</span>
                           </div>
                         </td>
-                        <td className="px-5 py-3 font-semibold text-ink">KES {loan.amount_requested.toLocaleString()}</td>
-                        <td className="px-5 py-3 font-mono text-xs text-ink-muted">{loan.ref}</td>
+                        <td className="px-5 py-3 font-semibold text-ink">KES {loanAmount.toLocaleString()}</td>
+                        <td className="px-5 py-3 font-mono text-xs text-ink-muted">{loanId}</td>
                         <td className="px-5 py-3 text-xs">
-                           <span className="text-ink-soft">{loan.disbursement_method.toUpperCase()}</span>
-                           {loan.disbursement_account && <span className="text-ink-faint ml-1">Â· {loan.disbursement_account}</span>}
+                           <span className="text-ink-soft">MPESA</span>
+                           {loanPhone && <span className="text-ink-faint ml-1">· {loanPhone}</span>}
                         </td>
                         <td className="px-5 py-3 text-xs text-ink-muted">Pending</td>
                         <td className="px-5 py-3">
                           <span className="bg-amber-50 text-amber-700 text-[11px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap">
-                            Approved â€” not sent
+                            Approved — not sent
                           </span>
                         </td>
                         <td className="px-5 py-3">
                           <button
                             className="px-3 py-1.5 rounded bg-[#0d7a4e] text-white text-[11px] font-semibold cursor-pointer hover:bg-[#0b6340] transition-colors whitespace-nowrap"
-                            onClick={() => { setActiveId(isExpanded ? null : loan.id); setPhone(''); setAmount(loan.amount_requested.toString()) }}
+                            onClick={() => { setActiveId(isExpanded ? null : loanId); setPhone(loanPhone); setAmount(loanAmount.toString()) }}
                           >
                             {isExpanded ? 'Close' : 'Send via M-Pesa'}
                           </button>
@@ -151,10 +157,9 @@ export function DisbursementsList() {
                                 <div className="bg-white border border-[#e5ede9] rounded-lg p-4">
                                   <div className="font-semibold text-xs text-ink-soft mb-3 uppercase tracking-wider">Loan summary</div>
                                   {[
-                                    { l: 'Product', v: loan.loan_product_label },
-                                    { l: 'Interest rate', v: `${loan.interest_rate}% p.a.` },
-                                    { l: 'Period', v: `${loan.period_months} months` },
-                                    { l: 'Monthly instalment', v: `KES ${loan.monthly_instalment.toLocaleString()}` },
+                                    { l: 'Product', v: productLabel },
+                                    { l: 'Term', v: `${termMonths} months` },
+                                    { l: 'Amount', v: `KES ${loanAmount.toLocaleString()}` },
                                   ].map(row => (
                                     <div key={row.l} className="flex justify-between py-2 border-b border-ink-faint text-xs last:border-0">
                                       <span className="text-ink-muted">{row.l}</span>
@@ -186,7 +191,7 @@ export function DisbursementsList() {
                                     <button
                                       className={`px-5 py-2.5 rounded-lg border-none bg-[#0d7a4e] text-white text-sm font-bold cursor-pointer hover:bg-[#0b6340] transition-colors ${disbursing ? 'opacity-60' : ''}`}
                                       onClick={() => disburse({ 
-                                        loanId: loan.id, 
+                                        loanId: loanId, 
                                         amount: Number(amount), 
                                         phone_number: phone,
                                         remarks: 'Loan disbursement via M-Pesa B2C'
@@ -198,7 +203,7 @@ export function DisbursementsList() {
                                       })}
                                       disabled={disbursing || !phone || !amount}
                                     >
-                                      {disbursing ? 'Processing...' : 'ðŸ“± Initiate Payout'}
+                                      {disbursing ? 'Processing...' : '📱 Initiate Payout'}
                                     </button>
                                     <button
                                       className="px-5 py-2.5 rounded-lg border border-[#e5ede9] bg-white text-sm font-medium cursor-pointer hover:bg-surface-2 transition-colors"

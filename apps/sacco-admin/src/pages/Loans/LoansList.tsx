@@ -10,14 +10,17 @@ const STATUS_COLORS: Record<string, { bg: string; color: string }> = {
   BOARD_REVIEW: { bg: 'bg-violet-50', color: 'text-violet-700' },
 }
 
-// Backend status transition rules
-const VALID_TRANSITIONS: Record<string, { canApprove: boolean; canReject: boolean; canDisburse: boolean; nextStatus: string }> = {
-  PENDING_APPROVAL: { canApprove: true, canReject: true, canDisburse: false, nextStatus: 'UNDER_REVIEW' },
-  UNDER_REVIEW: { canApprove: true, canReject: true, canDisburse: false, nextStatus: 'APPROVED' },
-  APPROVED: { canApprove: false, canReject: false, canDisburse: true, nextStatus: 'DISBURSED' },
-  REJECTED: { canApprove: false, canReject: false, canDisburse: false, nextStatus: '' },
-  DISBURSED: { canApprove: false, canReject: false, canDisburse: false, nextStatus: '' },
-  BOARD_REVIEW: { canApprove: true, canReject: true, canDisburse: false, nextStatus: 'UNDER_REVIEW' },
+// Strict backend status transition rules:
+// PENDING_APPROVAL / BOARD_REVIEW -> UNDER_REVIEW or REJECTED
+// UNDER_REVIEW -> APPROVED or REJECTED
+// APPROVED -> DISBURSED
+const VALID_TRANSITIONS: Record<string, { canMoveToReview: boolean; canApprove: boolean; canReject: boolean; canDisburse: boolean }> = {
+  PENDING_APPROVAL: { canMoveToReview: true, canApprove: false, canReject: true, canDisburse: false },
+  BOARD_REVIEW: { canMoveToReview: true, canApprove: false, canReject: true, canDisburse: false },
+  UNDER_REVIEW: { canMoveToReview: false, canApprove: true, canReject: true, canDisburse: false },
+  APPROVED: { canMoveToReview: false, canApprove: false, canReject: false, canDisburse: true },
+  REJECTED: { canMoveToReview: false, canApprove: false, canReject: false, canDisburse: false },
+  DISBURSED: { canMoveToReview: false, canApprove: false, canReject: false, canDisburse: false },
 }
 
 export function LoansList() {
@@ -27,6 +30,7 @@ export function LoansList() {
   const { mutate: disburseLoan, isPending: disbursing } = useDisburseLoan()
   const [activeId, setActiveId] = useState<string | null>(null)
   const [notes, setNotes] = useState('')
+  const [overrideReason, setOverrideReason] = useState('')
   const [alertInfo, setAlertInfo] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
 
   const showAlert = (type: 'success' | 'error', message: string) => {
@@ -34,19 +38,25 @@ export function LoansList() {
     setTimeout(() => setAlertInfo(null), 3000)
   }
 
-  const handleReview = (id: string, action: 'approve' | 'reject') => {
+  const handleReview = (loan: any, action: 'under_review' | 'approve' | 'reject') => {
+    if (action === 'approve' && loan.crb_listed_negative && overrideReason.trim().length < 10) {
+      showAlert('error', 'CRB check shows negative listing. Override reason (min 10 characters) is required.')
+      return
+    }
+
     reviewLoan(
-      { id, action, notes },
+      { id: loan.loan_id, action, notes, override_reason: overrideReason },
       {
         onSuccess: () => {
           setActiveId(null)
           setNotes('')
-          const msg = action === 'approve' ? 'approved' : 'rejected'
+          setOverrideReason('')
+          const msg = action === 'under_review' ? 'moved to under review' : action === 'approve' ? 'approved' : 'rejected'
           showAlert('success', `Loan ${msg} successfully`)
         },
-        onError: (error) => {
+        onError: (error: any) => {
           console.error('Failed to process loan:', error)
-          showAlert('error', 'Failed to process loan. Please try again.')
+          showAlert('error', error?.response?.data?.detail || error?.message || 'Failed to process loan. Please try again.')
         }
       }
     )
@@ -59,16 +69,16 @@ export function LoansList() {
         onSuccess: () => {
           setActiveId(null)
           setNotes('')
+          setOverrideReason('')
           showAlert('success', `Loan disbursed successfully`)
         },
-        onError: (error) => {
+        onError: (error: any) => {
           console.error('Failed to disburse loan:', error)
-          showAlert('error', 'Failed to disburse loan. Please try again.')
+          showAlert('error', error?.response?.data?.detail || error?.message || 'Failed to disburse loan. Please try again.')
         }
       }
     )
   }
-
 
   return (
     <div className="p-5 relative">
@@ -84,11 +94,11 @@ export function LoansList() {
             {data?.count ?? 0} total · {data?.results.filter((l: any) => l.status === 'PENDING_APPROVAL').length ?? 0} pending decision
           </div>
         </div>
-          <div className="flex gap-2">
-            <select
-              aria-label="Loan status filter"
-              title="Loan status filter"
-              className="px-3 py-1.5 border border-ink-faint rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+        <div className="flex gap-2">
+          <select
+            aria-label="Loan status filter"
+            title="Loan status filter"
+            className="px-3 py-1.5 border border-ink-faint rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 bg-white"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
           >
@@ -111,6 +121,7 @@ export function LoansList() {
         (data?.results ?? []).map((loan: any) => {
           const sc = STATUS_COLORS[loan.status] ?? STATUS_COLORS.PENDING_APPROVAL
           const isExpanded = activeId === loan.loan_id
+          const rules = VALID_TRANSITIONS[loan.status] ?? { canMoveToReview: false, canApprove: false, canReject: false, canDisburse: false }
 
           return (
             <div key={loan.loan_id} className="bg-white border border-[#e5ede9] rounded-[10px] p-4 mb-3">
@@ -118,7 +129,7 @@ export function LoansList() {
               <div className="grid grid-cols-[2fr_1.2fr_1fr_1fr_1fr_1fr_auto] gap-2.5 items-center mb-3">
                 <div className="flex items-center gap-2.5">
                   <div className="w-8 h-8 rounded-full bg-mint-600 flex items-center justify-center text-[10px] font-bold text-white shrink-0">
-                    {loan.member_name.split(' ').map((n: any) => n[0]).join('')}
+                    {(loan.member_name || 'M').split(' ').map((n: any) => n[0]).join('')}
                   </div>
                   <div>
                     <div className="font-medium text-sm">{loan.member_name}</div>
@@ -129,7 +140,7 @@ export function LoansList() {
                 <div className="text-sm font-semibold">KES {loan.amount.toLocaleString()}</div>
                 <div className="text-xs text-ink-muted">{loan.term_months} mo</div>
                 <div>
-                  <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full bg-surface-2 text-ink-muted`}>
+                  <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-surface-2 text-ink-muted">
                     Guarantors
                   </span>
                 </div>
@@ -137,7 +148,7 @@ export function LoansList() {
                   <span className={`${sc.bg} ${sc.color} px-2 py-0.5 rounded-full text-[11px] font-semibold`}>{loan.status}</span>
                 </div>
                 <div className="flex gap-1.5">
-                  {loan.status === 'PENDING_APPROVAL' || loan.status === 'UNDER_REVIEW' || loan.status === 'APPROVED' ? (
+                  {rules.canMoveToReview || rules.canApprove || rules.canDisburse ? (
                     <button
                       className={`px-3 py-1 rounded-[6px] border-none text-white text-xs font-semibold cursor-pointer transition-colors ${
                         loan.status === 'APPROVED' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-mint-600 hover:bg-mint-700'
@@ -145,9 +156,10 @@ export function LoansList() {
                       onClick={() => {
                         setActiveId(isExpanded ? null : loan.loan_id)
                         setNotes('')
+                        setOverrideReason('')
                       }}
                     >
-                      {isExpanded ? 'Close' : loan.status === 'APPROVED' ? 'Action' : 'Review'}
+                      {isExpanded ? 'Close' : loan.status === 'APPROVED' ? 'Disburse' : loan.status === 'UNDER_REVIEW' ? 'Approve/Reject' : 'Review'}
                     </button>
                   ) : (
                     <span className="text-xs text-ink-faint">—</span>
@@ -167,29 +179,55 @@ export function LoansList() {
                         { l: 'Term', v: `${loan.term_months} months` },
                         { l: 'Applied at', v: loan.applied_at ? new Date(loan.applied_at).toLocaleDateString() : '—' },
                         { l: 'Notes', v: loan.application_notes || 'None' },
+                        { l: 'CRB Score', v: loan.crb_score != null ? `${loan.crb_score} (${loan.crb_status || '—'})` : 'No CRB record' },
                       ].map((row) => (
                         <div key={row.l} className="flex justify-between py-1 border-b border-ink-faint text-xs">
                           <span className="text-ink-muted">{row.l}</span>
                           <span className="font-medium text-ink">{row.v}</span>
                         </div>
                       ))}
+
+                      {loan.crb_listed_negative && (
+                        <div className="mt-2.5 p-2 bg-red-50 border border-red-200 rounded text-xs text-red-700 font-medium">
+                          ⚠️ CRB Warning: Negative listing detected. Approval requires an override reason (min 10 chars).
+                        </div>
+                      )}
                     </div>
+
                     <div>
                       <div className="text-xs text-ink-muted mb-2">
-                        {VALID_TRANSITIONS[loan.status]?.canDisburse
-                          ? `Will change status to: DISBURSED`
-                          : VALID_TRANSITIONS[loan.status]?.canApprove
-                          ? `Will change status to: ${VALID_TRANSITIONS[loan.status].nextStatus}`
-                          : 'No valid transitions available'}
+                        {loan.status === 'PENDING_APPROVAL' || loan.status === 'BOARD_REVIEW'
+                          ? 'Step 1: Move loan to UNDER_REVIEW before approval'
+                          : loan.status === 'UNDER_REVIEW'
+                          ? 'Step 2: Approve or Reject loan'
+                          : loan.status === 'APPROVED'
+                          ? 'Step 3: Disburse funds to borrower'
+                          : 'No valid actions'}
                       </div>
+
                       <textarea
-                        className="w-full p-2.5 border border-ink-faint rounded-lg text-sm resize-y min-h-[80px] box-border mb-2.5 focus:outline-none focus:ring-2 focus:ring-violet-500"
+                        className="w-full p-2.5 border border-ink-faint rounded-lg text-sm resize-y min-h-[70px] box-border mb-2 focus:outline-none focus:ring-2 focus:ring-violet-500"
                         placeholder="Review notes (optional)..."
                         value={notes}
                         onChange={(e) => setNotes(e.target.value)}
                       />
+
+                      {loan.crb_listed_negative && rules.canApprove && (
+                        <div className="mb-2.5">
+                          <label className="block text-[11px] font-bold text-red-700 mb-1">
+                            CRB Override Reason (Required for approval - min 10 chars):
+                          </label>
+                          <textarea
+                            className="w-full p-2.5 border border-red-300 rounded-lg text-sm resize-y min-h-[60px] box-border focus:outline-none focus:ring-2 focus:ring-red-500 bg-red-50/50"
+                            placeholder="State justification for approving despite negative CRB listing..."
+                            value={overrideReason}
+                            onChange={(e) => setOverrideReason(e.target.value)}
+                          />
+                        </div>
+                      )}
+
                       <div className="flex gap-2">
-                        {VALID_TRANSITIONS[loan.status]?.canDisburse ? (
+                        {rules.canDisburse && (
                           <button
                             className={`flex-1 py-2 rounded-lg border-none bg-blue-600 text-white text-sm font-semibold cursor-pointer hover:bg-blue-700 transition-colors ${disbursing ? 'opacity-60' : ''}`}
                             onClick={() => handleDisburse(loan)}
@@ -197,27 +235,36 @@ export function LoansList() {
                           >
                             {disbursing ? 'Processing...' : '💸 Disburse Funds'}
                           </button>
-                        ) : (
-                          <>
-                            <button
-                              className={`flex-1 py-2 rounded-lg border-none text-white text-sm font-semibold cursor-pointer transition-colors ${
-                                VALID_TRANSITIONS[loan.status]?.canApprove ? 'bg-mint-600 hover:bg-mint-700' : 'bg-ink-faint cursor-not-allowed'
-                              }`}
-                              onClick={() => VALID_TRANSITIONS[loan.status]?.canApprove && handleReview(loan.loan_id, 'approve')}
-                              disabled={reviewing || !VALID_TRANSITIONS[loan.status]?.canApprove}
-                            >
-                              {reviewing ? 'Processing...' : '✓ Approve'}
-                            </button>
-                            <button
-                              className={`flex-1 py-2 rounded-lg border-none text-sm font-semibold cursor-pointer transition-colors ${
-                                VALID_TRANSITIONS[loan.status]?.canReject ? 'bg-red-50 text-red-700 hover:bg-red-100' : 'bg-ink-faint text-ink-muted cursor-not-allowed'
-                              }`}
-                              onClick={() => VALID_TRANSITIONS[loan.status]?.canReject && handleReview(loan.loan_id, 'reject')}
-                              disabled={reviewing || !VALID_TRANSITIONS[loan.status]?.canReject}
-                            >
-                              ✗ Reject
-                            </button>
-                          </>
+                        )}
+
+                        {rules.canMoveToReview && (
+                          <button
+                            className={`flex-1 py-2 rounded-lg border-none text-white text-sm font-semibold cursor-pointer bg-blue-600 hover:bg-blue-700 transition-colors ${reviewing ? 'opacity-60' : ''}`}
+                            onClick={() => handleReview(loan, 'under_review')}
+                            disabled={reviewing}
+                          >
+                            {reviewing ? 'Processing...' : '📋 Move to Under Review'}
+                          </button>
+                        )}
+
+                        {rules.canApprove && (
+                          <button
+                            className={`flex-1 py-2 rounded-lg border-none text-white text-sm font-semibold cursor-pointer bg-mint-600 hover:bg-mint-700 transition-colors ${reviewing ? 'opacity-60' : ''}`}
+                            onClick={() => handleReview(loan, 'approve')}
+                            disabled={reviewing}
+                          >
+                            {reviewing ? 'Processing...' : '✓ Approve Loan'}
+                          </button>
+                        )}
+
+                        {rules.canReject && (
+                          <button
+                            className={`flex-1 py-2 rounded-lg border-none text-sm font-semibold cursor-pointer bg-red-50 text-red-700 hover:bg-red-100 transition-colors ${reviewing ? 'opacity-60' : ''}`}
+                            onClick={() => handleReview(loan, 'reject')}
+                            disabled={reviewing}
+                          >
+                            ✗ Reject
+                          </button>
                         )}
                       </div>
                     </div>
@@ -231,4 +278,5 @@ export function LoansList() {
     </div>
   )
 }
+
 
