@@ -21,6 +21,12 @@ export default function ExternalGuarantorsScreen() {
     return null
   }
 
+  const { data: existingExternal = [], refetch } = useQuery({
+    queryKey: ['externalGuarantors', loanId],
+    queryFn: () => api.loans.getExternalGuarantors(loanId),
+    enabled: !!loanId,
+  })
+
   const { mutate: submitExternal, isPending } = useMutation({
     mutationFn: () =>
       api.loans.submitExternalGuarantor(loanId, {
@@ -39,6 +45,7 @@ export default function ExternalGuarantorsScreen() {
       setEmploymentStatus('')
       setMonthlyIncome('')
       setAmount('')
+      refetch()
     },
     onError: (err: any) => Alert.alert('Error', err.message),
   })
@@ -58,6 +65,25 @@ export default function ExternalGuarantorsScreen() {
       <Text className="text-ink-muted text-xs leading-5 mb-5">
         Provide details of someone who is not a member of the SACCO but is willing to guarantee your loan. They will be contacted to provide their consent and KYC details.
       </Text>
+
+      {existingExternal.length > 0 && (
+        <View className="mb-6 bg-surface2 border border-border rounded-xl p-4">
+          <Text className="text-ink text-xs font-semibold mb-3">Requested External Guarantors ({existingExternal.length})</Text>
+          <View className="gap-2">
+            {existingExternal.map((g: any, i: number) => (
+              <View key={g.id || i} className="flex-row justify-between items-center py-2 border-b border-border">
+                <View>
+                  <Text className="text-ink text-xs font-medium">{g.full_name || g.guarantor_name}</Text>
+                  <Text className="text-ink-muted text-[10px]">{g.phone_number || g.guarantor_phone} · ID: {g.id_number || g.guarantor_national_id}</Text>
+                </View>
+                <View className="px-2 py-1 rounded bg-violet-500/10 border border-violet-500/20">
+                  <Text className="text-violet-500 text-[10px] font-bold uppercase">{g.status || 'PENDING'}</Text>
+                </View>
+              </View>
+            ))}
+          </View>
+        </View>
+      )}
 
       <View className="gap-4 mb-6">
         <View>

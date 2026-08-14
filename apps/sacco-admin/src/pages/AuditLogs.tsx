@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { useAuditLogs } from '../hooks/useAuditLogs'
 
 const ACTION_COLORS: Record<string, { bg: string; color: string }> = {
@@ -14,6 +14,7 @@ export function AuditLogs() {
   const [actionFilter, setActionFilter] = useState('')
   const [resourceFilter, setResourceFilter] = useState('')
   const [userFilter, setUserFilter] = useState('')
+  const [expandedId, setExpandedId] = useState<string | null>(null)
   const { data, isLoading } = useAuditLogs({ action: actionFilter || undefined, resource_type: resourceFilter || undefined, user: userFilter || undefined })
 
   return (
@@ -71,24 +72,40 @@ export function AuditLogs() {
             <tbody>
               {(data?.results ?? []).map((log: any) => {
                 const ac = ACTION_COLORS[log.action] || { bg: 'bg-surface-2', color: 'text-ink' }
+                const isExpanded = expandedId === log.id
                 return (
-                  <tr key={log.id} className="border-b border-surface-3 hover:bg-surface-1">
-                    <td className="px-4 py-2 text-xs text-ink-muted">
-                      {log.timestamp ? new Date(log.timestamp).toLocaleString() : '—'}
-                    </td>
-                    <td className="px-4 py-2 text-xs text-ink">{log.user || '—'}</td>
-                    <td className="px-4 py-2">
-                      <span className={`${ac.bg} ${ac.color} px-2 py-0.5 rounded-full text-[11px] font-semibold`}>
-                        {log.action}
-                      </span>
-                    </td>
-                    <td className="px-4 py-2 text-xs text-ink">
-                      {log.resource_type} ({log.resource_id})
-                    </td>
-                    <td className="px-4 py-2 text-xs text-ink-muted max-w-xs truncate">
-                      {typeof log.details === 'string' ? log.details : JSON.stringify(log.details)}
-                    </td>
-                  </tr>
+                  <React.Fragment key={log.id}>
+                    <tr
+                      onClick={() => setExpandedId(isExpanded ? null : log.id)}
+                      className="border-b border-surface-3 hover:bg-surface-1 cursor-pointer transition-colors"
+                    >
+                      <td className="px-4 py-2 text-xs text-ink-muted">
+                        {log.timestamp ? new Date(log.timestamp).toLocaleString() : '—'}
+                      </td>
+                      <td className="px-4 py-2 text-xs text-ink">{log.user || '—'}</td>
+                      <td className="px-4 py-2">
+                        <span className={`${ac.bg} ${ac.color} px-2 py-0.5 rounded-full text-[11px] font-semibold`}>
+                          {log.action}
+                        </span>
+                      </td>
+                      <td className="px-4 py-2 text-xs text-ink">
+                        {log.resource_type} ({log.resource_id})
+                      </td>
+                      <td className="px-4 py-2 text-xs text-ink-muted max-w-xs truncate">
+                        {typeof log.details === 'string' ? log.details : JSON.stringify(log.details)}
+                      </td>
+                    </tr>
+                    {isExpanded && (
+                      <tr className="bg-surface2">
+                        <td colSpan={5} className="px-4 py-3 border-b border-surface-3">
+                          <div className="text-[11px] font-bold text-ink mb-1">State Change Details / JSON Payload:</div>
+                          <pre className="text-[11px] bg-slate-900 text-emerald-400 p-3 rounded-lg overflow-x-auto font-mono">
+                            {JSON.stringify(log.details || log, null, 2)}
+                          </pre>
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
                 )
               })}
             </tbody>

@@ -14,7 +14,7 @@ function B2CStatusBadge({ conversationId }: { conversationId: string }) {
   return (
     <div className="flex flex-col">
       <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold w-fit ${colorClass}`}>
-        {status === 'completed' || status === 'success' ? 'âœ“ DISBURSED' : status === 'failed' ? 'âœ— FAILED' : status.toUpperCase()}
+        {status === 'completed' || status === 'success' ? '✓ DISBURSED' : status === 'failed' ? '✕ FAILED' : status.toUpperCase()}
       </span>
       <span className="text-[9px] text-ink-faint font-mono mt-0.5">{conversationId}</span>
     </div>
@@ -66,7 +66,7 @@ export function DisbursementsList() {
         <div className="bg-white border border-[#e5ede9] rounded-[10px] p-5">
           <div className="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-1">Disbursed today</div>
           <div className="text-2xl font-bold text-ink mb-1">KES {dashboard?.disbursed_today?.total_amount?.toLocaleString() ?? '0'}</div>
-          <div className="text-xs text-mint-700 font-medium">â–² {dashboard?.disbursed_today?.count ?? 0} transactions</div>
+          <div className="text-xs text-mint-700 font-medium">▲ {dashboard?.disbursed_today?.count ?? 0} transactions</div>
         </div>
         <div className="bg-white border border-[#e5ede9] rounded-[10px] p-5">
           <div className="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-1">Pending disbursement</div>

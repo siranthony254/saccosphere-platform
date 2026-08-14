@@ -37,6 +37,8 @@ export function AppShell() {
     { path: '/dividends', label: 'Dividends', icon: '💎', badge: null },
     { path: '/sms', label: 'Bulk SMS', icon: '💬', badge: null },
     { path: '/reports', label: 'Reports', icon: '📈', badge: null },
+    { path: '/reports/sasra', label: 'SASRA Returns', icon: '🏛️', badge: null },
+    { path: '/analytics/liquidity-npl', label: 'Liquidity & NPL', icon: '📉', badge: null },
     { path: '/billing', label: 'SaaS Billing', icon: '🧾', badge: null },
     { path: '/kyc', label: 'KYC Review', icon: '🔍', badge: pendingKycCount > 0 ? String(pendingKycCount) : null },
     { path: '/roles', label: 'Roles', icon: '👤', badge: null },

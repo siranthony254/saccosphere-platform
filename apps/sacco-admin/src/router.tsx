@@ -20,6 +20,8 @@ import { KycReview } from './pages/Kyc/KycReview'
 import { Roles } from './pages/Roles/Roles'
 import { Import } from './pages/Import/Import'
 import { ExternalGuarantors } from './pages/ExternalGuarantors'
+import { SASRAReturns } from './pages/Reports/SASRAReturns'
+import { LiquidityNPLDashboard } from './pages/Analytics/LiquidityNPLDashboard'
 
 export const router = createBrowserRouter([
   {
@@ -47,6 +49,8 @@ export const router = createBrowserRouter([
       { path: 'sms', element: <BulkSMS /> },
       { path: 'billing', element: <Billing /> },
       { path: 'reports', element: <Reports /> },
+      { path: 'reports/sasra', element: <SASRAReturns /> },
+      { path: 'analytics/liquidity-npl', element: <LiquidityNPLDashboard /> },
       { path: 'settings', element: <Settings /> },
       { path: 'kyc', element: <KycReview /> },
       { path: 'roles', element: <Roles /> },

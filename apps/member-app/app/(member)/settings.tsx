@@ -34,9 +34,48 @@ export default function SettingsScreen() {
   const [kycImage, setKycImage] = useState<string | null>(null)
   const [uploadingKyc, setUploadingKyc] = useState(false)
 
+  const [devices, setDevices] = useState<any[]>([])
+  const [loadingDevices, setLoadingDevices] = useState(false)
+
   useEffect(() => {
     checkBiometricStatus()
+    loadDevices()
   }, [])
+
+  const loadDevices = async () => {
+    setLoadingDevices(true)
+    try {
+      const res = await api.auth.getDevices()
+      setDevices(Array.isArray(res) ? res : [])
+    } catch (err) {
+      console.log('Failed to load devices:', err)
+    } finally {
+      setLoadingDevices(false)
+    }
+  }
+
+  const handleRevokeDevice = (deviceId: string, deviceName: string) => {
+    Alert.alert(
+      'Revoke Device',
+      `Are you sure you want to revoke trusted access for "${deviceName || deviceId}"?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Revoke',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await api.auth.revokeDevice(deviceId)
+              Alert.alert('Success', 'Device revoked successfully.')
+              loadDevices()
+            } catch (err) {
+              Alert.alert('Error', 'Failed to revoke device access.')
+            }
+          },
+        },
+      ]
+    )
+  }
 
   const checkBiometricStatus = async () => {
     const compatible = await LocalAuthentication.hasHardwareAsync()
@@ -142,14 +181,15 @@ export default function SettingsScreen() {
     if (!kycImage) return
     setUploadingKyc(true)
     try {
-      // In a real app, we would upload the file to a server
-      // For now, we simulate success
-      await new Promise(resolve => setTimeout(resolve, 2000))
+      await api.kyc.uploadDocument({
+        document_type: 'id_front',
+        file: { uri: kycImage, name: 'kyc_id.jpg', type: 'image/jpeg' },
+      })
       Alert.alert('Success', 'KYC document uploaded successfully. Our team will review it shortly.')
       setKycModalVisible(false)
       setKycImage(null)
-    } catch (err) {
-      Alert.alert('Error', 'Failed to upload KYC document')
+    } catch (err: any) {
+      Alert.alert('Error', err?.message || err?.response?.data?.message || 'Failed to upload KYC document')
     } finally {
       setUploadingKyc(false)
     }
@@ -196,7 +236,7 @@ export default function SettingsScreen() {
 
         {/* Upload KYC */}
         <TouchableOpacity
-          style={{ backgroundColor: FROSTED_DARK, borderRadius: 12, padding: 16, borderWidth: 1, borderColor: BORDER_WHITE, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}
+          style={{ backgroundColor: FROSTED_DARK, borderRadius: 12, padding: 16, borderWidth: 1, borderColor: BORDER_WHITE, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}
           onPress={() => setKycModalVisible(true)}
         >
           <View>
@@ -205,6 +245,36 @@ export default function SettingsScreen() {
           </View>
           <Text style={{ color: TEXT_MUTED, fontSize: 18 }}>{'>'}</Text>
         </TouchableOpacity>
+
+        {/* Trusted Registered Devices */}
+        <View style={{ backgroundColor: FROSTED_DARK, borderRadius: 12, padding: 16, borderWidth: 1, borderColor: BORDER_WHITE }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <View>
+              <Text style={{ color: TEXT, fontSize: 14, fontWeight: '600' }}>Trusted Devices</Text>
+              <Text style={{ color: TEXT_MUTED, fontSize: 12 }}>Manage devices with biometric/trusted access.</Text>
+            </View>
+            {loadingDevices && <ActivityIndicator color={MINT} size="small" />}
+          </View>
+
+          {devices.length === 0 && !loadingDevices ? (
+            <Text style={{ color: TEXT_MUTED, fontSize: 12, fontStyle: 'italic' }}>No registered trusted devices found.</Text>
+          ) : (
+            devices.map((d: any) => (
+              <View key={d.device_id || d.id} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 10, borderTopWidth: 0.5, borderTopColor: BORDER_WHITE }}>
+                <View style={{ flex: 1, paddingRight: 8 }}>
+                  <Text style={{ color: TEXT, fontSize: 12, fontWeight: '600' }}>{d.device_name || d.device_id || 'Device'}</Text>
+                  <Text style={{ color: TEXT_MUTED, fontSize: 10 }}>Platform: {d.platform || 'Mobile'} · Biometric: {d.biometric_enabled ? 'Yes' : 'No'}</Text>
+                </View>
+                <TouchableOpacity
+                  style={{ backgroundColor: 'rgba(239, 68, 68, 0.2)', borderWidth: 1, borderColor: 'rgba(239, 68, 68, 0.4)', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4 }}
+                  onPress={() => handleRevokeDevice(d.device_id || d.id, d.device_name || d.device_id)}
+                >
+                  <Text style={{ color: '#FCA5A5', fontSize: 10, fontWeight: '600' }}>Revoke</Text>
+                </TouchableOpacity>
+              </View>
+            ))
+          )}
+        </View>
       </View>
 
       {/* Change Password Modal */}

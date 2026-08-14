@@ -979,8 +979,13 @@ export const api = {
     get: (id: string) =>
       api.applications.list().then((items) => items.find((item) => item.id === id) as MembershipApplication),
 
-    payRegistrationFee: (_id: string) =>
-      Promise.reject(new Error('Registration-fee STK push is not supported by the current backend contract.')),
+    payRegistrationFee: (data: { application_id: string; amount: number; phone_number: string }) =>
+      apiCall<any>('POST', '/payments/mpesa/stk-push/', {
+        phone_number: data.phone_number,
+        amount: data.amount,
+        sacco_id: uuid(data.application_id),
+        purpose: 'SAVING_DEPOSIT',
+      }),
 
     uploadDocument: async (applicationId: string, documentType: string, file: File | Blob | any, notes?: string) => {
       const formData = new FormData()
@@ -1259,6 +1264,12 @@ export const api = {
         action: action === 'approve' ? 'APPROVE' : 'DECLINE',
       })
     },
+
+    confirmDisbursement: (loanId: string) =>
+      apiCall<void>('POST', '/services/loans/confirm-disbursement/', { loan_id: uuid(loanId) }),
+
+    disputeDisbursement: (loanId: string, reason: string) =>
+      apiCall<void>('POST', '/services/loans/dispute-disbursement/', { loan_id: uuid(loanId), reason }),
   },
 
   // ─── PAYMENTS ──────────────────────────────────────────────────────────────
