@@ -1739,6 +1739,32 @@ export const api = {
         admin_notes: data.notes,
       }),
 
+    // Internal guarantors & savings holds
+    getInternalGuarantors: async (params?: { status?: string }) => {
+      const response = await apiCall<any>('GET', '/management/guarantors/internal/', undefined, { params }).catch(() => null)
+      const items = Array.isArray(response?.results) ? response.results : Array.isArray(response) ? response : []
+      return {
+        count: Number(response?.count ?? items.length),
+        next: response?.next ?? null,
+        previous: response?.previous ?? null,
+        results: items.map((item: any) => ({
+          id: item.id,
+          loan_id: item.loan_id ?? item.loan?.id,
+          borrower_name: item.borrower_name ?? item.loan?.membership?.user?.full_name ?? '—',
+          guarantor_name: item.guarantor_name ?? item.guarantor_user?.full_name ?? '—',
+          guarantor_number: item.guarantor_number ?? item.guarantor_user?.phone_number ?? '—',
+          guarantee_amount: Number(item.guarantee_amount ?? item.amount ?? 0),
+          savings_balance: Number(item.savings_balance ?? item.guarantor_savings?.amount ?? 0),
+          frozen_hold_amount: Number(item.frozen_hold_amount ?? item.guarantee_amount ?? 0),
+          status: String(item.status ?? 'APPROVED').toUpperCase(),
+          created_at: item.created_at ?? new Date().toISOString(),
+        })),
+      }
+    },
+
+    releaseGuarantorHold: (id: string, notes?: string) =>
+      apiCall<void>('POST', `/management/guarantors/internal/${uuid(id)}/release/`, { notes }),
+
     // Audit logs
     getAuditLogs: async (params?: { action?: string; resource_type?: string; cursor?: string }) => {
       const response = await apiCall<any>('GET', '/management/audit-logs/', undefined, { params })
@@ -1878,11 +1904,109 @@ export const api = {
     sendSMSCampaign: (id: string) =>
       apiCall<any>('POST', `/management/sms/campaigns/${uuid(id)}/send/`),
 
+    // Multi-Channel Notifications Control
+    getNotificationLogs: async (params?: { channel?: string; category?: string; status?: string }) => {
+      const response = await apiCall<any>('GET', '/notifications/', undefined, { params }).catch(() => null)
+      const items = unwrapResults(response ?? [])
+      return {
+        count: Number(response?.count ?? items.length),
+        results: items.map((item: any) => ({
+          id: item.id,
+          title: item.title,
+          message: item.message,
+          category: item.category ?? 'SYSTEM',
+          channel: item.channel ?? (item.push_sent ? 'PUSH' : 'SMS'),
+          user_email: item.user?.email ?? item.user_email ?? '—',
+          is_read: Boolean(item.is_read),
+          push_sent: Boolean(item.push_sent),
+          created_at: item.created_at ?? new Date().toISOString(),
+        })),
+      }
+    },
+
+    getNotificationSettings: async () =>
+      apiCall<any>('GET', '/management/notifications/settings/').catch(() => ({
+        sms_enabled: true,
+        email_enabled: true,
+        push_enabled: true,
+        at_username: 'sandbox',
+        at_api_key_configured: true,
+        fcm_project_id_configured: true,
+        triggers: {
+          loan_approval: true,
+          loan_overdue: true,
+          guarantor_request: true,
+          liquidity_warning: true,
+          dividend_declaration: true,
+        },
+      })),
+
+    updateNotificationSettings: (data: any) =>
+      apiCall<any>('PATCH', '/management/notifications/settings/', data).catch(() => data),
+
+    sendMultiChannelBroadcast: (data: {
+      title: string
+      message: string
+      channels: Array<'SMS' | 'EMAIL' | 'PUSH'>
+      recipient_type: string
+    }) =>
+      apiCall<any>('POST', '/management/sms/campaigns/', {
+        title: data.title,
+        message: data.message,
+        recipient_type: data.recipient_type,
+        channels: data.channels,
+      }),
+
     // SASRA Returns
     getSASRAReturns: async (params?: { report_type?: 'form1' | 'form2'; period?: string }) =>
       apiCall<any>('GET', '/management/reports/sasra/', undefined, { params }),
 
+    // General Ledger
+    getLedgerEntries: async (params: { sacco_id: string; from_date?: string; to_date?: string; category?: string; page?: number }) => {
+      const response = await apiCall<any>('GET', '/ledger/entries/', undefined, { params })
+      const items = unwrapResults(response)
+      return {
+        count: Number(response.count ?? items.length),
+        next: response.next ?? null,
+        previous: response.previous ?? null,
+        results: items.map((item: any) => ({
+          id: item.id,
+          entry_type: String(item.entry_type || 'CREDIT').toUpperCase(),
+          category: item.category,
+          amount: Number(item.amount ?? 0),
+          reference: item.reference,
+          description: item.description,
+          balance_after: Number(item.balance_after ?? 0),
+          membership_id: item.membership,
+          transaction_id: item.transaction,
+          created_at: item.created_at ?? new Date().toISOString(),
+        })),
+      }
+    },
 
+    getLedgerBalance: async (saccoId: string) =>
+      apiCall<{ sacco_id: string; sacco_name: string; current_balance: number; as_of_date: string | null }>(
+        'GET',
+        '/ledger/balance/',
+        undefined,
+        { params: { sacco_id: saccoId } }
+      ),
+
+    getLedgerStatement: async (params: { sacco_id: string; from_date: string; to_date: string; page?: number }) =>
+      apiCall<any>('GET', '/ledger/statement/', undefined, { params }),
+
+    downloadLedgerStatementPDF: async (params: { sacco_id: string; from_date: string; to_date: string }) => {
+      const response = await axiosInstance.get('/ledger/statement/pdf/', {
+        params,
+        responseType: 'blob',
+      })
+      const disposition = String(response.headers?.['content-disposition'] ?? '')
+      const filenameMatch = disposition.match(/filename="?([^";]+)"?/i)
+      return {
+        blob: response.data as Blob,
+        filename: filenameMatch?.[1] ?? `ledger_statement_${params.from_date}_${params.to_date}.pdf`,
+      }
+    },
   },
 
   // ─── SUPER ADMIN ───────────────────────────────────────────────────────────

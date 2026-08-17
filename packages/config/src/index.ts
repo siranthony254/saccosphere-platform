@@ -12,7 +12,7 @@ export const getApiUrl = (): string => {
   const vite = env?.VITE_API_URL
   const api = env?.API_URL
 
-  return expo ?? vite ?? api ?? 'https://saccosphere-production.up.railway.app'
+  return expo ?? vite ?? api ?? 'https://saccosphere-production-faac.up.railway.app'
 }
 
 // ─── APP ERROR CODES ─────────────────────────────────────────────────────────

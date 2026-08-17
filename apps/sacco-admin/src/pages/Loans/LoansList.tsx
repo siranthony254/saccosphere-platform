@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { api } from '@saccosphere/api-client'
 import { useAdminLoans, useReviewLoan, useDisburseLoan } from '../../hooks/useLoans'
 
 const STATUS_COLORS: Record<string, { bg: string; color: string }> = {
@@ -32,6 +34,16 @@ export function LoansList() {
   const [notes, setNotes] = useState('')
   const [overrideReason, setOverrideReason] = useState('')
   const [alertInfo, setAlertInfo] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
+
+  // Amortization Schedule Modal state
+  const [scheduleLoanId, setScheduleLoanId] = useState<string | null>(null)
+  const [scheduleLoanInfo, setScheduleLoanInfo] = useState<any>(null)
+
+  const { data: scheduleItems, isLoading: isScheduleLoading } = useQuery({
+    queryKey: ['loan-schedule', scheduleLoanId],
+    queryFn: () => api.loans.getSchedule(scheduleLoanId!),
+    enabled: Boolean(scheduleLoanId),
+  })
 
   const showAlert = (type: 'success' | 'error', message: string) => {
     setAlertInfo({ type, message })
@@ -148,6 +160,15 @@ export function LoansList() {
                   <span className={`${sc.bg} ${sc.color} px-2 py-0.5 rounded-full text-[11px] font-semibold`}>{loan.status}</span>
                 </div>
                 <div className="flex gap-1.5">
+                  <button
+                    className="px-2.5 py-1 rounded-[6px] border border-ink-faint bg-white hover:bg-surface-2 text-ink text-xs font-semibold cursor-pointer transition-colors"
+                    onClick={() => {
+                      setScheduleLoanId(loan.loan_id)
+                      setScheduleLoanInfo(loan)
+                    }}
+                  >
+                    📅 Schedule
+                  </button>
                   {rules.canMoveToReview || rules.canApprove || rules.canDisburse ? (
                     <button
                       className={`px-3 py-1 rounded-[6px] border-none text-white text-xs font-semibold cursor-pointer transition-colors ${
@@ -274,6 +295,115 @@ export function LoansList() {
             </div>
           )
         })
+      )}
+
+      {/* Amortization Repayment Schedule Modal */}
+      {scheduleLoanId && (
+        <div className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-xs">
+          <div className="w-full max-w-2xl bg-white h-full shadow-2xl flex flex-col p-6 overflow-y-auto">
+            <div className="flex justify-between items-center pb-4 border-b border-[#e5ede9]">
+              <div>
+                <div className="text-lg font-bold text-ink">Loan Amortization Schedule</div>
+                <div className="text-xs text-ink-muted">
+                  Borrower: {scheduleLoanInfo?.member_name} ({scheduleLoanInfo?.member_number})
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setScheduleLoanId(null)
+                  setScheduleLoanInfo(null)
+                }}
+                className="p-1 rounded-lg border border-ink-faint hover:bg-surface-2 text-ink text-xs font-bold cursor-pointer"
+              >
+                ✕ Close
+              </button>
+            </div>
+
+            <div className="my-4 grid grid-cols-3 gap-3 bg-surface-2 p-3 rounded-lg text-xs">
+              <div>
+                <span className="text-ink-muted block">Principal Amount</span>
+                <span className="font-bold text-sm text-ink">KES {Number(scheduleLoanInfo?.amount ?? 0).toLocaleString()}</span>
+              </div>
+              <div>
+                <span className="text-ink-muted block">Repayment Term</span>
+                <span className="font-bold text-sm text-ink">{scheduleLoanInfo?.term_months} Months</span>
+              </div>
+              <div>
+                <span className="text-ink-muted block">Loan Status</span>
+                <span className="font-bold text-sm text-violet-700">{scheduleLoanInfo?.status}</span>
+              </div>
+            </div>
+
+            <div className="flex-1 space-y-3">
+              <div className="text-xs font-bold text-ink uppercase tracking-wider">Instalment Schedule Breakdown</div>
+              <div className="overflow-x-auto border border-[#e5ede9] rounded-lg">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="border-b border-[#e5ede9] text-ink-muted font-semibold bg-surface-2">
+                      <th className="py-2.5 px-3">#</th>
+                      <th className="py-2.5 px-3">Due Date</th>
+                      <th className="py-2.5 px-3 text-right">Principal</th>
+                      <th className="py-2.5 px-3 text-right">Interest</th>
+                      <th className="py-2.5 px-3 text-right">Amount</th>
+                      <th className="py-2.5 px-3 text-right">Balance After</th>
+                      <th className="py-2.5 px-3 text-center">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#e5ede9]">
+                    {isScheduleLoading ? (
+                      <tr>
+                        <td colSpan={7} className="py-6 text-center text-ink-muted">
+                          Loading schedule breakdown...
+                        </td>
+                      </tr>
+                    ) : (scheduleItems ?? []).length === 0 ? (
+                      <tr>
+                        <td colSpan={7} className="py-6 text-center text-ink-muted">
+                          No schedule items generated yet for this loan.
+                        </td>
+                      </tr>
+                    ) : (
+                      (scheduleItems ?? []).map((inst: any) => {
+                        const statusColors: Record<string, string> = {
+                          paid: 'bg-mint-50 text-mint-700',
+                          pending: 'bg-amber-50 text-amber-700',
+                          overdue: 'bg-red-50 text-red-700',
+                          partial: 'bg-blue-50 text-blue-700',
+                        }
+                        const st = String(inst.status || 'pending').toLowerCase()
+                        return (
+                          <tr key={inst.instalment_number} className="hover:bg-surface-1">
+                            <td className="py-2.5 px-3 font-semibold">{inst.instalment_number}</td>
+                            <td className="py-2.5 px-3 text-ink-muted">
+                              {inst.due_date ? new Date(inst.due_date).toLocaleDateString() : '—'}
+                            </td>
+                            <td className="py-2.5 px-3 text-right font-medium text-ink">
+                              KES {Number(inst.principal ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                            </td>
+                            <td className="py-2.5 px-3 text-right font-medium text-amber-700">
+                              KES {Number(inst.interest ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                            </td>
+                            <td className="py-2.5 px-3 text-right font-bold text-ink">
+                              KES {Number(inst.amount ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                            </td>
+                            <td className="py-2.5 px-3 text-right text-ink-muted font-medium">
+                              KES {Number(inst.balance_after ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                            </td>
+                            <td className="py-2.5 px-3 text-center">
+                              <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${statusColors[st] || 'bg-gray-100 text-gray-700'}`}>
+                                {inst.status}
+                              </span>
+                            </td>
+                          </tr>
+                        )
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )
