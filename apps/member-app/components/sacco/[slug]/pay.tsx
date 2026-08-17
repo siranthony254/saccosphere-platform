@@ -102,11 +102,11 @@ export default function PayScreen() {
     )
   }
 
-  const handlePaymentComplete = (success: boolean) => {
+  const handlePaymentComplete = (success: boolean, _txnId?: string, errorMessage?: string) => {
     if (success) {
       setMethodStep('success')
     } else {
-      Alert.alert('Payment failed', 'The payment was not completed. Please try again.')
+      Alert.alert('Payment Cancelled / Failed', errorMessage ?? 'The payment was not completed. Please try again.')
       setMethodStep('method')
       setCheckoutRequestId(null)
     }

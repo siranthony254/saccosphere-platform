@@ -8,6 +8,13 @@ export function KycReview() {
   const [reviewingId, setReviewingId] = useState<string | null>(null)
   const [rejectionReason, setRejectionReason] = useState('')
 
+  const [alertInfo, setAlertInfo] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
+
+  const showAlert = (type: 'success' | 'error', message: string) => {
+    setAlertInfo({ type, message })
+    setTimeout(() => setAlertInfo(null), 3000)
+  }
+
   const handleReview = async (id: string, status: 'APPROVED' | 'REJECTED') => {
     try {
       await reviewKyc({ 
@@ -17,14 +24,22 @@ export function KycReview() {
       })
       setReviewingId(null)
       setRejectionReason('')
-    } catch (error) {
+      showAlert('success', `KYC verification ${status.toLowerCase()} successfully.`)
+    } catch (error: any) {
       console.error('Failed to review KYC:', error)
-      alert('Failed to review KYC. Check console for details.')
+      showAlert('error', error?.message || 'Failed to review KYC. Please try again.')
     }
   }
 
   return (
-    <div className="p-5">
+    <div className="p-5 relative">
+      {alertInfo && (
+        <div className={`fixed top-4 right-4 px-4 py-2 rounded-lg text-sm font-medium z-50 shadow-lg ${
+          alertInfo.type === 'success' ? 'bg-mint-500 text-white' : 'bg-red-500 text-white'
+        }`}>
+          {alertInfo.message}
+        </div>
+      )}
       <div className="flex justify-between items-center mb-5">
         <div>
           <div className="text-lg font-semibold text-ink">KYC Review</div>

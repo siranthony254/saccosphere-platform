@@ -16,7 +16,7 @@ interface PaymentProcessingScreenProps {
   purpose: 'SAVING_DEPOSIT' | 'LOAN_REPAYMENT'
   phoneNumber: string
   onConfirmStkPush: () => void
-  onComplete: (success: boolean, transactionId?: string) => void
+  onComplete: (success: boolean, transactionId?: string, errorMessage?: string) => void
   onCancel: () => void
 }
 
@@ -48,7 +48,9 @@ export default function PaymentProcessingScreen({
       if (normalizedStatus === 'completed' || normalizedStatus === 'success') {
         onComplete(true, checkoutRequestId ?? '')
       } else if (normalizedStatus === 'failed' || normalizedStatus === 'cancelled') {
-        onComplete(false)
+        const statusObj = status as any
+        const errorMsg = mapMpesaErrorCode(statusObj.result_code, statusObj.result_desc || statusObj.error)
+        onComplete(false, undefined, errorMsg)
       }
     }
   }, [status, isLoading, onComplete, checkoutRequestId, hasStartedPolling])
@@ -61,7 +63,7 @@ export default function PaymentProcessingScreen({
       setPollCount((prev) => {
         if (prev >= 30) {
           clearInterval(interval)
-          onComplete(false)
+          onComplete(false, undefined, 'M-Pesa request timed out. Please check your phone connection and try again.')
           return prev
         }
         return prev + 1
@@ -196,4 +198,14 @@ function DetailRow({ label, value }: { label: string; value: string }) {
       <Text style={{ fontSize: 11, fontWeight: '500', color: INK }}>{value}</Text>
     </View>
   )
+}
+
+function mapMpesaErrorCode(code?: number | string, desc?: string): string {
+  const codeStr = String(code ?? '')
+  if (codeStr === '1032') return 'Transaction cancelled. You declined the M-Pesa PIN prompt on your phone.'
+  if (codeStr === '1') return 'Insufficient M-Pesa balance. Please top up your M-Pesa line and try again.'
+  if (codeStr === '2001' || codeStr === '1037') return 'M-Pesa PIN entry timeout or incorrect PIN entered.'
+  if (codeStr === '1019' || codeStr === '1025') return 'M-Pesa system is currently busy or daily transaction limit exceeded.'
+  if (desc && desc.trim().length > 0) return desc
+  return 'The payment was not completed on your phone. Please try again.'
 }

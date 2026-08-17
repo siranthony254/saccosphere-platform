@@ -8,15 +8,23 @@ export function Roles() {
   const assignRole = useAssignRole()
   const revokeRole = useRevokeRole()
 
+  const [alertInfo, setAlertInfo] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
+
+  const showAlert = (type: 'success' | 'error', message: string) => {
+    setAlertInfo({ type, message })
+    setTimeout(() => setAlertInfo(null), 3000)
+  }
+
   const handleAssign = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
       await assignRole.mutateAsync({ user_id: userId, role_name: roleName, sacco_id: '' })
       refetch()
       setUserId('')
-    } catch (error) {
+      showAlert('success', 'Role assigned successfully.')
+    } catch (error: any) {
       console.error('Failed to assign role:', error)
-      alert('Failed to assign role. Check console for details.')
+      showAlert('error', error?.message || 'Failed to assign role.')
     }
   }
 
@@ -24,14 +32,22 @@ export function Roles() {
     try {
       await revokeRole.mutateAsync(roleId)
       refetch()
-    } catch (error) {
+      showAlert('success', 'Role revoked successfully.')
+    } catch (error: any) {
       console.error('Failed to revoke role:', error)
-      alert('Failed to revoke role. Check console for details.')
+      showAlert('error', error?.message || 'Failed to revoke role.')
     }
   }
 
   return (
-    <div className="p-5">
+    <div className="p-5 relative">
+      {alertInfo && (
+        <div className={`fixed top-4 right-4 px-4 py-2 rounded-lg text-sm font-medium z-50 shadow-lg ${
+          alertInfo.type === 'success' ? 'bg-mint-500 text-white' : 'bg-red-500 text-white'
+        }`}>
+          {alertInfo.message}
+        </div>
+      )}
       <div className="flex justify-between items-center mb-5">
         <div>
           <div className="text-lg font-semibold text-ink">Role Management</div>

@@ -3,7 +3,7 @@ import { useLocalSearchParams, router } from 'expo-router'
 import { useState } from 'react'
 import { api } from '@saccosphere/api-client'
 import { useLoanApplicationStore } from '../../../../../store/useLoanApplicationStore'
-import { useMutation } from '@tanstack/react-query'
+import { useQuery, useMutation } from '@tanstack/react-query'
 
 export default function ExternalGuarantorsScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>()

@@ -4,9 +4,14 @@ import { useApplications, useReviewApplication } from '../../hooks/useApplicatio
 
 const STATUS_COLORS: Record<string, { bg: string; color: string }> = {
   applied: { bg: 'bg-amber-50', color: 'text-amber-700' },
+  PENDING: { bg: 'bg-amber-50', color: 'text-amber-700' },
+  SUBMITTED: { bg: 'bg-amber-50', color: 'text-amber-700' },
   under_review: { bg: 'bg-blue-50', color: 'text-blue-700' },
+  UNDER_REVIEW: { bg: 'bg-blue-50', color: 'text-blue-700' },
   active: { bg: 'bg-mint-50', color: 'text-mint-700' },
+  APPROVED: { bg: 'bg-mint-50', color: 'text-mint-700' },
   withdrawn: { bg: 'bg-red-50', color: 'text-red-700' },
+  REJECTED: { bg: 'bg-red-50', color: 'text-red-700' },
 }
 
 export function ApplicationsList() {
@@ -103,7 +108,7 @@ export function ApplicationsList() {
                   >
                     Details
                   </button>
-                  {(app.status === 'applied' || app.status === 'under_review') && (
+                  {(app.status === 'applied' || app.status === 'under_review' || app.status === 'PENDING' || app.status === 'UNDER_REVIEW' || app.status === 'SUBMITTED') && (
                     <button
                       className="px-4 py-1.5 rounded-lg border-none bg-mint-600 text-white text-xs font-bold cursor-pointer hover:bg-mint-700 transition-colors shadow-sm"
                       onClick={() => {

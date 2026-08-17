@@ -56,9 +56,6 @@ export function DisbursementsList() {
               History
             </button>
           </div>
-          <button className="px-4 py-2 rounded-lg border border-[#e5ede9] bg-white text-sm font-medium text-ink-soft hover:bg-surface-2 transition-colors">
-            Export
-          </button>
         </div>
       </div>
 

@@ -3,6 +3,7 @@ import { Alert, Platform, ScrollView, Text, TouchableOpacity, View } from 'react
 import { useLocalSearchParams, router } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { api } from '@saccosphere/api-client'
+import { useQuery } from '@tanstack/react-query'
 import { useTransactions } from '../../hooks/useTransactions'
 import { useMembershipBySacco } from '../../hooks/useMembership'
 import type { Transaction } from '@saccosphere/schemas'
@@ -66,6 +67,20 @@ export default function StatementScreen() {
     }
   }
 
+  const { data: statementData } = useQuery({
+    queryKey: ['ledgerStatement', membership?.sacco_id, statementRange.from, statementRange.to],
+    queryFn: () =>
+      api.member.getStatement({
+        sacco_id: membership!.sacco_id,
+        from_date: statementRange.from,
+        to_date: statementRange.to,
+      }),
+    enabled: Boolean(membership?.sacco_id),
+  })
+
+  const openingBalance = Number(statementData?.opening_balance ?? 0)
+  const closingBalance = Number(statementData?.closing_balance ?? (openingBalance + totalCredits - totalDebits))
+
   return (
     <DeepSpaceBackground>
       <ScrollView
@@ -108,10 +123,10 @@ export default function StatementScreen() {
         {/* Summary Card */}
         <View className="bg-white/5 mx-4 mb-6 rounded-2xl p-4 border border-white/10">
           {[
-            { label: 'Opening balance', value: 'KES 135,000' },
-            { label: 'Total contributions', value: `+KES ${totalCredits.toLocaleString()}`, color: '#4ade80' },
-            { label: 'Loan repayments', value: `-KES ${totalDebits.toLocaleString()}`, color: '#f87171' },
-            { label: 'Closing balance', value: `KES ${(135000 + totalCredits - totalDebits).toLocaleString()}`, bold: true },
+            { label: 'Opening balance', value: `KES ${openingBalance.toLocaleString()}` },
+            { label: 'Total contributions', value: `+KES ${(statementData?.total_credits ?? totalCredits).toLocaleString()}`, color: '#4ade80' },
+            { label: 'Loan repayments', value: `-KES ${(statementData?.total_debits ?? totalDebits).toLocaleString()}`, color: '#f87171' },
+            { label: 'Closing balance', value: `KES ${closingBalance.toLocaleString()}`, bold: true },
           ].map((row, i, arr) => (
             <View key={row.label} className={`flex-row justify-between py-2.5 ${i !== arr.length - 1 ? 'border-b border-white/5' : ''}`}>
               <Text className="text-white/60 text-xs">{row.label}</Text>

@@ -786,6 +786,22 @@ export const api = {
       }
     },
 
+    getDividendPayouts: async () => {
+      const response = await apiCall<any>('GET', '/management/dividends/payouts/').catch(() => [])
+      const items = Array.isArray(response) ? response : response.results ?? []
+      return items.map((item: any) => ({
+        id: item.id,
+        financial_year: Number(item.financial_year ?? item.declaration?.financial_year ?? new Date().getFullYear() - 1),
+        share_capital: Number(item.share_capital ?? 0),
+        rate_pct: Number(item.rate_pct ?? item.declaration?.rate_pct ?? 0),
+        gross_dividend: Number(item.gross_dividend ?? 0),
+        withholding_tax: Number(item.withholding_tax ?? 0),
+        net_dividend: Number(item.net_dividend ?? 0),
+        status: String(item.status ?? 'PENDING').toUpperCase(),
+        disbursed_at: item.disbursed_at ?? null,
+      }))
+    },
+
     getNotifications: () =>
       apiCall<PaginatedResponse<AppNotification> | AppNotification[]>('GET', '/notifications/').then(unwrapResults),
 
@@ -795,8 +811,11 @@ export const api = {
     markAllNotificationsRead: () =>
       apiCall<void>('POST', '/notifications/read-all/'),
 
-    registerDevice: (data: { token: string; platform: 'ios' | 'android' }) =>
-      apiCall<void>('POST', '/notifications/device/', data),
+    registerDevice: (data: { token: string; platform: 'ios' | 'android' | 'web' | string }) =>
+      apiCall<void>('POST', '/notifications/device/', {
+        token: data.token,
+        platform: String(data.platform).toUpperCase(),
+      }),
 
     getEntries: async (params?: { sacco_id?: string; from_date?: string; to_date?: string }) => {
       const response = await apiCall<any>('GET', '/ledger/entries/', undefined, { params })
@@ -1119,6 +1138,20 @@ export const api = {
     get: (id: string) =>
       api.loans.list().then((loans) => loans.find((loan) => loan.id === id) as LoanApplication),
 
+    getSchedule: async (id: string) => {
+      const response = await apiCall<any>('GET', `/services/loans/${uuid(id)}/schedule/`)
+      const items = unwrapResults(response)
+      return items.map((item: any) => ({
+        instalment_number: Number(item.instalment_number ?? item.installment_number ?? 0),
+        due_date: item.due_date ?? item.date ?? '',
+        principal: Number(item.principal ?? 0),
+        interest: Number(item.interest ?? 0),
+        amount: Number(item.amount ?? item.total_due ?? 0),
+        balance_after: Number(item.balance_after ?? item.remaining_balance ?? 0),
+        status: String(item.status ?? 'PENDING').toUpperCase(),
+      }))
+    },
+
     getEligibility: async (saccoId: string) => {
       const response = await apiCall<any>('GET', '/services/loans/eligibility/', undefined, {
         params: { sacco_id: saccoId },
@@ -1132,19 +1165,6 @@ export const api = {
         guarantors_required: Number(response.guarantors_required ?? 0),
         reason: response.reason ?? null,
       }
-    },
-
-    getSchedule: async (loanId: string) => {
-      const response = await apiCall<any>('GET', `/services/loans/${uuid(loanId)}/schedule/`)
-      return Array.isArray(response) ? response.map((item: any) => ({
-        instalment_number: Number(item.instalment_number ?? 0),
-        due_date: item.due_date,
-        amount: Number(item.amount ?? 0),
-        principal: Number(item.principal ?? 0),
-        interest: Number(item.interest ?? 0),
-        balance_after: Number(item.balance_after ?? 0),
-        status: String(item.status ?? 'pending').toLowerCase(),
-      })) : []
     },
 
     apply: async (data: LoanApplicationInput) => {
@@ -1257,6 +1277,19 @@ export const api = {
         action: action === 'accept' ? 'ACCEPT' : 'DECLINE',
         notes: notes,
       }),
+
+    getGuarantorRequestDetails: async (responseToken: string) => {
+      const response = await apiCall<any>('GET', `/guarantors/external/respond/${responseToken}/`).catch(() => null)
+      return {
+        token: responseToken,
+        borrower_name: response?.borrower_name ?? response?.borrower ?? 'Borrower',
+        borrower_phone: response?.borrower_phone ?? '—',
+        loan_product_name: response?.loan_product_name ?? response?.loan_type ?? 'Loan',
+        guarantee_amount: Number(response?.guarantee_amount ?? response?.amount ?? 0),
+        savings_balance: Number(response?.savings_balance ?? response?.guarantor_savings ?? 0),
+        status: String(response?.status ?? 'PENDING').toUpperCase(),
+      }
+    },
 
     respondToGuarantorRequest: (id: string, action: 'approve' | 'decline') => {
       const [loanId, guarantorId] = id.split(':')
@@ -1472,7 +1505,7 @@ export const api = {
 
     // Membership applications
     getApplications: async (params?: { status?: string }) => {
-      const statusFilter = params?.status || 'PENDING'
+      const statusFilter = params?.status ? params.status.toUpperCase() : 'PENDING'
       const response = await apiCall<any>('GET', '/management/members/', undefined, {
         params: { ...params, status: statusFilter }
       })
@@ -1483,11 +1516,21 @@ export const api = {
         previous: response.previous ?? null,
         results: items.map((item: any) => {
           const member = normalizeAdminMember(item)
+          const rawStatus = String(item.status || 'PENDING').toUpperCase()
+          const statusMap: Record<string, string> = {
+            PENDING: 'applied',
+            SUBMITTED: 'applied',
+            UNDER_REVIEW: 'under_review',
+            APPROVED: 'active',
+            REJECTED: 'withdrawn',
+            WITHDRAWN: 'withdrawn',
+          }
+          const normalizedStatus = statusMap[rawStatus] || 'applied'
           return {
             id: member.id,
             application_id: item.application_id ?? item.id ?? member.id, 
             user_id: member.user_id,
-            full_name: `${member.first_name} ${member.last_name}`,
+            full_name: `${member.first_name} ${member.last_name}`.trim(),
             email: member.email,
             phone_number: member.phone,
             national_id: member.national_id,
@@ -1495,9 +1538,8 @@ export const api = {
             employer_name: item.employer_name ?? '—',
             monthly_income: Number(item.monthly_income ?? 0),
             monthly_contribution: member.monthly_contribution,
-            form_data: item.form_data ?? {},
-            custom_fields: item.custom_fields ?? {},
-            status: item.status,
+            status: rawStatus,
+            normalized_status: normalizedStatus,
             submitted_at: member.joined_at || new Date().toISOString(),
             review_notes: item.review_notes ?? '',
           }
@@ -1606,43 +1648,39 @@ export const api = {
         id: item.id || `contrib-${idx}`,
         date: item.date,
         amount: Number(item.amount ?? 0),
-        payment_method: 'mpesa',
-        payment_ref: item.member_number ?? '',
-        platform_fee: 0,
-        description: `Contribution from ${item.member_name} (${item.savings_type || 'Savings'})`,
+        member_name: item.member_name ?? '—',
+        member_number: item.member_number ?? '—',
+        savings_type: item.savings_type ?? 'Savings',
         status: 'completed',
-        balance_after: 0,
-        ref: item.member_number ?? '',
-        txn_type: 'contribution',
-        direction: 'credit' as const,
-        sacco_name: '',
-        sacco_slug: '',
-        completed_at: item.date ?? null,
-        member_name: item.member_name,
-        member_number: item.member_number,
-        savings_type: item.savings_type,
       }))
       return {
         count: results.length,
-        next: null,
-        previous: null,
+        received_today: dashboard.received_today,
+        expected_this_month: dashboard.expected_this_month,
+        received_so_far_this_month: dashboard.received_so_far_this_month,
+        missed_overdue: dashboard.missed_overdue,
+        contribution_rate_pct: dashboard.contribution_rate_pct,
         results,
       }
     },
 
     getDisbursements: async () => {
-      const response = await apiCall<any>('GET', '/payments/mpesa/b2c/history/')
-      const items = Array.isArray(response) ? response : response.results ?? []
+      const [dash, b2cHistory] = await Promise.all([
+        api.saccoAdmin.getDisbursementsDashboard().catch(() => null),
+        apiCall<any>('GET', '/payments/mpesa/b2c/history/').catch(() => []),
+      ])
+      const items = Array.isArray(b2cHistory) ? b2cHistory : b2cHistory.results ?? []
       return {
         count: items.length,
-        next: null,
-        previous: null,
+        disbursed_today: dash?.disbursed_today,
+        pending_disbursement: dash?.pending_disbursement,
+        total_disbursements: dash?.total_disbursements,
         results: items.map((item: any) => ({
           id: item.id,
           date: item.created_at,
           amount: Number(item.amount ?? 0),
           phone_number: item.phone_number ?? '',
-          status: String(item.status ?? 'pending').toLowerCase(),
+          status: String(item.status ?? 'pending').toUpperCase(),
           conversation_id: item.conversation_id ?? '',
         })),
       }

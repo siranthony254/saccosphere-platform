@@ -8,6 +8,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { api, setAccessToken, clearTokens } from '@saccosphere/api-client'
 import { useAuthStore } from '../store/useAuthStore'
 import { clearStoredRefreshToken, loadRefreshToken, saveRefreshToken } from '../hooks/useAuth'
+import { useAutoRegisterDeviceToken } from '../hooks/useNotifications'
 // @ts-ignore: Allow side-effect CSS import without type declarations
 import '../global.css'
 
@@ -92,10 +93,16 @@ export default function RootLayout() {
     <QueryClientProvider client={queryClient}>
       <SafeAreaProvider>
         <StatusBar style="light" />
+        <AutoDeviceRegistrar />
         <Stack screenOptions={{ headerShown: false }} />
       </SafeAreaProvider>
     </QueryClientProvider>
   )
+}
+
+function AutoDeviceRegistrar() {
+  useAutoRegisterDeviceToken()
+  return null
 }
 
 function isAuthPath(pathname: string) {

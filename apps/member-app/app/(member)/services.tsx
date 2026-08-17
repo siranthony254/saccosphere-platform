@@ -45,6 +45,13 @@ const servicesList: Array<{
     icon: 'S',
     color: 'rgba(245, 158, 11, 0.15)',
   },
+  {
+    action: 'dividends' as any,
+    label: 'Annual Dividends',
+    desc: 'View declared board dividends, gross earnings & net payouts.',
+    icon: 'D',
+    color: 'rgba(168, 85, 247, 0.15)',
+  },
 ]
 
 export default function ServicesScreen() {
@@ -172,6 +179,11 @@ function navigateToServiceAction(action: ServiceAction, slug: string) {
 
   if (action === 'loan') {
     router.push({ pathname: '/sacco/[slug]/loans', params: { slug } })
+    return
+  }
+
+  if (action === ('dividends' as any)) {
+    router.push('/dividends' as any)
     return
   }
 
