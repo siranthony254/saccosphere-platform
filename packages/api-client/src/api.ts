@@ -1819,8 +1819,35 @@ export const api = {
 
     getMember: async (id: string) => normalizeAdminMember(await apiCall<any>('GET', `/management/members/${uuid(id)}/`)),
 
-    createMember: async (data: { first_name: string; last_name: string; email: string; phone_number: string; national_id: string }) =>
-      apiCall<any>('POST', '/management/members/', data),
+    // Add one member by submitting a single-row CSV to the member-import
+    // pipeline — /management/members/ is GET-only, there is no admin
+    // create-member endpoint. Import columns: first_name, last_name, email
+    // (required) + phone_number, employment_status, monthly_income (optional).
+    addMemberViaImport: (data: {
+      first_name: string
+      last_name: string
+      email: string
+      phone_number?: string
+      employment_status?: string
+      monthly_income?: number
+    }) => {
+      const cell = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`
+      const headers = ['first_name', 'last_name', 'email', 'phone_number', 'employment_status', 'monthly_income']
+      const row = [
+        data.first_name,
+        data.last_name,
+        data.email,
+        data.phone_number ?? '',
+        data.employment_status ?? '',
+        data.monthly_income ?? '',
+      ]
+      const csv = `${headers.join(',')}\n${row.map(cell).join(',')}\n`
+      const file =
+        typeof File !== 'undefined'
+          ? new File([csv], 'add-member.csv', { type: 'text/csv' })
+          : (new Blob([csv], { type: 'text/csv' }) as unknown as File)
+      return api.saccoAdmin.importMembers(file)
+    },
 
     // Membership applications
     getApplications: async (params?: { status?: string }) => {
@@ -1866,13 +1893,11 @@ export const api = {
       }
     },
 
-    getApplicationDetail: async (id: string) =>
-      apiCall<any>('GET', `/management/applications/${uuid(id)}/review/`),
-
-    reviewApplication: (id: string, data: { status: 'APPROVED' | 'REJECTED'; review_notes?: string }) => {
-      return apiCall<void>('PATCH', `/management/applications/${uuid(id)}/review/`, data)
-    },
-
+    // NOTE: /management/applications/{id}/review/ is keyed on the
+    // SaccoApplication id, which no list endpoint exposes — the only id the
+    // admin console can obtain here is the Membership id, which 404s. Until a
+    // SaccoApplication list (or a membership-status endpoint) exists, there is
+    // no working approve/reject call to wrap.
 
     // Role management
     getRoles: async (userId: string) => apiCall<any>('GET', '/management/roles/', undefined, {
@@ -2192,21 +2217,46 @@ export const api = {
     // Dividends Management
     getDividendDeclarations: async () => {
       const response = await apiCall<any>('GET', '/management/dividends/declarations/')
-      const items = Array.isArray(response) ? response : response.results ?? []
+      const items = Array.isArray(response) ? response : response.data ?? response.results ?? []
       return items.map((item: any) => ({
         id: item.id,
-        financial_year: Number(item.financial_year ?? new Date().getFullYear()),
-        rate_pct: Number(item.rate_pct ?? item.dividend_rate ?? 0),
-        total_dividend_pool: Number(item.total_dividend_pool ?? item.total_amount ?? 0),
+        // financial_year is a CharField on the backend (e.g. "2024/2025").
+        financial_year: String(item.financial_year ?? ''),
+        savings_type_name: item.savings_type_name ?? '',
+        rate_pct: Number(item.declared_rate ?? item.rate_pct ?? 0),
+        total_dividend_pool: Number(item.total_dividend_amount ?? item.total_dividend_pool ?? 0),
         status: item.status ?? 'DRAFT',
+        period_start: item.period_start ?? null,
+        period_end: item.period_end ?? null,
         created_at: item.created_at ?? new Date().toISOString(),
         approved_at: item.approved_at ?? null,
         disbursed_at: item.disbursed_at ?? null,
       }))
     },
 
-    createDividendDeclaration: (data: { financial_year: number; rate_pct: number }) =>
-      apiCall<any>('POST', '/management/dividends/declarations/', data),
+    // DividendDeclarationSerializer writable fields: savings_type (a SavingsType
+    // UUID belonging to this SACCO), financial_year (string), declared_rate,
+    // period_start, period_end (YYYY-MM-DD). SACCO is derived server-side.
+    createDividendDeclaration: (data: {
+      savings_type: string
+      financial_year: string
+      declared_rate: number
+      period_start: string
+      period_end: string
+    }) => apiCall<any>('POST', '/management/dividends/declarations/', data),
+
+    getSavingsTypes: async (saccoId: string) => {
+      const items = unwrapResults(
+        await apiCall<any[] | PaginatedResponse<any>>('GET', '/services/savings-types/', undefined, {
+          params: { sacco_id: saccoId },
+        })
+      )
+      return items.map((item: any) => ({
+        id: String(item.id),
+        name: String(item.name ?? ''),
+        description: item.description ?? '',
+      }))
+    },
 
     getDividendDeclaration: (id: string) =>
       apiCall<any>('GET', `/management/dividends/declarations/${uuid(id)}/`),
@@ -2314,9 +2364,33 @@ export const api = {
         channels: data.channels,
       }),
 
-    // SASRA Returns
-    getSASRAReturns: async (params?: { report_type?: 'form1' | 'form2'; period?: string }) =>
-      apiCall<any>('GET', '/management/reports/sasra/', undefined, { params }),
+    // SASRA Returns. Backend params: type (par|financial_position|membership),
+    // as_of_date (par / financial_position), period_start + period_end
+    // (membership). Returns the raw report JSON — shape varies by type.
+    getSASRAReturns: (params: {
+      type: 'par' | 'financial_position' | 'membership'
+      as_of_date?: string
+      period_start?: string
+      period_end?: string
+    }) => apiCall<any>('GET', '/management/reports/sasra/', undefined, { params }),
+
+    downloadSASRAReturn: async (params: {
+      type: 'par' | 'financial_position' | 'membership'
+      as_of_date?: string
+      period_start?: string
+      period_end?: string
+    }) => {
+      const response = await axiosInstance.get('/management/reports/sasra/', {
+        params: { ...params, format: 'xlsx' },
+        responseType: 'blob',
+      })
+      const disposition = String(response.headers?.['content-disposition'] ?? '')
+      const filenameMatch = disposition.match(/filename="?([^";]+)"?/i)
+      return {
+        blob: response.data as Blob,
+        filename: filenameMatch?.[1] ?? `sasra_${params.type}.xlsx`,
+      }
+    },
 
     // General Ledger
     getLedgerEntries: async (params: { sacco_id: string; from_date?: string; to_date?: string; category?: string; page?: number }) => {

@@ -6,7 +6,9 @@ import {
   useApproveDividend,
   useDisburseDividend,
   useDividendPayouts,
+  useSavingsTypes,
 } from '../../hooks/useDividends'
+import { useSacco } from '../../hooks/useSacco'
 import type { DividendDeclaration, DividendPayout } from '@saccosphere/schemas'
 
 const statusStyles: Record<string, { bg: string; color: string }> = {
@@ -17,10 +19,17 @@ const statusStyles: Record<string, { bg: string; color: string }> = {
 }
 
 export function Dividends() {
+  const lastYear = new Date().getFullYear() - 1
   const [activeTab, setActiveTab] = useState<'declarations' | 'payouts'>('declarations')
   const [showDeclareModal, setShowDeclareModal] = useState(false)
-  const [financialYear, setFinancialYear] = useState(new Date().getFullYear() - 1)
+  const [financialYear, setFinancialYear] = useState(String(lastYear))
   const [ratePct, setRatePct] = useState(10)
+  const [savingsTypeId, setSavingsTypeId] = useState('')
+  const [periodStart, setPeriodStart] = useState(`${lastYear}-01-01`)
+  const [periodEnd, setPeriodEnd] = useState(`${lastYear}-12-31`)
+
+  const { data: sacco } = useSacco()
+  const { data: savingsTypes = [] } = useSavingsTypes(sacco?.id)
 
   const { data: declarations, isLoading: isDeclarationsLoading } = useDividendDeclarations()
   const { data: payouts, isLoading: isPayoutsLoading } = useDividendPayouts()
@@ -32,8 +41,18 @@ export function Dividends() {
 
   const handleDeclare = (e: React.FormEvent) => {
     e.preventDefault()
+    if (!savingsTypeId) {
+      alert('Select a savings type for this declaration.')
+      return
+    }
     createDeclaration(
-      { financial_year: Number(financialYear), rate_pct: Number(ratePct) },
+      {
+        savings_type: savingsTypeId,
+        financial_year: financialYear.trim(),
+        declared_rate: Number(ratePct),
+        period_start: periodStart,
+        period_end: periodEnd,
+      },
       {
         onSuccess: () => {
           setShowDeclareModal(false)
@@ -228,17 +247,57 @@ export function Dividends() {
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl max-w-md w-full p-5 border border-[#e5ede9] shadow-xl">
             <div className="text-base font-semibold text-ink mb-1">Declare New Dividend</div>
-            <div className="text-xs text-ink-muted mb-4">Set the dividend interest rate on share capital for the financial year.</div>
+            <div className="text-xs text-ink-muted mb-4">Set the dividend rate and calculation period for a savings type.</div>
             <form onSubmit={handleDeclare} className="flex flex-col gap-4">
+              <div>
+                <label className="text-xs font-medium text-ink mb-1 block">Savings type</label>
+                <select
+                  value={savingsTypeId}
+                  onChange={(e) => setSavingsTypeId(e.target.value)}
+                  className="w-full px-3 py-2 border border-ink-faint rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-mint-600 bg-white"
+                  required
+                >
+                  <option value="">Select a savings type…</option>
+                  {savingsTypes.map((st) => (
+                    <option key={st.id} value={st.id}>{st.name}</option>
+                  ))}
+                </select>
+                {savingsTypes.length === 0 && (
+                  <p className="text-[11px] text-amber-600 mt-1">No savings types found for this SACCO.</p>
+                )}
+              </div>
               <div>
                 <label className="text-xs font-medium text-ink mb-1 block">Financial Year</label>
                 <input
-                  type="number"
+                  type="text"
                   value={financialYear}
-                  onChange={(e) => setFinancialYear(Number(e.target.value))}
+                  onChange={(e) => setFinancialYear(e.target.value)}
+                  placeholder="e.g. 2024 or 2024/2025"
                   className="w-full px-3 py-2 border border-ink-faint rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-mint-600"
                   required
                 />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-medium text-ink mb-1 block">Period start</label>
+                  <input
+                    type="date"
+                    value={periodStart}
+                    onChange={(e) => setPeriodStart(e.target.value)}
+                    className="w-full px-3 py-2 border border-ink-faint rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-mint-600"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-ink mb-1 block">Period end</label>
+                  <input
+                    type="date"
+                    value={periodEnd}
+                    onChange={(e) => setPeriodEnd(e.target.value)}
+                    className="w-full px-3 py-2 border border-ink-faint rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-mint-600"
+                    required
+                  />
+                </div>
               </div>
               <div>
                 <label className="text-xs font-medium text-ink mb-1 block">Dividend Rate (%)</label>

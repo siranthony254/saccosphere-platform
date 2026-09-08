@@ -7,6 +7,13 @@ export function useImportMembers() {
   })
 }
 
+/** Add a single member — submitted through the CSV import pipeline. */
+export function useAddMember() {
+  return useMutation({
+    mutationFn: api.saccoAdmin.addMemberViaImport,
+  })
+}
+
 export function useImportJobStatus(jobId: string) {
   return useQuery({
     queryKey: ['import-job', jobId],

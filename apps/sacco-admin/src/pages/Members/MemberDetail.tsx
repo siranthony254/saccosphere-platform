@@ -1,16 +1,11 @@
 import { useParams, useNavigate } from 'react-router-dom'
-import { useState } from 'react'
 import { useMemberDetail } from '../../hooks/useMembers'
 import { useUserRoles } from '../../hooks/useRoles'
-import { useReviewApplication } from '../../hooks/useApplications'
 
 export function MemberDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { data: member, isLoading, error } = useMemberDetail(id!)
-  const { mutate: reviewApplication } = useReviewApplication()
-  const [reviewNotes, setReviewNotes] = useState('')
-
 
   // Fetch all roles for this user (they may be both a member AND a SACCO admin)
   // user_id is populated from the backend member.user.id field
@@ -21,19 +16,6 @@ export function MemberDetail() {
   if (!member) return <div className="p-5 text-ink-muted text-sm">Member not found.</div>
 
   const isPending = member.membership_status === 'applied' || member.membership_status === 'under_review'
-
-  const handleReview = (status: 'APPROVED' | 'REJECTED') => {
-    reviewApplication({ id: member.id, status, review_notes: reviewNotes }, {
-      onSuccess: () => {
-        alert(`Membership application ${status.toLowerCase()} successfully.`)
-        setReviewNotes('')
-        navigate('/applications')
-      },
-      onError: () => {
-        navigate(`/applications?user=${member.user_id}`)
-      }
-    })
-  }
 
   const roleColors: Record<string, { bg: string; color: string }> = {
     SACCO_ADMIN:   { bg: 'bg-violet-50', color: 'text-violet-700' },
@@ -61,24 +43,15 @@ export function MemberDetail() {
           </div>
         </div>
 
-        {isPending && (
-          <div className="flex gap-2">
-            <button className="px-3.5 py-1.5 rounded-lg border border-red-200 bg-white text-red-700 text-sm font-medium hover:bg-red-50" onClick={() => handleReview('REJECTED')}>Reject</button>
-            <button className="px-3.5 py-1.5 rounded-lg bg-mint-600 text-white text-sm font-medium hover:bg-mint-700 shadow-sm" onClick={() => handleReview('APPROVED')}>Approve Member</button>
-          </div>
-        )}
       </div>
 
       {isPending && (
-        <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-xl">
-          <div className="text-sm font-semibold text-amber-800 mb-2">Review membership application</div>
-          <textarea
-            className="w-full p-3 border border-amber-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-amber-500 mb-3"
-            placeholder="Add internal review notes here..."
-            value={reviewNotes}
-            onChange={e => setReviewNotes(e.target.value)}
-          />
-          <p className="text-[11px] text-amber-700">Approving will notify the user and generate their member number.</p>
+        <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-xl">
+          <div className="text-sm font-semibold text-blue-800 mb-1">Application pending</div>
+          <p className="text-[11px] text-blue-700">
+            Approving or rejecting a member isn’t available from this console yet — contact SaccoSphere
+            support to action this application.
+          </p>
         </div>
       )}
 

@@ -11,9 +11,23 @@ export function useDividendDeclarations() {
 export function useCreateDividendDeclaration() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (data: { financial_year: number; rate_pct: number }) =>
-      api.saccoAdmin.createDividendDeclaration(data),
+    mutationFn: (data: {
+      savings_type: string
+      financial_year: string
+      declared_rate: number
+      period_start: string
+      period_end: string
+    }) => api.saccoAdmin.createDividendDeclaration(data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['dividend-declarations'] }),
+  })
+}
+
+export function useSavingsTypes(saccoId?: string) {
+  return useQuery({
+    queryKey: ['savings-types', saccoId],
+    queryFn: () => api.saccoAdmin.getSavingsTypes(saccoId!),
+    enabled: !!saccoId,
+    staleTime: 300_000,
   })
 }
 
