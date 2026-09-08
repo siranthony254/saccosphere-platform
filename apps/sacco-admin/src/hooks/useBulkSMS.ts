@@ -11,8 +11,10 @@ export function useSMSCampaigns() {
 export function useCreateSMSCampaign() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (data: { title: string; message: string; recipient_type: string }) =>
-      api.saccoAdmin.createSMSCampaign(data),
+    mutationFn: (data: {
+      message: string
+      audience_filter?: { status?: string; savings_type?: string; member_number?: string }
+    }) => api.saccoAdmin.createSMSCampaign(data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['sms-campaigns'] }),
   })
 }

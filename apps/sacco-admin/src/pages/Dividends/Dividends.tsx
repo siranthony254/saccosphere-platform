@@ -198,7 +198,7 @@ export function Dividends() {
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-surface-2 border-b border-[#e5ede9]">
-                {['Member Name', 'Member No.', 'Share Capital', 'Gross Dividend', 'WHT (5%)', 'Net Dividend', 'Status'].map((h) => (
+                {['Member', 'Financial Year', 'Average Balance', 'Dividend Paid', 'Status'].map((h) => (
                   <th key={h} className="text-left px-3 py-2 text-[11px] text-ink-muted font-medium">
                     {h}
                   </th>
@@ -209,26 +209,27 @@ export function Dividends() {
               {isPayoutsLoading ? (
                 [1, 2, 3].map((i) => (
                   <tr key={i}>
-                    <td colSpan={7} className="p-5">
+                    <td colSpan={5} className="p-5">
                       <div className="h-5 bg-ink-faint rounded-[4px]" />
                     </td>
                   </tr>
                 ))
               ) : (payouts ?? []).length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="p-10 text-center text-ink-muted italic">
+                  <td colSpan={5} className="p-10 text-center text-ink-muted italic">
                     No payouts calculated yet. Calculate a declaration to generate member payout schedules.
                   </td>
                 </tr>
               ) : (
                 (payouts ?? []).map((p: DividendPayout, ri: number) => (
                   <tr key={p.id} className={`${ri % 2 === 0 ? 'bg-white' : 'bg-surface-2'} border-b border-surface-3`}>
-                    <td className="px-3 py-2.5 font-medium text-ink">{p.member_name}</td>
-                    <td className="px-3 py-2.5 text-xs text-ink-muted font-mono">{p.member_number}</td>
-                    <td className="px-3 py-2.5">KES {p.share_capital.toLocaleString()}</td>
-                    <td className="px-3 py-2.5 font-medium text-ink">KES {p.gross_dividend.toLocaleString()}</td>
-                    <td className="px-3 py-2.5 text-red-600 text-xs">- KES {p.withholding_tax.toLocaleString()}</td>
-                    <td className="px-3 py-2.5 font-bold text-mint-700">KES {p.net_dividend.toLocaleString()}</td>
+                    <td className="px-3 py-2.5 font-medium text-ink">
+                      {p.member_name}
+                      {p.member_email ? <span className="block text-[10px] text-ink-muted font-normal">{p.member_email}</span> : null}
+                    </td>
+                    <td className="px-3 py-2.5 text-xs text-ink-muted">{p.financial_year || '—'}</td>
+                    <td className="px-3 py-2.5">KES {p.average_balance.toLocaleString()}</td>
+                    <td className="px-3 py-2.5 font-bold text-mint-700">KES {p.dividend_amount.toLocaleString()}</td>
                     <td className="px-3 py-2.5">
                       <span className="bg-mint-50 text-mint-700 px-2 py-0.5 rounded-full text-[11px] font-semibold">
                         {p.status}

@@ -17,11 +17,9 @@ type SettingsUiModel = {
     min_loan_amount?: number
     max_loan_amount?: number
     loan_multiplier?: number
-    requires_guarantor?: boolean
     guarantor_type_allowed?: string
     registration_fee?: number
     monthly_contribution_amount?: number
-    liquidity_threshold_percentage?: number
     sms_daily_limit?: number
     updated_at?: string
   }

@@ -3,6 +3,9 @@ import { TransactionSchema } from './member'
 
 // ─── SACCO ADMIN ─────────────────────────────────────────────────────────────
 
+// Matches AdminSaccoStatsView._build_stats. It does not compute a
+// month-to-date disbursement figure or a pending-KYC count — the dashboard
+// sources those from the disbursements dashboard / KYC queue instead.
 export const SaccoAdminDashboardSchema = z.object({
   total_members: z.number(),
   total_savings_kes: z.number(),
@@ -10,10 +13,8 @@ export const SaccoAdminDashboardSchema = z.object({
   active_loans_kes: z.number(),
   default_rate_pct: z.number(),
   contributions_mtd_kes: z.number(),
-  disbursements_mtd_kes: z.number(),
   pending_applications: z.number(),
   pending_loan_approvals: z.number(),
-  pending_kyc_reviews: z.number(),
   members_in_arrears: z.number(),
 })
 export type SaccoAdminDashboard = z.infer<typeof SaccoAdminDashboardSchema>
@@ -311,40 +312,48 @@ export const NPLDashboardSchema = z.object({
 })
 export type NPLDashboard = z.infer<typeof NPLDashboardSchema>
 
+// Matches DividendDeclarationSerializer. financial_year is a CharField
+// ("2024/2025"); the rate is `declared_rate`, the pool `total_dividend_amount`.
 export const DividendDeclarationSchema = z.object({
   id: z.string().uuid(),
-  financial_year: z.number(),
+  financial_year: z.string(),
+  savings_type_name: z.string().optional(),
   rate_pct: z.number(),
   total_dividend_pool: z.number(),
-  status: z.enum(['DRAFT', 'CALCULATED', 'APPROVED', 'DISBURSED']),
+  status: z.string(),
+  period_start: z.string().nullable().optional(),
+  period_end: z.string().nullable().optional(),
   created_at: z.string(),
   approved_at: z.string().nullable().optional(),
   disbursed_at: z.string().nullable().optional(),
 })
 export type DividendDeclaration = z.infer<typeof DividendDeclarationSchema>
 
+// Matches DividendPayoutSerializer. There is no gross / withholding-tax /
+// share-capital breakdown at the payout level — only the amount actually paid.
 export const DividendPayoutSchema = z.object({
   id: z.string().uuid(),
   member_name: z.string(),
-  member_number: z.string(),
-  share_capital: z.number(),
-  gross_dividend: z.number(),
-  withholding_tax: z.number(),
-  net_dividend: z.number(),
+  member_email: z.string().optional(),
+  financial_year: z.string(),
+  average_balance: z.number(),
+  dividend_amount: z.number(),
   status: z.string(),
-  disbursed_at: z.string().nullable().optional(),
+  created_at: z.string(),
 })
 export type DividendPayout = z.infer<typeof DividendPayoutSchema>
 
+// Matches the Django serialize_campaign() output. SMS campaigns have no title;
+// audience is an audience_filter object which we surface as a readable label.
 export const BulkSMSCampaignSchema = z.object({
   id: z.string().uuid(),
-  title: z.string(),
   message: z.string(),
-  recipient_type: z.string(),
+  audience_label: z.string(),
   total_recipients: z.number(),
-  status: z.enum(['DRAFT', 'SENDING', 'COMPLETED', 'FAILED']),
+  sent_count: z.number(),
+  failed_count: z.number(),
+  status: z.string(),
   created_at: z.string(),
-  sent_at: z.string().nullable().optional(),
 })
 export type BulkSMSCampaign = z.infer<typeof BulkSMSCampaignSchema>
 

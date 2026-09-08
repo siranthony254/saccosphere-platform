@@ -4,31 +4,26 @@ import { useSaccoSettings } from '../../hooks/useSaccoSettings'
 export function Settings() {
   const { data, isLoading, error, isPending, save } = useSaccoSettings()
 
-  // Form state — mirrors every field the backend SaccoSettings model exposes
+  // Mirrors the fields SaccoSettingsSerializer actually exposes.
   const [formData, setFormData] = useState({
     min_loan_amount: '',
     max_loan_amount: '',
     loan_multiplier: '',
-    requires_guarantor: true,
     guarantor_type_allowed: 'BOTH',
     registration_fee: '',
     monthly_contribution_amount: '',
-    liquidity_threshold_percentage: '',
     sms_daily_limit: '',
   })
 
-  // Sync initial data to form
   useEffect(() => {
     if (data?.settings) {
       setFormData({
         min_loan_amount: String(data.settings.min_loan_amount ?? 1000),
         max_loan_amount: String(data.settings.max_loan_amount ?? 500000),
         loan_multiplier: String(data.settings.loan_multiplier ?? 3),
-        requires_guarantor: data.settings.requires_guarantor ?? true,
         guarantor_type_allowed: data.settings.guarantor_type_allowed ?? 'BOTH',
         registration_fee: String(data.settings.registration_fee ?? 0),
         monthly_contribution_amount: String(data.settings.monthly_contribution_amount ?? 0),
-        liquidity_threshold_percentage: String(data.settings.liquidity_threshold_percentage ?? 80),
         sms_daily_limit: String(data.settings.sms_daily_limit ?? 1000),
       })
     }
@@ -36,13 +31,12 @@ export function Settings() {
 
   const handleSave = () => {
     save({
-      ...formData,
+      guarantor_type_allowed: formData.guarantor_type_allowed,
       min_loan_amount: Number(formData.min_loan_amount),
       max_loan_amount: Number(formData.max_loan_amount),
       loan_multiplier: Number(formData.loan_multiplier),
       registration_fee: Number(formData.registration_fee),
       monthly_contribution_amount: Number(formData.monthly_contribution_amount),
-      liquidity_threshold_percentage: Number(formData.liquidity_threshold_percentage),
       sms_daily_limit: Number(formData.sms_daily_limit),
     })
   }
@@ -126,17 +120,6 @@ export function Settings() {
         </div>
 
         <div className="grid grid-cols-2 gap-6 p-4 bg-surface-2 rounded-xl">
-          <div className="flex items-center gap-3">
-            <input
-              type="checkbox"
-              id="req-guarantor"
-              className="w-4 h-4 rounded border-ink-faint text-violet-600 focus:ring-violet-500"
-              checked={formData.requires_guarantor}
-              onChange={e => setFormData(prev => ({ ...prev, requires_guarantor: e.target.checked }))}
-            />
-            <label htmlFor="req-guarantor" className="text-sm font-medium text-ink">Requires guarantors for all loans</label>
-          </div>
-
           <div>
             <label className="text-xs text-ink-muted mb-1.5 block">Guarantor types allowed</label>
             <select
@@ -148,14 +131,17 @@ export function Settings() {
               <option value="EXTERNAL_ONLY">External only</option>
               <option value="BOTH">Both Internal &amp; External</option>
             </select>
+            <p className="text-[10px] text-ink-faint mt-1">
+              Whether a specific loan product requires guarantors is set per loan type.
+            </p>
           </div>
         </div>
       </div>
 
-      {/* Operational Limits — sms_daily_limit + liquidity_threshold_percentage */}
+      {/* Operational Limits */}
       <div className="bg-white border border-[#e5ede9] rounded-[10px] p-5 mt-5">
         <div className="font-semibold text-sm text-ink mb-1 border-b border-surface-3 pb-3">Operational limits</div>
-        <p className="text-xs text-ink-muted mb-4">Controls cost and risk guardrails for the SACCO.</p>
+        <p className="text-xs text-ink-muted mb-4">Controls cost guardrails for the SACCO.</p>
 
         <div className="grid grid-cols-2 gap-6">
           {field(
@@ -163,12 +149,6 @@ export function Settings() {
             'sms_daily_limit',
             'number',
             'Maximum number of SMS messages that can be sent in a single day. Prevents runaway costs.',
-          )}
-          {field(
-            'Liquidity utilisation warning threshold (%)',
-            'liquidity_threshold_percentage',
-            'number',
-            'A liquidity warning fires when loan disbursements exceed this percentage of total savings. Default: 80%.',
           )}
         </div>
       </div>
@@ -186,5 +166,3 @@ export function Settings() {
     </div>
   )
 }
-
-

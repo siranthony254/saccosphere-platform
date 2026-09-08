@@ -19,11 +19,11 @@ import { KycReview } from './pages/Kyc/KycReview'
 import { Roles } from './pages/Roles/Roles'
 import { Import } from './pages/Import/Import'
 import { ExternalGuarantors } from './pages/ExternalGuarantors'
-import { InternalGuarantors } from './pages/Guarantors/InternalGuarantors'
 import { SASRAReturns } from './pages/Reports/SASRAReturns'
 import { LiquidityNPLDashboard } from './pages/Analytics/LiquidityNPLDashboard'
 import { LedgerManagement } from './pages/Ledger/LedgerManagement'
 import { NotificationsHub } from './pages/Notifications/NotificationsHub'
+import { BulkSMS } from './pages/BulkSMS/BulkSMS'
 
 export const router = createBrowserRouter([
   {
@@ -50,7 +50,7 @@ export const router = createBrowserRouter([
       { path: 'ledger', element: <LedgerManagement /> },
       { path: 'dividends', element: <Dividends /> },
       { path: 'notifications', element: <NotificationsHub /> },
-      { path: 'sms', element: <NotificationsHub /> },
+      { path: 'sms', element: <BulkSMS /> },
       { path: 'billing', element: <Billing /> },
       { path: 'reports', element: <Reports /> },
       { path: 'reports/sasra', element: <SASRAReturns /> },
@@ -60,7 +60,6 @@ export const router = createBrowserRouter([
       { path: 'roles', element: <Roles /> },
       { path: 'import', element: <Import /> },
       { path: 'external-guarantors', element: <ExternalGuarantors /> },
-      { path: 'internal-guarantors', element: <InternalGuarantors /> },
     ],
   },
   { path: '*', element: <Navigate to="/" replace /> },

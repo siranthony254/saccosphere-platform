@@ -55,28 +55,14 @@ export function useAuthBootstrap() {
         setAccessToken(newToken)
         setRefreshToken(refreshToken) // Restore it if refresh succeeded
 
-        // Fetch user profile
+        // /accounts/me/ already resolves sacco_id for a SACCO admin server-side
+        // (UserProfileSerializer.get_sacco_id). The /management/roles/ response
+        // carries neither a machine role name nor a sacco id, so don't try to
+        // re-derive it here — that only clobbered the good value with null.
         const user = await api.member.getProfile()
 
-        // Fetch user roles to determine SACCO ID for SACCO admins
-        let saccoId = null
-        try {
-          const roles = await api.saccoAdmin.getRoles(user.id)
-          const saccoAdminRole = roles?.find((r: any) => r.name === 'SACCO_ADMIN')
-          if (saccoAdminRole) {
-            saccoId =
-              saccoAdminRole?.sacco?.id ??
-              saccoAdminRole?.sacco_id ??
-              saccoAdminRole?.saccoId ??
-              null
-          }
-
-        } catch (e) {
-          console.log('Could not fetch roles:', e)
-        }
-
         if (!isMounted) return
-        setAuth({ token: newToken, user: { ...user, sacco_id: saccoId } })
+        setAuth({ token: newToken, user })
 
         // Invalidate all queries to ensure fresh data on page load
         queryClient.invalidateQueries()
@@ -120,23 +106,9 @@ export function useLogin() {
       setAccessToken(tokens.access)
       await saveRefreshToken(tokens.refresh)
 
-      // Fetch user roles to determine SACCO ID for SACCO admins
-      let saccoId = null
-      try {
-        const roles = await api.saccoAdmin.getRoles(tokens.user.id)
-        const saccoAdminRole = roles?.find((r: any) => r.name === 'SACCO_ADMIN')
-        if (saccoAdminRole) {
-          saccoId =
-            saccoAdminRole?.sacco?.id ??
-            saccoAdminRole?.sacco_id ??
-            saccoAdminRole?.saccoId ??
-            null
-        }
-      } catch (e) {
-        console.log('Could not fetch roles:', e)
-      }
-
-      setAuth({ token: tokens.access, user: { ...tokens.user, sacco_id: saccoId } })
+      // tokens.user already carries sacco_id (UserProfileSerializer resolves it
+      // server-side). No roles lookup — see useAuthBootstrap.
+      setAuth({ token: tokens.access, user: tokens.user })
       return tokens
     },
     onSuccess: () => {

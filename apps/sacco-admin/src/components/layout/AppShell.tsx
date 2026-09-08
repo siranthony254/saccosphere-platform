@@ -37,6 +37,7 @@ export function AppShell() {
     { path: '/ledger', label: 'General Ledger', icon: '📖', badge: null },
     { path: '/dividends', label: 'Dividends', icon: '💎', badge: null },
     { path: '/notifications', label: 'Notifications Hub', icon: '🔔', badge: null },
+    { path: '/sms', label: 'Bulk SMS', icon: '💬', badge: null },
     { path: '/reports', label: 'Reports', icon: '📈', badge: null },
     { path: '/reports/sasra', label: 'SASRA Returns', icon: '🏛️', badge: null },
     { path: '/analytics/liquidity-npl', label: 'Liquidity & NPL', icon: '📉', badge: null },
@@ -45,7 +46,6 @@ export function AppShell() {
     { path: '/roles', label: 'Roles', icon: '👤', badge: null },
     { path: '/import', label: 'Import', icon: '📤', badge: null },
     { path: '/external-guarantors', label: 'External Guarantors', icon: '🤝', badge: null },
-    { path: '/internal-guarantors', label: 'Savings Freeze & Holds', icon: '🔒', badge: null },
     { path: '/settings', label: 'Settings', icon: '⚙️', badge: null },
   ]
 

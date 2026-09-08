@@ -1,6 +1,7 @@
 import { useSaccoAdminDashboard, useDisbursementsDashboard, useContributionsDashboard } from '../hooks/useSaccoAdminDashboard'
 import { useLiquidityStatus, useNPLDashboard } from '../hooks/useLiquidityNpl'
 import { useSacco } from '../hooks/useSacco'
+import { useKycQueue } from '../hooks/useKyc'
 
 function MetricCard({ label, value, delta, deltaColor = 'text-mint-600' }: { label: string; value: string; delta?: string; deltaColor?: string }) {
   return (
@@ -19,6 +20,8 @@ export function Dashboard() {
   const { data: liquidity } = useLiquidityStatus()
   const { data: npl } = useNPLDashboard()
   const { data: sacco } = useSacco()
+  const { data: kycQueue } = useKycQueue({ status: 'PENDING' })
+  const pendingKyc = Array.isArray(kycQueue) ? kycQueue.length : 0
 
   if (isLoading) return (
     <div className="p-5">
@@ -43,7 +46,7 @@ export function Dashboard() {
     { bg: 'bg-amber-50', text: `${d.pending_applications} membership applications awaiting review`, borderColor: 'border-l-amber-500', textColor: 'text-amber-700', path: '/applications' },
     { bg: 'bg-amber-50', text: `${d.pending_loan_approvals} loans awaiting final approval`, borderColor: 'border-l-amber-500', textColor: 'text-amber-700', path: '/loans' },
     { bg: 'bg-red-50', text: `${d.members_in_arrears} members in arrears — review required`, borderColor: 'border-l-red-500', textColor: 'text-red-700', path: '/members?status=suspended' },
-    { bg: 'bg-blue-50', text: `${d.pending_kyc_reviews} KYC documents pending verification`, borderColor: 'border-l-blue-500', textColor: 'text-blue-700', path: '/kyc' },
+    { bg: 'bg-blue-50', text: `${pendingKyc} KYC documents pending verification`, borderColor: 'border-l-blue-500', textColor: 'text-blue-700', path: '/kyc' },
   ]
 
   return (

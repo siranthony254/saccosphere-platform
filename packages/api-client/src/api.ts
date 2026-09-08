@@ -283,10 +283,8 @@ const normalizeAdminDashboard = (dashboard: any): SaccoAdminDashboard => {
     active_loans_kes: Number(dashboard.total_loans_portfolio ?? dashboard.active_loans_portfolio ?? 0),
     default_rate_pct: Number(dashboard.default_rate ?? dashboard.default_rate_pct ?? 0),
     contributions_mtd_kes: Number(dashboard.monthly_contributions ?? 0),
-    disbursements_mtd_kes: Number(dashboard.disbursements_mtd_kes ?? 0),
     pending_applications: Number(dashboard.pending_applications ?? 0),
     pending_loan_approvals: Number(dashboard.pending_loan_approvals ?? 0),
-    pending_kyc_reviews: Number(dashboard.pending_kyc_reviews ?? 0),
     members_in_arrears: Number(dashboard.default_count ?? 0),
   })
 }
@@ -1927,7 +1925,9 @@ export const api = {
           application_notes: item.application_notes,
           applied_at: item.applied_at,
           status: item.status,
-          phone_number: item.phone_number || item.member_phone || '',
+          // /management/loans/approvals/ does not return the member's phone —
+          // the disburse dialog collects it manually.
+          phone_number: '',
           guarantors_summary: item.guarantors_summary ? {
             internal_approved: Number(item.guarantors_summary.internal_approved ?? 0),
             external_approved: Number(item.guarantors_summary.external_approved ?? 0),
@@ -2046,16 +2046,39 @@ export const api = {
     getReports: async (params: { type: 'loans' | 'contributions' | 'members'; from_date?: string; to_date?: string }) =>
       apiCall<any>('GET', '/management/reports/', undefined, { params }),
 
-    downloadReport: async (params: { type: 'loans' | 'contributions' | 'members'; from_date?: string; to_date?: string; format?: 'csv' | 'pdf' }) => {
-      const response = await axiosInstance.get('/management/reports/', {
-        params: { ...params, format: params.format || 'pdf' },
-        responseType: 'blob',
-      })
-      const disposition = String(response.headers?.['content-disposition'] ?? '')
-      const filenameMatch = disposition.match(/filename="?([^";]+)"?/i)
+    // SaccoReportView only returns JSON (it ignores `format` and never streams a
+    // file), so build the CSV client-side from that JSON.
+    downloadReport: async (params: { type: 'loans' | 'contributions' | 'members'; from_date?: string; to_date?: string }) => {
+      const report = await api.saccoAdmin.getReports(params)
+      const body = report?.data ?? report ?? {}
+      const cell = (v: unknown) => {
+        const s = String(v ?? '')
+        return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
+      }
+      const rows: unknown[][] = [
+        ['Report', report?.type ?? params.type],
+        ['From', report?.from_date ?? params.from_date ?? ''],
+        ['To', report?.to_date ?? params.to_date ?? ''],
+        [],
+      ]
+      for (const [k, v] of Object.entries(body)) {
+        if (v == null || typeof v === 'object') continue
+        rows.push([k, v])
+      }
+      const arrKey = ['status_breakdown', 'by_month', 'growth_by_month'].find(
+        (k) => Array.isArray((body as any)[k]) && (body as any)[k].length
+      )
+      if (arrKey) {
+        const arr = (body as any)[arrKey] as Record<string, unknown>[]
+        const cols = Object.keys(arr[0])
+        rows.push([], cols)
+        for (const item of arr) rows.push(cols.map((c) => item[c]))
+      }
+      const csv = rows.map((r) => r.map(cell).join(',')).join('\r\n')
+      const stamp = `${params.from_date ?? ''}_${params.to_date ?? ''}`.replace(/^_|_$/g, '')
       return {
-        blob: response.data as Blob,
-        filename: filenameMatch?.[1] ?? `sacco_report_${params.type}.${params.format || 'pdf'}`,
+        blob: new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' }),
+        filename: `sacco_${params.type}_report${stamp ? `_${stamp}` : ''}.csv`,
       }
     },
 
@@ -2121,69 +2144,60 @@ export const api = {
         admin_notes: data.notes,
       }),
 
-    // Internal guarantors & savings holds
-    getInternalGuarantors: async (params?: { status?: string }) => {
-      const response = await apiCall<any>('GET', '/management/guarantors/internal/', undefined, { params }).catch(() => null)
-      const items = Array.isArray(response?.results) ? response.results : Array.isArray(response) ? response : []
-      return {
-        count: Number(response?.count ?? items.length),
-        next: response?.next ?? null,
-        previous: response?.previous ?? null,
-        results: items.map((item: any) => ({
-          id: item.id,
-          loan_id: item.loan_id ?? item.loan?.id,
-          borrower_name: item.borrower_name ?? item.loan?.membership?.user?.full_name ?? '—',
-          guarantor_name: item.guarantor_name ?? item.guarantor_user?.full_name ?? '—',
-          guarantor_number: item.guarantor_number ?? item.guarantor_user?.phone_number ?? '—',
-          guarantee_amount: Number(item.guarantee_amount ?? item.amount ?? 0),
-          savings_balance: Number(item.savings_balance ?? item.guarantor_savings?.amount ?? 0),
-          frozen_hold_amount: Number(item.frozen_hold_amount ?? item.guarantee_amount ?? 0),
-          status: String(item.status ?? 'APPROVED').toUpperCase(),
-          created_at: item.created_at ?? new Date().toISOString(),
-        })),
-      }
-    },
-
-    releaseGuarantorHold: (id: string, notes?: string) =>
-      apiCall<void>('POST', `/management/guarantors/internal/${uuid(id)}/release/`, { notes }),
+    // NOTE: there is no backend for "internal guarantor holds" — no list
+    // endpoint, no hold/lien model, no release action. Internal guarantee
+    // capacity is recomputed automatically (services.engines.guarantor_logic)
+    // and frees up when the loan or guarantor status changes.
 
     // Audit logs
-    getAuditLogs: async (params?: { action?: string; resource_type?: string; cursor?: string }) => {
+    getAuditLogs: async (params?: { action?: string; resource_type?: string; user?: string; cursor?: string }) => {
+      // SystemAuditLogSerializer: created_at (not timestamp), user_email (user
+      // is a bare UUID), old_values / new_values (no `details`).
       const response = await apiCall<any>('GET', '/management/audit-logs/', undefined, { params })
-      const items = Array.isArray(response) ? response : response.results ?? []
+      const items = Array.isArray(response) ? response : response.results ?? response.data ?? []
       return {
-        count: items.length,
+        count: Number(response.count ?? items.length),
         next: response.next ?? null,
         previous: response.previous ?? null,
         results: items.map((item: any) => ({
           id: item.id,
-          timestamp: item.timestamp,
-          user: item.user?.full_name ?? item.user_id,
+          timestamp: item.created_at ?? item.timestamp ?? null,
+          user:
+            item.user_email ??
+            (typeof item.user === 'object' ? item.user?.email : item.user) ??
+            '—',
           action: item.action,
           resource_type: item.resource_type,
           resource_id: item.resource_id,
-          details: item.details,
+          details:
+            item.old_values != null || item.new_values != null
+              ? { old_values: item.old_values ?? null, new_values: item.new_values ?? null }
+              : (item.details ?? null),
         })),
       }
     },
 
     // Billing/Invoices
     getInvoices: async () => {
+      // InvoiceListSerializer: billing_month / total_amount / paid_at
+      // (no `period` / `amount` / `paid_date` / `sacco`).
       const response = await apiCall<any>('GET', '/billing/invoices/')
-      const items = Array.isArray(response) ? response : response.results ?? []
+      const items = Array.isArray(response) ? response : response.data ?? response.results ?? []
       return {
         count: items.length,
         next: response.next ?? null,
         previous: response.previous ?? null,
         results: items.map((item: any) => ({
-          id: item.id,
-          invoice_number: item.invoice_number,
-          period: item.period,
-          amount: Number(item.amount ?? 0),
+          id: String(item.id),
+          invoice_number: item.invoice_number ?? '',
+          period: item.billing_month ?? item.period ?? '',
+          amount: Number(item.total_amount ?? item.amount ?? 0),
           status: String(item.status ?? 'pending').toLowerCase(),
-          due_date: item.due_date,
-          paid_date: item.paid_date,
-          sacco: item.sacco,
+          due_date: item.due_date ?? '',
+          paid_date: item.paid_at ?? item.paid_date ?? null,
+          line_items_count: Number(item.line_items_count ?? 0),
+          days_overdue: Number(item.days_overdue ?? 0),
+          pdf_url: item.pdf_url ?? '',
         })),
       }
     },
@@ -2271,39 +2285,57 @@ export const api = {
       apiCall<any>('POST', `/management/dividends/declarations/${uuid(id)}/disburse/`),
 
     getDividendPayouts: async () => {
+      // DividendPayoutSerializer: member_name / member_email /
+      // declaration_financial_year / average_balance / dividend_amount /
+      // status / created_at. No gross / WHT / share-capital / member_number.
       const response = await apiCall<any>('GET', '/management/dividends/payouts/')
-      const items = Array.isArray(response) ? response : response.results ?? []
+      const items = Array.isArray(response) ? response : response.data ?? response.results ?? []
       return items.map((item: any) => ({
-        id: item.id,
-        member_name: item.member_name ?? item.member?.full_name ?? '—',
-        member_number: item.member_number ?? item.member?.member_number ?? '—',
-        share_capital: Number(item.share_capital ?? 0),
-        gross_dividend: Number(item.gross_dividend ?? 0),
-        withholding_tax: Number(item.withholding_tax ?? 0),
-        net_dividend: Number(item.net_dividend ?? 0),
-        status: item.status ?? 'PENDING',
-        disbursed_at: item.disbursed_at ?? null,
+        id: String(item.id),
+        member_name: item.member_name ?? '—',
+        member_email: item.member_email ?? '',
+        financial_year: String(item.declaration_financial_year ?? item.financial_year ?? ''),
+        average_balance: Number(item.average_balance ?? 0),
+        dividend_amount: Number(item.dividend_amount ?? 0),
+        status: String(item.status ?? 'PENDING'),
+        created_at: item.created_at ?? new Date().toISOString(),
       }))
     },
 
     // Bulk SMS Campaigns
     getSMSCampaigns: async () => {
       const response = await apiCall<any>('GET', '/management/sms/campaigns/')
-      const items = Array.isArray(response) ? response : response.results ?? []
+      const items = Array.isArray(response) ? response : response.data ?? response.results ?? []
+      const audienceLabel = (f: any): string => {
+        if (!f || typeof f !== 'object') return 'All approved members'
+        if (f.savings_type) return `${f.savings_type} savers`
+        if (f.member_number) return `Member ${f.member_number}`
+        if (f.status) return `${String(f.status).toLowerCase()} members`
+        return 'All approved members'
+      }
       return items.map((item: any) => ({
-        id: item.id,
-        title: item.title ?? 'Campaign',
-        message: item.message ?? '',
-        recipient_type: item.recipient_type ?? 'ALL_MEMBERS',
-        total_recipients: Number(item.total_recipients ?? item.recipient_count ?? 0),
-        status: item.status ?? 'DRAFT',
+        id: String(item.id),
+        message: String(item.message ?? ''),
+        audience_label: audienceLabel(item.audience_filter),
+        total_recipients: Number(item.total_recipients ?? 0),
+        sent_count: Number(item.sent_count ?? 0),
+        failed_count: Number(item.failed_count ?? 0),
+        status: String(item.status ?? 'DRAFT'),
         created_at: item.created_at ?? new Date().toISOString(),
-        sent_at: item.sent_at ?? null,
       }))
     },
 
-    createSMSCampaign: (data: { title: string; message: string; recipient_type: string }) =>
-      apiCall<any>('POST', '/management/sms/campaigns/', data),
+    // Backend reads only `message` + `audience_filter` ({ status | savings_type
+    // | member_number }). title / recipient_type / channels are not supported.
+    // Only members with active MARKETING consent are eligible recipients.
+    createSMSCampaign: (data: {
+      message: string
+      audience_filter?: { status?: string; savings_type?: string; member_number?: string }
+    }) =>
+      apiCall<any>('POST', '/management/sms/campaigns/', {
+        message: data.message,
+        audience_filter: data.audience_filter ?? { status: 'APPROVED' },
+      }),
 
     getSMSCampaign: (id: string) =>
       apiCall<any>('GET', `/management/sms/campaigns/${uuid(id)}/`),
