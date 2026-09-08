@@ -1898,15 +1898,25 @@ export const api = {
     // no working approve/reject call to wrap.
 
     // Role management
-    getRoles: async (userId: string) => apiCall<any>('GET', '/management/roles/', undefined, {
-      params: { user_id: userId }
-    }),
+    // UserRolesView is IsSaccoAdminOrSuperAdmin (read OK), paginated, and
+    // RoleSerializer returns role_name (display label), user_email, sacco_name,
+    // created_at — no machine `name` and no sacco id.
+    getRoles: async (userId: string) => {
+      const response = await apiCall<any>('GET', '/management/roles/', undefined, {
+        params: { user_id: userId },
+      })
+      const items = Array.isArray(response) ? response : response.results ?? response.data ?? []
+      return items.map((r: any) => ({
+        id: String(r.id),
+        role_label: r.role_name ?? r.name ?? '—',
+        user_email: r.user_email ?? r.user?.email ?? '',
+        sacco_name: r.sacco_name ?? r.sacco?.name ?? null,
+        created_at: r.created_at ?? null,
+      }))
+    },
 
-    assignRole: async (data: { user_id: string; role_name: string; sacco_id?: string }) =>
-      apiCall<any>('POST', '/management/roles/assign/', data),
-
-    revokeRole: async (roleId: string) =>
-      apiCall<any>('DELETE', `/management/roles/${uuid(roleId)}/`),
+    // NOTE: RoleAssignView / RoleRevokeView are IsSuperAdmin — a SACCO admin
+    // gets 403. Role changes are done from the platform (super-admin) app.
 
 
     // Loan approval queue (admin view)
@@ -2117,24 +2127,58 @@ export const api = {
     },
 
     // External guarantors
-    getExternalGuarantors: async () => {
-      const response = await apiCall<any>('GET', '/management/external-guarantors/')
-      const items = Array.isArray(response.results) ? response.results : []
+    getExternalGuarantors: async (params?: { status?: string }) => {
+      // ExternalGuarantorDetailSerializer exposes the model fields: full_name /
+      // phone_number / id_number / guarantee_amount / monthly_income / status /
+      // guarantor_response + requested_by_name (the loan applicant) + sacco_name
+      // + id_front_url / id_back_url. `loan` / `requested_by` are bare UUIDs.
+      const response = await apiCall<any>('GET', '/management/external-guarantors/', undefined, { params })
+      const items = Array.isArray(response.results)
+        ? response.results
+        : Array.isArray(response)
+          ? response
+          : []
+      const LABELS: Record<string, string> = {
+        PENDING_SMS: 'Sending SMS',
+        SMS_SENT: 'Awaiting guarantor',
+        ACCEPTED: 'Awaiting admin review',
+        DECLINED: 'Declined by guarantor',
+        UNDER_ADMIN_REVIEW: 'Under admin review',
+        APPROVED_BY_ADMIN: 'Approved',
+        REJECTED_BY_ADMIN: 'Rejected',
+      }
       return {
         count: Number(response.count ?? items.length),
         next: response.next ?? null,
         previous: response.previous ?? null,
-        results: items.map((item: any) => ({
-          id: item.id,
-          loan_id: item.loan_id,
-          member_name: item.member_name,
-          guarantor_name: item.guarantor_name,
-          guarantor_phone: item.guarantor_phone,
-          guarantor_national_id: item.guarantor_national_id,
-          amount: Number(item.amount ?? 0),
-          status: item.status,
-          created_at: item.created_at,
-        })),
+        results: items.map((item: any) => {
+          const status = String(item.status ?? 'PENDING_SMS')
+          return {
+            id: String(item.id),
+            loan_id: String(item.loan ?? item.loan_id ?? ''),
+            member_name: item.requested_by_name ?? item.member_name ?? '—',
+            guarantor_name: item.full_name ?? item.guarantor_name ?? '—',
+            guarantor_phone: item.phone_number ?? item.guarantor_phone ?? '—',
+            guarantor_national_id: item.id_number ?? item.guarantor_national_id ?? '—',
+            amount: Number(item.guarantee_amount ?? item.amount ?? 0),
+            monthly_income: Number(item.monthly_income ?? 0),
+            employment_status: item.employment_status ?? '',
+            guarantor_response: item.guarantor_response ?? null,
+            status,
+            status_label: LABELS[status] ?? status,
+            can_approve: status === 'ACCEPTED' || status === 'UNDER_ADMIN_REVIEW',
+            is_final:
+              status === 'APPROVED_BY_ADMIN' ||
+              status === 'REJECTED_BY_ADMIN' ||
+              status === 'DECLINED',
+            admin_notes: item.admin_notes ?? '',
+            sacco_name: item.sacco_name ?? '',
+            id_front_url: item.id_front_url ?? null,
+            id_back_url: item.id_back_url ?? null,
+            reviewed_at: item.reviewed_at ?? null,
+            created_at: item.created_at ?? new Date().toISOString(),
+          }
+        }),
       }
     },
 

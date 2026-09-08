@@ -1,133 +1,70 @@
 import { useState } from 'react'
-import { useUserRoles, useAssignRole, useRevokeRole } from '../../hooks/useRoles'
+import { useUserRoles } from '../../hooks/useRoles'
 
 export function Roles() {
+  const [input, setInput] = useState('')
   const [userId, setUserId] = useState('')
-  const [roleName, setRoleName] = useState('MEMBER')
-  const { data: roles, refetch } = useUserRoles(userId)
-  const assignRole = useAssignRole()
-  const revokeRole = useRevokeRole()
-
-  const [alertInfo, setAlertInfo] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
-
-  const showAlert = (type: 'success' | 'error', message: string) => {
-    setAlertInfo({ type, message })
-    setTimeout(() => setAlertInfo(null), 3000)
-  }
-
-  const handleAssign = async (e: React.FormEvent) => {
-    e.preventDefault()
-    try {
-      await assignRole.mutateAsync({ user_id: userId, role_name: roleName, sacco_id: '' })
-      refetch()
-      setUserId('')
-      showAlert('success', 'Role assigned successfully.')
-    } catch (error: any) {
-      console.error('Failed to assign role:', error)
-      showAlert('error', error?.message || 'Failed to assign role.')
-    }
-  }
-
-  const handleRevoke = async (roleId: string) => {
-    try {
-      await revokeRole.mutateAsync(roleId)
-      refetch()
-      showAlert('success', 'Role revoked successfully.')
-    } catch (error: any) {
-      console.error('Failed to revoke role:', error)
-      showAlert('error', error?.message || 'Failed to revoke role.')
-    }
-  }
+  const { data: roles, isLoading, isError } = useUserRoles(userId)
 
   return (
-    <div className="p-5 relative">
-      {alertInfo && (
-        <div className={`fixed top-4 right-4 px-4 py-2 rounded-lg text-sm font-medium z-50 shadow-lg ${
-          alertInfo.type === 'success' ? 'bg-mint-500 text-white' : 'bg-red-500 text-white'
-        }`}>
-          {alertInfo.message}
-        </div>
-      )}
-      <div className="flex justify-between items-center mb-5">
-        <div>
-          <div className="text-lg font-semibold text-ink">Role Management</div>
-          <div className="text-xs text-ink-muted">Assign and revoke user roles within your SACCO</div>
-        </div>
+    <div className="p-5">
+      <div className="mb-5">
+        <div className="text-lg font-semibold text-ink">Roles</div>
+        <div className="text-xs text-ink-muted">Look up the platform roles held by a user.</div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        {/* Assign role form */}
-        <div className="bg-white border border-[#e5ede9] rounded-[10px] p-4">
-          <div className="font-semibold text-sm text-ink mb-4">Assign Role</div>
-          <form onSubmit={handleAssign} className="space-y-3">
-            <div>
-              <label className="text-xs text-ink-muted mb-1 block">User ID (UUID)</label>
-              <input
-                className="w-full py-2 px-3 border border-ink-faint rounded-lg text-sm outline-none focus:ring-2 focus:ring-violet-500"
-                placeholder="Enter user UUID"
-                value={userId}
-                onChange={e => setUserId(e.target.value)}
-                required
-              />
-            </div>
-            <div>
-              <label className="text-xs text-ink-muted mb-1 block">Role</label>
-              <select
-                className="w-full py-2 px-3 border border-ink-faint rounded-lg text-sm outline-none bg-white focus:ring-2 focus:ring-violet-500"
-                value={roleName}
-                onChange={e => setRoleName(e.target.value)}
-              >
-                <option value="MEMBER">Member</option>
-                <option value="SACCO_ADMIN">SACCO Admin</option>
-              </select>
-            </div>
-            <button
-              type="submit"
-              disabled={assignRole.isPending}
-              className="w-full py-2 px-4 rounded-lg bg-violet-500 hover:bg-violet-600 text-white text-sm font-semibold cursor-pointer transition-colors disabled:opacity-50"
-            >
-              {assignRole.isPending ? 'Assigning...' : 'Assign Role'}
-            </button>
-          </form>
-        </div>
+      <div className="mb-4 bg-blue-50 border border-blue-200 rounded-lg px-4 py-2.5 text-xs text-blue-800">
+        Assigning or revoking roles is handled by SaccoSphere platform administration.
+      </div>
 
-        {/* User roles list */}
-        <div className="bg-white border border-[#e5ede9] rounded-[10px] p-4">
-          <div className="font-semibold text-sm text-ink mb-4">User Roles</div>
-          <div className="mb-3">
-            <input
-              className="w-full py-2 px-3 border border-ink-faint rounded-lg text-sm outline-none focus:ring-2 focus:ring-violet-500"
-              placeholder="Enter user UUID to view roles"
-              value={userId}
-              onChange={e => setUserId(e.target.value)}
-            />
-          </div>
-          {userId && roles ? (
-            <div className="space-y-2">
-              {roles.length === 0 ? (
-                <div className="text-sm text-ink-muted">No roles found for this user.</div>
-              ) : (
-                roles.map((role: any) => (
-                  <div key={role.id} className="flex items-center justify-between p-2 bg-surface-2 rounded-lg">
-                    <div>
-                      <div className="text-sm font-medium">{role.name.replace('_', ' ')}</div>
-                      <div className="text-xs text-ink-muted">User: {role.user?.email || role.user?.first_name || '—'}</div>
-                    </div>
-                    <button
-                      onClick={() => handleRevoke(role.id)}
-                      disabled={revokeRole.isPending}
-                      className="px-3 py-1 rounded-lg bg-red-50 text-red-700 text-xs font-semibold hover:bg-red-100 transition-colors disabled:opacity-50"
-                    >
-                      Revoke
-                    </button>
+      <div className="bg-white border border-[#e5ede9] rounded-[10px] p-4 max-w-xl">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault()
+            setUserId(input.trim())
+          }}
+          className="flex gap-2 mb-4"
+        >
+          <input
+            className="flex-1 py-2 px-3 border border-ink-faint rounded-lg text-sm outline-none focus:ring-2 focus:ring-violet-500"
+            placeholder="Enter user UUID"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+          />
+          <button
+            type="submit"
+            className="px-4 py-2 rounded-lg bg-violet-500 hover:bg-violet-600 text-white text-sm font-semibold"
+          >
+            View roles
+          </button>
+        </form>
+
+        {!userId ? (
+          <div className="text-sm text-ink-muted">Enter a user ID to view their roles.</div>
+        ) : isLoading ? (
+          <div className="text-sm text-ink-muted">Loading…</div>
+        ) : isError ? (
+          <div className="text-sm text-red-600">Could not load roles for this user.</div>
+        ) : (roles ?? []).length === 0 ? (
+          <div className="text-sm text-ink-muted">No roles found for this user.</div>
+        ) : (
+          <div className="space-y-2">
+            {(roles ?? []).map((role: any) => (
+              <div key={role.id} className="flex items-center justify-between p-2.5 bg-surface-2 rounded-lg">
+                <div>
+                  <div className="text-sm font-medium text-ink">{role.role_label}</div>
+                  <div className="text-xs text-ink-muted">
+                    {role.user_email || '—'}
+                    {role.sacco_name ? ` · ${role.sacco_name}` : ''}
                   </div>
-                ))
-              )}
-            </div>
-          ) : (
-            <div className="text-sm text-ink-muted">Enter a user ID to view their roles.</div>
-          )}
-        </div>
+                </div>
+                <div className="text-[11px] text-ink-faint">
+                  {role.created_at ? new Date(role.created_at).toLocaleDateString() : ''}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )

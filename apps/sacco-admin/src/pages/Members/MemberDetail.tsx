@@ -17,11 +17,7 @@ export function MemberDetail() {
 
   const isPending = member.membership_status === 'applied' || member.membership_status === 'under_review'
 
-  const roleColors: Record<string, { bg: string; color: string }> = {
-    SACCO_ADMIN:   { bg: 'bg-violet-50', color: 'text-violet-700' },
-    MEMBER:        { bg: 'bg-mint-50',   color: 'text-mint-700' },
-    SUPER_ADMIN:   { bg: 'bg-red-50',    color: 'text-red-700' },
-  }
+  const roleBadge = 'bg-violet-50 text-violet-700'
 
   return (
     <div className="p-5">
@@ -75,15 +71,12 @@ export function MemberDetail() {
                 {b.text}
               </span>
             ))}
-            {/* All roles this user holds (e.g. MEMBER + SACCO_ADMIN of same SACCO) */}
-            {roles && roles.length > 0 && roles.map((role: any) => {
-              const rc = roleColors[role.name] ?? { bg: 'bg-gray-100', color: 'text-gray-600' }
-              return (
-                <span key={role.id} className={`${rc.bg} ${rc.color} px-2 py-0.5 rounded-full text-[10px] font-semibold`}>
-                  {role.name.replace(/_/g, ' ')}
-                </span>
-              )
-            })}
+            {/* All roles this user holds */}
+            {roles && roles.length > 0 && roles.map((role: any) => (
+              <span key={role.id} className={`${roleBadge} px-2 py-0.5 rounded-full text-[10px] font-semibold`}>
+                {role.role_label}
+              </span>
+            ))}
           </div>
         </div>
       </div>
@@ -124,24 +117,21 @@ export function MemberDetail() {
         <div className="bg-white border border-[#e5ede9] rounded-[10px] p-4">
           <div className="font-semibold text-sm text-ink mb-3">Platform roles</div>
           <div className="flex flex-col gap-2">
-            {roles.map((role: any) => {
-              const rc = roleColors[role.name] ?? { bg: 'bg-gray-100', color: 'text-gray-600' }
-              return (
-                <div key={role.id} className="flex items-center justify-between px-3 py-2 bg-surface-2 rounded-lg">
-                  <div>
-                    <span className={`${rc.bg} ${rc.color} text-[11px] font-semibold px-2 py-0.5 rounded-full`}>
-                      {role.name.replace(/_/g, ' ')}
-                    </span>
-                    {role.sacco && (
-                      <span className="ml-2 text-xs text-ink-muted">{role.sacco.name}</span>
-                    )}
-                  </div>
-                  <span className="text-[10px] text-ink-muted">
-                    {role.assigned_at ? new Date(role.assigned_at).toLocaleDateString() : ''}
+            {roles.map((role: any) => (
+              <div key={role.id} className="flex items-center justify-between px-3 py-2 bg-surface-2 rounded-lg">
+                <div>
+                  <span className={`${roleBadge} text-[11px] font-semibold px-2 py-0.5 rounded-full`}>
+                    {role.role_label}
                   </span>
+                  {role.sacco_name && (
+                    <span className="ml-2 text-xs text-ink-muted">{role.sacco_name}</span>
+                  )}
                 </div>
-              )
-            })}
+                <span className="text-[10px] text-ink-muted">
+                  {role.created_at ? new Date(role.created_at).toLocaleDateString() : ''}
+                </span>
+              </div>
+            ))}
           </div>
         </div>
       )}

@@ -1,10 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '@saccosphere/api-client'
 
-export function useExternalGuarantors() {
+export function useExternalGuarantors(params?: { status?: string }) {
   return useQuery({
-    queryKey: ['external-guarantors'],
-    queryFn: api.saccoAdmin.getExternalGuarantors,
+    queryKey: ['external-guarantors', params],
+    queryFn: () => api.saccoAdmin.getExternalGuarantors(params),
   })
 }
 
