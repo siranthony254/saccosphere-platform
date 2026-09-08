@@ -21,3 +21,14 @@ export function useTransactions(filters?: TransactionFilters) {
     enabled: isAuthenticated,
   })
 }
+
+export function useTransaction(id: string) {
+  const isAuthenticated = useIsAuthenticated()
+  return useQuery({
+    queryKey: ['transaction', id],
+    queryFn: () => api.member.getTransaction(id),
+    staleTime: STALE_TIMES.transactions,
+    gcTime: 300_000,
+    enabled: isAuthenticated && !!id,
+  })
+}

@@ -17,9 +17,3 @@ export function useSubmitMembershipApplication() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: QueryKeys.applications() }),
   })
 }
-
-export function usePayRegistrationFee() {
-  return useMutation({
-    mutationFn: api.applications.payRegistrationFee,
-  })
-}

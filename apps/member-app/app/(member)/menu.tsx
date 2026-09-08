@@ -9,6 +9,10 @@ import SaccoSwitcher from '../../components/SaccoSwitcher'
 import SaccoSelectModal from '../../components/SaccoSelectModal'
 import { getActiveMemberships } from '../../lib/membership'
 
+import { api } from '@saccosphere/api-client'
+import { Icon, IconName } from '../../components/ui/Icon'
+import { Badge } from '../../components/ui/Badge'
+
 const BACKGROUND = '#06091A'
 const FROSTED = 'rgba(255, 255, 255, 0.08)'
 const FROSTED_DARK = 'rgba(255, 255, 255, 0.06)'
@@ -35,30 +39,30 @@ export default function MenuScreen() {
 
   const referralCode = user ? `${user.first_name[0]}${user.last_name[0]}-${Math.floor(1000 + Math.random() * 9000)}`.toUpperCase() : 'SS-JOIN'
 
-  const menuItems = [
+  const menuItems: Array<{ label: string, helper: string, icon: IconName, action: () => void, disabled?: boolean }> = [
     {
       label: 'Guarantor requests',
       helper: 'Review and approve loan guarantees',
-      icon: '🤝',
+      icon: 'guarantor',
       action: () => router.push('/(member)/guarantor-request'),
     },
     {
       label: 'Referrals',
       helper: 'Invite friends and earn rewards',
-      icon: '🎁',
+      icon: 'dividend',
       action: () => setReferralsVisible(true),
     },
     {
       label: 'SACCO switcher',
       helper: 'Jump to a specific SACCO dashboard',
-      icon: '🔄',
+      icon: 'transfer',
       action: () => setSwitcherVisible(true),
       disabled: activeMemberships.length === 0,
     },
     {
       label: 'Compare loans',
       helper: 'Compare loan interest rates across SACCOs',
-      icon: '⚖️',
+      icon: 'loan',
       action: () => {
         if (activeMemberships.length === 0) {
           Alert.alert('No SACCOs linked', 'Link a SACCO first to compare loans.')
@@ -72,13 +76,13 @@ export default function MenuScreen() {
     {
       label: "What's new",
       helper: 'Check recent updates and announcements',
-      icon: '✨',
+      icon: 'bell',
       action: () => setWhatsNewVisible(true),
     },
     {
       label: "Security & Settings",
       helper: 'Manage biometrics and account security',
-      icon: '⚙️',
+      icon: 'settings',
       action: () => router.push('/(member)/settings'),
     },
   ]
@@ -101,7 +105,7 @@ export default function MenuScreen() {
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
               <TouchableOpacity style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: FROSTED_DARK, alignItems: 'center', justifyContent: 'center' }} onPress={() => router.push('/(member)/notifications')}>
-                <Text style={{ fontSize: 14 }}>🔔</Text>
+                <Icon name="bell" size={18} color={TEXT} />
               </TouchableOpacity>
               <TouchableOpacity style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: VIOLET, alignItems: 'center', justifyContent: 'center' }} onPress={() => router.push('/(member)/profile')}>
                 <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700' }}>{initials}</Text>
@@ -138,13 +142,13 @@ export default function MenuScreen() {
               disabled={item.disabled}
             >
               <View style={{ width: 36, height: 36, borderRadius: 12, backgroundColor: FROSTED, alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
-                <Text style={{ fontSize: 18 }}>{item.icon}</Text>
+                <Icon name={item.icon} size={20} color={TEXT} />
               </View>
               <View style={{ flex: 1, paddingRight: 12 }}>
                 <Text style={{ color: TEXT, fontSize: 12, fontWeight: '600' }}>{item.label}</Text>
                 <Text style={{ color: TEXT_MUTED, fontSize: 12, marginTop: 2 }}>{item.helper}</Text>
               </View>
-              <Text style={{ color: TEXT_MUTED, fontSize: 18 }}>{'>'}</Text>
+              <Icon name="arrow-right" size={16} color={TEXT_MUTED} />
             </TouchableOpacity>
           ))}
         </View>
@@ -157,9 +161,7 @@ export default function MenuScreen() {
               <View key={membership.id} style={{ paddingVertical: 12, borderBottomWidth: 0.5, borderBottomColor: BORDER_WHITE }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
                   <Text style={{ color: TEXT, fontSize: 12, fontWeight: '600' }}>{membership.sacco_name}</Text>
-                  <View style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8 }}>
-                    <Text style={{ color: MINT, fontSize: 12, fontWeight: '600', textTransform: 'capitalize' }}>{membership.status}</Text>
-                  </View>
+                  <Badge label={membership.status} variant="success" />
                 </View>
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
                   <TouchableOpacity

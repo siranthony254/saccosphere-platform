@@ -249,8 +249,10 @@ export default function SaccoLoanSelectorScreen() {
 
         {loans.length > 0 ? (
           loans.map((loan) => (
-            <View
+            <TouchableOpacity
               key={loan.id}
+              activeOpacity={0.7}
+              onPress={() => router.push({ pathname: '/(member)/loan-detail', params: { id: loan.id } } as any)}
               style={{
                 backgroundColor: SURFACE,
                 borderWidth: 1,
@@ -295,7 +297,7 @@ export default function SaccoLoanSelectorScreen() {
                   </Text>
                 </View>
               )}
-            </View>
+            </TouchableOpacity>
           ))
         ) : (
           <View

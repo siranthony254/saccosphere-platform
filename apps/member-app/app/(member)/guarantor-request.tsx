@@ -1,9 +1,9 @@
 import { View, Text, TouchableOpacity, ScrollView, TextInput, ActivityIndicator, Alert } from 'react-native'
 import { useLocalSearchParams } from 'expo-router'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Dimensions } from 'react-native'
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useMutation } from '@tanstack/react-query'
 import { api } from '@saccosphere/api-client'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
@@ -11,16 +11,22 @@ const PADDING_H = Math.max(16, Math.min(24, SCREEN_WIDTH * 0.05))
 
 export default function GuarantorRequest() {
   const insets = useSafeAreaInsets()
-  const { token } = useLocalSearchParams<{ token?: string }>()
+  // The backend has no token -> details lookup for an external guarantor. The
+  // borrower name, guarantee amount and SACCO come to this person in the SMS,
+  // and can be passed through on an in-app deep link as params.
+  const { token, borrowerName, amount, saccoName, loanProduct } = useLocalSearchParams<{
+    token?: string
+    borrowerName?: string
+    amount?: string
+    saccoName?: string
+    loanProduct?: string
+  }>()
   const [notes, setNotes] = useState('')
   const [agreedToLien, setAgreedToLien] = useState(false)
   const [hasResponded, setHasResponded] = useState(false)
 
-  const { data: requestDetails, isLoading: loadingDetails } = useQuery({
-    queryKey: ['guarantorRequestDetails', token],
-    queryFn: () => api.loans.getGuarantorRequestDetails(token || ''),
-    enabled: Boolean(token),
-  })
+  const guaranteeAmount = amount != null && amount !== '' && !Number.isNaN(Number(amount)) ? Number(amount) : null
+  const amountLabel = guaranteeAmount != null ? `KES ${guaranteeAmount.toLocaleString()}` : 'the agreed guarantee amount'
 
   const respond = useMutation({
     mutationFn: (action: 'accept' | 'decline') =>
@@ -41,7 +47,7 @@ export default function GuarantorRequest() {
         <View className="bg-surface2 border border-border rounded-xl p-5 items-center">
           <Text className="text-ink text-sm font-semibold mb-1">Invalid Request</Text>
           <Text className="text-ink-muted text-xs text-center leading-5">
-            No response token provided. Please check the link from the SMS or in-app notification.
+            No response token provided. Please open the link from the SMS or in-app notification.
           </Text>
         </View>
       </ScrollView>
@@ -64,9 +70,6 @@ export default function GuarantorRequest() {
     )
   }
 
-  const guaranteeAmount = requestDetails?.guarantee_amount ?? 0
-  const savingsBalance = requestDetails?.savings_balance ?? 0
-
   return (
     <ScrollView
       contentContainerStyle={{ paddingHorizontal: PADDING_H, paddingBottom: insets.bottom + 20 }}
@@ -75,55 +78,60 @@ export default function GuarantorRequest() {
       <View className="mb-4">
         <Text className="text-ink text-base font-bold mb-1">Guarantor & Savings Freeze Request</Text>
         <Text className="text-ink-muted text-xs leading-5">
-          Review the borrower's request and collateral encumbrance warnings before accepting.
+          Review the request and the collateral lien warning below before you accept.
         </Text>
       </View>
 
       {/* Borrower & Loan Details Card */}
       <View className="bg-surface2 border border-border rounded-xl p-4 mb-4">
         <Text className="text-ink text-xs font-bold uppercase tracking-wider mb-3">Borrower & Loan Details</Text>
-        {loadingDetails ? (
-          <ActivityIndicator color="#6D28D9" />
-        ) : (
-          <View className="gap-2">
-            <View className="flex-row justify-between py-1 border-b border-border">
-              <Text className="text-ink-muted text-xs">Borrower Name</Text>
-              <Text className="text-ink text-xs font-bold">{requestDetails?.borrower_name || '—'}</Text>
-            </View>
-            <View className="flex-row justify-between py-1 border-b border-border">
-              <Text className="text-ink-muted text-xs">Loan Product</Text>
-              <Text className="text-ink text-xs font-semibold">{requestDetails?.loan_product_name || 'Loan'}</Text>
-            </View>
-            <View className="flex-row justify-between py-1">
-              <Text className="text-ink-muted text-xs">Requested Guarantee Amount</Text>
-              <Text className="text-violet-600 text-xs font-bold">KES {guaranteeAmount.toLocaleString()}</Text>
-            </View>
+        <View className="gap-2">
+          <View className="flex-row justify-between py-1 border-b border-border">
+            <Text className="text-ink-muted text-xs">Borrower</Text>
+            <Text className="text-ink text-xs font-bold">{borrowerName || 'See your SMS'}</Text>
           </View>
+          {!!saccoName && (
+            <View className="flex-row justify-between py-1 border-b border-border">
+              <Text className="text-ink-muted text-xs">SACCO</Text>
+              <Text className="text-ink text-xs font-semibold">{saccoName}</Text>
+            </View>
+          )}
+          <View className="flex-row justify-between py-1 border-b border-border">
+            <Text className="text-ink-muted text-xs">Loan Product</Text>
+            <Text className="text-ink text-xs font-semibold">{loanProduct || 'Loan'}</Text>
+          </View>
+          <View className="flex-row justify-between py-1">
+            <Text className="text-ink-muted text-xs">Requested Guarantee Amount</Text>
+            <Text className="text-violet-600 text-xs font-bold">
+              {guaranteeAmount != null ? `KES ${guaranteeAmount.toLocaleString()}` : 'See your SMS'}
+            </Text>
+          </View>
+        </View>
+        {!borrowerName && (
+          <Text className="text-ink-muted text-[10px] leading-4 mt-3">
+            The full details were sent to you by SMS. Only Accept or Decline below.
+          </Text>
         )}
       </View>
 
-      {/* 🔒 Savings Freeze & Collateral Lien Warning Card */}
+      {/* Savings Freeze & Collateral Lien Warning Card */}
       <View className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 mb-5">
         <View className="flex-row items-center gap-2 mb-2">
           <Text className="text-base">🔒</Text>
           <Text className="text-amber-500 text-xs font-bold uppercase tracking-wider">Savings Freeze & Lien Notice</Text>
         </View>
         <Text className="text-ink text-xs leading-5 mb-3">
-          Accepting this request will place a <Text className="font-bold text-amber-500">collateral lien hold</Text> on your SACCO savings balance equal to <Text className="font-bold">KES {guaranteeAmount.toLocaleString()}</Text>.
+          Accepting this request places a <Text className="font-bold text-amber-500">collateral lien hold</Text> on your SACCO savings equal to <Text className="font-bold">{amountLabel}</Text> until the loan is settled.
         </Text>
 
-        <View className="bg-surface/80 rounded-lg p-3 gap-1.5 border border-amber-500/20 mb-3">
-          {savingsBalance > 0 && (
+        {guaranteeAmount != null && (
+          <View className="bg-surface/80 rounded-lg p-3 gap-1.5 border border-amber-500/20 mb-3">
             <View className="flex-row justify-between">
-              <Text className="text-ink-muted text-[11px]">Your Current Savings</Text>
-              <Text className="text-ink text-[11px] font-semibold">KES {savingsBalance.toLocaleString()}</Text>
+              <Text className="text-amber-500 text-[11px] font-bold">Amount to be frozen</Text>
+              <Text className="text-amber-500 text-[11px] font-bold">KES {guaranteeAmount.toLocaleString()}</Text>
             </View>
-          )}
-          <View className="flex-row justify-between">
-            <Text className="text-amber-500 text-[11px] font-bold">Amount to be Encumbered/Frozen</Text>
-            <Text className="text-amber-500 text-[11px] font-bold">KES {guaranteeAmount.toLocaleString()}</Text>
           </View>
-        </View>
+        )}
 
         <TouchableOpacity
           activeOpacity={0.8}
@@ -134,7 +142,7 @@ export default function GuarantorRequest() {
             {agreedToLien && <Text className="text-white text-xs font-bold">✓</Text>}
           </View>
           <Text className="text-ink text-[11px] font-medium flex-1">
-            I acknowledge and agree to freeze KES {guaranteeAmount.toLocaleString()} of my savings balance until loan settlement.
+            I acknowledge and agree to freeze {amountLabel} of my savings until the loan is settled.
           </Text>
         </TouchableOpacity>
       </View>
@@ -147,7 +155,7 @@ export default function GuarantorRequest() {
           <Text className="text-ink-soft text-xs font-medium mb-1.5">Notes / Conditions (Optional)</Text>
           <TextInput
             className="bg-surface border border-border rounded-xl p-3 text-ink text-xs"
-            placeholder="Add any notes for borrower or SACCO..."
+            placeholder="Add any notes for the borrower or SACCO..."
             placeholderTextColor="#9CA3AF"
             multiline
             numberOfLines={3}
@@ -184,7 +192,7 @@ export default function GuarantorRequest() {
       </View>
 
       <Text className="text-ink-muted text-[10px] text-center leading-4">
-        By accepting, you agree to the SACCO Bylaws collateral lien rules. Funds are auto-released upon borrower loan repayment.
+        By accepting, you agree to the SACCO Bylaws collateral lien rules. Funds are auto-released once the borrower repays the loan.
       </Text>
     </ScrollView>
   )

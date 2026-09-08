@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useQuery } from '@tanstack/react-query'
 import { api } from '@saccosphere/api-client'
 import { useLoans } from '../../../hooks/useLoans'
-import { useInitiatePayment } from '../../../hooks/usePayment'
+import { useInitiatePayment, useFeePreview } from '../../../hooks/usePayment'
 import { useMembershipBySacco } from '../../../hooks/useMembership'
 import { useSaccoConfig } from '../../../hooks/useSaccoConfig'
 import { useCurrentUser } from '../../../store/useAuthStore'
@@ -44,7 +44,9 @@ export default function PayScreen() {
   const [checkoutRequestId, setCheckoutRequestId] = useState<string | null>(null)
 
   const numericAmount = Number(String(amount || defaultAmount || 0).replace(/[^0-9.]/g, ''))
-  const platformFee = Math.round(numericAmount * 0.02)
+  const { data: feePreview } = useFeePreview({ type: isRepayment ? 'repayment' : 'deposit', amount: numericAmount })
+  const platformFee = feePreview ? Math.round(feePreview.platform_fee) : Math.round(numericAmount * 0.02)
+  const grossCharge = feePreview ? Math.round(feePreview.gross_amount) : numericAmount + platformFee
   const saccoName = membership?.sacco_name ?? selectedLoan?.sacco_name ?? slug
   const phoneNumber = user?.phone_number ?? user?.phone ?? ''
   const primarySaving = savingsQuery.data?.[0]
@@ -230,6 +232,13 @@ export default function PayScreen() {
           <BankRow label="SACCO" value={saccoName} />
           <BankRow label="Purpose" value={isRepayment ? 'Loan Repayment' : 'Saving Contribution'} />
           <BankRow label="Accepted Methods" value={acceptedMethods.map(m => m === 'mpesa' ? 'M-Pesa' : m === 'bank_transfer' ? 'Bank' : m).join(', ')} />
+          {numericAmount >= 10 ? (
+            <>
+              <BankRow label="Platform fee" value={`KES ${platformFee.toLocaleString()}`} />
+              <BankRow label="You pay" value={`KES ${grossCharge.toLocaleString()}`} />
+              <BankRow label={isRepayment ? 'Applied to loan' : 'Credited to savings'} value={`KES ${numericAmount.toLocaleString()}`} />
+            </>
+          ) : null}
         </View>
 
         <TouchableOpacity

@@ -2,7 +2,7 @@
   "name": "member-app",
   "version": "0.1.0",
   "private": true,
-  "main": "expo-router/entry",
+  "main": "index.js",
   "scripts": {
     "dev": "cross-env EXPO_NO_DEPENDENCY_VALIDATION=true expo start",
     "dev:safe": "expo start --reset-cache --max-workers 1",

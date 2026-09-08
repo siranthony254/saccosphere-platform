@@ -46,6 +46,8 @@ export function useRegisterDevice() {
   })
 }
 
+import * as Device from 'expo-device'
+
 export function useAutoRegisterDeviceToken() {
   const isAuthenticated = useIsAuthenticated()
   const registerDevice = useRegisterDevice()
@@ -53,11 +55,16 @@ export function useAutoRegisterDeviceToken() {
   useEffect(() => {
     if (!isAuthenticated) return
 
-    const platform = Platform.OS === 'ios' ? 'IOS' : Platform.OS === 'android' ? 'ANDROID' : 'WEB'
-    const deviceToken = `expo_token_${Platform.OS}_${Date.now()}`
+    const platform = Platform.OS === 'ios' ? 'ios' : 'android'
+    const deviceId = Device.osInternalBuildId || Device.modelId || 'unknown_device'
+    const deviceName = Device.modelName || 'Unknown Device'
+    const deviceToken = `expo_token_${deviceId}`
 
     registerDevice.mutate(
-      { token: deviceToken, platform },
+      {
+        token: deviceToken,
+        platform,
+      },
       {
         onError: (err) => console.warn('Device token auto-registration notice:', err?.message),
       }

@@ -9,6 +9,23 @@ export function useInitiatePayment() {
   })
 }
 
+export function useFeePreview(params: { type: 'deposit' | 'repayment' | 'withdrawal'; amount: number }) {
+  return useQuery({
+    queryKey: ['fee-preview', params.type, params.amount],
+    queryFn: () => api.payments.getFeePreview(params),
+    staleTime: 300_000,
+    gcTime: 600_000,
+    enabled: params.amount > 0,
+  })
+}
+
+export function useWithdrawSavings() {
+  return useMutation({
+    mutationFn: (data: { sacco_id: string; saving_id: string; amount: number; phone_number: string }) =>
+      api.payments.withdrawSavings(data),
+  })
+}
+
 export function usePaymentStatus(reference: string) {
   return useQuery({
     queryKey: QueryKeys.paymentStatus(reference),

@@ -11,13 +11,15 @@ import { useSaccoFields } from '../../hooks/useSaccoFields'
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 const PADDING_H = Math.max(16, Math.min(24, SCREEN_WIDTH * 0.05))
 
+import { DynamicField } from './DynamicField'
+
 export default function SaccoApplicationStep1() {
   const { slug } = useLocalSearchParams<{ slug: string }>()
   const insets = useSafeAreaInsets()
   const user = useCurrentUser()
   const { setSacco, setFormData, setMonthlyContribution, formData, monthlyContribution } = useMembershipApplicationStore()
   const { data: sacco } = useSacco(slug)
-  const { data: fields, isLoading: fieldsLoading } = useSaccoFields(sacco?.id ?? '')
+  const { data: fieldsData, isLoading: fieldsLoading } = useSaccoFields(sacco?.id ?? '')
 
   const [firstName, setFirstName] = useState<string>(formData.firstName as string ?? user?.first_name ?? '')
   const [lastName, setLastName] = useState<string>(formData.lastName as string ?? user?.last_name ?? '')
@@ -27,7 +29,7 @@ export default function SaccoApplicationStep1() {
   const [employmentType, setEmploymentType] = useState<string>(formData.employmentType as string ?? '')
   const [income, setIncome] = useState<string>(formData.income as string ?? '')
   const [contribution, setContribution] = useState<string>(monthlyContribution ? String(monthlyContribution) : '')
-  const [customFields, setCustomFields] = useState<Record<string, string>>({})
+  const [customFields, setCustomFields] = useState<Record<string, any>>(formData.customFields as Record<string, any> ?? {})
 
   useEffect(() => {
     if (slug) setSacco(slug)
@@ -43,8 +45,13 @@ export default function SaccoApplicationStep1() {
 
   const contributionNumber = Number(contribution.replace(/[^0-9]/g, ''))
   const minContribution = sacco?.min_monthly_contribution ?? 1000
+
+  // Custom field definitions from SACCO config
+  const fieldDefinitions = Array.isArray(fieldsData?.results) ? fieldsData.results : []
+
   const canContinue = Boolean(
-    firstName && lastName && nationalId && dob && employer && employmentType && contributionNumber >= minContribution
+    firstName && lastName && nationalId && dob && employer && employmentType && contributionNumber >= minContribution &&
+    fieldDefinitions.every((f: any) => !f.is_required || !!customFields[f.id])
   )
 
   const handleContinue = () => {
@@ -56,7 +63,7 @@ export default function SaccoApplicationStep1() {
       employer,
       employmentType,
       income,
-      ...customFields,
+      customFields,
     })
     setMonthlyContribution(contributionNumber)
     router.push(`/(member)/discover/${slug}/apply/documents`)
@@ -70,8 +77,6 @@ export default function SaccoApplicationStep1() {
       </View>
     )
   }
-
-  const customFieldDefinitions = Array.isArray(fields?.fields) ? fields.fields : []
 
   return (
     <ScrollView
@@ -108,20 +113,20 @@ export default function SaccoApplicationStep1() {
       </View>
 
       {/* Standard Form Fields */}
-      <View className="grid grid-cols-2 gap-2 mb-3">
-        <View>
-          <Text className="text-ink-soft text-xs font-medium mb-1">First name</Text>
+      <View className="flex-row gap-2 mb-3">
+        <View className="flex-1">
+          <Text className="text-ink-soft text-xs font-medium mb-1.5">First name</Text>
           <TextInput
-            className="bg-surface2 rounded-xl p-2.5 text-xs text-ink"
+            className="bg-surface2 rounded-xl p-3 text-xs text-ink border border-border"
             value={firstName}
             onChangeText={setFirstName}
             placeholderTextColor="#9ca3af"
           />
         </View>
-        <View>
-          <Text className="text-ink-soft text-xs font-medium mb-1">Last name</Text>
+        <View className="flex-1">
+          <Text className="text-ink-soft text-xs font-medium mb-1.5">Last name</Text>
           <TextInput
-            className="bg-surface2 rounded-xl p-2.5 text-xs text-ink"
+            className="bg-surface2 rounded-xl p-3 text-xs text-ink border border-border"
             value={lastName}
             onChangeText={setLastName}
             placeholderTextColor="#9ca3af"
@@ -130,9 +135,9 @@ export default function SaccoApplicationStep1() {
       </View>
 
       <View className="mb-3">
-        <Text className="text-ink-soft text-xs font-medium mb-1">National ID</Text>
+        <Text className="text-ink-soft text-xs font-medium mb-1.5">National ID</Text>
         <TextInput
-          className="bg-surface2 rounded-xl p-2.5 text-xs text-ink"
+          className="bg-surface2 rounded-xl p-3 text-xs text-ink border border-border"
           value={nationalId}
           onChangeText={setNationalId}
           placeholderTextColor="#9ca3af"
@@ -140,19 +145,20 @@ export default function SaccoApplicationStep1() {
       </View>
 
       <View className="mb-3">
-        <Text className="text-ink-soft text-xs font-medium mb-1">Date of birth</Text>
+        <Text className="text-ink-soft text-xs font-medium mb-1.5">Date of birth</Text>
         <TextInput
-          className="bg-surface2 rounded-xl p-2.5 text-xs text-ink"
+          className="bg-surface2 rounded-xl p-3 text-xs text-ink border border-border"
           value={dob}
           onChangeText={setDob}
+          placeholder="YYYY-MM-DD"
           placeholderTextColor="#9ca3af"
         />
       </View>
 
       <View className="mb-3">
-        <Text className="text-ink-soft text-xs font-medium mb-1">Employer / Business</Text>
+        <Text className="text-ink-soft text-xs font-medium mb-1.5">Employer / Business</Text>
         <TextInput
-          className="bg-surface2 rounded-xl p-2.5 text-xs text-ink"
+          className="bg-surface2 rounded-xl p-3 text-xs text-ink border border-border"
           value={employer}
           onChangeText={setEmployer}
           placeholder="e.g. Safaricom Ltd"
@@ -161,65 +167,68 @@ export default function SaccoApplicationStep1() {
       </View>
 
       <View className="mb-3">
-        <Text className="text-ink-soft text-xs font-medium mb-1">Employment type</Text>
+        <Text className="text-ink-soft text-xs font-medium mb-1.5">Employment type</Text>
         <TextInput
-          className="bg-surface2 rounded-xl p-2.5 text-xs text-ink"
+          className="bg-surface2 rounded-xl p-3 text-xs text-ink border border-border"
           value={employmentType}
           onChangeText={setEmploymentType}
+          placeholder="e.g. Salaried, Self-employed"
           placeholderTextColor="#9ca3af"
         />
       </View>
 
       <View className="mb-3">
-        <Text className="text-ink-soft text-xs font-medium mb-1">Gross monthly income (KES)</Text>
+        <Text className="text-ink-soft text-xs font-medium mb-1.5">Gross monthly income (KES)</Text>
         <TextInput
-          className="bg-surface2 rounded-xl p-2.5 text-xs text-ink"
+          className="bg-surface2 rounded-xl p-3 text-xs text-ink border border-border"
           value={income}
           onChangeText={setIncome}
+          keyboardType="numeric"
           placeholderTextColor="#9ca3af"
         />
       </View>
 
       {/* Dynamic Custom Fields */}
-      {customFieldDefinitions.map((field: any) => (
-        <View key={field.id} className="mb-3">
-          <Text className="text-ink-soft text-xs font-medium mb-1">{field.label || field.name}</Text>
-          <TextInput
-            className="bg-surface2 rounded-xl p-2.5 text-xs text-ink"
-            value={customFields[field.name] || ''}
-            onChangeText={(value) => setCustomFields(prev => ({ ...prev, [field.name]: value }))}
-            placeholder={field.placeholder || ''}
-            placeholderTextColor="#9ca3af"
-            secureTextEntry={field.field_type === 'password'}
-          />
-        </View>
+      {fieldDefinitions.map((f: any) => (
+        <DynamicField
+          key={f.id}
+          field={{
+            key: f.id,
+            label: f.label,
+            type: (f.field_type || 'text').toLowerCase() as any,
+            required: !!f.is_required,
+            options: f.options,
+          }}
+          value={customFields[f.id]}
+          onChange={(val) => setCustomFields(prev => ({ ...prev, [f.id]: val }))}
+        />
       ))}
 
       <View className="mb-4">
-        <Text className="text-ink-soft text-xs font-medium mb-1">Monthly contribution (min KES {minContribution.toLocaleString()})</Text>
+        <Text className="text-ink-soft text-xs font-medium mb-1.5">Monthly contribution (min KES {minContribution.toLocaleString()})</Text>
         <TextInput
-          className="bg-surface2 rounded-xl p-2.5 text-xs text-ink"
+          className="bg-surface2 rounded-xl p-3 text-xs text-ink border border-border"
           value={contribution}
           onChangeText={setContribution}
           placeholderTextColor="#9ca3af"
           keyboardType="numeric"
         />
-        <Text className="text-mint-600 text-xs mt-1">
-          This will be deducted via M-Pesa on the 25th of each month
+        <Text className="text-mint-600 text-[10px] mt-1.5 font-medium">
+          Note: This contribution will be deducted via M-Pesa once your application is approved.
         </Text>
       </View>
 
       {/* CTA Button */}
       <TouchableOpacity
-        className={`w-full py-3 rounded-xl items-center ${!canContinue ? 'bg-surface2' : 'bg-violet-500'}`}
+        className={`w-full py-3.5 rounded-xl items-center shadow-sm ${!canContinue ? 'bg-surface2' : 'bg-violet-600'}`}
         onPress={handleContinue}
         disabled={!canContinue}
       >
-        <Text className={`text-xs font-semibold ${!canContinue ? 'text-ink-muted' : 'text-white'}`}>Continue →</Text>
+        <Text className={`text-xs font-bold ${!canContinue ? 'text-ink-muted' : 'text-white'}`}>Continue to Documents →</Text>
       </TouchableOpacity>
 
       {/* Spacer */}
-      <View className="h-7.5" />
+      <View className="h-10" />
     </ScrollView>
   )
 }

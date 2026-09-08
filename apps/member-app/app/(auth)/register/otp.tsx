@@ -37,6 +37,7 @@ export default function RegisterOTP() {
   const [canResend, setCanResend] = useState(false)
   const [otpExpirySeconds, setOtpExpirySeconds] = useState(300)
   const [expiryCountdown, setExpiryCountdown] = useState(300)
+  const [channel, setChannel] = useState<'PHONE' | 'EMAIL'>('PHONE')
 
   const { step1, setOtpVerified } = useRegistrationStore()
 
@@ -44,13 +45,15 @@ export default function RegisterOTP() {
     if (!step1) router.replace('/(auth)/register')
   }, [step1])
 
-  useEffect(() => {
-    if (!step1 || otpSent || otpError) return
+  const sendOtpRequest = (deliveryChannel: 'PHONE' | 'EMAIL') => {
+    if (!step1?.phone_number) return
 
+    setLoading(true)
     api.auth
-      .sendOTP(step1.phone_number)
+      .sendOTP(step1.phone_number, { channel: deliveryChannel })
       .then((response) => {
         setOtpSent(true)
+        setChannel(deliveryChannel)
         if (response && (response as any).expires_in) {
           const expiry = (response as any).expires_in
           setOtpExpirySeconds(expiry)
@@ -64,6 +67,12 @@ export default function RegisterOTP() {
         setOtpError(message)
         Alert.alert('OTP failed', message)
       })
+      .finally(() => setLoading(false))
+  }
+
+  useEffect(() => {
+    if (!step1 || otpSent || otpError) return
+    sendOtpRequest('PHONE')
   }, [step1, otpSent, otpError])
 
   useEffect(() => {
@@ -81,15 +90,18 @@ export default function RegisterOTP() {
     return () => clearInterval(timer)
   }, [otpSent, expiryCountdown])
 
-  const handleResend = async () => {
-    if (!step1?.phone_number || !canResend) return
+  const handleResend = async (newChannel?: 'PHONE' | 'EMAIL') => {
+    if (!step1?.phone_number || (!canResend && !newChannel)) return
+
+    const targetChannel = newChannel || channel
     try {
-      await api.auth.sendOTP(step1.phone_number)
+      await api.auth.sendOTP(step1.phone_number, { channel: targetChannel })
+      setChannel(targetChannel)
       setCountdown(60)
       setCanResend(false)
       setOtpError(null)
       setExpiryCountdown(otpExpirySeconds)
-      Alert.alert('OTP Resent', 'A new code has been sent to your phone.')
+      Alert.alert('OTP Resent', `A new code has been sent to your ${targetChannel === 'EMAIL' ? 'email' : 'phone'}.`)
     } catch (error) {
       const message = getApiErrorMessage(error, 'Unable to resend OTP.')
       Alert.alert('Resend failed', message)
@@ -102,7 +114,7 @@ export default function RegisterOTP() {
     setLoading(true)
     setOtpError(null)
     try {
-      await api.auth.verifyOTP(step1.phone_number, code)
+      await api.auth.verifyOTP(step1.phone_number, code, { purpose: 'PHONE_VERIFY' })
 
       // Mark OTP verified so KYC step can be unlocked.
       // IMPORTANT: we do not create/log in the user here.
@@ -119,6 +131,10 @@ export default function RegisterOTP() {
 
   const maskedPhone = step1?.phone_number
     ? step1.phone_number.replace(/(\d{3})(\d{3})(\d{3})/, '$1 ··· $3')
+    : ''
+
+  const maskedEmail = step1?.email
+    ? step1.email.replace(/(.{2})(.*)(@.*)/, '$1···$3')
     : ''
 
   return (
@@ -144,7 +160,7 @@ export default function RegisterOTP() {
         </View>
 
         <Text className="text-xs mb-5" style={{ color: TEXT_MUTED }}>
-          Step 2 of 4 — Verify your phone
+          Step 2 of 4 — Verify your contact
         </Text>
 
         <Text style={{ color: VIOLET, fontWeight: '700', fontSize: 14, marginBottom: 14, fontFamily: 'Fraunces_700Bold' }}>
@@ -155,10 +171,10 @@ export default function RegisterOTP() {
           Enter the code
         </Text>
         <Text className="text-xs mb-1" style={{ color: TEXT_MUTED, lineHeight: 18 }}>
-          We sent a 6-digit code to
+          We sent a 6-digit code to your {channel === 'EMAIL' ? 'email' : 'phone'}
         </Text>
         <Text className="text-sm font-semibold mb-5" style={{ color: TEXT }}>
-          {maskedPhone || (step1?.phone_number ?? '+254 712 ··· 678')}
+          {channel === 'EMAIL' ? maskedEmail : (maskedPhone || (step1?.phone_number ?? '+254 712 ··· 678'))}
         </Text>
 
         {!otpSent && !otpError && <Text className="text-xs mb-4" style={{ color: TEXT_MUTED }}>Sending OTP...</Text>}
@@ -211,17 +227,26 @@ export default function RegisterOTP() {
           autoFocus
         />
 
-        {canResend ? (
-          <TouchableOpacity onPress={handleResend} className="mb-5">
-            <Text className="text-xs font-semibold text-center" style={{ color: VIOLET }}>
-              Resend code
+        <View className="mb-5 flex-row justify-center gap-4">
+          {canResend ? (
+            <>
+              <TouchableOpacity onPress={() => handleResend('PHONE')}>
+                <Text className="text-xs font-semibold" style={{ color: VIOLET }}>
+                  Resend SMS
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => handleResend('EMAIL')}>
+                <Text className="text-xs font-semibold" style={{ color: VIOLET }}>
+                  Resend Email
+                </Text>
+              </TouchableOpacity>
+            </>
+          ) : (
+            <Text className="text-xs font-semibold text-center" style={{ color: TEXT_MUTED }}>
+              Resend in {Math.floor(countdown / 60)}:{(countdown % 60).toString().padStart(2, '0')}
             </Text>
-          </TouchableOpacity>
-        ) : (
-          <Text className="text-xs font-semibold text-center mb-5" style={{ color: TEXT_MUTED }}>
-            Resend in {Math.floor(countdown / 60)}:{(countdown % 60).toString().padStart(2, '0')}
-          </Text>
-        )}
+          )}
+        </View>
 
         <View
           className="rounded-xl p-3 mb-4"
@@ -232,7 +257,7 @@ export default function RegisterOTP() {
           }}
         >
           <Text className="text-xs leading-5" style={{ color: MINT }}>
-            Code expires in <Text style={{ fontWeight: '600' }}>{Math.floor(expiryCountdown / 60)} minutes {expiryCountdown % 60} seconds</Text>. Check your SMS or M-Pesa notification.
+            Code expires in <Text style={{ fontWeight: '600' }}>{Math.floor(expiryCountdown / 60)} minutes {expiryCountdown % 60} seconds</Text>. Check your SMS or Email.
           </Text>
         </View>
 
@@ -242,11 +267,11 @@ export default function RegisterOTP() {
           onPress={handleVerify}
           disabled={loading || code.length < 6 || !otpSent || Boolean(otpError)}
         >
-          {loading ? <ActivityIndicator color="#fff" /> : <Text className="text-white text-xs font-semibold">Verify phone →</Text>}
+          {loading ? <ActivityIndicator color="#fff" /> : <Text className="text-white text-xs font-semibold">Verify code →</Text>}
         </TouchableOpacity>
 
         <View className="flex-row justify-center">
-          <Text className="text-xs" style={{ color: TEXT_MUTED }}>Wrong number? </Text>
+          <Text className="text-xs" style={{ color: TEXT_MUTED }}>Wrong details? </Text>
           <TouchableOpacity onPress={() => router.back()}>
             <Text className="text-xs font-semibold" style={{ color: VIOLET }}>Change</Text>
           </TouchableOpacity>

@@ -16,8 +16,8 @@ export function useSubmitLoanApplication() {
 
 export function useRespondToGuarantorRequest() {
   return useMutation({
-    mutationFn: ({ id, action }: { id: string; action: 'approve' | 'decline' }) =>
-      api.loans.respondToGuarantorRequest(id, action),
+    mutationFn: ({ id, guarantorId, action }: { id: string; guarantorId: string; action: 'approve' | 'decline' }) =>
+      api.loans.respondToGuarantorRequest(id, guarantorId, action),
   })
 }
 

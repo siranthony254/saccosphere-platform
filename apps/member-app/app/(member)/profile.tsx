@@ -5,13 +5,15 @@
 import { View, Text, ScrollView, TouchableOpacity, Alert } from 'react-native'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { router } from 'expo-router'
-import { File, Paths } from 'expo-file-system'
+import * as FileSystem from 'expo-file-system'
 import * as Sharing from 'expo-sharing'
 import { useCurrentUser } from '../../store/useAuthStore'
 import { useLogout } from '../../hooks/useAuth'
 import { useMemberships } from '../../hooks/useMembership'
 import { getActiveMemberships } from '../../lib/membership'
 import { api } from '@saccosphere/api-client'
+import { Icon, IconName } from '../../components/ui/Icon'
+import { Badge } from '../../components/ui/Badge'
 
 const BACKGROUND = '#06091A'
 const FROSTED = 'rgba(255, 255, 255, 0.08)'
@@ -21,6 +23,23 @@ const TEXT = '#F8FAFC'
 const TEXT_MUTED = 'rgba(248, 250, 252, 0.68)'
 const VIOLET = '#6D28D9'
 const MINT = '#10B981'
+
+const getKycLabel = (status?: string, iprsVerified?: boolean) => {
+  if (status === 'verified') return iprsVerified ? 'Official Identity Verified' : 'KYC Verified'
+  if (status === 'iprs_mismatch') return 'ID Details Mismatch'
+  if (status === 'pending_manual') return 'Manual Review Pending'
+  if (status === 'iprs_rejected') return 'Identity Verification Failed'
+  if (status === 'rejected') return 'KYC Rejected'
+  if (status === 'under_review' || status === 'pending') return 'Review in Progress'
+  return 'KYC Not Started'
+}
+
+const getKycVariant = (status?: string): any => {
+  if (status === 'verified') return 'success'
+  if (status === 'rejected' || status === 'iprs_rejected' || status === 'iprs_mismatch') return 'error'
+  if (status === 'under_review' || status === 'pending' || status === 'pending_manual') return 'warning'
+  return 'neutral'
+}
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets()
@@ -45,11 +64,11 @@ export default function ProfileScreen() {
         reader.onload = async () => {
           try {
             const base64Data = (reader.result as string).split(',')[1]
-            const file = new File(Paths.document, filename)
-            file.write(base64Data, { encoding: 'base64' })
+            const fileUri = `${(FileSystem as any).cacheDirectory}${filename}`
+            await FileSystem.writeAsStringAsync(fileUri, base64Data, { encoding: 'base64' })
             
             if (await Sharing.isAvailableAsync()) {
-              await Sharing.shareAsync(file.uri)
+              await Sharing.shareAsync(fileUri)
             } else {
               Alert.alert('Success', `Statement downloaded: ${filename}`)
             }
@@ -66,10 +85,10 @@ export default function ProfileScreen() {
     }
   }
 
-  const settings = [
-    { icon: '📱', label: 'M-Pesa number', value: user?.phone_number || user?.phone || 'Not set', action: () => {} },
-    { icon: '🔒', label: 'Change password', action: () => router.push('/(auth)/forgot-password') },
-    { icon: '📄', label: 'Download all statements', action: handleDownloadStatements },
+  const settings: Array<{ icon: IconName, label: string, value?: string, action: () => void }> = [
+    { icon: 'phone', label: 'M-Pesa number', value: user?.phone_number || user?.phone || 'Not set', action: () => {} },
+    { icon: 'security', label: 'Change password', action: () => router.push('/(auth)/forgot-password') },
+    { icon: 'file', label: 'Download all statements', action: handleDownloadStatements },
   ]
 
 
@@ -89,12 +108,11 @@ export default function ProfileScreen() {
         <Text style={{ color: TEXT_MUTED, fontSize: 12, marginBottom: 10 }}>
           {user?.id ? `ID: ${user.id.slice(0, 8).toUpperCase()}` : ''} · Joined {user?.created_at ? new Date(user.created_at).toLocaleDateString(undefined, { month: 'short', year: 'numeric' }) : 'recently'}
         </Text>
-        <View style={{ paddingHorizontal: 12, paddingVertical: 4, borderRadius: 20, backgroundColor: user?.kyc_status === 'verified' ? 'rgba(16, 185, 129, 0.15)' : user?.kyc_status === 'rejected' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(245, 158, 11, 0.15)' }}>
-          <Text style={{ fontSize: 12, fontWeight: '600', color: user?.kyc_status === 'verified' ? MINT : user?.kyc_status === 'rejected' ? '#F87171' : '#F59E0B' }}>
-            {user?.kyc_status === 'verified' ? '✓ KYC Verified' : user?.kyc_status === 'rejected' ? '✗ KYC Rejected' : user?.kyc_status === 'pending' || user?.kyc_status === 'under_review' ? '⏳ KYC Under Review' : '⚠ KYC Not Started'}
-          </Text>
-        </View>
-
+        <Badge
+          label={getKycLabel(user?.kyc_status, user?.iprs_verified)}
+          variant={getKycVariant(user?.kyc_status)}
+          size="md"
+        />
       </View>
 
       {/* SACCO memberships summary */}
@@ -122,15 +140,16 @@ export default function ProfileScreen() {
         <Text style={{ color: TEXT_MUTED, fontSize: 12, fontWeight: '600', letterSpacing: 1, marginBottom: 12 }}>ACCOUNT SETTINGS</Text>
         {settings.map((s, i) => (
           <TouchableOpacity key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, borderBottomWidth: 0.5, borderBottomColor: i === settings.length - 1 ? 'transparent' : BORDER_WHITE }} onPress={s.action}>
-            <View style={{ width: 34, height: 34, borderRadius: 8, backgroundColor: FROSTED, alignItems: 'center', justifyContent: 'center' }}><Text>{s.icon}</Text></View>
+            <View style={{ width: 34, height: 34, borderRadius: 8, backgroundColor: FROSTED, alignItems: 'center', justifyContent: 'center' }}>
+              <Icon name={s.icon} size={18} color={TEXT} />
+            </View>
             <Text style={{ flex: 1, color: TEXT, fontSize: 12, fontWeight: '500' }}>{s.label}</Text>
-            {('toggle' in s && s.toggle) ? (
-
+            {('toggle' in s && (s as any).toggle) ? (
               <View style={{ width: 38, height: 22, borderRadius: 11, backgroundColor: VIOLET }} />
             ) : (
               <>
                 {s.value && <Text style={{ color: TEXT_MUTED, fontSize: 12, marginRight: 4 }}>{s.value}</Text>}
-                <Text style={{ color: TEXT_MUTED, fontSize: 18 }}>›</Text>
+                <Icon name="arrow-right" size={16} color={TEXT_MUTED} />
               </>
             )}
           </TouchableOpacity>

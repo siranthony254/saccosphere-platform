@@ -1,6 +1,7 @@
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Tabs } from 'expo-router'
 import { Text, View } from 'react-native'
+import { Icon, type IconName } from '../../components/ui/Icon'
 
 const BACKGROUND = '#06091A'
 const VIOLET = '#6D28D9'
@@ -35,28 +36,28 @@ export default function MemberTabLayout() {
           name="index" 
           options={{ 
             title: 'Home', 
-            tabBarIcon: ({ color, focused }) => <TabIcon icon="🏠" color={color} focused={focused} /> 
+            tabBarIcon: ({ color, focused }) => <TabIcon icon="home" color={color} focused={focused} />
           }} 
         />
         <Tabs.Screen 
           name="services" 
           options={{ 
             title: 'Services', 
-            tabBarIcon: ({ color, focused }) => <TabIcon icon="⚡" color={color} focused={focused} /> 
+            tabBarIcon: ({ color, focused }) => <TabIcon icon="services" color={color} focused={focused} />
           }} 
         />
         <Tabs.Screen 
           name="discover" 
           options={{ 
             title: 'Discover', 
-            tabBarIcon: ({ color, focused }) => <TabIcon icon="🔍" color={color} focused={focused} /> 
+            tabBarIcon: ({ color, focused }) => <TabIcon icon="discover" color={color} focused={focused} />
           }} 
         />
         <Tabs.Screen 
           name="menu" 
           options={{ 
             title: 'Menu', 
-            tabBarIcon: ({ color, focused }) => <TabIcon icon="☰" color={color} focused={focused} /> 
+            tabBarIcon: ({ color, focused }) => <TabIcon icon="menu" color={color} focused={focused} />
           }} 
         />
         <Tabs.Screen name="approved-dashboard" options={{ href: null }} />
@@ -66,6 +67,12 @@ export default function MemberTabLayout() {
         <Tabs.Screen name="discover-browse" options={{ href: null }} />
         <Tabs.Screen name="guarantor-request" options={{ href: null }} />
         <Tabs.Screen name="loan-repayment" options={{ href: null }} />
+        <Tabs.Screen name="loan-detail" options={{ href: null }} />
+        <Tabs.Screen name="transaction-detail" options={{ href: null }} />
+        <Tabs.Screen name="withdraw" options={{ href: null }} />
+        <Tabs.Screen name="privacy" options={{ href: null }} />
+        <Tabs.Screen name="dividends" options={{ href: null }} />
+        <Tabs.Screen name="guarantor-inbox" options={{ href: null }} />
         <Tabs.Screen name="notifications" options={{ href: null }} />
         <Tabs.Screen name="profile" options={{ href: null }} />
         <Tabs.Screen name="settings" options={{ href: null }} />
@@ -79,7 +86,7 @@ export default function MemberTabLayout() {
 //{quick actions on the home tab}
 
 
-function TabIcon({ icon, color, focused }: { icon: string; color: string; focused: boolean }) {
+function TabIcon({ icon, color, focused }: { icon: IconName; color: string; focused: boolean }) {
   return (
     <View style={{
       width: 28,
@@ -90,7 +97,7 @@ function TabIcon({ icon, color, focused }: { icon: string; color: string; focuse
       justifyContent: 'center',
       position: 'relative',
     }}>
-      <Text style={{ fontSize: 18, lineHeight: 22 }}>{icon}</Text>
+      <Icon name={icon} size={18} color={color} />
       {focused && (
         <View style={{
           position: 'absolute',

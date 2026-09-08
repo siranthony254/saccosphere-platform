@@ -45,3 +45,18 @@ export function useLeaveMembership() {
     mutationFn: (id: string) => api.member.leaveMembership(id),
   })
 }
+
+/**
+ * SACCO switcher cards straight from /dashboard/saccos/ — includes per-SACCO
+ * savings total, active-loan count and unread-notification count.
+ */
+export function useSaccoSwitcher() {
+  const isAuthenticated = useIsAuthenticated()
+  return useQuery({
+    queryKey: ['sacco-switcher'],
+    queryFn: api.member.getSaccoSwitcher,
+    staleTime: 30_000,
+    gcTime: 300_000,
+    enabled: isAuthenticated,
+  })
+}

@@ -5,7 +5,17 @@ import { z } from 'zod'
 export const UserRoleSchema = z.enum(['member', 'sacco_admin', 'superadmin'])
 export type UserRole = z.infer<typeof UserRoleSchema>
 
-export const KYCStatusSchema = z.enum(['not_started', 'pending', 'under_review', 'verified', 'rejected'])
+export const KYCStatusSchema = z.enum([
+  'not_started',
+  'pending',
+  'under_review',
+  'verified',
+  'rejected',
+  'iprs_mismatch',
+  'pending_manual',
+  'iprs_rejected',
+  'iprs_unavailable',
+])
 export type KYCStatus = z.infer<typeof KYCStatusSchema>
 
 export const UserSchema = z.object({
@@ -17,6 +27,7 @@ export const UserSchema = z.object({
   last_name: z.string(),
   role: UserRoleSchema.default('member').optional(),
   kyc_status: KYCStatusSchema.default('not_started').optional(),
+  iprs_verified: z.boolean().default(false).optional(),
   national_id: z.string().nullable().default(null),
   sacco_id: z.string().uuid().nullable().default(null), // non-null for sacco_admin
   sacco_slug: z.string().nullable().default(null).optional(),

@@ -24,6 +24,7 @@ import * as SecureStore from 'expo-secure-store'
 import * as LocalAuthentication from 'expo-local-authentication'
 import { api, setAccessToken } from '@saccosphere/api-client'
 import { useAuthStore } from '../../store/useAuthStore'
+import { Icon } from '../../components/ui/Icon'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 const PADDING_H = Math.max(16, Math.min(24, SCREEN_WIDTH * 0.05))
@@ -324,7 +325,7 @@ export default function LoginScreen() {
                 <ActivityIndicator color="#fff" />
               ) : (
                 <>
-                  <Text style={{ fontSize: 18 }}>🔐</Text>
+                  <Icon name="security" size={18} color="#fff" />
                   <Text className="text-white text-sm font-semibold">Log in with Biometrics</Text>
                 </>
               )}

@@ -8,7 +8,7 @@ import { z } from 'zod'
 export const AdditionalFieldSchema = z.object({
   key: z.string(),
   label: z.string(),
-  type: z.enum(['text', 'number', 'select', 'date', 'phone', 'textarea']),
+  type: z.enum(['text', 'number', 'select', 'date', 'boolean', 'file', 'phone', 'textarea']),
   required: z.boolean(),
   options: z.array(z.string()).optional(), // for 'select' type
   hint: z.string().optional(),

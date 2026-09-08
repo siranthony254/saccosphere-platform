@@ -67,7 +67,7 @@ export default function LoanGuarantors() {
           <View className="mb-2">
             <TextInput
               className="bg-white/5 border border-white/10 rounded-xl p-3.5 text-white text-xs"
-              placeholder="Search by phone number (e.g., 07...)"
+              placeholder="Phone number (07...) or member number"
               placeholderTextColor="rgba(255,255,255,0.3)"
               value={search}
               onChangeText={setSearch}
@@ -98,7 +98,7 @@ export default function LoanGuarantors() {
           )}
 
           {searchResults && searchResults.length === 0 && search.length >= 3 && !isFetching && (
-            <Text className="text-white/40 text-xs mt-4 text-center">No members found with that phone number.</Text>
+            <Text className="text-white/40 text-xs mt-4 text-center">No member found with that phone or member number.</Text>
           )}
         </View>
 

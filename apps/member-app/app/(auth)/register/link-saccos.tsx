@@ -127,23 +127,23 @@ export default function LinkSaccos() {
       }
 
       // 3. UPLOAD KYC DOCUMENTS
-      if (kycDocuments.front && kycDocuments.back) {
+      if ((kycDocuments as any).front && (kycDocuments as any).back) {
         try {
           await Promise.all([
             api.kyc.uploadDocument({
               document_type: 'id_front',
               file: {
-                uri: kycDocuments.front.uri,
-                name: kycDocuments.front.name,
-                type: kycDocuments.front.type,
+                uri: (kycDocuments as any).front.uri,
+                name: (kycDocuments as any).front.name,
+                type: (kycDocuments as any).front.type,
               }
             }),
             api.kyc.uploadDocument({
               document_type: 'id_back',
               file: {
-                uri: kycDocuments.back.uri,
-                name: kycDocuments.back.name,
-                type: kycDocuments.back.type,
+                uri: (kycDocuments as any).back.uri,
+                name: (kycDocuments as any).back.name,
+                type: (kycDocuments as any).back.type,
               }
             }),
           ])
@@ -159,7 +159,7 @@ export default function LinkSaccos() {
 
       if (selected.length > 0 && selected[0]) {
         linkMembership(
-          { sacco_slug: selected[0], member_number: '' },
+          { sacco_slug: selected[0] },
           {
             onSuccess: () => {
               resetRegistrationStore()
@@ -193,14 +193,14 @@ export default function LinkSaccos() {
       }
 
       // Upload KYC even if skipping SACCO link
-      if (kycDocuments.front && kycDocuments.back) {
+      if ((kycDocuments as any).front && (kycDocuments as any).back) {
         api.kyc.uploadDocument({
           document_type: 'id_front',
-          file: { uri: kycDocuments.front.uri, name: kycDocuments.front.name, type: kycDocuments.front.type }
+          file: { uri: (kycDocuments as any).front.uri, name: (kycDocuments as any).front.name, type: (kycDocuments as any).front.type }
         }).catch(console.warn)
         api.kyc.uploadDocument({
           document_type: 'id_back',
-          file: { uri: kycDocuments.back.uri, name: kycDocuments.back.name, type: kycDocuments.back.type }
+          file: { uri: (kycDocuments as any).back.uri, name: (kycDocuments as any).back.name, type: (kycDocuments as any).back.type }
         }).catch(console.warn)
       }
 

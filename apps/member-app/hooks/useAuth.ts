@@ -59,6 +59,13 @@ export function useGoogleAuth() {
   })
 }
 
+/** Attach a Google identity to the already signed-in account. */
+export function useLinkGoogle() {
+  return useMutation({
+    mutationFn: (data: { id_token: string; nonce?: string }) => api.auth.linkGoogle(data),
+  })
+}
+
 export function useLogin() {
   const { setAuth } = useAuthStore()
 
@@ -119,21 +126,14 @@ export function useLogout() {
 export function useSendOTP() {
   return useMutation({
     mutationFn: ({ phone, purpose }: { phone: string; purpose?: 'PHONE_VERIFY' | 'PASSWORD_RESET' | 'LOGIN' }) =>
-      api.auth.sendOTP(phone, purpose),
+      api.auth.sendOTP(phone, { purpose }),
   })
 }
 
 export function useVerifyOTP() {
   return useMutation({
     mutationFn: ({ phone, code, purpose }: { phone: string; code: string; purpose?: 'PHONE_VERIFY' | 'PASSWORD_RESET' | 'LOGIN' }) =>
-      api.auth.verifyOTP(phone, code, purpose),
-  })
-}
-
-export function useResendOTP() {
-  return useMutation({
-    mutationFn: ({ phone, purpose }: { phone: string; purpose?: 'PHONE_VERIFY' | 'PASSWORD_RESET' | 'LOGIN' }) =>
-      api.auth.resendOTP(phone, purpose),
+      api.auth.verifyOTP(phone, code, { purpose }),
   })
 }
 

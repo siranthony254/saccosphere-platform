@@ -1,9 +1,7 @@
 import React from 'react'
 import {
   Ionicons,
-  MaterialCommunityIcons,
-  Feather,
-  FontAwesome6
+  MaterialCommunityIcons
 } from '@expo/vector-icons'
 
 export type IconName =
@@ -40,7 +38,7 @@ export function Icon({ name, size = 20, color = '#111827', className = '' }: Pro
     case 'dividend': return <Ionicons name="trending-up-outline" size={size} color={color} />
 
     case 'security': return <Ionicons name="shield-checkmark-outline" size={size} color={color} />
-    case 'phone': return <Ionicons name="smartphone-outline" size={size} color={color} />
+    case 'phone': return <Ionicons name="call-outline" size={size} color={color} />
     case 'bell': return <Ionicons name="notifications-outline" size={size} color={color} />
     case 'settings': return <Ionicons name="settings-outline" size={size} color={color} />
     case 'logout': return <Ionicons name="log-out-outline" size={size} color={color} />

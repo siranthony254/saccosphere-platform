@@ -18,6 +18,8 @@ import {
   getMembershipSavings,
   getPendingMemberships,
 } from '../../lib/membership'
+import { Badge } from '../ui/Badge'
+import { Icon, type IconName } from '../ui/Icon'
 
 type QuickAction = 'contribute' | 'loan' | 'statement' | 'repay'
 
@@ -63,10 +65,19 @@ export default function HomeScreen() {
   const activeMemberships = useMemo(() => getActiveMemberships(allMemberships), [allMemberships])
   const pendingMemberships = useMemo(() => getPendingMemberships(allMemberships), [allMemberships])
   const activeSlugs = useMemo(() => new Set(activeMemberships.map((m) => m.sacco_slug)), [activeMemberships])
-  const dashboard = useMemo(
-    () => buildDashboard(dashboardQuery.data, activeMemberships, activeSlugs),
-    [activeMemberships, activeSlugs, dashboardQuery.data]
-  )
+  const dashboard = useMemo(() => {
+    if (!dashboardQuery.data) {
+      return {
+        total_balance: 0,
+        total_savings: 0,
+        active_loans_balance: 0,
+        sacco_count: 0,
+        memberships: [],
+        recent_transactions: [],
+      }
+    }
+    return dashboardQuery.data
+  }, [dashboardQuery.data])
 
   // Show spinner until we have a definitive answer on memberships (the context gate).
   const isLoading = membershipsQuery.isLoading || (membershipsQuery.data === undefined && dashboardQuery.isLoading)
@@ -174,7 +185,7 @@ export default function HomeScreen() {
                 position: 'relative',
               }}
             >
-              <Text style={{ fontSize: 13 }}>🔔</Text>
+              <Icon name="bell" size={16} color={TEXT} />
               <View
                 style={{
                   position: 'absolute', top: 4, right: 4,
@@ -276,7 +287,7 @@ function NoSaccoDashboard({ publicStats }: { publicStats: { total_saccos?: numbe
             marginBottom: 12,
           }}
         >
-          <Text style={{ fontSize: 28 }}>🏦</Text>
+          <Icon name="bank" size={28} color={VIOLET} />
         </View>
         <Text style={{ fontSize: 16, fontWeight: '700', color: TEXT, marginBottom: 6 }}>
           No SACCOs linked yet
@@ -473,7 +484,10 @@ function SingleSaccoDashboard({
             Total savings — {membership.sacco_name.toUpperCase()}
           </Text>
           {onViewDetail && (
-            <Text style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', letterSpacing: 0.3 }}>View detail {'>'}</Text>
+            <View className="flex-row items-center gap-1">
+              <Text style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', letterSpacing: 0.3 }}>View detail</Text>
+              <Icon name="arrow-right" size={10} color="rgba(255,255,255,0.4)" />
+            </View>
           )}
         </View>
         <Text
@@ -534,11 +548,10 @@ function SingleSaccoDashboard({
             }}
           >
             <Text style={{ fontSize: 12, fontWeight: '600', color: TEXT }}>Active loan</Text>
-            <View style={{ backgroundColor: 'rgba(245, 158, 11, 0.15)', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 20 }}>
-              <Text style={{ fontSize: 10, fontWeight: '600', color: '#FDBA74' }}>
-                {activeLoan.status === 'active' || activeLoan.status === 'disbursed' ? 'In repayment' : 'Approved'}
-              </Text>
-            </View>
+            <Badge
+              label={activeLoan.status === 'active' || activeLoan.status === 'disbursed' ? 'In repayment' : 'Approved'}
+              variant="warning"
+            />
           </View>
           <InfoRow label={activeLoan.loan_product_label} value={money(activeLoan.amount_requested)} />
           <View
@@ -709,10 +722,10 @@ function QuickActions({
           marginBottom: 16,
         }}
       >
-        <QuickActionButton label="Contribute" icon="💳" tone="mint" onPress={() => onAction('contribute')} />
-        <QuickActionButton label="Apply loan" icon="🏦" tone="blue" onPress={() => onAction('loan')} />
-        <QuickActionButton label="Statement" icon="📄" tone="amber" onPress={() => onAction('statement')} />
-        <QuickActionButton label="Add SACCO" icon="➕" tone="violet" onPress={() => router.push('/(member)/discover')} />
+        <QuickActionButton label="Contribute" icon="card" tone="mint" onPress={() => onAction('contribute')} />
+        <QuickActionButton label="Apply loan" icon="loan" tone="blue" onPress={() => onAction('loan')} />
+        <QuickActionButton label="Statement" icon="file" tone="amber" onPress={() => onAction('statement')} />
+        <QuickActionButton label="Add SACCO" icon="plus" tone="violet" onPress={() => router.push('/(member)/discover')} />
       </View>
     )
   }
@@ -726,10 +739,10 @@ function QuickActions({
         marginBottom: 16,
       }}
     >
-      <QuickActionButton label="Contribute" icon="💳" tone="mint" onPress={() => onAction('contribute')} />
-      <QuickActionButton label="Pay loan" icon="📤" tone="blue" onPress={() => onAction('repay')} />
-      <QuickActionButton label="Apply loan" icon="🏦" tone="amber" onPress={() => onAction('loan')} />
-      <QuickActionButton label="Statement" icon="📄" tone="violet" onPress={() => onAction('statement')} />
+      <QuickActionButton label="Contribute" icon="card" tone="mint" onPress={() => onAction('contribute')} />
+      <QuickActionButton label="Pay loan" icon="withdraw" tone="blue" onPress={() => onAction('repay')} />
+      <QuickActionButton label="Apply loan" icon="loan" tone="amber" onPress={() => onAction('loan')} />
+      <QuickActionButton label="Statement" icon="file" tone="violet" onPress={() => onAction('statement')} />
     </View>
   )
 }
@@ -741,7 +754,7 @@ function QuickActionButton({
   onPress,
 }: {
   label: string
-  icon: string
+  icon: IconName
   tone: 'mint' | 'blue' | 'amber' | 'violet'
   onPress: () => void
 }) {
@@ -750,6 +763,13 @@ function QuickActionButton({
     blue: 'rgba(37, 99, 235, 0.06)',
     amber: 'rgba(245, 158, 11, 0.08)',
     violet: 'rgba(109, 40, 217, 0.08)',
+  }
+
+  const iconColor = {
+    mint: '#10B981',
+    blue: '#2563EB',
+    amber: '#D97706',
+    violet: '#6D28D9',
   }
 
   return (
@@ -762,7 +782,7 @@ function QuickActionButton({
           marginBottom: 4,
         }}
       >
-        <Text style={{ fontSize: 18 }}>{icon}</Text>
+        <Icon name={icon} size={20} color={iconColor[tone]} />
       </View>
       <Text style={{ fontSize: 9, fontWeight: '500', color: TEXT_MUTED, textAlign: 'center', lineHeight: 13 }}>
         {label}
@@ -812,7 +832,7 @@ function SaccoRow({ membership, onPress }: { membership: Membership; onPress: ()
         <Text style={{ fontSize: 13, fontWeight: '600', color: TEXT }}>{money(totalSavings)}</Text>
         <Text style={{ fontSize: 9, color: TEXT_MUTED }}>Savings</Text>
       </View>
-      <Text style={{ fontSize: 14, color: TEXT_MUTED, marginLeft: 2 }}>{'>'}</Text>
+      <Icon name="arrow-right" size={14} color={TEXT_MUTED} />
     </TouchableOpacity>
   )
 }
@@ -849,6 +869,17 @@ function RecentTransactions({ transactions, title }: { transactions: Transaction
 
 function TransactionRow({ transaction }: { transaction: Transaction }) {
   const isCredit = transaction.direction === 'credit'
+  const type = transaction.txn_type.toLowerCase()
+
+  const getIcon = (): IconName => {
+    if (type === 'contribution' || type === 'deposit') return 'savings'
+    if (type === 'loan_repayment') return 'withdraw'
+    if (type === 'loan_disbursement') return 'loan'
+    if (type === 'withdrawal') return 'withdraw'
+    if (type === 'transfer') return 'transfer'
+    if (type === 'dividend') return 'dividend'
+    return 'card'
+  }
 
   return (
     <View
@@ -868,9 +899,7 @@ function TransactionRow({ transaction }: { transaction: Transaction }) {
           alignItems: 'center', justifyContent: 'center',
         }}
       >
-        <Text style={{ fontSize: 12, color: isCredit ? MINT : '#F87171', fontWeight: '600' }}>
-          {isCredit ? '↑' : '↓'}
-        </Text>
+        <Icon name={getIcon()} size={16} color={isCredit ? MINT : '#F87171'} />
       </View>
       <View style={{ flex: 1 }}>
         <Text style={{ fontSize: 12, fontWeight: '500', color: TEXT }}>
@@ -937,14 +966,11 @@ function TrackerStep({ label, active }: { label: string; active?: boolean }) {
           alignItems: 'center', justifyContent: 'center',
         }}
       >
-        <Text
-          style={{
-            fontSize: 10, fontWeight: '700',
-            color: active ? '#fff' : TEXT_MUTED,
-          }}
-        >
-          {active ? '✓' : '○'}
-        </Text>
+        {active ? (
+          <Icon name="check" size={12} color="#fff" />
+        ) : (
+          <View className="w-1 h-1 rounded-full bg-white/30" />
+        )}
       </View>
       <Text style={{ fontSize: 12, fontWeight: '500', color: active ? TEXT : TEXT_MUTED }}>
         {label}
@@ -968,27 +994,6 @@ function navigateToSaccoAction(action: QuickAction, slug: string) {
     return
   }
   router.push({ pathname: '/sacco/[slug]/statement', params: { slug } })
-}
-
-function buildDashboard(
-  dashboard: Dashboard | undefined,
-  activeMemberships: Membership[],
-  activeSlugs: Set<string>
-): Dashboard {
-  const totalSavings = activeMemberships.reduce((sum, m) => sum + getMembershipSavings(m), 0)
-  const shareCapital = activeMemberships.reduce((sum, m) => sum + m.share_capital, 0)
-  const recentTransactions = (dashboard?.recent_transactions ?? []).filter((t) =>
-    activeSlugs.has(t.sacco_slug)
-  )
-
-  return {
-    total_balance: Number(dashboard?.total_balance ?? 0) || totalSavings + shareCapital,
-    total_savings: Number(dashboard?.total_savings ?? 0) || totalSavings,
-    active_loans_balance: Number(dashboard?.active_loans_balance ?? 0),
-    sacco_count: activeMemberships.length,
-    memberships: activeMemberships,
-    recent_transactions: recentTransactions,
-  }
 }
 
 function formatDate(value?: string | null) {

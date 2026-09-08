@@ -100,6 +100,7 @@ export const LoanApplicationSchema = z.object({
   balance_remaining: z.number().optional(),
   next_payment_date: z.string().optional(),
   next_payment_amount: z.number().optional(),
+  rejection_reason: z.string().nullable().optional(),
 })
 export type LoanApplication = z.infer<typeof LoanApplicationSchema>
 
@@ -183,27 +184,27 @@ export type Dashboard = z.infer<typeof DashboardSchema>
 
 // ─── NOTIFICATIONS ────────────────────────────────────────────────────────────
 
+// Matches the Django NotificationSerializer exactly.
+export const NotificationCategorySchema = z.enum([
+  'LOAN',
+  'PAYMENT',
+  'ALERT',
+  'LIQUIDITY_WARNING',
+  'NPL_WARNING',
+  'GUARANTOR',
+  'DIVIDEND',
+  'SYSTEM',
+])
+export type NotificationCategory = z.infer<typeof NotificationCategorySchema>
+
 export const NotificationSchema = z.object({
   id: z.string().uuid(),
   title: z.string(),
-  body: z.string(),
-  type: z.enum([
-    'loan_approved',
-    'loan_rejected',
-    'loan_disbursed',
-    'guarantor_request',
-    'guarantor_response',
-    'contribution_received',
-    'instalment_due',
-    'membership_approved',
-    'membership_rejected',
-    'dividend_credited',
-    'system',
-  ]),
+  message: z.string(),
+  category: NotificationCategorySchema.catch('SYSTEM'),
   is_read: z.boolean(),
-  deep_link: z.string().optional(),
-  sacco_name: z.string().optional(),
-  created_at: z.string().datetime({ offset: true }),
+  action_url: z.string().nullable().optional(),
+  created_at: z.string(),
 })
 export type Notification = z.infer<typeof NotificationSchema>
 

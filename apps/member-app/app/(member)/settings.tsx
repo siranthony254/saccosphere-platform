@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { View, Text, TouchableOpacity, Alert, ActivityIndicator, Modal, TextInput, Image } from 'react-native'
+import { View, Text, TouchableOpacity, Alert, ActivityIndicator, Modal, TextInput, Image, Platform } from 'react-native'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { router } from 'expo-router'
 import * as LocalAuthentication from 'expo-local-authentication'
@@ -101,7 +101,7 @@ export default function SettingsScreen() {
         const deviceId = Device.osBuildId || Device.modelName || 'unknown-device'
         await api.auth.registerDevice({
           device_id: deviceId,
-          platform: Device.osName || 'unknown',
+          platform: Platform.OS === 'ios' ? 'ios' : 'android',
           biometric_enabled: false,
         })
         setBiometricEnabled(false)
@@ -123,7 +123,7 @@ export default function SettingsScreen() {
           const deviceId = Device.osBuildId || Device.modelName || 'unknown-device'
           await api.auth.registerDevice({
             device_id: deviceId,
-            platform: Device.osName || 'unknown',
+            platform: Platform.OS === 'ios' ? 'ios' : 'android',
             biometric_enabled: true,
           })
           setBiometricEnabled(true)
@@ -242,6 +242,18 @@ export default function SettingsScreen() {
           <View>
             <Text style={{ color: TEXT, fontSize: 14, fontWeight: '600', marginBottom: 4 }}>Upload KYC</Text>
             <Text style={{ color: TEXT_MUTED, fontSize: 12 }}>Upload ID or documents for account verification.</Text>
+          </View>
+          <Text style={{ color: TEXT_MUTED, fontSize: 18 }}>{'>'}</Text>
+        </TouchableOpacity>
+
+        {/* Privacy & Data */}
+        <TouchableOpacity
+          style={{ backgroundColor: FROSTED_DARK, borderRadius: 12, padding: 16, borderWidth: 1, borderColor: BORDER_WHITE, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}
+          onPress={() => router.push('/(member)/privacy')}
+        >
+          <View>
+            <Text style={{ color: TEXT, fontSize: 14, fontWeight: '600', marginBottom: 4 }}>Privacy & Data</Text>
+            <Text style={{ color: TEXT_MUTED, fontSize: 12 }}>Manage consents, connect Google, export or delete your data.</Text>
           </View>
           <Text style={{ color: TEXT_MUTED, fontSize: 18 }}>{'>'}</Text>
         </TouchableOpacity>

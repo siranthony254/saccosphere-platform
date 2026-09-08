@@ -1,13 +1,20 @@
 import { View, Text, ScrollView, TouchableOpacity, RefreshControl } from 'react-native'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
+import { router } from 'expo-router'
 import { useNotifications } from '../../hooks/useNotifications'
 import type { Notification } from '@saccosphere/schemas'
+import { Icon, type IconName } from '../../components/ui/Icon'
+import { Badge } from '../../components/ui/Badge'
 
-const TYPE_ICONS: Record<string, string> = {
-  loan_approved: '✅', loan_rejected: '❌', loan_disbursed: '💰',
-  guarantor_request: '🤝', guarantor_response: '👍', contribution_received: '✓',
-  instalment_due: '⏰', membership_approved: '🎉', membership_rejected: '❌',
-  dividend_credited: '🎉', system: '📢',
+const CATEGORY_ICONS: Record<string, IconName> = {
+  LOAN: 'loan',
+  PAYMENT: 'savings',
+  GUARANTOR: 'guarantor',
+  DIVIDEND: 'dividend',
+  ALERT: 'warning',
+  LIQUIDITY_WARNING: 'warning',
+  NPL_WARNING: 'warning',
+  SYSTEM: 'info',
 }
 
 const BACKGROUND = '#06091A'
@@ -19,9 +26,13 @@ const TEXT_MUTED = 'rgba(248, 250, 252, 0.68)'
 const VIOLET = '#6D28D9'
 const MINT = '#10B981'
 
-const TYPE_COLORS: Record<string, string> = {
-  loan_disbursed: 'rgba(16, 185, 129, 0.15)', guarantor_request: 'rgba(109, 40, 217, 0.15)',
-  instalment_due: 'rgba(245, 158, 11, 0.15)', default: FROSTED_DARK,
+const CATEGORY_COLORS: Record<string, string> = {
+  PAYMENT: 'rgba(16, 185, 129, 0.15)',
+  GUARANTOR: 'rgba(109, 40, 217, 0.15)',
+  ALERT: 'rgba(245, 158, 11, 0.15)',
+  LIQUIDITY_WARNING: 'rgba(245, 158, 11, 0.15)',
+  NPL_WARNING: 'rgba(245, 158, 11, 0.15)',
+  default: FROSTED_DARK,
 }
 
 export default function NotificationsScreen() {
@@ -77,18 +88,28 @@ export default function NotificationsScreen() {
 }
 
 function NotifItem({ notification: n }: { notification: Notification }) {
-  const iconBg = TYPE_COLORS[n.type] ?? TYPE_COLORS.default
-  const icon = TYPE_ICONS[n.type] ?? '📢'
+  const iconBg = CATEGORY_COLORS[n.category] ?? CATEGORY_COLORS.default
+  const icon = CATEGORY_ICONS[n.category] ?? 'info'
   const timeAgo = getTimeAgo(n.created_at)
 
+  const handlePress = () => {
+    if (n.category === 'GUARANTOR') {
+      router.push('/(member)/guarantor-inbox')
+      return
+    }
+  }
+
   return (
-    <TouchableOpacity style={{ flexDirection: 'row', gap: 12, padding: 12, borderRadius: 12, marginBottom: 8, alignItems: 'flex-start', backgroundColor: !n.is_read ? 'rgba(16, 185, 129, 0.15)' : FROSTED_DARK, borderWidth: 1, borderColor: !n.is_read ? MINT : BORDER_WHITE }}>
+    <TouchableOpacity
+      onPress={handlePress}
+      style={{ flexDirection: 'row', gap: 12, padding: 12, borderRadius: 12, marginBottom: 8, alignItems: 'flex-start', backgroundColor: !n.is_read ? 'rgba(16, 185, 129, 0.15)' : FROSTED_DARK, borderWidth: 1, borderColor: !n.is_read ? MINT : BORDER_WHITE }}
+    >
       <View style={{ width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center', flexShrink: 0, backgroundColor: iconBg }}>
-        <Text style={{ fontSize: 16 }}>{icon}</Text>
+        <Icon name={icon} size={18} color={!n.is_read ? MINT : TEXT} />
       </View>
       <View style={{ flex: 1 }}>
         <Text style={{ color: TEXT, fontSize: 12, fontWeight: '600', marginBottom: 2 }}>{n.title}</Text>
-        <Text style={{ color: TEXT_MUTED, fontSize: 12, lineHeight: 18, marginBottom: 4 }}>{n.body}</Text>
+        <Text style={{ color: TEXT_MUTED, fontSize: 12, lineHeight: 18, marginBottom: 4 }}>{n.message}</Text>
         <Text style={{ color: TEXT_MUTED, fontSize: 12 }}>{timeAgo}</Text>
       </View>
       {!n.is_read && <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#EF4444', marginTop: 4, flexShrink: 0 }} />}

@@ -24,6 +24,7 @@ import {
   DashboardSchema,
   LoanApplicationSchema,
   MembershipSchema,
+  NotificationSchema,
   RegisterInputSchema,
   SaccoConfigSchema,
   SaccoAdminDashboardSchema,
@@ -47,7 +48,12 @@ const RefreshResponseSchema = z.object({
   refresh: z.string().optional(),
 })
 const PasswordResetResponseSchema = z.object({ message: z.string() })
+const PasswordResetConfirmResponseSchema = z.object({ reset_token: z.string() })
 const OTPResponseSchema = z.object({ message: z.string() })
+
+// Version stamped on consent records the member app collects. Bump when the
+// terms / privacy copy shown in the app materially changes.
+const CONSENT_VERSION = 'v1.0'
 const KycDocumentTypeSchema = z.enum(['id_front', 'id_back', 'passport', 'huduma'])
 type KycDocumentType = z.infer<typeof KycDocumentTypeSchema>
 type KycUploadFile = Blob | {
@@ -89,6 +95,7 @@ const normalizeUser = (user: any, roleOverrides?: { role?: User['role']; sacco_i
     phone_number: user.phone_number ?? user.phone ?? '',
     role,
     kyc_status: kycStatus === 'approved' ? 'verified' : kycStatus,
+    iprs_verified: Boolean(user.iprs_verified),
     national_id: user.national_id ?? null,
     sacco_id: roleOverrides?.sacco_id ?? user.sacco_id ?? null,
     sacco_slug: roleOverrides?.sacco_slug ?? user.sacco_slug ?? null,
@@ -555,14 +562,15 @@ export const api = {
     logout: (refreshToken?: string) =>
       apiCall<void>('POST', '/accounts/logout/', refreshToken ? { refresh: refreshToken } : undefined),
 
-    sendOTP: (phone: string, purpose: 'PHONE_VERIFY' | 'PASSWORD_RESET' | 'LOGIN' = 'PHONE_VERIFY') => {
+    sendOTP: (phone: string, options?: { purpose?: 'PHONE_VERIFY' | 'PASSWORD_RESET' | 'LOGIN'; channel?: 'PHONE' | 'EMAIL' }) => {
       const normalizedPhone = normalizeKenyanPhoneNumber(phone)
       return apiCall<{ message: string }>(
         'POST',
         '/accounts/otp/send/',
         {
           phone_number: z.string().min(10).parse(normalizedPhone),
-          purpose: z.enum(['PHONE_VERIFY', 'PASSWORD_RESET', 'LOGIN']).parse(purpose),
+          purpose: z.enum(['PHONE_VERIFY', 'PASSWORD_RESET', 'LOGIN']).parse(options?.purpose ?? 'PHONE_VERIFY'),
+          channel: z.enum(['PHONE', 'EMAIL']).parse(options?.channel ?? 'PHONE'),
         },
         {
           responseSchema: OTPResponseSchema,
@@ -570,7 +578,7 @@ export const api = {
       )
     },
 
-    verifyOTP: async (phone: string, code: string, _purpose: 'PHONE_VERIFY' | 'PASSWORD_RESET' | 'LOGIN' = 'PHONE_VERIFY') => {
+    verifyOTP: async (phone: string, code: string, options?: { purpose?: 'PHONE_VERIFY' | 'PASSWORD_RESET' | 'LOGIN' }) => {
       const normalizedPhone = normalizeKenyanPhoneNumber(phone)
       return apiCall<{ message: string }>(
         'POST',
@@ -578,19 +586,21 @@ export const api = {
         {
           phone_number: z.string().min(10).parse(normalizedPhone),
           code: z.string().length(6).parse(code),
+          purpose: z.enum(['PHONE_VERIFY', 'PASSWORD_RESET', 'LOGIN']).parse(options?.purpose ?? 'PHONE_VERIFY'),
         },
         { responseSchema: OTPResponseSchema }
       )
     },
 
-    resendOTP: (phone: string, purpose: 'PHONE_VERIFY' | 'PASSWORD_RESET' | 'LOGIN' = 'PHONE_VERIFY') => {
+    resendOTP: (phone: string, options?: { purpose?: 'PHONE_VERIFY' | 'PASSWORD_RESET' | 'LOGIN'; channel?: 'PHONE' | 'EMAIL' }) => {
       const normalizedPhone = normalizeKenyanPhoneNumber(phone)
       return apiCall<{ message: string }>(
         'POST',
         '/accounts/otp/resend/',
         {
           phone_number: z.string().min(10).parse(normalizedPhone),
-          purpose: z.enum(['PHONE_VERIFY', 'PASSWORD_RESET', 'LOGIN']).parse(purpose),
+          purpose: z.enum(['PHONE_VERIFY', 'PASSWORD_RESET', 'LOGIN']).parse(options?.purpose ?? 'PHONE_VERIFY'),
+          channel: z.enum(['PHONE', 'EMAIL']).parse(options?.channel ?? 'PHONE'),
         },
         { responseSchema: OTPResponseSchema }
       )
@@ -599,30 +609,40 @@ export const api = {
     requestPasswordReset: (emailOrPhone: string) =>
       apiCall<{ message: string }>(
         'POST',
-        '/accounts/password/reset/',
+        '/accounts/password/reset/request/',
         {
           phone_number: z.string().min(10).parse(normalizeKenyanPhoneNumber(emailOrPhone)),
         },
         { responseSchema: PasswordResetResponseSchema }
       ),
 
-    confirmPasswordReset: (data: {
+    // Backend splits this into two calls: `confirm/` verifies the OTP and hands
+    // back a short-lived `reset_token`, then `complete/` sets the new password.
+    confirmPasswordReset: async (data: {
       phone_number: string
       code: string
       new_password: string
       new_password2: string
-    }) =>
-      apiCall<{ message: string }>(
+    }) => {
+      const phone_number = z.string().min(10).parse(normalizeKenyanPhoneNumber(data.phone_number))
+      const code = z.string().length(6).parse(data.code)
+      const new_password = z.string().min(8).parse(data.new_password)
+      const new_password2 = z.string().min(8).parse(data.new_password2)
+
+      const { reset_token } = await apiCall<{ reset_token: string }>(
         'POST',
         '/accounts/password/reset/confirm/',
-        {
-          phone_number: z.string().min(10).parse(data.phone_number),
-          code: z.string().length(6).parse(data.code),
-          new_password: z.string().min(6).parse(data.new_password),
-          new_password2: z.string().min(6).parse(data.new_password2),
-        },
+        { phone_number, code },
+        { responseSchema: PasswordResetConfirmResponseSchema }
+      )
+
+      return apiCall<{ message: string }>(
+        'POST',
+        '/accounts/password/reset/complete/',
+        { reset_token, new_password, new_password2 },
         { responseSchema: PasswordResetResponseSchema }
-      ),
+      )
+    },
 
     changePassword: (data: {
       old_password: string
@@ -640,7 +660,7 @@ export const api = {
         { responseSchema: PasswordResetResponseSchema }
       ),
 
-    registerDevice: (data: { device_id: string; platform: string; push_token?: string; biometric_enabled: boolean }) =>
+    registerDevice: (data: { device_id: string; platform: 'ios' | 'android'; device_name?: string; push_token?: string; biometric_enabled: boolean }) =>
       apiCall<any>('POST', '/accounts/device/register/', data),
 
     getDevices: () =>
@@ -648,6 +668,70 @@ export const api = {
 
     revokeDevice: (deviceId: string) =>
       apiCall<void>('DELETE', `/accounts/device/${deviceId}/`),
+
+    // Attach a Google identity to the already-authenticated account.
+    linkGoogle: (data: { id_token: string; nonce?: string }) =>
+      apiCall<{ message?: string; email?: string }>('POST', '/accounts/oauth/google/link/', {
+        id_token: data.id_token,
+        ...(data.nonce ? { nonce: data.nonce } : {}),
+      }),
+  },
+
+  // ─── ACCOUNT / PRIVACY (ODPC) ──────────────────────────────────────────────
+
+  account: {
+    // Current consent status for every consent type (backend returns a plain
+    // array, one row per type, with a `never_given` placeholder where none
+    // has been recorded).
+    getConsents: () =>
+      apiCall<Array<{
+        id?: string
+        consent_type: string
+        consent_type_display?: string
+        version: string | null
+        consented: boolean
+        status?: string
+        timestamp?: string
+      }>>('GET', '/accounts/consents/list/'),
+
+    getConsentHistory: () =>
+      apiCall<Array<{
+        id: string
+        consent_type: string
+        consent_type_display?: string
+        version: string
+        consented: boolean
+        status?: string
+        timestamp: string
+      }>>('GET', '/accounts/consents/history/'),
+
+    giveConsent: (data: { consent_type: string; consented: boolean; version?: string }) =>
+      apiCall<any>('POST', '/accounts/consents/', {
+        consent_type: data.consent_type,
+        consented: data.consented,
+        version: data.version ?? CONSENT_VERSION,
+      }),
+
+    withdrawConsent: (consentType: string) =>
+      apiCall<any>('POST', `/accounts/consents/${encodeURIComponent(consentType)}/withdraw/`),
+
+    // Downloadable JSON: the user's consent history + the ODPC audit-log
+    // entries recorded about them. Returned inside the standard envelope.
+    exportMyData: () =>
+      apiCall<{
+        exported_at: string
+        consents: { count: number; results: any[] }
+        audit_logs: { count: number; results: any[] }
+      }>('GET', '/accounts/consents/export/'),
+
+    // Right-to-erasure. Returns immediately when no regulatory/dispute hold
+    // applies, otherwise the request is queued (`status` reflects which).
+    requestDataErasure: (reason: string) =>
+      apiCall<{ id: string; status: string; message?: string; hold_reason?: string | null; hold_until?: string | null }>(
+        'POST',
+        '/accounts/me/erasure-requests/',
+        { reason: z.string().min(1).parse(reason) }
+      ),
   },
 
   //  MEMBER PROFILE and DASHBOARD
@@ -708,8 +792,12 @@ export const api = {
     getMembership: async (id: string) => {
       const membership = await apiCall<any>('GET', `/members/memberships/${uuid(id)}/`)
       const saccoId = membership.sacco?.id ?? (typeof membership.sacco === 'string' ? membership.sacco : null)
+      const isApproved = String(membership.status ?? '').toUpperCase() === 'APPROVED'
 
-      if (!saccoId) {
+      // /services/savings/breakdown/ and /services/loans/eligibility/ both
+      // require an APPROVED membership — for a pending application they 400/404,
+      // so skip them rather than swallow the errors and show misleading zeros.
+      if (!saccoId || !isApproved) {
         return normalizeMembership({
           ...membership,
           bosa_balance: 0,
@@ -744,15 +832,38 @@ export const api = {
       type?: string
       from?: string
       to?: string
-      cursor?: string
     }) => {
-      const response = await apiCall<PaginatedResponse<any>>('GET', '/payments/transactions/', undefined, {
-        params,
-      })
-      return {
-        ...response,
-        results: unwrapResults(response).map(normalizeTransaction),
+      // TransactionListView ignores every query param and returns all of the
+      // user's transactions, so filter the normalised results client-side to
+      // honour the requested view.
+      const response = await apiCall<PaginatedResponse<any>>('GET', '/payments/transactions/')
+      let results = unwrapResults(response).map(normalizeTransaction)
+
+      if (params?.sacco) {
+        const key = params.sacco.toLowerCase()
+        results = results.filter(
+          (t) => t.sacco_slug === key || t.sacco_name.toLowerCase() === key
+        )
       }
+      if (params?.type) {
+        const wanted = params.type.toLowerCase()
+        results = results.filter((t) => t.txn_type.toLowerCase() === wanted)
+      }
+      if (params?.from) {
+        const fromMs = new Date(params.from).getTime()
+        if (!Number.isNaN(fromMs)) results = results.filter((t) => new Date(t.date).getTime() >= fromMs)
+      }
+      if (params?.to) {
+        const toMs = new Date(params.to).getTime()
+        if (!Number.isNaN(toMs)) results = results.filter((t) => new Date(t.date).getTime() <= toMs)
+      }
+
+      return { ...response, count: results.length, results }
+    },
+
+    getTransaction: async (id: string) => {
+      const t = await apiCall<any>('GET', `/payments/transactions/${uuid(id)}/`)
+      return normalizeTransaction(t)
     },
 
     getSaccoFields: async (saccoId: string) =>
@@ -786,24 +897,71 @@ export const api = {
       }
     },
 
+    // The backend has no member-scoped dividend endpoint (the payouts view is
+    // SACCO-admin only). A member's actual received dividends land as CREDIT
+    // ledger entries with category DIVIDEND_PAYOUT (see DividendDisburseView),
+    // which /ledger/entries/ exposes per approved membership. Aggregate those
+    // across the member's SACCOs. Only the net amount that was credited is
+    // available here — gross / withholding-tax / rate / share-capital breakdown
+    // lives on the admin-only payout records.
     getDividendPayouts: async () => {
-      const response = await apiCall<any>('GET', '/management/dividends/payouts/').catch(() => [])
-      const items = Array.isArray(response) ? response : response.results ?? []
-      return items.map((item: any) => ({
-        id: item.id,
-        financial_year: Number(item.financial_year ?? item.declaration?.financial_year ?? new Date().getFullYear() - 1),
-        share_capital: Number(item.share_capital ?? 0),
-        rate_pct: Number(item.rate_pct ?? item.declaration?.rate_pct ?? 0),
-        gross_dividend: Number(item.gross_dividend ?? 0),
-        withholding_tax: Number(item.withholding_tax ?? 0),
-        net_dividend: Number(item.net_dividend ?? 0),
-        status: String(item.status ?? 'PENDING').toUpperCase(),
-        disbursed_at: item.disbursed_at ?? null,
-      }))
+      const memberships = await api.member.getMemberships().catch(() => [])
+      const active = memberships.filter((m) => m.status === 'active' && !!m.sacco_id)
+
+      const byMembership = await Promise.all(
+        active.map((m) =>
+          api.member
+            .getEntries({ sacco_id: m.sacco_id, category: 'DIVIDEND_PAYOUT' })
+            .then((entries) =>
+              (entries as any[]).map((entry) => {
+                const disbursed_at: string | null = entry.created_at ?? null
+                const yearMatch = String(entry.description ?? '').match(/(\d{4})(?!.*\d{4})/)
+                return {
+                  id: String(entry.id),
+                  sacco_name: m.sacco_name,
+                  financial_year: yearMatch
+                    ? Number(yearMatch[1])
+                    : disbursed_at
+                      ? new Date(disbursed_at).getFullYear()
+                      : new Date().getFullYear(),
+                  net_dividend: Number(entry.amount ?? 0),
+                  reference: String(entry.reference ?? ''),
+                  disbursed_at,
+                  status: 'DISBURSED' as const,
+                }
+              })
+            )
+            .catch(() => [] as Array<{
+              id: string
+              sacco_name: string
+              financial_year: number
+              net_dividend: number
+              reference: string
+              disbursed_at: string | null
+              status: 'DISBURSED'
+            }>)
+        )
+      )
+
+      return byMembership
+        .flat()
+        .sort((a, b) => String(b.disbursed_at ?? '').localeCompare(String(a.disbursed_at ?? '')))
     },
 
-    getNotifications: () =>
-      apiCall<PaginatedResponse<AppNotification> | AppNotification[]>('GET', '/notifications/').then(unwrapResults),
+    getNotifications: async (): Promise<AppNotification[]> => {
+      const items = await apiCall<PaginatedResponse<any> | any[]>('GET', '/notifications/').then(unwrapResults)
+      return items.map((n: any) =>
+        NotificationSchema.parse({
+          id: String(n.id),
+          title: String(n.title ?? ''),
+          message: String(n.message ?? ''),
+          category: String(n.category ?? 'SYSTEM').toUpperCase(),
+          is_read: Boolean(n.is_read),
+          action_url: n.action_url ?? null,
+          created_at: n.created_at ?? new Date().toISOString(),
+        })
+      )
+    },
 
     markNotificationRead: (id: string) =>
       apiCall<void>('POST', `/notifications/${uuid(id)}/read/`),
@@ -817,7 +975,7 @@ export const api = {
         platform: String(data.platform).toUpperCase(),
       }),
 
-    getEntries: async (params?: { sacco_id?: string; from_date?: string; to_date?: string }) => {
+    getEntries: async (params?: { sacco_id?: string; from_date?: string; to_date?: string; category?: string }) => {
       const response = await apiCall<any>('GET', '/ledger/entries/', undefined, { params })
       return unwrapResults(response)
     },
@@ -843,6 +1001,26 @@ export const api = {
       const response = await apiCall<any>('GET', '/dashboard/activity/', undefined, { params })
       return unwrapResults(response)
     },
+
+    // Approved-membership cards for the SACCO switcher. The backend already
+    // computes per-SACCO savings, active-loan count and unread-notification
+    // count, so use it rather than re-deriving from getMemberships + portfolio.
+    getSaccoSwitcher: async () => {
+      const rows = await apiCall<any[]>('GET', '/dashboard/saccos/')
+      return (Array.isArray(rows) ? rows : []).map((row: any) => ({
+        sacco_id: String(row.sacco_id ?? ''),
+        sacco_name: String(row.sacco_name ?? 'SACCO'),
+        sacco_slug: String(row.sacco_name ?? row.sacco_id ?? '')
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-|-$/g, ''),
+        sacco_logo_url: row.sacco_logo_url ?? null,
+        member_number: String(row.member_number ?? ''),
+        savings_total: Number(row.savings_total ?? 0),
+        active_loans: Number(row.active_loans ?? 0),
+        unread_notifications: Number(row.unread_notifications ?? 0),
+      }))
+    },
   },
 
   //  SACCO DISCOVERY 
@@ -851,9 +1029,11 @@ export const api = {
     getPublicStats: () =>
       apiCall<{ total_saccos: number; total_members_on_app: number }>('GET', '/accounts/public-stats/'),
 
-    list: (params?: { sector?: string; county?: string; search?: string }) =>
+    list: (params?: { sector?: string; county?: string; search?: string; verified_only?: boolean }) =>
       apiCall<any[] | PaginatedResponse<any>>('GET', '/accounts/saccos/', undefined, {
-        params: { verified_only: true, ordering: '-member_count', ...params },
+        // Don't force verified_only — members should see every publicly listed
+        // SACCO. Callers can still opt in via params.verified_only.
+        params: { ordering: '-member_count', ...params },
       }).then((items) => unwrapResults(items).map(normalizeSacco)),
 
     get: async (saccoId: string) => {
@@ -998,13 +1178,11 @@ export const api = {
     get: (id: string) =>
       api.applications.list().then((items) => items.find((item) => item.id === id) as MembershipApplication),
 
-    payRegistrationFee: (data: { application_id: string; amount: number; phone_number: string }) =>
-      apiCall<any>('POST', '/payments/mpesa/stk-push/', {
-        phone_number: data.phone_number,
-        amount: data.amount,
-        sacco_id: uuid(data.application_id),
-        purpose: 'SAVING_DEPOSIT',
-      }),
+    // NOTE: there is no way to collect a membership registration fee through
+    // this API. The STK-push endpoint only accepts purpose SAVING_DEPOSIT
+    // (requires an existing saving_id, which does not exist pre-approval) or
+    // LOAN_REPAYMENT — there is no REGISTRATION_FEE purpose. The registration
+    // fee is settled with the SACCO directly.
 
     uploadDocument: async (applicationId: string, documentType: string, file: File | Blob | any, notes?: string) => {
       const formData = new FormData()
@@ -1135,8 +1313,39 @@ export const api = {
       })
     },
 
-    get: (id: string) =>
-      api.loans.list().then((loans) => loans.find((loan) => loan.id === id) as LoanApplication),
+    get: async (id: string) => {
+      // LoanDetailView returns disbursement_date, application_notes and
+      // rejection_reason — fields the list endpoint omits, so a member can see
+      // why a loan was rejected. Falls back to the list if the detail 404s.
+      const loan = await apiCall<any>('GET', `/services/loans/${uuid(id)}/`).catch(() => null)
+      if (!loan) {
+        return api.loans.list().then((loans) => loans.find((l) => l.id === id) as LoanApplication)
+      }
+      const saccoName = loan.membership?.sacco_name ?? loan.sacco_name ?? ''
+      return LoanApplicationSchema.parse({
+        id: String(loan.id),
+        ref: loan.reference ?? String(loan.id),
+        sacco_name: saccoName,
+        sacco_slug: String(saccoName)
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-|-$/g, ''),
+        loan_product_key: loan.loan_type?.name ?? loan.loan_type ?? '',
+        loan_product_label: loan.loan_type?.name ?? loan.loan_type ?? 'Loan',
+        amount_requested: Number(loan.amount ?? 0),
+        period_months: Number(loan.term_months ?? 0),
+        interest_rate: Number(loan.interest_rate ?? 0),
+        monthly_instalment: Number(loan.monthly_instalment ?? 0),
+        total_repayable: Number(loan.total_repayable ?? loan.amount ?? 0),
+        purpose: loan.application_notes ?? '',
+        status: normalizeLoanStatus(loan.status),
+        submitted_at: loan.created_at ?? null,
+        approved_at: loan.approved_at ?? null,
+        disbursed_at: loan.disbursement_date ?? null,
+        balance_remaining: Number(loan.outstanding_balance ?? 0),
+        rejection_reason: loan.rejection_reason ?? null,
+      })
+    },
 
     getSchedule: async (id: string) => {
       const response = await apiCall<any>('GET', `/services/loans/${uuid(id)}/schedule/`)
@@ -1169,31 +1378,49 @@ export const api = {
 
     apply: async (data: LoanApplicationInput) => {
       const membership = await api.member.getMembership(data.membership_id).catch(() => null)
-      const loan = await apiCall<any>('POST', '/services/loans/apply/', {
+      const amount = Number(data.amount_requested)
+      const termMonths = Number(data.period_months)
+
+      // The backend's LoanApplySerializer echoes back only
+      // {loan_type, amount, term_months, application_notes} — no id / status /
+      // reference — and the view is not wrapped in {success,data}. So fire the
+      // POST, then read the freshly created loan back from the member's own
+      // loan list (which does carry id, status, created_at, …).
+      await apiCall<unknown>('POST', '/services/loans/apply/', {
         loan_type: data.loan_product_key,
-        amount: Number(data.amount_requested),
-        term_months: Number(data.period_months),
+        amount,
+        term_months: termMonths,
         application_notes: data.purpose || '',
       })
 
+      const loans = await api.loans
+        .list(membership?.sacco_id ? { sacco: membership.sacco_id } : undefined)
+        .catch(() => [] as LoanApplication[])
+
+      const byNewest = (a: LoanApplication, b: LoanApplication) =>
+        String(b.submitted_at ?? '').localeCompare(String(a.submitted_at ?? ''))
+
+      const created =
+        loans
+          .filter((l) => l.amount_requested === amount && l.period_months === termMonths)
+          .sort(byNewest)[0] ?? [...loans].sort(byNewest)[0]
+
+      if (!created?.id) {
+        throw {
+          code: 'LOAN_CREATED_NOT_READABLE',
+          message:
+            'Your loan application was submitted, but we could not load it back. Open “My loans” to continue.',
+        }
+      }
+
       return LoanApplicationSchema.parse({
-        id: loan.id,
-        ref: loan.reference ?? loan.id,
-        sacco_name: loan.membership?.sacco_name ?? membership?.sacco_name ?? '',
-        sacco_slug: membership?.sacco_slug ?? '',
-        loan_product_key: loan.loan_type?.name ?? data.loan_product_key,
-        loan_product_label: loan.loan_type?.name ?? data.loan_product_key,
-        amount_requested: Number(loan.amount ?? data.amount_requested),
-        period_months: Number(loan.term_months ?? data.period_months),
-        interest_rate: Number(loan.interest_rate ?? 0),
-        monthly_instalment: Number(loan.monthly_instalment ?? 0),
-        total_repayable: Number(loan.total_repayable ?? loan.amount ?? data.amount_requested),
-        purpose: loan.application_notes ?? data.purpose,
-        status: normalizeLoanStatus(loan.status),
-        submitted_at: loan.created_at ?? new Date().toISOString(),
-        approved_at: null,
-        disbursed_at: null,
-        balance_remaining: Number(loan.outstanding_balance ?? loan.amount ?? data.amount_requested),
+        ...created,
+        // The list serializer exposes loan_type by name only — keep the product
+        // key the caller submitted so downstream product lookups still resolve.
+        loan_product_key: data.loan_product_key,
+        purpose: created.purpose || data.purpose,
+        sacco_slug: created.sacco_slug || membership?.sacco_slug || '',
+        sacco_name: created.sacco_name || membership?.sacco_name || '',
       })
     },
 
@@ -1250,7 +1477,9 @@ export const api = {
 
     searchGuarantors: (loanId: string, query: string) =>
       apiCall<any[]>('GET', `/services/loans/${uuid(loanId)}/guarantors/search/`, undefined, {
-        params: { phone: query },
+        // Backend matches on phone first, then member number — send the raw
+        // query as both so either identifier the member types resolves.
+        params: { phone: query, member_number: query },
       }),
 
     requestGuarantor: (loanId: string, guarantorId: string, amount?: number) =>
@@ -1272,37 +1501,41 @@ export const api = {
     getExternalGuarantors: (loanId: string) =>
       apiCall<any[]>('GET', `/services/loans/${uuid(loanId)}/external-guarantors/`),
 
+    // The external guarantor is unauthenticated and only holds a response
+    // token. The backend exposes exactly one token-scoped endpoint — this POST.
+    // There is no GET to look up borrower / amount details by token; those come
+    // to the guarantor in the SMS body (and, for an in-app open, via route
+    // params on the deep link).
     respondToExternalGuarantorRequest: (responseToken: string, action: 'accept' | 'decline', notes?: string) =>
-      apiCall<void>('POST', `/guarantors/external/respond/${responseToken}/`, {
+      apiCall<{ message: string }>('POST', `/guarantors/external/respond/${responseToken}/`, {
         action: action === 'accept' ? 'ACCEPT' : 'DECLINE',
         notes: notes,
       }),
 
-    getGuarantorRequestDetails: async (responseToken: string) => {
-      const response = await apiCall<any>('GET', `/guarantors/external/respond/${responseToken}/`).catch(() => null)
-      return {
-        token: responseToken,
-        borrower_name: response?.borrower_name ?? response?.borrower ?? 'Borrower',
-        borrower_phone: response?.borrower_phone ?? '—',
-        loan_product_name: response?.loan_product_name ?? response?.loan_type ?? 'Loan',
-        guarantee_amount: Number(response?.guarantee_amount ?? response?.amount ?? 0),
-        savings_balance: Number(response?.savings_balance ?? response?.guarantor_savings ?? 0),
-        status: String(response?.status ?? 'PENDING').toUpperCase(),
-      }
-    },
-
-    respondToGuarantorRequest: (id: string, action: 'approve' | 'decline') => {
-      const [loanId, guarantorId] = id.split(':')
-      return apiCall<void>('POST', `/services/loans/${uuid(loanId)}/guarantors/${uuid(guarantorId)}/respond/`, {
+    respondToGuarantorRequest: (loanId: string, guarantorId: string, action: 'approve' | 'decline') =>
+      apiCall<void>('POST', `/services/loans/${uuid(loanId)}/guarantors/${uuid(guarantorId)}/respond/`, {
         action: action === 'approve' ? 'APPROVE' : 'DECLINE',
-      })
-    },
+      }),
 
-    confirmDisbursement: (loanId: string) =>
-      apiCall<void>('POST', '/services/loans/confirm-disbursement/', { loan_id: uuid(loanId) }),
+    // These are unauthenticated GET endpoints keyed on a server-signed token
+    // that the backend delivers by SMS / push as
+    // `{FRONTEND_BASE_URL}/confirm-disbursement/?token=…`. The token embeds the
+    // loan id and expires after 24h — there is no loan_id / POST form.
+    confirmDisbursement: (token: string) =>
+      apiCall<{ status: string; message: string }>(
+        'GET',
+        '/services/loans/confirm-disbursement/',
+        undefined,
+        { params: { token: requiredString(token) } }
+      ),
 
-    disputeDisbursement: (loanId: string, reason: string) =>
-      apiCall<void>('POST', '/services/loans/dispute-disbursement/', { loan_id: uuid(loanId), reason }),
+    disputeDisbursement: (token: string, reason?: string) =>
+      apiCall<{ status: string; message: string }>(
+        'GET',
+        '/services/loans/dispute-disbursement/',
+        undefined,
+        { params: { token: requiredString(token), ...(reason ? { reason } : {}) } }
+      ),
   },
 
   // ─── PAYMENTS ──────────────────────────────────────────────────────────────
@@ -1341,16 +1574,62 @@ export const api = {
       const response = await apiCall<any>('GET', '/payments/mpesa/b2c/history/', undefined, { params })
       return Array.isArray(response) ? response : response.results ?? []
     },
+
+    // Pre-confirmation fee breakdown: "you pay / platform fee / you receive".
+    getFeePreview: async (data: { type: 'deposit' | 'repayment' | 'withdrawal'; amount: number }) => {
+      const r = await apiCall<any>('GET', '/payments/fee-preview/', undefined, {
+        params: { type: data.type, amount: data.amount },
+      })
+      return {
+        gross_amount: Number(r.gross_amount ?? data.amount),
+        net_amount: Number(r.net_amount ?? data.amount),
+        platform_fee: Number(r.platform_fee ?? 0),
+        fee_rate: Number(r.fee_rate ?? 0),
+        summary: (r.summary ?? {}) as Record<string, string>,
+      }
+    },
+
+    // Member-initiated M-Pesa B2C withdrawal from a savings account.
+    withdrawSavings: (data: { sacco_id: string; saving_id: string; amount: number; phone_number: string }) =>
+      apiCall<any>('POST', '/payments/mpesa/b2c/withdraw/', {
+        sacco_id: uuid(data.sacco_id),
+        saving_id: uuid(data.saving_id),
+        amount: data.amount,
+        phone_number: data.phone_number,
+      }, { idempotent: true }),
   },
 
   // ─── KYC ───────────────────────────────────────────────────────────────────
 
   kyc: {
-    getStatus: () =>
-      apiCall<{
-        kyc_status: string
-        documents: Array<{ doc_type: string; status: string }>
-      }>('GET', '/accounts/kyc/status/'),
+    // Mirrors the Django KYCStatusSerializer. The backend sends `status`
+    // (not `kyc_status`) and individual `id_front` / `id_back` / `passport`
+    // file fields — there is no `documents` array.
+    getStatus: async () => {
+      const kyc = await apiCall<any>('GET', '/accounts/kyc/status/')
+      const rawStatus = String(kyc.status ?? 'not_started').toLowerCase()
+      return {
+        id: kyc.id ? String(kyc.id) : null,
+        // Normalised the same way as the user profile: `approved` -> `verified`.
+        status: rawStatus === 'approved' ? 'verified' : rawStatus,
+        status_display: String(kyc.status_display ?? ''),
+        iprs_verified: Boolean(kyc.iprs_verified),
+        iprs_attempted_at: (kyc.iprs_attempted_at ?? null) as string | null,
+        iprs_error: String(kyc.iprs_error ?? ''),
+        admin_review_reason: String(kyc.admin_review_reason ?? ''),
+        manual_verification_reason: String(kyc.manual_verification_reason ?? ''),
+        submitted_at: (kyc.submitted_at ?? null) as string | null,
+        rejection_reason: String(kyc.rejection_reason ?? ''),
+        id_front: (kyc.id_front ?? null) as string | null,
+        id_back: (kyc.id_back ?? null) as string | null,
+        passport: (kyc.passport ?? null) as string | null,
+        // The backend exposes no member-facing signed URL to view these images
+        // back, so surface only whether each side has been received.
+        has_id_front: Boolean(kyc.id_front),
+        has_id_back: Boolean(kyc.id_back),
+        has_passport: Boolean(kyc.passport),
+      }
+    },
 
     submitId: (data: { id_number: string; date_of_birth: string }) =>
       apiCall<{ message: string; status: string }>(

@@ -6,6 +6,9 @@ import { useMemberships } from '../../hooks/useMembership'
 import SaccoSelectModal from '../../components/SaccoSelectModal'
 import { getActiveMemberships, getPendingMemberships } from '../../lib/membership'
 
+import { api } from '@saccosphere/api-client'
+import { Icon, IconName } from '../../components/ui/Icon'
+
 const BACKGROUND = '#06091A'
 const FROSTED = 'rgba(255, 255, 255, 0.08)'
 const FROSTED_DARK = 'rgba(255, 255, 255, 0.06)'
@@ -15,41 +18,48 @@ const TEXT_MUTED = 'rgba(248, 250, 252, 0.68)'
 const VIOLET = '#6D28D9'
 const MINT = '#10B981'
 
-type ServiceAction = 'contribute' | 'loan' | 'statement'
+type ServiceAction = 'contribute' | 'withdraw' | 'loan' | 'statement'
 
 const servicesList: Array<{
   action: ServiceAction
   label: string
   desc: string
-  icon: string
+  icon: IconName
   color: string
 }> = [
   {
     action: 'contribute',
     label: 'Contribute and Save',
     desc: 'Deposit savings or share capital instantly via M-Pesa STK push.',
-    icon: 'C',
+    icon: 'card',
     color: 'rgba(16, 185, 129, 0.15)',
+  },
+  {
+    action: 'withdraw',
+    label: 'Withdraw Savings',
+    desc: 'Send eligible savings to your M-Pesa number.',
+    icon: 'withdraw',
+    color: 'rgba(239, 68, 68, 0.15)',
   },
   {
     action: 'loan',
     label: 'Apply for a Loan',
     desc: 'Submit a loan application from an active SACCO membership.',
-    icon: 'L',
+    icon: 'loan',
     color: 'rgba(59, 130, 246, 0.15)',
   },
   {
     action: 'statement',
     label: 'Account Statement',
     desc: 'View recent transactions, ledger entries, and statement records.',
-    icon: 'S',
+    icon: 'file',
     color: 'rgba(245, 158, 11, 0.15)',
   },
   {
     action: 'dividends' as any,
     label: 'Annual Dividends',
     desc: 'View declared board dividends, gross earnings & net payouts.',
-    icon: 'D',
+    icon: 'dividend',
     color: 'rgba(168, 85, 247, 0.15)',
   },
 ]
@@ -122,13 +132,13 @@ export default function ServicesScreen() {
                   onPress={() => handleServiceSelect(service.action)}
                 >
                   <View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: service.color, alignItems: 'center', justifyContent: 'center', marginRight: 14 }}>
-                    <Text style={{ color: TEXT, fontSize: 16, fontWeight: '700' }}>{service.icon}</Text>
+                    <Icon name={service.icon} size={22} color={TEXT} />
                   </View>
                   <View style={{ flex: 1, paddingRight: 12 }}>
                     <Text style={{ color: TEXT, fontSize: 12, fontWeight: '600' }}>{service.label}</Text>
                     <Text style={{ color: TEXT_MUTED, fontSize: 12, marginTop: 4, lineHeight: 16 }}>{service.desc}</Text>
                   </View>
-                  <Text style={{ color: TEXT_MUTED, fontSize: 18, fontWeight: '700' }}>{'>'}</Text>
+                  <Icon name="arrow-right" size={18} color={TEXT_MUTED} />
                 </TouchableOpacity>
               ))}
             </View>
@@ -146,7 +156,7 @@ export default function ServicesScreen() {
         onSelect={(slug) => {
           if (currentAction) navigateToServiceAction(currentAction, slug)
         }}
-        title={currentAction === 'contribute' ? 'Make Contribution' : currentAction === 'loan' ? 'Apply for Loan' : 'Account Statement'}
+        title={currentAction === 'contribute' ? 'Make Contribution' : currentAction === 'withdraw' ? 'Withdraw Savings' : currentAction === 'loan' ? 'Apply for Loan' : 'Account Statement'}
         subtitle="Select an active SACCO to continue"
       />
     </>
@@ -174,6 +184,11 @@ function LockedServicesState({ hasPending }: { hasPending: boolean }) {
 function navigateToServiceAction(action: ServiceAction, slug: string) {
   if (action === 'contribute') {
     router.push({ pathname: '/sacco/[slug]/pay', params: { slug } })
+    return
+  }
+
+  if (action === 'withdraw') {
+    router.push({ pathname: '/(member)/withdraw', params: { slug } } as any)
     return
   }
 

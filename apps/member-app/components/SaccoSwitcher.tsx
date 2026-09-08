@@ -1,9 +1,10 @@
 
 import { View, Text, TouchableOpacity, Modal } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { useMemberships } from '../hooks/useMembership'
+import { useMemberships, useSaccoSwitcher } from '../hooks/useMembership'
 import { router } from 'expo-router'
 import { getActiveMemberships } from '../lib/membership'
+import { Icon } from './ui/Icon'
 
 interface SaccoSwitcherProps {
 
@@ -15,7 +16,13 @@ interface SaccoSwitcherProps {
 export default function SaccoSwitcher({ visible, onClose, currentSacco }: SaccoSwitcherProps) {
   const insets = useSafeAreaInsets()
   const { data: memberships, isLoading } = useMemberships()
+  const { data: switcherRows } = useSaccoSwitcher()
   const activeMemberships = getActiveMemberships(memberships ?? [])
+
+  const statsFor = (m: { sacco_id?: string; sacco_name?: string; sacco_slug?: string }) =>
+    switcherRows?.find(
+      (r) => r.sacco_id === m.sacco_id || r.sacco_name === m.sacco_name || r.sacco_slug === m.sacco_slug
+    )
 
   const handleSaccoSelect = (saccoSlug: string) => {
     router.replace(`/sacco/${saccoSlug}`)
@@ -69,6 +76,14 @@ export default function SaccoSwitcher({ visible, onClose, currentSacco }: SaccoS
                       <Text className="text-ink text-xs font-medium">{membership.sacco_name}</Text>
                       <Text className="text-ink-faint text-xs">{membership.member_number}</Text>
                     </View>
+                    {(() => {
+                      const unread = statsFor(membership)?.unread_notifications ?? 0
+                      return unread > 0 ? (
+                        <View className="min-w-5 h-5 px-1.5 rounded-full bg-violet-500 items-center justify-center mr-1">
+                          <Text className="text-white text-[10px] font-bold">{unread > 99 ? '99+' : unread}</Text>
+                        </View>
+                      ) : null
+                    })()}
                     {membership.sacco_slug === currentSacco && (
                       <View className="w-2 h-2 rounded-full bg-violet-500" />
                     )}
@@ -80,7 +95,6 @@ export default function SaccoSwitcher({ visible, onClose, currentSacco }: SaccoS
                   </View>
                 ) : null}
                 
-                {/* Add SACCO option */}
                 <TouchableOpacity
                   onPress={() => {
                     onClose()
@@ -89,7 +103,7 @@ export default function SaccoSwitcher({ visible, onClose, currentSacco }: SaccoS
                   className="flex-row items-center gap-3 py-3 px-4 mt-2"
                 >
                   <View className="w-10 h-10 rounded-lg bg-violet-100 justify-center items-center">
-                    <Text className="text-violet-500 text-lg font-bold">+</Text>
+                    <Icon name="plus" size={20} color="#8B5CF6" />
                   </View>
                   <View className="flex-1">
                     <Text className="text-ink text-xs font-medium">Add another SACCO</Text>

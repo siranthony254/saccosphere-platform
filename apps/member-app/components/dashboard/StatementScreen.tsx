@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { Alert, Platform, ScrollView, Text, TouchableOpacity, View } from 'react-native'
 import { useLocalSearchParams, router } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import * as FileSystem from 'expo-file-system'
+import * as Sharing from 'expo-sharing'
 import { api } from '@saccosphere/api-client'
 import { useQuery } from '@tanstack/react-query'
 import { useTransactions } from '../../hooks/useTransactions'
@@ -9,7 +11,7 @@ import { useMembershipBySacco } from '../../hooks/useMembership'
 import type { Transaction } from '@saccosphere/schemas'
 import { DeepSpaceBackground } from '../DeepSpaceBackground'
 
-const FILTERS = ['All', 'Contributions', 'Loans', 'Dividends']
+const FILTERS = ['All', 'Contributions', 'Withdrawals', 'Transfers', 'Loans', 'Dividends', 'Fees']
 
 export default function StatementScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>()
@@ -25,9 +27,13 @@ export default function StatementScreen() {
 
   const filtered =
     transactions?.filter((t) => {
-      if (filter === 'Contributions') return t.txn_type === 'contribution'
-      if (filter === 'Loans') return t.txn_type === 'loan_repayment' || t.txn_type === 'loan_disbursement'
-      if (filter === 'Dividends') return t.txn_type === 'dividend'
+      const type = t.txn_type.toLowerCase()
+      if (filter === 'Contributions') return type === 'contribution' || type === 'deposit'
+      if (filter === 'Withdrawals') return type === 'withdrawal'
+      if (filter === 'Transfers') return type === 'transfer'
+      if (filter === 'Loans') return type === 'loan_repayment' || type === 'loan_disbursement'
+      if (filter === 'Dividends') return type === 'dividend'
+      if (filter === 'Fees') return type === 'fee' || type === 'registration_fee'
       return true
     }) ?? []
 
@@ -40,11 +46,6 @@ export default function StatementScreen() {
       return
     }
 
-    if (Platform.OS !== 'web') {
-      Alert.alert('Download available on web', 'Open Saccosphere in a browser to download the PDF statement.')
-      return
-    }
-
     setIsDownloading(true)
     try {
       const { blob, filename } = await api.member.downloadStatementPdf({
@@ -52,14 +53,37 @@ export default function StatementScreen() {
         from_date: statementRange.from,
         to_date: statementRange.to,
       })
-      const url = URL.createObjectURL(blob)
-      const anchor = document.createElement('a')
-      anchor.href = url
-      anchor.download = filename
-      document.body.appendChild(anchor)
-      anchor.click()
-      anchor.remove()
-      URL.revokeObjectURL(url)
+
+      if (Platform.OS === 'web') {
+        const url = URL.createObjectURL(blob)
+        const anchor = document.createElement('a')
+        anchor.href = url
+        anchor.download = filename
+        document.body.appendChild(anchor)
+        anchor.click()
+        anchor.remove()
+        URL.revokeObjectURL(url)
+      } else {
+        // Native mobile implementation
+        const reader = new FileReader()
+        reader.onload = async () => {
+          try {
+            const base64Data = (reader.result as string).split(',')[1]
+            const fileUri = `${(FileSystem as any).cacheDirectory}${filename}`
+            await FileSystem.writeAsStringAsync(fileUri, base64Data, { encoding: 'base64' })
+
+            if (await Sharing.isAvailableAsync()) {
+              await Sharing.shareAsync(fileUri)
+            } else {
+              Alert.alert('Success', `Statement saved: ${filename}`)
+            }
+          } catch (e) {
+            console.error('File share error:', e)
+            Alert.alert('Error', 'Failed to save or share statement.')
+          }
+        }
+        reader.readAsDataURL(blob)
+      }
     } catch {
       Alert.alert('Download failed', 'Unable to download the statement PDF. Please try again.')
     } finally {
@@ -178,21 +202,37 @@ export default function StatementScreen() {
 
 function TxnRow({ txn }: { txn: Transaction }) {
   const isCredit = txn.direction === 'credit'
+  const type = txn.txn_type.toLowerCase()
+
+  const getIcon = () => {
+    if (type === 'contribution' || type === 'deposit') return '💰'
+    if (type === 'loan_repayment') return '📤'
+    if (type === 'loan_disbursement') return '📥'
+    if (type === 'withdrawal') return '💸'
+    if (type === 'transfer') return '🔄'
+    if (type === 'dividend') return '📈'
+    return isCredit ? '↓' : '↑'
+  }
+
   return (
-    <View className="flex-row items-center gap-4 py-3.5 border-b border-white/5 bg-white/5 px-4 rounded-2xl mb-2 border border-white/5">
+    <TouchableOpacity
+      activeOpacity={0.7}
+      onPress={() => router.push({ pathname: '/(member)/transaction-detail', params: { id: txn.id } } as any)}
+      className="flex-row items-center gap-4 py-3.5 border-b border-white/5 bg-white/5 px-4 rounded-2xl mb-2 border border-white/5"
+    >
       <View className={`w-10 h-10 rounded-xl items-center justify-center ${isCredit ? 'bg-green-500/10' : 'bg-red-500/10'}`}>
-        <Text style={{ color: isCredit ? '#4ade80' : '#f87171', fontWeight: 'bold' }}>{isCredit ? '↓' : '↑'}</Text>
+        <Text style={{ color: isCredit ? '#4ade80' : '#f87171', fontWeight: 'bold', fontSize: 16 }}>{getIcon()}</Text>
       </View>
       <View className="flex-1">
         <Text className="text-white text-xs font-bold">{txn.description}</Text>
         <Text className="text-white/40 text-[10px] uppercase font-bold mt-0.5">
-          {new Date(txn.date).toLocaleDateString('en-KE', { day: 'numeric', month: 'short' })}
+          {new Date(txn.date).toLocaleDateString('en-KE', { day: 'numeric', month: 'short' })} · {txn.txn_type.replace('_', ' ')}
         </Text>
       </View>
       <Text className={`text-xs font-bold ${isCredit ? 'text-green-400' : 'text-red-400'}`}>
         {isCredit ? '+' : '-'}{txn.amount.toLocaleString()}
       </Text>
-    </View>
+    </TouchableOpacity>
   )
 }
 

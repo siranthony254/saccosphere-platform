@@ -29,6 +29,8 @@ const INK_FAINT = '#9CA3AF'
 const BORDER = 'rgba(0,0,0,0.08)'
 const BORDER_MID = 'rgba(0,0,0,0.13)'
 
+import { Icon } from '../../../components/ui/Icon'
+
 type PickedDocument = {
   uri: string
   name: string
@@ -39,18 +41,39 @@ type PickedDocument = {
 const ACCEPTED_IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png'] as const
 const ACCEPTED_IMAGE_MIME_TYPES = ['image/jpeg', 'image/jpg', 'image/png'] as const
 
-type IdSide = 'front' | 'back'
+type IdSide = 'id_front' | 'id_back' | 'passport' | 'huduma'
+type DocType = 'id_card' | 'passport' | 'huduma_card'
 
 export default function RegisterKYC() {
   const insets = useSafeAreaInsets()
-  const { step1, otpVerified, setKYCDocuments, setIDInfo, idNumber: initialIdNumber, dateOfBirth: initialDob } = useRegistrationStore()
-  const [idFront, setIdFront] = useState<PickedDocument | null>(null)
-  const [idBack, setIdBack] = useState<PickedDocument | null>(null)
+  const {
+    step1,
+    otpVerified,
+    setKYCDocuments,
+    setIDInfo,
+    idNumber: initialIdNumber,
+    dateOfBirth: initialDob,
+    documentType: initialDocType,
+    kycDocuments: savedDocs
+  } = useRegistrationStore()
+
+  const [docType, setDocType] = useState<DocType>(initialDocType || 'id_card')
+  const [idFront, setIdFront] = useState<PickedDocument | null>(savedDocs.id_front)
+  const [idBack, setIdBack] = useState<PickedDocument | null>(savedDocs.id_back)
+  const [passport, setPassport] = useState<PickedDocument | null>(savedDocs.passport)
+  const [huduma, setHuduma] = useState<PickedDocument | null>(savedDocs.huduma)
+
   const [idNumber, setIdNumber] = useState(initialIdNumber || '')
   const [dob, setDob] = useState(initialDob || '')
   const [loading, setLoading] = useState(false)
 
-  const canContinue = idFront && idBack && idNumber.length >= 7 && dob.length === 10
+  const canContinue = (() => {
+    if (idNumber.length < 7 || dob.length !== 10) return false
+    if (docType === 'id_card') return !!idFront && !!idBack
+    if (docType === 'passport') return !!passport
+    if (docType === 'huduma_card') return !!huduma
+    return false
+  })()
 
   if (!step1 || !otpVerified) {
     if (!step1) router.replace('/(auth)/register')
@@ -82,25 +105,26 @@ export default function RegisterKYC() {
       type: mimeType,
     }
 
-    if (side === 'front') setIdFront(document)
-    else setIdBack(document)
+    if (side === 'id_front') setIdFront(document)
+    else if (side === 'id_back') setIdBack(document)
+    else if (side === 'passport') setPassport(document)
+    else if (side === 'huduma') setHuduma(document)
   }
 
   const handleContinue = async () => {
-    if (!step1 || !idFront || !idBack) return
+    if (!step1) return
     
-    // Store ID info
-    setIDInfo(idNumber, dob)
+    setIDInfo(idNumber, dob, docType)
 
-    // Store document info locally for upload during final registration
     setKYCDocuments({
-      front: { uri: idFront.uri, name: idFront.name, type: idFront.type },
-      back: { uri: idBack.uri, name: idBack.name, type: idBack.type },
+      id_front: idFront,
+      id_back: idBack,
+      passport: passport,
+      huduma: huduma,
     })
     
     router.push('/(auth)/register/link-saccos')
   }
-
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: BACKGROUND }} edges={['bottom', 'left', 'right']}>
@@ -128,20 +152,43 @@ export default function RegisterKYC() {
         Step 3 of 4 — Verify your identity
       </Text>
 
-      {/* Brand */}
       <Text className="text-sm font-bold mb-4" style={{ color: VIOLET, fontFamily: 'Fraunces_700Bold' }}>
         Saccosphere
       </Text>
 
-      {/* Heading */}
       <Text className="text-base font-bold mb-1" style={{ color: TEXT }}>ID verification</Text>
       <Text className="text-xs mb-5" style={{ color: TEXT_MUTED, lineHeight: 18 }}>
         Required by SASRA regulations. Your documents are encrypted and never shared.
       </Text>
 
+      {/* Document Type Selector */}
+      <Text className="text-xs font-medium mb-1.5" style={{ color: TEXT_MUTED }}>
+        Select Document Type
+      </Text>
+      <View className="flex-row gap-2 mb-4">
+        {(['id_card', 'passport', 'huduma_card'] as const).map((type) => (
+          <TouchableOpacity
+            key={type}
+            onPress={() => setDocType(type)}
+            className="flex-1 py-2 px-1 border rounded-lg items-center justify-center"
+            style={{
+              borderColor: docType === type ? VIOLET : BORDER_WHITE,
+              backgroundColor: docType === type ? 'rgba(109, 40, 217, 0.1)' : FROSTED_DARK
+            }}
+          >
+            <Text
+              className="text-[10px] font-bold uppercase text-center"
+              style={{ color: docType === type ? VIOLET : TEXT_MUTED }}
+            >
+              {type.replace('_', ' ')}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
       {/* ID Number */}
       <Text className="text-xs font-medium mb-1.5" style={{ color: TEXT_MUTED }}>
-        National ID Number
+        {docType === 'passport' ? 'Passport Number' : 'National ID Number'}
       </Text>
       <TextInput
         className="border rounded-xl p-3 text-sm mb-3"
@@ -152,8 +199,8 @@ export default function RegisterKYC() {
         }}
         value={idNumber}
         onChangeText={setIdNumber}
-        placeholder="12345678"
-        keyboardType="number-pad"
+        placeholder={docType === 'passport' ? 'A12345678' : '12345678'}
+        autoCapitalize="characters"
         placeholderTextColor={TEXT_MUTED}
       />
 
@@ -174,79 +221,40 @@ export default function RegisterKYC() {
         placeholderTextColor={TEXT_MUTED}
       />
 
-      {/* ID Front - uploaded state */}
-      {idFront ? (
-        <View className="flex-row items-center gap-3 rounded-xl p-3 mb-2.5" style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)', borderWidth: 1, borderColor: MINT }}>
-          <View
-            className="w-5 h-5 rounded-full items-center justify-center"
-            style={{ backgroundColor: MINT }}
-          >
-            <Text className="text-white text-xs font-bold">✓</Text>
-          </View>
-          <View>
-            <Text className="text-xs font-semibold" style={{ color: MINT }}>
-              National ID — Front
-            </Text>
-            <Text className="text-xs" style={{ color: TEXT_MUTED }}>
-              {idFront.name || 'Ready to upload securely'}
-            </Text>
-          </View>
-        </View>
-      ) : (
-        <TouchableOpacity
-          className="border-2 border-dashed rounded-xl p-4 items-center mb-3"
-          style={{ borderColor: BORDER_WHITE, backgroundColor: FROSTED_DARK }}
-          onPress={() => handleUpload('front')}
-        >
-          <View
-            className="w-8 h-8 rounded-xl items-center justify-center mb-2"
-            style={{ backgroundColor: FROSTED }}
-          >
-            <Text className="text-base">📷</Text>
-          </View>
-          <Text className="text-xs font-semibold mb-0.5" style={{ color: TEXT }}>
-            Upload ID — Front
-          </Text>
-          <Text className="text-xs" style={{ color: TEXT_MUTED }}>
-            JPG or PNG · Max 5MB
-          </Text>
-        </TouchableOpacity>
+      {/* Conditional Document Uploads */}
+      {docType === 'id_card' && (
+        <>
+          <KycUploadButton
+            label="Upload ID — Front"
+            side="id_front"
+            document={idFront}
+            onUpload={() => handleUpload('id_front')}
+          />
+          <KycUploadButton
+            label="Upload ID — Back"
+            side="id_back"
+            document={idBack}
+            onUpload={() => handleUpload('id_back')}
+          />
+        </>
       )}
 
-      {/* ID Back - uploaded state */}
-      {idBack ? (
-        <View className="flex-row items-center gap-3 rounded-xl p-3 mb-2.5" style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)', borderWidth: 1, borderColor: MINT }}>
-          <View
-            className="w-5 h-5 rounded-full items-center justify-center"
-            style={{ backgroundColor: MINT }}
-          >
-            <Text className="text-white text-xs font-bold">✓</Text>
-          </View>
-          <View>
-            <Text className="text-xs font-semibold" style={{ color: MINT }}>
-              National ID — Back
-            </Text>
-            <Text className="text-xs" style={{ color: TEXT_MUTED }}>
-              {idBack.name || 'Ready to upload securely'}
-            </Text>
-          </View>
-        </View>
-      ) : (
-        <TouchableOpacity
-          className="border-2 border-dashed rounded-xl p-4 items-center mb-3"
-          style={{ borderColor: BORDER_WHITE, backgroundColor: FROSTED_DARK }}
-          onPress={() => handleUpload('back')}
-        >
-          <View className="w-8 h-8 rounded-sm items-center justify-center mb-2" style={{ backgroundColor: FROSTED }}>
-            <Text className="text-base">📷</Text>
-          </View>
-          <Text className="text-xs font-semibold mb-0.5" style={{ color: TEXT }}>
-            Upload ID — Back
-          </Text>
-          <Text className="text-xs" style={{ color: TEXT_MUTED }}>
-            JPG or PNG · Max 5MB
-          </Text>
-        </TouchableOpacity>
+      {docType === 'passport' && (
+        <KycUploadButton
+          label="Upload Passport Bio-page"
+          side="passport"
+          document={passport}
+          onUpload={() => handleUpload('passport')}
+        />
+      )}
+
+      {docType === 'huduma_card' && (
+        <KycUploadButton
+          label="Upload Huduma Card"
+          side="huduma"
+          document={huduma}
+          onUpload={() => handleUpload('huduma')}
+        />
       )}
 
       {/* Alert */}
@@ -279,6 +287,49 @@ export default function RegisterKYC() {
       </TouchableOpacity>
     </ScrollView>
     </SafeAreaView>
+  )
+}
+
+function KycUploadButton({
+  label,
+  side,
+  document,
+  onUpload
+}: {
+  label: string,
+  side: IdSide,
+  document: PickedDocument | null,
+  onUpload: () => void
+}) {
+  if (document) {
+    return (
+      <View className="flex-row items-center gap-3 rounded-xl p-3 mb-2.5" style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)', borderWidth: 1, borderColor: MINT }}>
+        <View className="w-5 h-5 rounded-full items-center justify-center" style={{ backgroundColor: MINT }}>
+          <Icon name="check" size={12} color="#fff" />
+        </View>
+        <View>
+          <Text className="text-xs font-semibold" style={{ color: MINT }}>{label}</Text>
+          <Text className="text-xs" style={{ color: TEXT_MUTED }}>Ready to upload securely</Text>
+        </View>
+        <TouchableOpacity onPress={onUpload} className="ml-auto">
+          <Text className="text-[10px] text-violet-400 font-bold uppercase">Change</Text>
+        </TouchableOpacity>
+      </View>
+    )
+  }
+
+  return (
+    <TouchableOpacity
+      className="border-2 border-dashed rounded-xl p-4 items-center mb-3"
+      style={{ borderColor: BORDER_WHITE, backgroundColor: FROSTED_DARK }}
+      onPress={onUpload}
+    >
+      <View className="w-8 h-8 rounded-xl items-center justify-center mb-2" style={{ backgroundColor: FROSTED }}>
+        <Icon name="file" size={18} color={TEXT} />
+      </View>
+      <Text className="text-xs font-semibold mb-0.5" style={{ color: TEXT }}>{label}</Text>
+      <Text className="text-xs" style={{ color: TEXT_MUTED }}>JPG or PNG · Max 5MB</Text>
+    </TouchableOpacity>
   )
 }
 

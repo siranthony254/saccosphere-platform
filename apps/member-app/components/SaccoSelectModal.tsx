@@ -2,6 +2,7 @@ import { View, Text, TouchableOpacity, Modal } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useMemberships } from '../hooks/useMembership'
 import { getActiveMemberships } from '../lib/membership'
+import { Icon } from './ui/Icon'
 
 interface SaccoSelectModalProps {
   visible: boolean
@@ -76,7 +77,7 @@ export default function SaccoSelectModal({
                     <Text className="text-ink text-xs font-medium">{membership.sacco_name}</Text>
                     <Text className="text-ink-faint text-xs">Member No. {membership.member_number || 'Pending'}</Text>
                   </View>
-                  <Text className="text-ink-faint text-lg">›</Text>
+                  <Icon name="arrow-right" size={16} color="#9CA3AF" />
                 </TouchableOpacity>
               ))
             )}

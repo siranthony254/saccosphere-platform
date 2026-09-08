@@ -6,6 +6,9 @@ import { router } from 'expo-router'
 import { useSaccos } from '../../hooks/useSaccos'
 import { useMemberships } from '../../hooks/useMembership'
 import { getActiveMemberships } from '../../lib/membership'
+import { api } from '@saccosphere/api-client'
+import { Icon } from '../../components/ui/Icon'
+import { Badge } from '../../components/ui/Badge'
 
 const BACKGROUND = '#06091A'
 const FROSTED = 'rgba(255, 255, 255, 0.08)'
@@ -71,9 +74,7 @@ export default function DiscoverScreen() {
                   <Text style={{ color: TEXT, fontSize: 12, fontWeight: '600' }}>{membership.sacco_name}</Text>
                   <Text style={{ color: TEXT_MUTED, fontSize: 12 }}>Member {membership.member_number}</Text>
                 </View>
-                <View style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8 }}>
-                  <Text style={{ color: MINT, fontSize: 12, fontWeight: '600' }}>Active</Text>
-                </View>
+                <Badge label="Active" variant="success" />
               </View>
             </TouchableOpacity>
           ))}
@@ -82,13 +83,16 @@ export default function DiscoverScreen() {
 
       {/* Search */}
       <View style={{ paddingHorizontal: 14, paddingVertical: 14, backgroundColor: BACKGROUND }}>
-        <TextInput
-          style={{ borderWidth: 1, borderColor: BORDER_WHITE, borderRadius: 12, padding: 10, fontSize: 14, color: TEXT, backgroundColor: FROSTED_DARK }}
-          placeholder="🔍  Search by name, sector, county..."
-          value={search}
-          onChangeText={setSearch}
-          placeholderTextColor={TEXT_MUTED}
-        />
+        <View className="flex-row items-center border border-white/10 rounded-xl px-3 bg-white/5">
+          <Icon name="discover" size={16} color={TEXT_MUTED} />
+          <TextInput
+            style={{ flex: 1, padding: 10, fontSize: 14, color: TEXT }}
+            placeholder="Search by name, sector, county..."
+            value={search}
+            onChangeText={setSearch}
+            placeholderTextColor={TEXT_MUTED}
+          />
+        </View>
       </View>
 
       {/* Sector pills */}
@@ -123,11 +127,10 @@ export default function DiscoverScreen() {
                 <Text style={{ color: TEXT, fontSize: 12, fontWeight: '600' }}>{sacco.name}</Text>
                 <Text style={{ color: TEXT_MUTED, fontSize: 12 }}>{sacco.sector} · {sacco.county}</Text>
               </View>
-              <View style={{ paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8, backgroundColor: sacco.membership_type === 'open' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)' }}>
-                <Text style={{ fontSize: 12, fontWeight: '600', color: sacco.membership_type === 'open' ? MINT : '#F59E0B' }}>
-                  {sacco.membership_type === 'open' ? 'Open' : 'Restricted'}
-                </Text>
-              </View>
+              <Badge
+                label={sacco.membership_type === 'open' ? 'Open' : 'Restricted'}
+                variant={sacco.membership_type === 'open' ? 'success' : 'warning'}
+              />
             </View>
             <View style={{ flexDirection: 'row', justifyContent: 'space-around', backgroundColor: FROSTED, borderRadius: 8, padding: 10, marginBottom: 12 }}>
               <View style={{ alignItems: 'center' }}>
@@ -144,18 +147,15 @@ export default function DiscoverScreen() {
                 <Text style={{ color: TEXT_MUTED, fontSize: 12, marginTop: 2 }}>Loan limit</Text>
               </View>
             </View>
-            <TouchableOpacity
+            <View
               style={{ borderRadius: 8, padding: 10, alignItems: 'center', backgroundColor: sacco.membership_type === 'open' ? VIOLET : FROSTED }}
-              onPress={() =>
-                sacco.membership_type === 'open' &&
-                router.push({ pathname: '/(member)/discover/[slug]', params: { slug: sacco.slug } })
-              }
-              disabled={sacco.membership_type !== 'open'}
+              className="flex-row items-center justify-center gap-2"
             >
               <Text style={{ fontSize: 12, fontWeight: '600', color: sacco.membership_type === 'open' ? '#fff' : TEXT_MUTED }}>
-                {sacco.membership_type === 'open' ? 'Apply to join →' : 'Restricted membership'}
+                {sacco.membership_type === 'open' ? 'Apply to join' : 'Restricted membership'}
               </Text>
-            </TouchableOpacity>
+              {sacco.membership_type === 'open' && <Icon name="arrow-right" size={14} color="#fff" />}
+            </View>
           </TouchableOpacity>
         ))}
       </View>
