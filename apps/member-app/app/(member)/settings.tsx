@@ -8,6 +8,9 @@ import * as Device from 'expo-device'
 import * as ImagePicker from 'expo-image-picker'
 import { api } from '@saccosphere/api-client'
 import { useCurrentUser } from '../../store/useAuthStore'
+import { loadRefreshToken } from '../../hooks/useAuth'
+
+const BIOMETRIC_TOKEN_KEY = 'saccosphere_biometric_refresh_token'
 
 const BACKGROUND = '#06091A'
 const FROSTED_DARK = 'rgba(255, 255, 255, 0.06)'
@@ -83,7 +86,7 @@ export default function SettingsScreen() {
     setBiometricSupported(compatible && enrolled)
 
     if (compatible && enrolled) {
-      const stored = await SecureStore.getItemAsync('saccosphere_biometric_refresh_token')
+      const stored = await SecureStore.getItemAsync(BIOMETRIC_TOKEN_KEY)
       setBiometricEnabled(!!stored)
     }
   }
@@ -97,7 +100,7 @@ export default function SettingsScreen() {
     if (biometricEnabled) {
       setLoadingBiometrics(true)
       try {
-        await SecureStore.deleteItemAsync('saccosphere_biometric_refresh_token')
+        await SecureStore.deleteItemAsync(BIOMETRIC_TOKEN_KEY)
         const deviceId = Device.osBuildId || Device.modelName || 'unknown-device'
         await api.auth.registerDevice({
           device_id: deviceId,
@@ -117,9 +120,18 @@ export default function SettingsScreen() {
       if (result.success) {
         setLoadingBiometrics(true)
         try {
-          const currentRefreshToken = window.localStorage.getItem('saccosphere-refresh-token') || ''
-          await SecureStore.setItemAsync('saccosphere_biometric_refresh_token', currentRefreshToken)
-          
+          // Persist the real refresh token (SecureStore on native, localStorage
+          // on web — both handled by loadRefreshToken) so biometric login can
+          // exchange it later.
+          const currentRefreshToken = (await loadRefreshToken()) || ''
+          if (!currentRefreshToken) {
+            Alert.alert('Sign in again', 'Please sign out and back in before enabling biometric login.')
+            return
+          }
+          await SecureStore.setItemAsync(BIOMETRIC_TOKEN_KEY, currentRefreshToken, {
+            keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
+          })
+
           const deviceId = Device.osBuildId || Device.modelName || 'unknown-device'
           await api.auth.registerDevice({
             device_id: deviceId,
@@ -130,6 +142,7 @@ export default function SettingsScreen() {
           Alert.alert('Success', 'Biometric login is now enabled.')
         } catch (err) {
           console.error(err)
+          await SecureStore.deleteItemAsync(BIOMETRIC_TOKEN_KEY).catch(() => {})
           Alert.alert('Error', 'Failed to enable biometric login on the server.')
         } finally {
           setLoadingBiometrics(false)

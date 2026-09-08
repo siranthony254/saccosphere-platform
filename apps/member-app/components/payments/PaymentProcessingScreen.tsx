@@ -43,13 +43,10 @@ export default function PaymentProcessingScreen({
 
   useEffect(() => {
     if (status && !isLoading && hasStartedPolling) {
-      const normalizedStatus = String(status.status).toLowerCase()
-
-      if (normalizedStatus === 'completed' || normalizedStatus === 'success') {
+      if (status.is_success) {
         onComplete(true, checkoutRequestId ?? '')
-      } else if (normalizedStatus === 'failed' || normalizedStatus === 'cancelled') {
-        const statusObj = status as any
-        const errorMsg = mapMpesaErrorCode(statusObj.result_code, statusObj.result_desc || statusObj.error)
+      } else if (status.is_final) {
+        const errorMsg = mapMpesaErrorCode(status.result_code ?? undefined, status.result_description)
         onComplete(false, undefined, errorMsg)
       }
     }

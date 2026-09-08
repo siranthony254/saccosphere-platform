@@ -32,10 +32,7 @@ export function usePaymentStatus(reference: string) {
     queryFn: () => api.payments.checkStatus(reference),
     staleTime: STALE_TIMES.paymentStatus,
     enabled: Boolean(reference),
-    refetchInterval: (query) => {
-      const status = String(query.state.data?.status ?? '').toLowerCase()
-      return status === 'completed' || status === 'failed' || status === 'cancelled' ? false : 4000
-    },
+    refetchInterval: (query) => (query.state.data?.is_final ? false : 4000),
   })
 }
 
@@ -59,7 +56,7 @@ export function useB2cStatus(conversationId: string) {
     queryKey: ['b2c-status', conversationId],
     queryFn: () => api.payments.checkB2cStatus(conversationId),
     staleTime: 30_000,
-    refetchInterval: 10_000, // Poll every 10 seconds
+    refetchInterval: (query) => (query.state.data?.is_final ? false : 10_000),
     enabled: !!conversationId,
   })
 }

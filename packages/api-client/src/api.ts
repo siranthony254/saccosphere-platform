@@ -1546,11 +1546,27 @@ export const api = {
         idempotent: true,
       }).then(normalizeStkPushResponse),
 
-    checkStatus: (ref: string) =>
-      apiCall<{ status: string; completed_at: string | null }>(
-        'GET',
-        `/payments/mpesa/stk/${requiredString(ref)}/status/`
-      ),
+    // STKStatusView returns {checkout_request_id, merchant_request_id, status,
+    // result_code, result_description, callback_received} — no completed_at.
+    // `status` is a Transaction.Status value; collapse the terminal ones so
+    // pollers know when to stop.
+    checkStatus: async (ref: string) => {
+      const r = await apiCall<any>('GET', `/payments/mpesa/stk/${requiredString(ref)}/status/`)
+      const raw = String(r.status ?? '').toUpperCase()
+      const is_success = raw === 'COMPLETED'
+      const is_final =
+        is_success || ['FAILED', 'INITIATION_FAILED', 'AMOUNT_MISMATCH', 'REVERSED'].includes(raw)
+      return {
+        checkout_request_id: r.checkout_request_id ?? ref,
+        merchant_request_id: (r.merchant_request_id ?? null) as string | null,
+        status: raw.toLowerCase(),
+        is_success,
+        is_final,
+        result_code: (r.result_code ?? null) as string | number | null,
+        result_description: String(r.result_description ?? ''),
+        callback_received: Boolean(r.callback_received),
+      }
+    },
 
     getMpesaDetails: (id: string) =>
       apiCall<any>('GET', `/payments/mpesa/${uuid(id)}/`),
@@ -1563,11 +1579,27 @@ export const api = {
         remarks: data.remarks ?? 'Loan disbursement',
       }, { idempotent: true }).then(normalizeStkPushResponse),
 
-    checkB2cStatus: (conversationId: string) =>
-      apiCall<{ status: string; completed_at: string | null }>(
-        'GET',
-        `/payments/mpesa/b2c/${requiredString(conversationId)}/status/`
-      ),
+    // B2CStatusView returns {conversation_id, originator_conversation_id,
+    // status, result_code, result_description, mpesa_receipt_number,
+    // callback_received, loan_id, amount, created_at} — no completed_at.
+    checkB2cStatus: async (conversationId: string) => {
+      const r = await apiCall<any>('GET', `/payments/mpesa/b2c/${requiredString(conversationId)}/status/`)
+      const raw = String(r.status ?? '').toUpperCase()
+      const is_success = raw === 'COMPLETED'
+      const is_final =
+        is_success || ['FAILED', 'INITIATION_FAILED', 'AMOUNT_MISMATCH', 'REVERSED'].includes(raw)
+      return {
+        conversation_id: r.conversation_id ?? conversationId,
+        status: raw.toLowerCase(),
+        is_success,
+        is_final,
+        result_code: (r.result_code ?? null) as string | number | null,
+        result_description: String(r.result_description ?? ''),
+        mpesa_receipt_number: (r.mpesa_receipt_number ?? null) as string | null,
+        callback_received: Boolean(r.callback_received),
+        amount: Number(r.amount ?? 0),
+      }
+    },
 
     getB2cHistory: async (saccoId?: string) => {
       const params = saccoId ? { sacco_id: saccoId } : undefined
@@ -1631,16 +1663,24 @@ export const api = {
       }
     },
 
-    submitId: (data: { id_number: string; date_of_birth: string }) =>
-      apiCall<{ message: string; status: string }>(
-        'POST',
-        '/accounts/kyc/submit-id/',
-        {
-          id_number: z.string().min(1).parse(data.id_number),
-          date_of_birth: z.string().min(1).parse(data.date_of_birth),
-        },
-        { responseSchema: OTPResponseSchema }
-      ),
+    // KYCSubmitIDView returns {outcome, iprs_verified, status, id_number, name,
+    // iprs_reference, error} — not a {message} envelope. (The old
+    // responseSchema:OTPResponseSchema made this throw on every call.)
+    submitId: async (data: { id_number: string; date_of_birth: string }) => {
+      const r = await apiCall<any>('POST', '/accounts/kyc/submit-id/', {
+        id_number: z.string().min(1).parse(data.id_number),
+        date_of_birth: z.string().min(1).parse(data.date_of_birth),
+      })
+      return {
+        outcome: (r.outcome ?? null) as string | null,
+        iprs_verified: Boolean(r.iprs_verified),
+        status: String(r.status ?? '').toLowerCase(),
+        id_number: (r.id_number ?? null) as string | null,
+        name: (r.name ?? null) as string | null,
+        iprs_reference: String(r.iprs_reference ?? ''),
+        error: (r.error ?? null) as string | null,
+      }
+    },
 
     requestUploadUrl: (data: {
       doc_type: string

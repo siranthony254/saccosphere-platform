@@ -14,7 +14,7 @@ import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useState, useEffect } from 'react'
-import { useLogin, useGoogleAuth } from '../../hooks/useAuth'
+import { useLogin, useGoogleAuth, saveRefreshToken } from '../../hooks/useAuth'
 import {
   GoogleSignin,
   statusCodes,
@@ -109,6 +109,16 @@ export default function LoginScreen() {
         try {
           const res = await api.auth.refresh(biometricToken)
           setAccessToken(res.access)
+          // Persist the rotated refresh token so biometric login keeps working
+          // when the backend rotates refresh tokens.
+          const rotated = (res as { refresh?: string }).refresh
+          if (rotated) {
+            await saveRefreshToken(rotated)
+            await SecureStore.setItemAsync('saccosphere_biometric_refresh_token', rotated, {
+              keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
+            })
+            setBiometricToken(rotated)
+          }
           const user = await api.member.getProfile()
           setAuth({ token: res.access, user })
           router.replace('/(member)')
