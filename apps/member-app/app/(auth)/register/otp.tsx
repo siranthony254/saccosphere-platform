@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   View,
   Text,
   TextInput,
   TouchableOpacity,
+  Pressable,
   ActivityIndicator,
   Alert,
   Dimensions,
@@ -38,22 +39,37 @@ export default function RegisterOTP() {
   const [otpExpirySeconds, setOtpExpirySeconds] = useState(300)
   const [expiryCountdown, setExpiryCountdown] = useState(300)
   const [channel, setChannel] = useState<'PHONE' | 'EMAIL'>('PHONE')
+  // 'select' = user is choosing a delivery channel; no OTP has been sent yet.
+  // 'code'   = an OTP has been sent, user is entering it.
+  const [phase, setPhase] = useState<'select' | 'code'>('select')
 
   const { step1, setOtpVerified } = useRegistrationStore()
+  const codeInputRef = useRef<TextInput>(null)
 
   useEffect(() => {
     if (!step1) router.replace('/(auth)/register')
   }, [step1])
 
+  // Focus the (visually hidden) code field once we're on the entry screen.
+  useEffect(() => {
+    if (phase === 'code' && otpSent) {
+      const t = setTimeout(() => codeInputRef.current?.focus(), 250)
+      return () => clearTimeout(t)
+    }
+  }, [phase, otpSent])
+
+  // No OTP is sent until the user explicitly picks a channel below.
   const sendOtpRequest = (deliveryChannel: 'PHONE' | 'EMAIL') => {
     if (!step1?.phone_number) return
 
     setLoading(true)
+    setOtpError(null)
     api.auth
       .sendOTP(step1.phone_number, { channel: deliveryChannel })
       .then((response) => {
         setOtpSent(true)
         setChannel(deliveryChannel)
+        setPhase('code')
         if (response && (response as any).expires_in) {
           const expiry = (response as any).expires_in
           setOtpExpirySeconds(expiry)
@@ -63,17 +79,16 @@ export default function RegisterOTP() {
         setCanResend(false)
       })
       .catch((error) => {
-        const message = getApiErrorMessage(error, 'Unable to send OTP.')
+        const message = getApiErrorMessage(
+          error,
+          deliveryChannel === 'EMAIL'
+            ? 'Email codes aren’t available for sign-up right now — use SMS instead.'
+            : 'Unable to send the SMS code. Please try again.'
+        )
         setOtpError(message)
-        Alert.alert('OTP failed', message)
       })
       .finally(() => setLoading(false))
   }
-
-  useEffect(() => {
-    if (!step1 || otpSent || otpError) return
-    sendOtpRequest('PHONE')
-  }, [step1, otpSent, otpError])
 
   useEffect(() => {
     if (!otpSent || countdown <= 0) {
@@ -167,6 +182,70 @@ export default function RegisterOTP() {
           Saccosphere
         </Text>
 
+        {/* ── PHASE: choose delivery channel (nothing sent yet) ────────────── */}
+        {phase === 'select' && (
+          <>
+            <Text className="text-base font-bold mb-1" style={{ color: TEXT }}>
+              How should we send your code?
+            </Text>
+            <Text className="text-xs mb-5" style={{ color: TEXT_MUTED, lineHeight: 18 }}>
+              Pick a channel. We only send the 6-digit code once you choose.
+            </Text>
+
+            {otpError && (
+              <View className="border rounded-xl p-3 mb-4" style={{ backgroundColor: 'rgba(220, 38, 38, 0.15)', borderColor: '#EF4444' }}>
+                <Text className="text-xs leading-4" style={{ color: '#FCA5A5' }}>{otpError}</Text>
+              </View>
+            )}
+
+            <TouchableOpacity
+              className="border rounded-xl p-3.5 mb-2.5 flex-row items-center"
+              style={{ borderColor: BORDER_WHITE, backgroundColor: FROSTED_DARK, opacity: loading ? 0.6 : 1 }}
+              onPress={() => sendOtpRequest('PHONE')}
+              disabled={loading}
+            >
+              <View className="flex-1">
+                <Text className="text-sm font-semibold" style={{ color: TEXT }}>Text message (SMS)</Text>
+                <Text className="text-xs mt-0.5" style={{ color: TEXT_MUTED }}>
+                  {maskedPhone || step1?.phone_number || 'your phone'}
+                </Text>
+              </View>
+              {loading && channel === 'PHONE' ? (
+                <ActivityIndicator color={VIOLET} />
+              ) : (
+                <Text className="text-xs font-semibold" style={{ color: VIOLET }}>Send →</Text>
+              )}
+            </TouchableOpacity>
+
+            {step1?.email ? (
+              <TouchableOpacity
+                className="border rounded-xl p-3.5 mb-2.5 flex-row items-center"
+                style={{ borderColor: BORDER_WHITE, backgroundColor: FROSTED_DARK, opacity: loading ? 0.6 : 1 }}
+                onPress={() => sendOtpRequest('EMAIL')}
+                disabled={loading}
+              >
+                <View className="flex-1">
+                  <Text className="text-sm font-semibold" style={{ color: TEXT }}>Email</Text>
+                  <Text className="text-xs mt-0.5" style={{ color: TEXT_MUTED }}>{maskedEmail}</Text>
+                </View>
+                {loading && channel === 'EMAIL' ? (
+                  <ActivityIndicator color={VIOLET} />
+                ) : (
+                  <Text className="text-xs font-semibold" style={{ color: VIOLET }}>Send →</Text>
+                )}
+              </TouchableOpacity>
+            ) : null}
+
+            <Text className="text-xs mt-2" style={{ color: TEXT_MUTED, lineHeight: 16 }}>
+              SMS is the fastest for M-Pesa phones. Email delivery depends on your account being
+              set up for it.
+            </Text>
+          </>
+        )}
+
+        {/* ── PHASE: enter the code that was sent ──────────────────────────── */}
+        {phase === 'code' && (
+          <>
         <Text className="text-base font-bold mb-1" style={{ color: TEXT }}>
           Enter the code
         </Text>
@@ -177,8 +256,6 @@ export default function RegisterOTP() {
           {channel === 'EMAIL' ? maskedEmail : (maskedPhone || (step1?.phone_number ?? '+254 712 ··· 678'))}
         </Text>
 
-        {!otpSent && !otpError && <Text className="text-xs mb-4" style={{ color: TEXT_MUTED }}>Sending OTP...</Text>}
-
         {otpError && (
           <View className="border rounded-xl p-3 mb-4" style={{ backgroundColor: 'rgba(220, 38, 38, 0.15)', borderColor: '#EF4444' }}>
             <Text className="text-xs leading-4" style={{ color: '#FCA5A5' }}>
@@ -188,15 +265,20 @@ export default function RegisterOTP() {
               className="mt-2"
               onPress={() => {
                 setOtpError(null)
+                setCode('')
                 setOtpSent(false)
+                setPhase('select')
               }}
             >
-              <Text className="text-xs font-semibold" style={{ color: VIOLET }}>Try again</Text>
+              <Text className="text-xs font-semibold" style={{ color: VIOLET }}>Choose another method</Text>
             </TouchableOpacity>
           </View>
         )}
 
-        <View className="flex-row gap-2 justify-center mb-6">
+        <Pressable
+          className="flex-row gap-2 justify-center mb-6"
+          onPress={() => codeInputRef.current?.focus()}
+        >
           {[0, 1, 2, 3, 4, 5].map((i) => {
             const filled = code.length > i
             const focused = code.length === i
@@ -216,16 +298,27 @@ export default function RegisterOTP() {
               </View>
             )
           })}
-        </View>
 
-        <TextInput
-          className="absolute opacity-0 left-0 right-0 h-0"
-          value={code}
-          onChangeText={setCode}
-          keyboardType="number-pad"
-          maxLength={6}
-          autoFocus
-        />
+          {/* Visually hidden but focusable — captures the keyboard input. */}
+          <TextInput
+            ref={codeInputRef}
+            style={{ position: 'absolute', width: '100%', height: '100%', opacity: 0 }}
+            value={code}
+            onChangeText={(t) => setCode(t.replace(/[^0-9]/g, '').slice(0, 6))}
+            keyboardType="number-pad"
+            inputMode="numeric"
+            maxLength={6}
+            autoFocus
+            caretHidden
+            textContentType="oneTimeCode"
+            autoComplete="one-time-code"
+            importantForAutofill="yes"
+          />
+        </Pressable>
+
+        <Text className="text-xs text-center mb-4" style={{ color: TEXT_MUTED }}>
+          Tap the boxes above and type the 6-digit code.
+        </Text>
 
         <View className="mb-5 flex-row justify-center gap-4">
           {canResend ? (
@@ -269,6 +362,8 @@ export default function RegisterOTP() {
         >
           {loading ? <ActivityIndicator color="#fff" /> : <Text className="text-white text-xs font-semibold">Verify code →</Text>}
         </TouchableOpacity>
+          </>
+        )}
 
         <View className="flex-row justify-center">
           <Text className="text-xs" style={{ color: TEXT_MUTED }}>Wrong details? </Text>

@@ -15,7 +15,7 @@
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#0d7a4e"
+      "backgroundColor": "#FFFFFF"
     },
     "assetBundlePatterns": [
       "**/*"
@@ -31,7 +31,7 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#0d7a4e"
+        "backgroundColor": "#FFFFFF"
       },
       "package": "co.ke.saccosphere.member",
       "permissions": [
@@ -54,6 +54,19 @@
         {
           "photosPermission": "Saccosphere needs access to your photos for KYC document upload.",
           "cameraPermission": "Saccosphere needs your camera to capture KYC documents."
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#FFFFFF",
+          "dark": {
+            "image": "./assets/splash-icon.png",
+            "backgroundColor": "#0B1020"
+          }
         }
       ]
     ],
