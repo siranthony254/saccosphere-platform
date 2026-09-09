@@ -196,7 +196,7 @@ function MembershipReport({ data }: { data: any }) {
   const byStatus = data.current_members_by_status ?? {}
   return (
     <>
-      <div className="text-xs text-ink-muted">{data.period_start} → {data.period_end}</div>
+      <div className="text-xs text-ink-muted">{data.period_start} – {data.period_end}</div>
       <div className="grid grid-cols-3 gap-4">
         <Kpi label="Total current members" value={String(data.total_current_members ?? 0)} />
         <Kpi label="New registrations" value={String(data.new_registrations ?? 0)} />

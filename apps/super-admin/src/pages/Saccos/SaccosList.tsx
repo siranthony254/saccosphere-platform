@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAllSaccos } from '../../hooks/usePlatformData'
 import { PageHeader } from '../../components/ui/PageHeader'
@@ -11,16 +11,25 @@ export function SaccosList() {
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState('all')
 
-  const { data, isLoading } = useAllSaccos({
-    search: search || undefined,
-    status: status === 'all' ? undefined : status,
-  })
+  // The backend list is unpaginated and unfiltered — one fetch, filter here.
+  const { data, isLoading } = useAllSaccos()
+
+  const rows = useMemo(() => {
+    const all: SuperAdminSacco[] = data?.results ?? []
+    const q = search.trim().toLowerCase()
+    return all.filter((s) => {
+      if (q && !s.name.toLowerCase().includes(q)) return false
+      if (status === 'active' && !s.is_active) return false
+      if (status === 'suspended' && s.is_active) return false
+      return true
+    })
+  }, [data, search, status])
 
   return (
     <div className="p-5">
       <PageHeader
         title="All SACCOs"
-        subtitle={`${data?.count ?? 0} SACCOs on the platform`}
+        subtitle={`${rows.length} of ${data?.count ?? 0} SACCOs on the platform`}
       />
 
       <div className="flex gap-2.5 mb-4">
@@ -78,9 +87,9 @@ export function SaccosList() {
               row.last_transaction_at ? new Date(row.last_transaction_at).toLocaleDateString() : '—',
           },
         ]}
-        data={data?.results ?? []}
+        data={rows}
         loading={isLoading}
-        emptyMessage={search ? "No SACCOs match your search." : "No SACCOs registered on the platform yet."}
+        emptyMessage={search || status !== 'all' ? "No SACCOs match your filters." : "No SACCOs registered on the platform yet."}
         keyExtractor={(row: SuperAdminSacco) => row.id}
         onRowClick={(row: SuperAdminSacco) => navigate(`/saccos/${row.id}`)}
       />

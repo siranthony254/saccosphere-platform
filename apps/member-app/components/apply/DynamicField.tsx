@@ -2,6 +2,7 @@ import React from 'react'
 import { View, Text, TextInput, Switch, TouchableOpacity } from 'react-native'
 import type { AdditionalField } from '@saccosphere/schemas'
 import * as ImagePicker from 'expo-image-picker'
+import { Icon } from '../ui/Icon'
 
 interface Props {
   field: AdditionalField
@@ -77,11 +78,11 @@ export function DynamicField({ field, value, onChange }: Props) {
             }}
             className="border-2 border-dashed border-border bg-surface2 rounded-xl p-4 items-center"
           >
-            <Text className="text-base mb-1">📁</Text>
+            <Icon name="folder" size={16} color="#6B7280" style={{ marginBottom: 4 }} />
             <Text className="text-xs font-semibold text-ink">
               {value ? (value.fileName || 'Document selected') : `Upload ${field.label}`}
             </Text>
-            {value && <Text className="text-[10px] text-mint-600 font-bold mt-1">✓ Ready</Text>}
+            {value && <Text className="text-[10px] text-mint-600 font-bold mt-1">Ready</Text>}
           </TouchableOpacity>
         )
 

@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Dimensions } from 'react-native'
 import { useMembershipApplicationStore } from '../../store/useMembershipApplicationStore'
 import { useSacco } from '../../hooks/useSaccos'
+import { Icon } from '../ui/Icon'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 const PADDING_H = Math.max(16, Math.min(24, SCREEN_WIDTH * 0.05))
@@ -49,7 +50,7 @@ export default function SaccoApplicationDocuments() {
       {/* Auto-imported from KYC */}
       <View className="flex-row gap-2.5 mb-3">
         <View className="w-6 h-6 rounded-full bg-mint-500 justify-center items-center">
-          <Text className="text-white text-xs font-bold">✓</Text>
+          <Icon name="check" size={12} color="#ffffff" />
         </View>
         <View>
           <Text className="text-mint-700 text-xs font-semibold">National ID (front & back)</Text>
@@ -59,7 +60,7 @@ export default function SaccoApplicationDocuments() {
 
       <View className="flex-row gap-2.5 mb-4">
         <View className="w-6 h-6 rounded-full bg-mint-500 justify-center items-center">
-          <Text className="text-white text-xs font-bold">✓</Text>
+          <Icon name="check" size={12} color="#ffffff" />
         </View>
         <View>
           <Text className="text-mint-700 text-xs font-semibold">Passport photo</Text>
@@ -69,7 +70,7 @@ export default function SaccoApplicationDocuments() {
 
       {/* Still needed */}
       <TouchableOpacity className="bg-surface2 border border-border rounded-xl p-3 mb-2.5 flex-row gap-2.5 items-start">
-        <Text className="text-base">📄</Text>
+        <Icon name="file" size={16} color="#6B7280" />
         <View>
           <Text className="text-ink text-xs font-semibold mb-0.5">Latest payslip (last 3 months)</Text>
           <Text className="text-ink-faint text-xs">Required by {sacco?.name ?? 'the SACCO'} · PDF or image</Text>
@@ -77,7 +78,7 @@ export default function SaccoApplicationDocuments() {
       </TouchableOpacity>
 
       <TouchableOpacity className="bg-surface2 border border-border rounded-xl p-3 mb-4 flex-row gap-2.5 items-start">
-        <Text className="text-base">🏦</Text>
+        <Icon name="bank" size={16} color="#6B7280" />
         <View>
           <Text className="text-ink text-xs font-semibold mb-0.5">Bank statement (3 months)</Text>
           <Text className="text-ink-faint text-xs">Required by {sacco?.name ?? 'the SACCO'} · PDF</Text>

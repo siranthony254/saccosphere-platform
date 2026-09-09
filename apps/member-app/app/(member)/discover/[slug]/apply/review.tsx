@@ -120,7 +120,7 @@ export default function ApplyReviewScreen() {
               <Text className="text-white/60 text-xs">{doc.label}</Text>
               <View className={`px-2 py-0.5 rounded-md ${doc.already_verified_from_kyc ? 'bg-mint-500/20' : 'bg-blue-500/20'}`}>
                 <Text className={`text-xs font-semibold ${doc.already_verified_from_kyc ? 'text-mint-400' : 'text-blue-400'}`}>
-                  {doc.already_verified_from_kyc ? '✓ Verified' : '✓ Uploaded'}
+                  {doc.already_verified_from_kyc ? 'Verified' : 'Uploaded'}
                 </Text>
               </View>
             </View>

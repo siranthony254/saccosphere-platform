@@ -5,6 +5,7 @@ import { Dimensions } from 'react-native'
 import { useMembershipApplicationStore } from '../../../store/useMembershipApplicationStore'
 import { useSaccoConfig } from '../../../hooks/useSaccoConfig'
 import type { RequiredDocument } from '@saccosphere/schemas'
+import { Icon } from '../../ui/Icon'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 const PADDING_H = Math.max(16, Math.min(24, SCREEN_WIDTH * 0.05))
@@ -67,7 +68,7 @@ export default function SaccoApplicationDocuments() {
           {kycVerifiedDocs.map((doc: RequiredDocument) => (
             <View key={doc.key} className="flex-row gap-2.5 mb-3">
               <View className="w-6 h-6 rounded-full bg-mint-500 justify-center items-center">
-                <Text className="text-white text-xs font-bold">✓</Text>
+                <Icon name="check" size={12} color="#ffffff" />
               </View>
               <View>
                 <Text className="text-mint-700 text-xs font-semibold">{doc.label}</Text>
@@ -84,7 +85,7 @@ export default function SaccoApplicationDocuments() {
           <Text className="text-ink-faint text-xs mb-2 mt-4">Upload the following</Text>
           {docsToUpload.map((doc: RequiredDocument) => (
             <TouchableOpacity key={doc.key} className="bg-surface2 border border-border rounded-xl p-3 mb-2.5 flex-row gap-2.5 items-start">
-              <Text className="text-base">📄</Text>
+              <Icon name="file" size={16} color="#6B7280" />
               <View className="flex-1">
                 <Text className="text-ink text-xs font-semibold mb-0.5">{doc.label}</Text>
                 <Text className="text-ink-faint text-xs">

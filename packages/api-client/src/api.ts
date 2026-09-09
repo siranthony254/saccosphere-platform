@@ -2598,21 +2598,12 @@ export const api = {
       }
     },
 
-    getSaccos: async (params?: { status?: string; search?: string }) => {
+    // AllSaccosListView has pagination_class = None and accepts no query params,
+    // so this always returns the full list — callers filter client-side from
+    // one cached fetch rather than refetching per keystroke.
+    getSaccos: async () => {
       const response = await apiCall<any>('GET', '/management/superadmin/saccos/')
-      let items = Array.isArray(response) ? response : response.results ?? []
-
-      if (params?.search) {
-        items = items.filter((item: any) =>
-          item.name?.toLowerCase().includes(params.search!.toLowerCase())
-        )
-      }
-      if (params?.status) {
-        items = items.filter((item: any) =>
-          (params.status === 'active' && item.is_active) ||
-          (params.status === 'suspended' && !item.is_active)
-        )
-      }
+      const items = Array.isArray(response) ? response : response.results ?? []
 
       return {
         count: items.length,

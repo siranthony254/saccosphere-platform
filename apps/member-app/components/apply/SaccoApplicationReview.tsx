@@ -97,13 +97,13 @@ export default function SaccoApplicationReview() {
       <View className="bg-surface border border-border rounded-xl p-3.5 mb-2.5">
         <Text className="text-ink text-xs font-semibold mb-2">Documents</Text>
         {[
-          { label: 'National ID Front', status: (formData.customFields as any)?.id_front ? '✓ Ready' : '✗ Missing' },
-          { label: 'National ID Back', status: (formData.customFields as any)?.id_back ? '✓ Ready' : '✗ Missing' },
+          { label: 'National ID Front', status: (formData.customFields as any)?.id_front ? 'Ready' : 'Missing' },
+          { label: 'National ID Back', status: (formData.customFields as any)?.id_back ? 'Ready' : 'Missing' },
           ...Object.entries(formData.customFields || {})
             .filter(([k]) => k !== 'id_front' && k !== 'id_back')
             .map(([k, v]) => ({
               label: k.replace(/_/g, ' '),
-              status: v ? '✓ Provided' : '✗ Missing'
+              status: v ? 'Provided' : 'Missing'
             }))
         ].map((row) => (
           <View
@@ -111,8 +111,8 @@ export default function SaccoApplicationReview() {
             className="flex-row justify-between py-2 border-b border-border last:border-b-0"
           >
             <Text className="text-ink-muted text-xs">{row.label}</Text>
-            <View className={row.status.startsWith('✓') ? 'bg-mint-100 px-2 py-0.5 rounded-md' : 'bg-red-100 px-2 py-0.5 rounded-md'}>
-              <Text className={row.status.startsWith('✓') ? 'text-mint-700 text-[10px] font-bold' : 'text-red-700 text-[10px] font-bold'}>{row.status}</Text>
+            <View className={row.status !== 'Missing' ? 'bg-mint-100 px-2 py-0.5 rounded-md' : 'bg-red-100 px-2 py-0.5 rounded-md'}>
+              <Text className={row.status !== 'Missing' ? 'text-mint-700 text-[10px] font-bold' : 'text-red-700 text-[10px] font-bold'}>{row.status}</Text>
             </View>
           </View>
         ))}

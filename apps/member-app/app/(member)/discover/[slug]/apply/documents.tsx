@@ -5,6 +5,7 @@ import { useMembershipApplicationStore } from '../../../../../store/useMembershi
 import { useSaccoConfig } from '../../../../../hooks/useSaccoConfig'
 import type { RequiredDocument } from '@saccosphere/schemas'
 import { DeepSpaceBackground } from '../../../../../components/DeepSpaceBackground'
+import { Icon } from '../../../../../components/ui/Icon'
 
 export default function ApplyDocumentsScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>()
@@ -67,7 +68,7 @@ export default function ApplyDocumentsScreen() {
             {kycVerifiedDocs.map((doc: RequiredDocument) => (
               <View key={doc.key} className="flex-row gap-2.5 mx-4 mb-3">
                 <View className="w-6 h-6 rounded-full justify-center items-center bg-mint-500">
-                  <Text className="text-white text-xs font-bold">✓</Text>
+                  <Icon name="check" size={12} color="#ffffff" />
                 </View>
                 <View>
                   <Text className="text-mint-400 text-xs font-semibold">
@@ -86,7 +87,7 @@ export default function ApplyDocumentsScreen() {
             <Text className="text-white/40 text-xs mb-2 mx-4 mt-4">Upload the following</Text>
             {docsToUpload.map((doc: RequiredDocument) => (
               <TouchableOpacity key={doc.key} className="mx-4 bg-white/5 border border-white/10 rounded-xl p-3 mb-2.5 flex-row gap-2.5 items-start">
-                <Text className="text-base">📄</Text>
+                <Icon name="file" size={16} color="#6B7280" />
                 <View className="flex-1">
                   <Text className="text-white text-xs font-semibold mb-0.5">{doc.label}</Text>
                   <Text className="text-white/60 text-xs">

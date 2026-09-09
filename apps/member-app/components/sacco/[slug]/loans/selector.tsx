@@ -4,6 +4,7 @@ import { router } from 'expo-router'
 import { useLoans } from '../../../../hooks/useLoans'
 import { useMemberships } from '../../../../hooks/useMembership'
 import { getActiveMemberships, getMembershipSavings } from '../../../../lib/membership'
+import { Icon } from '../../../ui/Icon'
 
 const VIOLET = '#6D28D9'
 const MINT = '#10B981'
@@ -44,7 +45,7 @@ export default function SaccoLoanSelectorScreen() {
   if (activeMemberships.length === 0) {
     return (
       <View style={{ flex: 1, backgroundColor: SURFACE, alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-        <Text style={{ fontSize: 36, marginBottom: 12 }}>🏦</Text>
+        <Icon name="bank" size={36} color="#6D28D9" style={{ marginBottom: 12 }} />
         <Text style={{ fontSize: 15, fontWeight: '700', color: INK, marginBottom: 6 }}>No SACCOs linked</Text>
         <Text style={{ fontSize: 12, color: INK_MUTED, textAlign: 'center', lineHeight: 20, marginBottom: 16 }}>
           Join a SACCO first to apply for a loan.
@@ -89,7 +90,7 @@ export default function SaccoLoanSelectorScreen() {
             marginBottom: 8,
           }}
         >
-          <Text style={{ fontSize: 18 }}>🏦</Text>
+          <Icon name="bank" size={18} color="#6D28D9" />
         </View>
         <Text style={{ fontSize: 17, fontWeight: '700', color: INK }}>Apply for a loan</Text>
         <Text style={{ fontSize: 12, color: INK_MUTED, marginTop: 4 }}>
@@ -123,7 +124,7 @@ export default function SaccoLoanSelectorScreen() {
                 justifyContent: 'center',
               }}
             >
-              <Text style={{ fontSize: 16 }}>⚖️</Text>
+              <Icon name="scale" size={16} color="#6D28D9" />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={{ fontSize: 12, fontWeight: '600', color: INK, marginBottom: 2 }}>

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Icon } from '@saccosphere/ui'
 import { useMembers } from '../../hooks/useMembers'
 import { useSaccoAdminDashboard } from '../../hooks/useSaccoAdminDashboard'
 import type { AdminMember } from '@saccosphere/schemas'
@@ -77,7 +78,7 @@ export function MembersList() {
             value={search}
             onChange={e => setSearch(e.target.value)}
           />
-          <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-ink-faint text-xs">🔍</span>
+          <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-ink-faint"><Icon name="search" size={13} /></span>
         </div>
         <select
           className="px-3 py-2 border border-ink-faint rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 bg-white cursor-pointer"
@@ -141,7 +142,7 @@ export function MembersList() {
                       <td className="px-3 py-2.5">KES {m.monthly_contribution.toLocaleString()}</td>
                       <td className="px-3 py-2.5">
                         <span className={`${m.kyc_status === 'verified' ? 'bg-mint-50 text-mint-700' : 'bg-amber-50 text-amber-700'} px-2 py-0.5 rounded-full text-[11px] font-semibold`}>
-                          {m.kyc_status === 'verified' ? '✓ Verified' : m.kyc_status}
+                          {m.kyc_status === 'verified' ? 'Verified' : m.kyc_status}
                         </span>
                       </td>
                       <td className="px-3 py-2.5">
@@ -161,7 +162,7 @@ export function MembersList() {
                             Review App
                           </button>
                         ) : (
-                          <span className="text-mint-600 font-medium text-xs">Details →</span>
+                          <span className="text-mint-600 font-medium text-xs">Details</span>
                         )}
                       </td>
                     </tr>

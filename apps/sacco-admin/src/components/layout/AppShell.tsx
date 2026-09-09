@@ -1,4 +1,5 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
+import { Icon, type IconName } from '@saccosphere/ui'
 import { useLayoutStore } from '../../store/useLayoutStore'
 import { useAuthStore } from '../../store/useAuthStore'
 import { useSacco } from '../../hooks/useSacco'
@@ -27,25 +28,25 @@ export function AppShell() {
   const pendingLoansCount = loans?.count ?? 0
   const pendingKycCount = kycQueue?.length ?? 0
 
-  const NAV_ITEMS = [
-    { path: '/dashboard', label: 'Dashboard', icon: '📊', badge: null },
-    { path: '/members', label: 'Members', icon: '👥', badge: null },
-    { path: '/applications', label: 'Applications', icon: '📝', badge: pendingAppsCount > 0 ? String(pendingAppsCount) : null },
-    { path: '/loans', label: 'Loan approvals', icon: '💰', badge: pendingLoansCount > 0 ? String(pendingLoansCount) : null },
-    { path: '/disbursements', label: 'Disbursements', icon: '💸', badge: null },
-    { path: '/contributions', label: 'Contributions', icon: '📥', badge: null },
-    { path: '/ledger', label: 'General Ledger', icon: '📖', badge: null },
-    { path: '/dividends', label: 'Dividends', icon: '💎', badge: null },
-    { path: '/sms', label: 'Bulk SMS', icon: '💬', badge: null },
-    { path: '/reports', label: 'Reports', icon: '📈', badge: null },
-    { path: '/reports/sasra', label: 'SASRA Returns', icon: '🏛️', badge: null },
-    { path: '/analytics/liquidity-npl', label: 'Liquidity & NPL', icon: '📉', badge: null },
-    { path: '/billing', label: 'SaaS Billing', icon: '🧾', badge: null },
-    { path: '/kyc', label: 'KYC Review', icon: '🔍', badge: pendingKycCount > 0 ? String(pendingKycCount) : null },
-    { path: '/roles', label: 'Roles', icon: '👤', badge: null },
-    { path: '/import', label: 'Import', icon: '📤', badge: null },
-    { path: '/external-guarantors', label: 'External Guarantors', icon: '🤝', badge: null },
-    { path: '/settings', label: 'Settings', icon: '⚙️', badge: null },
+  const NAV_ITEMS: { path: string; label: string; icon: IconName; badge: string | null }[] = [
+    { path: '/dashboard', label: 'Dashboard', icon: 'dashboard', badge: null },
+    { path: '/members', label: 'Members', icon: 'users', badge: null },
+    { path: '/applications', label: 'Applications', icon: 'file-text', badge: pendingAppsCount > 0 ? String(pendingAppsCount) : null },
+    { path: '/loans', label: 'Loan approvals', icon: 'coins', badge: pendingLoansCount > 0 ? String(pendingLoansCount) : null },
+    { path: '/disbursements', label: 'Disbursements', icon: 'send', badge: null },
+    { path: '/contributions', label: 'Contributions', icon: 'download', badge: null },
+    { path: '/ledger', label: 'General Ledger', icon: 'book', badge: null },
+    { path: '/dividends', label: 'Dividends', icon: 'gem', badge: null },
+    { path: '/sms', label: 'Bulk SMS', icon: 'message', badge: null },
+    { path: '/reports', label: 'Reports', icon: 'bar-chart', badge: null },
+    { path: '/reports/sasra', label: 'SASRA Returns', icon: 'landmark', badge: null },
+    { path: '/analytics/liquidity-npl', label: 'Liquidity & NPL', icon: 'trending-down', badge: null },
+    { path: '/billing', label: 'SaaS Billing', icon: 'receipt', badge: null },
+    { path: '/kyc', label: 'KYC Review', icon: 'scan-face', badge: pendingKycCount > 0 ? String(pendingKycCount) : null },
+    { path: '/roles', label: 'Roles', icon: 'user-check', badge: null },
+    { path: '/import', label: 'Import', icon: 'upload', badge: null },
+    { path: '/external-guarantors', label: 'External Guarantors', icon: 'handshake', badge: null },
+    { path: '/settings', label: 'Settings', icon: 'settings', badge: null },
   ]
 
 
@@ -86,7 +87,7 @@ export function AppShell() {
                 }`
               }
             >
-              <span className="text-sm shrink-0">{item.icon}</span>
+              <Icon name={item.icon} size={17} className="shrink-0" />
               {!sidebarCollapsed && (
                 <>
                   <span className="flex-1">{item.label}</span>

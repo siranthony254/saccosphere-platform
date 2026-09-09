@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, ScrollView, Dimensions } from 'react-nati
 import { router } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRegistrationStore } from '../../../store/useRegistrationStore'
+import { Icon } from '../../../components/ui/Icon'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 const PADDING_H = Math.max(16, Math.min(24, SCREEN_WIDTH * 0.05))
@@ -46,7 +47,7 @@ export default function RegistrationSuccessScreen() {
       {/* Success Ring */}
       <View className="w-18 h-18 rounded-full bg-mint-50 justify-center items-center mb-5">
         <View className="w-9 h-9 rounded-full bg-mint-500 justify-center items-center">
-          <Text className="text-white text-lg font-bold">✓</Text>
+          <Icon name="check" size={18} color="#ffffff" />
         </View>
       </View>
 
@@ -71,7 +72,7 @@ export default function RegistrationSuccessScreen() {
                 </Text>
               </View>
               <Text className="flex-1 text-ink text-xs font-medium">{SACCO_NAMES[slug] || 'SACCO'}</Text>
-              <Text className="text-mint-500 text-base">✓</Text>
+              <Icon name="check" size={16} color="#10b981" />
             </View>
           ))}
 

@@ -158,7 +158,7 @@ export default function ProfileScreen() {
 
       {/* Sign out */}
       <TouchableOpacity style={{ marginHorizontal: 14, marginVertical: 14, backgroundColor: 'rgba(239, 68, 68, 0.15)', borderRadius: 12, padding: 16, alignItems: 'center', borderWidth: 1, borderColor: '#EF4444' }} onPress={() => logout(undefined, { onSuccess: () => router.replace('/(auth)/login') })}>
-        <Text style={{ color: '#F87171', fontSize: 12, fontWeight: '600' }}>🚪  Sign out</Text>
+        <Text style={{ color: '#F87171', fontSize: 12, fontWeight: '600' }}>Sign out</Text>
       </TouchableOpacity>
 
       <Text style={{ textAlign: 'center', color: TEXT_MUTED, fontSize: 12, marginBottom: 40 }}>Saccosphere v1.0 · SASRA regulated · CBK licensed</Text>

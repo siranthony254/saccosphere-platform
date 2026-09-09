@@ -18,6 +18,7 @@ import { router } from 'expo-router'
 import { usePublicStats } from '../hooks/usePublicStats'
 import { useMemberships } from '../hooks/useMembership'
 import { api } from '@saccosphere/api-client'
+import { Icon } from '../components/ui/Icon'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 const PADDING_H = Math.max(16, Math.min(24, SCREEN_WIDTH * 0.05))
@@ -249,7 +250,7 @@ export default function LandingScreen() {
                 onPress={() => setLookupVisible(true)}
               >
                 <Text className="text-xs font-semibold" style={{ color: TEXT }}>
-                  🔗 Link my existing SACCOs
+                  Link my existing SACCOs
                 </Text>
                 <Text className="text-xs mt-1" style={{ color: TEXT_MUTED }}>
                   Already a member? Sync your data in one tap
@@ -603,7 +604,7 @@ function LinkExistingMembershipModal({
                       }}
                     >
                       {isConfirmed && (
-                        <Text className="text-white text-xs font-bold">✓</Text>
+                        <Icon name="check" size={12} color="#ffffff" />
                       )}
                     </View>
                   </TouchableOpacity>

@@ -2,6 +2,7 @@ import { View, Text, TouchableOpacity, ScrollView } from 'react-native'
 import { router } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Dimensions } from 'react-native'
+import { Icon } from '../../../components/ui/Icon'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 const PADDING_H = Math.max(16, Math.min(24, SCREEN_WIDTH * 0.05))
@@ -62,7 +63,7 @@ export default function NoSaccoPrompt() {
         style={{ borderWidth: 1, borderColor: BORDER_MID, backgroundColor: SURFACE2 }}
       >
         <Text className="text-xs" style={{ color: INK_FAINT }}>
-          🔍 Search 237 SACCOs...
+          Search 237 SACCOs...
         </Text>
       </View>
 
@@ -76,7 +77,7 @@ export default function NoSaccoPrompt() {
           borderColor: BORDER_MID,
         }}
       >
-        <Text className="text-3xl mb-3">🏦</Text>
+        <Icon name="bank" size={30} color="#6D28D9" style={{ marginBottom: 12 }} />
         <Text className="text-ink text-sm font-semibold mb-1">
           Not in a SACCO yet?
         </Text>

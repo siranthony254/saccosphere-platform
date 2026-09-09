@@ -9,6 +9,7 @@ import { useSubmitLoanApplication } from '../../../../../hooks/useLoanApplicatio
 import { useCurrentUser } from '../../../../../store/useAuthStore'
 import { useLoanEligibility } from '../../../../../hooks/useLoans'
 import { DeepSpaceBackground } from '../../../../DeepSpaceBackground'
+import { Icon } from '../../../../ui/Icon'
 
 export default function LoanStep1() {
   const { slug } = useLocalSearchParams<{ slug: string }>()
@@ -118,7 +119,7 @@ export default function LoanStep1() {
           </View>
 
           <View className="bg-red-500/10 border border-red-500/30 rounded-2xl p-6 items-center">
-            <Text className="text-red-400 text-2xl mb-3">⚠️</Text>
+            <Icon name="warning" size={24} color="#f87171" style={{ marginBottom: 12 }} />
             <Text className="text-white text-lg font-bold mb-2">Not Eligible</Text>
             <Text className="text-white/60 text-sm text-center">{eligibility.reason ?? 'You are not eligible for a loan at this time'}</Text>
           </View>
@@ -144,7 +145,7 @@ export default function LoanStep1() {
           </View>
 
           <View className="bg-yellow-500/10 border border-yellow-500/30 rounded-2xl p-6 items-center">
-            <Text className="text-yellow-400 text-2xl mb-3">💰</Text>
+            <Icon name="cash" size={24} color="#facc15" style={{ marginBottom: 12 }} />
             <Text className="text-white text-lg font-bold mb-2">No Loan Limit</Text>
             <Text className="text-white/60 text-sm text-center">Your current loan limit is KES 0. Please build your savings to increase your limit.</Text>
           </View>

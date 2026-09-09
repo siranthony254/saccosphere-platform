@@ -49,7 +49,7 @@ function B2CStatusBadge({ conversationId }: { conversationId: string }) {
   return (
     <div className="flex flex-col">
       <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold w-fit ${colorClass}`}>
-        {status === 'completed' || status === 'success' ? '✓ DISBURSED' : status === 'failed' ? '✕ FAILED' : status.toUpperCase()}
+        {status === 'completed' || status === 'success' ? 'DISBURSED' : status === 'failed' ? 'FAILED' : status.toUpperCase()}
       </span>
       <span className="text-[9px] text-ink-faint font-mono mt-0.5">{conversationId}</span>
     </div>
@@ -235,7 +235,7 @@ export function DisbursementsList() {
                                       })}
                                       disabled={disbursing || !phone || !amount}
                                     >
-                                      {disbursing ? 'Processing...' : '📱 Initiate Payout'}
+                                      {disbursing ? 'Processing...' : 'Initiate Payout'}
                                     </button>
                                     <button
                                       className="px-5 py-2.5 rounded-lg border border-[#e5ede9] bg-white text-sm font-medium cursor-pointer hover:bg-surface-2 transition-colors"

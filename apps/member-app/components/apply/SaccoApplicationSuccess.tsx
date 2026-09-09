@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Dimensions } from 'react-native'
 import { useMembershipApplicationStore } from '../../store/useMembershipApplicationStore'
 import { useSacco } from '../../hooks/useSaccos'
+import { Icon } from '../ui/Icon'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 const PADDING_H = Math.max(16, Math.min(24, SCREEN_WIDTH * 0.05))
@@ -28,7 +29,7 @@ export default function SaccoApplicationSuccess() {
       {/* Success Ring */}
       <View className="w-16 h-16 rounded-full bg-mint-50 justify-center items-center mb-4">
         <View className="w-8 h-8 rounded-full bg-mint-500 justify-center items-center">
-          <Text className="text-white text-lg font-bold">✓</Text>
+          <Icon name="check" size={18} color="#ffffff" />
         </View>
       </View>
 
@@ -67,7 +68,7 @@ export default function SaccoApplicationSuccess() {
       <View className="w-full mb-4">
         <View className="flex-row items-start gap-2.5 mb-4">
           <View className="w-5.5 h-5.5 rounded-full bg-mint-500 justify-center items-center">
-            <Text className="text-white text-xs font-bold">✓</Text>
+            <Icon name="check" size={12} color="#ffffff" />
           </View>
           <View className="flex-1">
             <Text className="text-ink text-xs font-medium">Application submitted</Text>

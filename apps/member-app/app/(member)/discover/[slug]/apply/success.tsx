@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useSacco } from '../../../../../hooks/useSaccos'
 import { useSaccoConfig } from '../../../../../hooks/useSaccoConfig'
 import { DeepSpaceBackground } from '../../../../../components/DeepSpaceBackground'
+import { Icon } from '../../../../../components/ui/Icon'
 
 export default function ApplySuccessScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>()
@@ -25,7 +26,7 @@ export default function ApplySuccessScreen() {
         <View className="items-center pt-10 mb-4">
           <View className="w-16 h-16 rounded-full mb-4 items-center justify-center bg-violet-500/20">
             <View className="w-8 h-8 rounded-full items-center justify-center bg-violet-500">
-              <Text className="text-white text-lg font-bold">✓</Text>
+              <Icon name="check" size={18} color="#ffffff" />
             </View>
           </View>
           <Text className="text-white text-base font-bold mb-1">Application submitted!</Text>
@@ -63,7 +64,7 @@ export default function ApplySuccessScreen() {
         <View className="mx-4 mb-6">
           <View className="flex-row items-start gap-2.5 mb-4">
             <View className="w-5.5 h-5.5 rounded-full items-center justify-center bg-violet-500">
-              <Text className="text-white text-xs font-bold">✓</Text>
+              <Icon name="check" size={12} color="#ffffff" />
             </View>
             <View className="flex-1">
               <Text className="text-white text-xs font-medium">Application submitted</Text>

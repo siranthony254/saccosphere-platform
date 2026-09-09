@@ -1,4 +1,5 @@
 import React from 'react'
+import type { StyleProp, TextStyle } from 'react-native'
 import {
   Ionicons,
   MaterialCommunityIcons
@@ -6,52 +7,77 @@ import {
 
 export type IconName =
   | 'home' | 'services' | 'discover' | 'menu'
-  | 'card' | 'bank' | 'file' | 'plus'
+  | 'card' | 'bank' | 'file' | 'folder' | 'plus'
   | 'savings' | 'withdraw' | 'transfer' | 'loan' | 'dividend'
-  | 'security' | 'phone' | 'bell' | 'settings' | 'logout'
+  | 'security' | 'lock' | 'phone' | 'bell' | 'settings' | 'logout'
   | 'success' | 'error' | 'warning' | 'info'
-  | 'guarantor' | 'arrow-right' | 'check'
+  | 'guarantor' | 'arrow-right' | 'check' | 'close'
+  | 'camera' | 'cash' | 'send' | 'receive' | 'swap'
+  | 'calendar' | 'bulb' | 'scale' | 'mail' | 'link' | 'search' | 'chart'
 
 interface Props {
   name: IconName
   size?: number
   color?: string
   className?: string
+  style?: StyleProp<TextStyle>
 }
 
-export function Icon({ name, size = 20, color = '#111827', className = '' }: Props) {
+export function Icon({ name, size = 20, color = '#111827', style }: Props) {
+  const io = (n: React.ComponentProps<typeof Ionicons>['name']) => (
+    <Ionicons name={n} size={size} color={color} style={style} />
+  )
+  const mci = (n: React.ComponentProps<typeof MaterialCommunityIcons>['name']) => (
+    <MaterialCommunityIcons name={n} size={size} color={color} style={style} />
+  )
   switch (name) {
-    case 'home': return <Ionicons name="home-outline" size={size} color={color} />
-    case 'services': return <Ionicons name="flash-outline" size={size} color={color} />
-    case 'discover': return <Ionicons name="search-outline" size={size} color={color} />
-    case 'menu': return <Ionicons name="menu-outline" size={size} color={color} />
+    case 'home': return io('home-outline')
+    case 'services': return io('flash-outline')
+    case 'discover': return io('search-outline')
+    case 'menu': return io('menu-outline')
 
-    case 'card': return <Ionicons name="card-outline" size={size} color={color} />
-    case 'bank': return <MaterialCommunityIcons name="bank-outline" size={size} color={color} />
-    case 'file': return <Ionicons name="document-text-outline" size={size} color={color} />
-    case 'plus': return <Ionicons name="add-outline" size={size} color={color} />
+    case 'card': return io('card-outline')
+    case 'bank': return mci('bank-outline')
+    case 'file': return io('document-text-outline')
+    case 'folder': return io('folder-outline')
+    case 'plus': return io('add-outline')
 
-    case 'savings': return <MaterialCommunityIcons name="piggy-bank-outline" size={size} color={color} />
-    case 'withdraw': return <MaterialCommunityIcons name="cash-minus" size={size} color={color} />
-    case 'transfer': return <MaterialCommunityIcons name="swap-horizontal" size={size} color={color} />
-    case 'loan': return <MaterialCommunityIcons name="hand-coin-outline" size={size} color={color} />
-    case 'dividend': return <Ionicons name="trending-up-outline" size={size} color={color} />
+    case 'camera': return io('camera-outline')
+    case 'cash': return io('cash-outline')
+    case 'send': return io('arrow-up-circle-outline')
+    case 'receive': return io('arrow-down-circle-outline')
+    case 'swap': return io('swap-horizontal-outline')
+    case 'calendar': return io('calendar-outline')
+    case 'bulb': return io('bulb-outline')
+    case 'scale': return mci('scale-balance')
+    case 'mail': return io('mail-outline')
+    case 'link': return io('link-outline')
+    case 'search': return io('search-outline')
+    case 'chart': return io('bar-chart-outline')
+    case 'lock': return io('lock-closed-outline')
+    case 'close': return io('close-outline')
 
-    case 'security': return <Ionicons name="shield-checkmark-outline" size={size} color={color} />
-    case 'phone': return <Ionicons name="call-outline" size={size} color={color} />
-    case 'bell': return <Ionicons name="notifications-outline" size={size} color={color} />
-    case 'settings': return <Ionicons name="settings-outline" size={size} color={color} />
-    case 'logout': return <Ionicons name="log-out-outline" size={size} color={color} />
+    case 'savings': return mci('piggy-bank-outline')
+    case 'withdraw': return mci('cash-minus')
+    case 'transfer': return mci('swap-horizontal')
+    case 'loan': return mci('hand-coin-outline')
+    case 'dividend': return io('trending-up-outline')
 
-    case 'success': return <Ionicons name="checkmark-circle" size={size} color={color} />
-    case 'error': return <Ionicons name="close-circle" size={size} color={color} />
-    case 'warning': return <Ionicons name="warning-outline" size={size} color={color} />
-    case 'info': return <Ionicons name="information-circle-outline" size={size} color={color} />
+    case 'security': return io('shield-checkmark-outline')
+    case 'phone': return io('call-outline')
+    case 'bell': return io('notifications-outline')
+    case 'settings': return io('settings-outline')
+    case 'logout': return io('log-out-outline')
 
-    case 'guarantor': return <MaterialCommunityIcons name="handshake-outline" size={size} color={color} />
-    case 'arrow-right': return <Ionicons name="chevron-forward" size={size} color={color} />
-    case 'check': return <Ionicons name="checkmark" size={size} color={color} />
+    case 'success': return io('checkmark-circle')
+    case 'error': return io('close-circle')
+    case 'warning': return io('warning-outline')
+    case 'info': return io('information-circle-outline')
 
-    default: return <Ionicons name="help-circle-outline" size={size} color={color} />
+    case 'guarantor': return mci('handshake-outline')
+    case 'arrow-right': return io('chevron-forward')
+    case 'check': return io('checkmark')
+
+    default: return io('help-circle-outline')
   }
 }

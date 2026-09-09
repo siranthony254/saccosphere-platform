@@ -106,7 +106,7 @@ export function Reports() {
             to="/reports/sasra"
             className="inline-block px-3 py-1.5 rounded bg-violet-600 text-white text-xs font-medium hover:bg-violet-700"
           >
-            Open SASRA Returns →
+            Open SASRA Returns
           </Link>
         </div>
       </div>

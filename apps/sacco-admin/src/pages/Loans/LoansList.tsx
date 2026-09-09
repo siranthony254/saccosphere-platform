@@ -187,7 +187,7 @@ export function LoansList() {
                       setScheduleLoanInfo(loan)
                     }}
                   >
-                    📅 Schedule
+                    Schedule
                   </button>
                   {rules.canMoveToReview || rules.canApprove || rules.canDisburse ? (
                     <button
@@ -230,7 +230,7 @@ export function LoansList() {
 
                       {loan.crb_listed_negative && (
                         <div className="mt-2.5 p-2 bg-red-50 border border-red-200 rounded text-xs text-red-700 font-medium">
-                          ⚠️ CRB Warning: Negative listing detected. Approval requires an override reason (min 10 chars).
+                          CRB Warning: Negative listing detected. Approval requires an override reason (min 10 chars).
                         </div>
                       )}
 
@@ -240,7 +240,7 @@ export function LoansList() {
                           onClick={() => handleRunCRB(loan)}
                           disabled={crbRunning}
                         >
-                          {crbRunning ? 'Checking…' : loan.crb_checked_at ? '↻ Re-run CRB check' : '🔎 Run CRB check'}
+                          {crbRunning ? 'Checking…' : loan.crb_checked_at ? 'Re-run CRB check' : 'Run CRB check'}
                         </button>
                         {!loan.crb_checked_at && (
                           <span className="text-[10px] text-amber-700">Required before approval</span>
@@ -292,7 +292,7 @@ export function LoansList() {
                             onClick={() => handleDisburse(loan)}
                             disabled={disbursing}
                           >
-                            {disbursing ? 'Processing...' : '💸 Disburse Funds'}
+                            {disbursing ? 'Processing...' : 'Disburse Funds'}
                           </button>
                         )}
 
@@ -302,7 +302,7 @@ export function LoansList() {
                             onClick={() => handleReview(loan, 'under_review')}
                             disabled={reviewing}
                           >
-                            {reviewing ? 'Processing...' : '📋 Move to Under Review'}
+                            {reviewing ? 'Processing...' : 'Move to Under Review'}
                           </button>
                         )}
 
@@ -312,7 +312,7 @@ export function LoansList() {
                             onClick={() => handleReview(loan, 'approve')}
                             disabled={reviewing}
                           >
-                            {reviewing ? 'Processing...' : '✓ Approve Loan'}
+                            {reviewing ? 'Processing...' : 'Approve Loan'}
                           </button>
                         )}
 
@@ -322,7 +322,7 @@ export function LoansList() {
                             onClick={() => handleReview(loan, 'reject')}
                             disabled={reviewing}
                           >
-                            ✗ Reject
+                            Reject
                           </button>
                         )}
                       </div>
@@ -353,7 +353,7 @@ export function LoansList() {
                 }}
                 className="p-1 rounded-lg border border-ink-faint hover:bg-surface-2 text-ink text-xs font-bold cursor-pointer"
               >
-                ✕ Close
+                Close
               </button>
             </div>
 

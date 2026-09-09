@@ -140,13 +140,13 @@ export default function SaccoDetailScreen() {
             className="flex-1 bg-white/5 rounded-xl p-3.5 items-center border border-white/10"
             onPress={() => router.push({ pathname: '/sacco/[slug]/statement', params: { slug } })}
           >
-            <Text className="text-white/80 text-xs font-medium">📄 View statement</Text>
+            <Text className="text-white/80 text-xs font-medium">View statement</Text>
           </TouchableOpacity>
           <TouchableOpacity
             className="flex-1 bg-white/5 rounded-xl p-3.5 items-center border border-white/10"
             onPress={() => router.push({ pathname: '/sacco/[slug]/compare', params: { slug } })}
           >
-            <Text className="text-white/80 text-xs font-medium">⚖️ Compare loans</Text>
+            <Text className="text-white/80 text-xs font-medium">Compare loans</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

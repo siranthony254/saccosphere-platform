@@ -2,6 +2,7 @@ import { View, Text, TouchableOpacity, ScrollView } from 'react-native'
 import { useLocalSearchParams, router } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { DeepSpaceBackground } from '../../../../DeepSpaceBackground'
+import { Icon } from '../../../../ui/Icon'
 
 export default function LoanSubmittedSuccess() {
   const { slug, ref } = useLocalSearchParams<{ slug: string; ref?: string }>()
@@ -22,7 +23,7 @@ export default function LoanSubmittedSuccess() {
         {/* Success Ring */}
         <View className="w-20 h-20 rounded-full bg-mint-500/10 justify-center items-center mb-6 border border-mint-500/20">
           <View className="w-10 h-10 rounded-full bg-mint-500 justify-center items-center">
-            <Text className="text-white text-xl font-bold">✓</Text>
+            <Icon name="check" size={20} color="#ffffff" />
           </View>
         </View>
 

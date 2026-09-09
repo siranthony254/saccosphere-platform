@@ -1,4 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom'
+import { Icon } from '@saccosphere/ui'
 import { useMemberDetail } from '../../hooks/useMembers'
 import { useUserRoles } from '../../hooks/useRoles'
 
@@ -26,9 +27,10 @@ export function MemberDetail() {
         <div className="flex items-center gap-2.5">
           <button
             onClick={() => navigate(-1)}
-            className="bg-transparent border-none cursor-pointer text-ink-muted text-sm hover:text-ink transition-colors"
+            className="flex items-center gap-1 bg-transparent border-none cursor-pointer text-ink-muted text-sm hover:text-ink transition-colors"
           >
-            ← Members
+            <Icon name="chevron-left" size={14} />
+            Members
           </button>
           <span className="text-ink-faint">|</span>
           <div>

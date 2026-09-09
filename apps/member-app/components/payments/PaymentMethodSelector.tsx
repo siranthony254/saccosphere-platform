@@ -1,6 +1,7 @@
 import { View, Text, TouchableOpacity, ScrollView } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { DeepSpaceBackground } from '../DeepSpaceBackground'
+import { Icon } from '../ui/Icon'
 
 const BRAND_VIOLET = '#6D28D9'
 const BRAND_MINT = '#10B981'
@@ -58,7 +59,7 @@ export default function PaymentMethodSelector({
               borderColor: 'rgba(109, 40, 217, 0.2)',
             }}
           >
-            <Text style={{ fontSize: 24 }}>{title.includes('Contribute') ? '💰' : title.includes('Loan') ? '📋' : '💳'}</Text>
+            <Icon name={title.includes('Contribute') ? 'cash' : title.includes('Loan') ? 'file' : 'card'} size={24} color="#6D28D9" />
           </View>
           <Text style={{ fontSize: 24, fontWeight: '800', color: '#fff' }}>{title}</Text>
           <Text style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', marginTop: 6, lineHeight: 20 }}>
@@ -195,7 +196,7 @@ export default function PaymentMethodSelector({
                 borderColor: 'rgba(59, 130, 246, 0.2)',
               }}
             >
-              <Text style={{ fontSize: 24 }}>🏦</Text>
+              <Icon name="bank" size={24} color="#6D28D9" />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={{ fontSize: 15, fontWeight: '700', color: '#fff' }}>Bank Transfer</Text>

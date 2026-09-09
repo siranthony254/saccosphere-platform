@@ -1,18 +1,19 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
+import { Icon, type IconName } from '@saccosphere/ui'
 import { useAuthStore } from '../../store/useAuthStore'
 import { useLogout } from '../../hooks/useAuth'
 
-const NAV = [
-  { path: '/overview',     label: 'System overview',    icon: '🌐', badge: null },
-  { path: '/saccos',       label: 'All SACCOs',         icon: '🏦', badge: null },
-  { path: '/members',      label: 'All Members',        icon: '👥', badge: null },
-  { path: '/transactions', label: 'Transactions',        icon: '💸', badge: null, live: true },
-  { path: '/roles',        label: 'Role Management',    icon: '👑', badge: null },
-  { path: '/kyc',          label: 'KYC Review',         icon: '🪪', badge: null },
-  { path: '/audit-logs',   label: 'Audit Logs',         icon: '📋', badge: null },
-  { path: '/billing',      label: 'Billing & Invoices',  icon: '🧾', badge: null },
-  { path: '/compliance',   label: 'Compliance',         icon: '🛡️', badge: null },
-  { path: '/system',       label: 'System & API health', icon: '🔧', badge: null },
+const NAV: { path: string; label: string; icon: IconName; badge: string | null; live?: boolean }[] = [
+  { path: '/overview',     label: 'System overview',    icon: 'globe',            badge: null },
+  { path: '/saccos',       label: 'All SACCOs',         icon: 'building',         badge: null },
+  { path: '/members',      label: 'All Members',        icon: 'users',            badge: null },
+  { path: '/transactions', label: 'Transactions',       icon: 'arrow-left-right', badge: null, live: true },
+  { path: '/roles',        label: 'Role Management',    icon: 'shield',           badge: null },
+  { path: '/kyc',          label: 'KYC Review',         icon: 'scan-face',        badge: null },
+  { path: '/audit-logs',   label: 'Audit Logs',         icon: 'clipboard-list',   badge: null },
+  { path: '/billing',      label: 'Billing & Invoices', icon: 'receipt',          badge: null },
+  { path: '/compliance',   label: 'Compliance',         icon: 'shield-check',     badge: null },
+  { path: '/system',       label: 'System & API health', icon: 'activity',        badge: null },
 ]
 
 export function AppShell() {
@@ -53,7 +54,7 @@ export function AppShell() {
                 }`
               }
             >
-              <span className="text-sm shrink-0">{item.icon}</span>
+              <Icon name={item.icon} size={17} className="shrink-0" />
               <span className="flex-1">{item.label}</span>
               {item.live && (
                 <span className="flex items-center gap-1 text-[9px] text-mint-400">

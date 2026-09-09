@@ -8,6 +8,7 @@ import { api } from '@saccosphere/api-client'
 import { useQuery } from '@tanstack/react-query'
 import { useTransactions } from '../../hooks/useTransactions'
 import { useMembershipBySacco } from '../../hooks/useMembership'
+import { Icon, type IconName } from '../ui/Icon'
 import type { Transaction } from '@saccosphere/schemas'
 import { DeepSpaceBackground } from '../DeepSpaceBackground'
 
@@ -204,14 +205,14 @@ function TxnRow({ txn }: { txn: Transaction }) {
   const isCredit = txn.direction === 'credit'
   const type = txn.txn_type.toLowerCase()
 
-  const getIcon = () => {
-    if (type === 'contribution' || type === 'deposit') return '💰'
-    if (type === 'loan_repayment') return '📤'
-    if (type === 'loan_disbursement') return '📥'
-    if (type === 'withdrawal') return '💸'
-    if (type === 'transfer') return '🔄'
-    if (type === 'dividend') return '📈'
-    return isCredit ? '↓' : '↑'
+  const getIcon = (): IconName => {
+    if (type === 'contribution' || type === 'deposit') return 'cash'
+    if (type === 'loan_repayment') return 'send'
+    if (type === 'loan_disbursement') return 'receive'
+    if (type === 'withdrawal') return 'withdraw'
+    if (type === 'transfer') return 'swap'
+    if (type === 'dividend') return 'dividend'
+    return isCredit ? 'receive' : 'send'
   }
 
   return (
@@ -221,7 +222,7 @@ function TxnRow({ txn }: { txn: Transaction }) {
       className="flex-row items-center gap-4 py-3.5 border-b border-white/5 bg-white/5 px-4 rounded-2xl mb-2 border border-white/5"
     >
       <View className={`w-10 h-10 rounded-xl items-center justify-center ${isCredit ? 'bg-green-500/10' : 'bg-red-500/10'}`}>
-        <Text style={{ color: isCredit ? '#4ade80' : '#f87171', fontWeight: 'bold', fontSize: 16 }}>{getIcon()}</Text>
+        <Icon name={getIcon()} size={16} color={isCredit ? '#4ade80' : '#f87171'} />
       </View>
       <View className="flex-1">
         <Text className="text-white text-xs font-bold">{txn.description}</Text>

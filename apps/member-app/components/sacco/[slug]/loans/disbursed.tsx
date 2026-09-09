@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, ScrollView } from 'react-native'
 import { useLocalSearchParams, router } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Dimensions } from 'react-native'
+import { Icon } from '../../../ui/Icon'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 const PADDING_H = Math.max(16, Math.min(24, SCREEN_WIDTH * 0.05))
@@ -28,7 +29,7 @@ export default function LoanDisbursed() {
     >
       {/* Success Icon */}
       <View className="w-16 h-16 rounded-full bg-mint-50 justify-center items-center mb-4">
-        <Text className="text-4xl">💰</Text>
+        <Icon name="cash" size={40} color="#10b981" />
       </View>
 
       {/* Title */}

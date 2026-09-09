@@ -9,6 +9,7 @@ import * as ImagePicker from 'expo-image-picker'
 import { api } from '@saccosphere/api-client'
 import { useCurrentUser } from '../../store/useAuthStore'
 import { loadRefreshToken } from '../../hooks/useAuth'
+import { Icon } from '../../components/ui/Icon'
 
 const BIOMETRIC_TOKEN_KEY = 'saccosphere_biometric_refresh_token'
 
@@ -378,14 +379,14 @@ export default function SettingsScreen() {
                   style={{ flex: 1, backgroundColor: FROSTED_DARK, borderRadius: 16, padding: 20, alignItems: 'center', borderWidth: 1, borderColor: BORDER_WHITE }}
                   onPress={() => pickImage(true)}
                 >
-                  <Text style={{ fontSize: 24, marginBottom: 8 }}>📸</Text>
+                  <Icon name="camera" size={24} color="#6D28D9" style={{ marginBottom: 8 }} />
                   <Text style={{ color: TEXT, fontSize: 12, fontWeight: '600' }}>Take Photo</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={{ flex: 1, backgroundColor: FROSTED_DARK, borderRadius: 16, padding: 20, alignItems: 'center', borderWidth: 1, borderColor: BORDER_WHITE }}
                   onPress={() => pickImage(false)}
                 >
-                  <Text style={{ fontSize: 24, marginBottom: 8 }}>📁</Text>
+                  <Icon name="folder" size={24} color="#6D28D9" style={{ marginBottom: 8 }} />
                   <Text style={{ color: TEXT, fontSize: 12, fontWeight: '600' }}>Choose File</Text>
                 </TouchableOpacity>
               </View>

@@ -112,7 +112,7 @@ export default function SaccoApplicationReview() {
             <Text className="text-ink-muted text-xs">{doc.label}</Text>
             <View className={`px-2 py-0.5 rounded-md ${doc.already_verified_from_kyc ? 'bg-mint-100' : 'bg-blue-50'}`}>
               <Text className={`text-xs font-semibold ${doc.already_verified_from_kyc ? 'text-mint-700' : 'text-blue-700'}`}>
-                {doc.already_verified_from_kyc ? '✓ Verified' : '✓ Uploaded'}
+                {doc.already_verified_from_kyc ? 'Verified' : 'Uploaded'}
               </Text>
             </View>
           </View>

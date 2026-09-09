@@ -91,7 +91,7 @@ export default function SaccoProfileScreen() {
           Est. {sacco.established_year || 'N/A'} · {sacco.sasra_reg_no || 'No SASRA reg'}
         </Text>
         <View className="bg-white/20 px-2.5 py-0.5 rounded-full">
-          <Text className="text-white text-xs font-semibold">✓ SASRA Regulated</Text>
+          <Text className="text-white text-xs font-semibold">SASRA Regulated</Text>
         </View>
       </View>
 

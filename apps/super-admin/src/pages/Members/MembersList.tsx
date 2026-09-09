@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Icon } from '@saccosphere/ui'
 import { useAllMembers, useAllSaccos } from '../../hooks/usePlatformData'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { DataTable } from '../../components/ui/DataTable'
@@ -115,18 +116,20 @@ export function MembersList() {
           </div>
           <div className="flex gap-2">
             <button
-              className="px-3 py-1.5 border border-mid rounded-lg text-[13px] bg-surface disabled:opacity-40"
+              className="flex items-center gap-1 px-3 py-1.5 border border-mid rounded-lg text-[13px] bg-surface disabled:opacity-40"
               disabled={!data.previous}
               onClick={() => setPage((p) => Math.max(1, p - 1))}
             >
-              ← Prev
+              <Icon name="chevron-left" size={13} />
+              Prev
             </button>
             <button
-              className="px-3 py-1.5 border border-mid rounded-lg text-[13px] bg-surface disabled:opacity-40"
+              className="flex items-center gap-1 px-3 py-1.5 border border-mid rounded-lg text-[13px] bg-surface disabled:opacity-40"
               disabled={!data.next}
               onClick={() => setPage((p) => p + 1)}
             >
-              Next →
+              Next
+              <Icon name="chevron-right" size={13} />
             </button>
           </div>
         </div>

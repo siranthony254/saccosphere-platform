@@ -20,7 +20,7 @@ export function useMembers(filters: MemberFilters = {}) {
   return useQuery({
     queryKey: QueryKeys.adminMembers(params),
     queryFn: () => api.saccoAdmin.getMembers(params),
-    staleTime: 0,          // always consider stale → refetch on focus
+    staleTime: 0,          // always consider stale; refetch on focus
     refetchInterval: 30_000, // poll every 30 s for real-time member count / status
   })
 }

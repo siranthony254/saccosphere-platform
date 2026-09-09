@@ -4,6 +4,7 @@ import { router } from 'expo-router'
 import { useLoans } from '../../hooks/useLoans'
 import { useMemberships } from '../../hooks/useMembership'
 import { api } from '@saccosphere/api-client'
+import { Icon } from '../../components/ui/Icon'
 
 const VIOLET = '#6D28D9'
 const MINT = '#10B981'
@@ -113,7 +114,7 @@ export default function LoanRepaymentRoute() {
                   onPress={() => handleOpenSchedule(loan)}
                   style={{ flex: 1, paddingVertical: 10, borderRadius: 10, borderWidth: 1, borderColor: VIOLET, alignItems: 'center', backgroundColor: 'rgba(109, 40, 217, 0.05)' }}
                 >
-                  <Text style={{ color: VIOLET, fontSize: 12, fontWeight: '700' }}>📅 View Schedule</Text>
+                  <Text style={{ color: VIOLET, fontSize: 12, fontWeight: '700' }}>View Schedule</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -130,7 +131,7 @@ export default function LoanRepaymentRoute() {
                   }
                   style={{ flex: 1, paddingVertical: 10, borderRadius: 10, backgroundColor: VIOLET, alignItems: 'center' }}
                 >
-                  <Text style={{ color: '#FFF', fontSize: 12, fontWeight: '700' }}>📱 Pay via M-Pesa</Text>
+                  <Text style={{ color: '#FFF', fontSize: 12, fontWeight: '700' }}>Pay via M-Pesa</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -148,7 +149,7 @@ export default function LoanRepaymentRoute() {
                 <Text style={{ color: INK_MUTED, fontSize: 12 }}>{selectedScheduleLoan?.loan_product_label || 'Loan'} • KES {(selectedScheduleLoan?.amount_requested ?? 0).toLocaleString()}</Text>
               </View>
               <TouchableOpacity onPress={() => setSelectedScheduleLoan(null)} style={{ padding: 6 }}>
-                <Text style={{ fontSize: 18, color: INK_MUTED, fontWeight: 'bold' }}>✕</Text>
+                <Icon name="close" size={18} color={INK_MUTED} />
               </TouchableOpacity>
             </View>
 

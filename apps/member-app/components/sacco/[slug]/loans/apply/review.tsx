@@ -69,7 +69,7 @@ export default function LoanReview() {
             { label: 'Monthly payment', value: `KES ${instalment.toLocaleString('en-KE', { maximumFractionDigits: 0 })}`, highlight: true },
             { label: 'Total repayable', value: `KES ${(instalment * n).toLocaleString('en-KE', { maximumFractionDigits: 0 })}` },
             { label: 'Processing fee', value: processingFee > 0 ? `KES ${processingFeeAmount.toLocaleString('en-KE', { maximumFractionDigits: 0 })}` : 'Waived' },
-            { label: 'Disbursement to', value: step1.disbursement_method === 'mpesa' ? '📱 M-Pesa' : step1.disbursement_method },
+            { label: 'Disbursement to', value: step1.disbursement_method === 'mpesa' ? 'M-Pesa' : step1.disbursement_method },
           ].map((row, i, arr) => (
             <View key={row.label} className={`flex-row justify-between items-center py-2.5 ${i !== arr.length - 1 ? 'border-b border-white/5' : ''}`}>
               <Text className="text-white/60 text-xs">{row.label}</Text>

@@ -71,7 +71,7 @@ export default function SaccoProfileScreen() {
             {sacco.sasra_reg_no || 'SASRA Regulated'}
           </Text>
           <View className="bg-white/20 px-3 py-0.5 rounded-full">
-            <Text className="text-white text-xs font-semibold">✓ SASRA Regulated</Text>
+            <Text className="text-white text-xs font-semibold">SASRA Regulated</Text>
           </View>
         </View>
 

@@ -111,7 +111,7 @@ export function KycReview() {
               <div>
                 <div className="text-[10px] text-ink-faint mb-0.5">IPRS Verified</div>
                 <div className={`text-sm font-bold ${kyc.iprs_verified ? 'text-mint-600' : 'text-amber-600'}`}>
-                  {kyc.iprs_verified ? '✓ Yes' : '✗ No'}
+                  {kyc.iprs_verified ? 'Yes' : 'No'}
                 </div>
               </div>
             </div>
@@ -135,14 +135,14 @@ export function KycReview() {
                         onClick={() => handleReview(kyc.id, 'APPROVED')}
                         disabled={isPending}
                       >
-                        {isPending ? 'Processing...' : '✓ Approve'}
+                        {isPending ? 'Processing...' : 'Approve'}
                       </button>
                       <button
                         className="px-4.5 py-2 rounded-lg border-none text-sm font-semibold cursor-pointer text-red-700 bg-red-50 hover:bg-red-100 transition-colors"
                         onClick={() => handleReview(kyc.id, 'REJECTED')}
                         disabled={isPending || !rejectionReason}
                       >
-                        ✗ Reject
+                        Reject
                       </button>
                     </>
                   )}
@@ -161,7 +161,7 @@ export function KycReview() {
                     className="px-4 py-1.5 rounded-lg border-none text-sm font-semibold cursor-pointer text-white bg-mint-600 hover:bg-mint-700 transition-colors"
                     onClick={() => setReviewingId(kyc.id)}
                   >
-                    Review KYC →
+                    Review KYC
                   </button>
                 )}
               </div>

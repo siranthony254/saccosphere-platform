@@ -137,7 +137,7 @@ export function ExternalGuarantors() {
                           }
                           disabled={reviewing || !guarantor.can_approve}
                         >
-                          {reviewing ? 'Processing...' : '✓ Approve'}
+                          {reviewing ? 'Processing...' : 'Approve'}
                         </button>
                         <button
                           className="flex-1 py-2 rounded-lg border-none bg-red-50 text-red-700 text-sm font-semibold cursor-pointer hover:bg-red-100 transition-colors disabled:opacity-50"
@@ -146,7 +146,7 @@ export function ExternalGuarantors() {
                           }
                           disabled={reviewing}
                         >
-                          ✗ Reject
+                          Reject
                         </button>
                       </div>
                     </div>

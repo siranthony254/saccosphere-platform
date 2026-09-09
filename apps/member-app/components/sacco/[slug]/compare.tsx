@@ -31,7 +31,7 @@ export default function LoanCompareScreen() {
         {best && (
           <View className="bg-violet-500/10 border border-violet-500/20 rounded-2xl p-4 mb-6">
             <Text className="text-violet-200 text-xs leading-5">
-              💡 <Text className="font-semibold text-white">Smart suggestion:</Text> For KES {parseFloat(amount).toLocaleString()} over {months} months,{' '}
+              <Text className="font-semibold text-white">Smart suggestion:</Text> For KES {parseFloat(amount).toLocaleString()} over {months} months,{' '}
               <Text className="font-bold text-violet-400">{best.sacco_name}</Text> saves you the most in interest.
             </Text>
           </View>

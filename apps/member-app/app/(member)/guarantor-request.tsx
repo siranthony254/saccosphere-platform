@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Dimensions } from 'react-native'
 import { useMutation } from '@tanstack/react-query'
 import { api } from '@saccosphere/api-client'
+import { Icon } from '../../components/ui/Icon'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 const PADDING_H = Math.max(16, Math.min(24, SCREEN_WIDTH * 0.05))
@@ -117,7 +118,7 @@ export default function GuarantorRequest() {
       {/* Savings Freeze & Collateral Lien Warning Card */}
       <View className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 mb-5">
         <View className="flex-row items-center gap-2 mb-2">
-          <Text className="text-base">🔒</Text>
+          <Icon name="lock" size={16} color="#6B7280" />
           <Text className="text-amber-500 text-xs font-bold uppercase tracking-wider">Savings Freeze & Lien Notice</Text>
         </View>
         <Text className="text-ink text-xs leading-5 mb-3">
@@ -139,7 +140,7 @@ export default function GuarantorRequest() {
           className="flex-row items-center gap-2.5 pt-1"
         >
           <View className={`w-5 h-5 rounded border items-center justify-center ${agreedToLien ? 'bg-amber-500 border-amber-500' : 'border-amber-500/50 bg-surface'}`}>
-            {agreedToLien && <Text className="text-white text-xs font-bold">✓</Text>}
+            {agreedToLien && <Icon name="check" size={12} color="#ffffff" />}
           </View>
           <Text className="text-ink text-[11px] font-medium flex-1">
             I acknowledge and agree to freeze {amountLabel} of my savings until the loan is settled.
@@ -173,7 +174,7 @@ export default function GuarantorRequest() {
             {respond.isPending ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text className="text-white text-xs font-bold">🔒 Agree & Accept Guarantee Hold</Text>
+              <Text className="text-white text-xs font-bold">Agree & Accept Guarantee Hold</Text>
             )}
           </TouchableOpacity>
 

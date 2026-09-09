@@ -101,7 +101,7 @@ export function TransactionsFeed() {
           {
             key: 'status',
             header: 'Status',
-            render: (row: any) => <Badge variant={row.status === 'completed' ? 'success' : 'error'}>{row.status === 'completed' ? '✓ OK' : '✗ Failed'}</Badge>,
+            render: (row: any) => <Badge variant={row.status === 'completed' ? 'success' : 'error'}>{row.status === 'completed' ? 'OK' : 'Failed'}</Badge>,
           },
         ]}
         data={filtered}

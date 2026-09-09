@@ -1,6 +1,7 @@
 import { View, Text, TouchableOpacity, ScrollView } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { DeepSpaceBackground } from '../DeepSpaceBackground'
+import { Icon } from '../ui/Icon'
 
 const BRAND_MINT = '#10B981'
 const BRAND_VIOLET = '#6D28D9'
@@ -66,7 +67,7 @@ export default function PaymentSuccessScreen({
               justifyContent: 'center',
             }}
           >
-            <Text style={{ color: '#fff', fontSize: 22, fontWeight: '800' }}>✓</Text>
+            <Icon name="check" size={22} color="#ffffff" />
           </View>
         </View>
 

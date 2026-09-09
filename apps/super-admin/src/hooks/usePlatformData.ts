@@ -81,10 +81,12 @@ export function usePlatformAlerts() {
   })
 }
 
-export function useAllSaccos(filters?: { status?: string; search?: string }) {
+// Backend returns the full SACCO list unpaginated with no filter params, so
+// fetch it once (stable key, shared across pages) and filter in the component.
+export function useAllSaccos() {
   return useQuery({
-    queryKey: QueryKeys.allSaccos(filters),
-    queryFn: () => api.superAdmin.getSaccos(filters),
+    queryKey: QueryKeys.allSaccos(),
+    queryFn: () => api.superAdmin.getSaccos(),
     staleTime: 60_000, // 1 minute
   })
 }

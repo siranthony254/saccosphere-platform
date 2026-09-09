@@ -24,7 +24,7 @@ export function LiquidityNPLDashboard() {
       {/* Liquidity Overview Card */}
       <div className="bg-surface border border-border rounded-xl p-5 shadow-sm">
         <h2 className="text-sm font-bold text-ink mb-4 flex items-center gap-2">
-          <span>💧 Liquidity Ratio & Cash Reserves</span>
+          <span>Liquidity Ratio & Cash Reserves</span>
         </h2>
 
         {loadingLiquidity ? (
@@ -67,7 +67,7 @@ export function LiquidityNPLDashboard() {
       {/* NPL Portfolio Breakdown */}
       <div className="bg-surface border border-border rounded-xl p-5 shadow-sm">
         <h2 className="text-sm font-bold text-ink mb-4 flex items-center gap-2">
-          <span>📉 Non-Performing Loans (NPL) & Provisioning</span>
+          <span>Non-Performing Loans (NPL) & Provisioning</span>
         </h2>
 
         {loadingNPL ? (

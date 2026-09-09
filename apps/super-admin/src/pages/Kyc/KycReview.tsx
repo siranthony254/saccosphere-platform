@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Icon } from '@saccosphere/ui'
 import { useKycQueue } from '../../hooks/usePlatformData'
 import { api } from '@saccosphere/api-client'
 import { Badge } from '../../components/ui/Badge'
@@ -85,7 +86,7 @@ export function KycReview() {
                           onClick={() => setSelectedId(isExpanded ? null : kyc.id)}
                           className="px-3 py-1 rounded text-xs font-bold bg-violet-600 text-white hover:bg-violet-700 shadow-sm"
                         >
-                          {isExpanded ? 'Cancel' : 'Review →'}
+                          {isExpanded ? 'Cancel' : 'Review'}
                         </button>
                       )}
                       {isExpanded && (
@@ -99,7 +100,7 @@ export function KycReview() {
                                      {kyc.admin_review_reason ? ` · ${kyc.admin_review_reason}` : ''}
                                    </p>
                                  </div>
-                                 <button onClick={() => setSelectedId(null)} className="text-ink-faint hover:text-ink">✕</button>
+                                 <button onClick={() => setSelectedId(null)} className="text-ink-faint hover:text-ink" aria-label="Close"><Icon name="x" size={16} /></button>
                               </div>
                               <div className="p-6">
                                  <div className="grid grid-cols-2 gap-6 mb-8">
@@ -125,7 +126,7 @@ export function KycReview() {
                                     <div>
                                        <div className="text-[10px] text-ink-faint uppercase font-bold mb-1">IPRS Verification</div>
                                        <div className={`text-sm font-bold ${kyc.iprs_verified ? 'text-mint-600' : 'text-amber-600'}`}>
-                                          {kyc.iprs_verified ? '✓ PASSED' : '✗ NOT VERIFIED'}
+                                          {kyc.iprs_verified ? 'PASSED' : 'NOT VERIFIED'}
                                        </div>
                                     </div>
                                     <div>
@@ -141,7 +142,7 @@ export function KycReview() {
                                       className="flex-1 py-3 bg-mint-600 text-white rounded-xl font-bold shadow-lg hover:bg-mint-700 active:scale-95 transition-all"
                                       onClick={() => handleReview(kyc.id, 'APPROVED')}
                                     >
-                                      ✓ Approve Verification
+                                      Approve Verification
                                     </button>
                                     <button
                                       className="flex-1 py-3 bg-red-50 text-red-700 border border-red-200 rounded-xl font-bold hover:bg-red-100 active:scale-95 transition-all"
@@ -150,7 +151,7 @@ export function KycReview() {
                                         if (reason) handleReview(kyc.id, 'REJECTED', reason)
                                       }}
                                     >
-                                      ✗ Reject Identity
+                                      Reject Identity
                                     </button>
                                  </div>
                               </div>

@@ -18,6 +18,7 @@ import { useIsAuthenticated } from '../../../store/useAuthStore'
 import { useLinkMembership } from '../../../hooks/useLinkMembership'
 import { useMemberships } from '../../../hooks/useMembership'
 import { useRegister, useGoogleAuth } from '../../../hooks/useAuth'
+import { Icon } from '../../../components/ui/Icon'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 const PADDING_H = Math.max(16, Math.min(24, SCREEN_WIDTH * 0.05))
@@ -265,7 +266,7 @@ export default function LinkSaccos() {
         style={{ borderColor: BORDER_WHITE, backgroundColor: FROSTED_DARK }}
       >
         <Text className="text-xs" style={{ color: TEXT_MUTED }}>
-          🔍 Search {saccos.length} SACCOs...
+          Search {saccos.length} SACCOs...
         </Text>
       </View>
       <TextInput
@@ -317,12 +318,7 @@ export default function LinkSaccos() {
                 </Text>
               </View>
               {isSelected && (
-                <Text
-                  className="text-xs font-bold"
-                  style={{ color: MINT, fontSize: 16 }}
-                >
-                  ✓
-                </Text>
+                <Icon name="check" size={16} color={MINT} />
               )}
               {!isSelected && (
                 <View

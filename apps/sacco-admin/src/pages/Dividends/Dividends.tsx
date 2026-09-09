@@ -179,7 +179,7 @@ export function Dividends() {
                             </button>
                           )}
                           {dec.status === 'DISBURSED' && (
-                            <span className="text-xs text-mint-600 font-medium">✓ Disbursed</span>
+                            <span className="text-xs text-mint-600 font-medium">Disbursed</span>
                           )}
                         </div>
                       </td>

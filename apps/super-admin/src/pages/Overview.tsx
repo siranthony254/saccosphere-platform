@@ -7,6 +7,7 @@ import {
   useRevenueChart,
 } from '../hooks/usePlatformData'
 
+import { Icon } from '@saccosphere/ui'
 import { PageHeader } from '../components/ui/PageHeader'
 import { MetricCard } from '../components/ui/MetricCard'
 import { Card } from '../components/ui/Card'
@@ -153,7 +154,7 @@ export function Overview() {
             <div className="space-y-4">
               <Card
                 title="Top SACCOs by transaction volume"
-                action={<span className="text-[11px] text-violet-500 font-medium cursor-pointer" onClick={() => navigate('/saccos')}>All SACCOs →</span>}
+                action={<span className="text-[11px] text-violet-500 font-medium cursor-pointer" onClick={() => navigate('/saccos')}>All SACCOs</span>}
               >
                 {topLoading ? (
                   <div className="text-xs text-ink-muted">Loading top SACCOs...</div>
@@ -217,7 +218,7 @@ export function Overview() {
                       header: 'Amount',
                       render: (row: any) => (
                         <span className={`font-semibold ${row.status === 'failed' ? 'text-red-700' : 'text-mint-700'}`}>
-                          {row.status === 'failed' ? '✗' : '+'}{row.amount.toLocaleString()}
+                          {row.status === 'failed' ? '-' : '+'}{row.amount.toLocaleString()}
                         </span>
                       ),
                     },
@@ -226,7 +227,7 @@ export function Overview() {
                       header: 'Status',
                       render: (row: any) => (
                         <Badge variant={row.status === 'completed' ? 'success' : 'error'}>
-                          {row.status === 'completed' ? '✓' : '✗'}
+                          <Icon name={row.status === 'completed' ? 'check' : 'x'} size={12} />
                         </Badge>
                       ),
                     },
