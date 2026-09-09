@@ -16,9 +16,10 @@ export function useInvoice(id: string) {
   })
 }
 
-export function useResendInvoice() {
-  return useMutation({
-    mutationFn: api.saccoAdmin.resendInvoice,
+export function useCurrentMonthBilling() {
+  return useQuery({
+    queryKey: ['current-month-billing'],
+    queryFn: () => api.saccoAdmin.getCurrentMonthBilling(),
   })
 }
 

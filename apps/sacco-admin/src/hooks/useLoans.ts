@@ -18,6 +18,25 @@ export function useReviewLoan() {
   })
 }
 
+// A CRB check must exist before a loan can be approved. Refreshes the approval
+// queue so the new crb_* fields show up on the row.
+export function useRunCRBCheck() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ loanId, force_refresh }: { loanId: string; force_refresh?: boolean }) =>
+      api.saccoAdmin.runCRBCheck(loanId, { force_refresh }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: QueryKeys.adminLoans() }),
+  })
+}
+
+export function useLoanDisbursementAudit(loanId: string | null) {
+  return useQuery({
+    queryKey: ['loan-disbursement-audit', loanId],
+    queryFn: () => api.saccoAdmin.getLoanDisbursementAudit(loanId!),
+    enabled: !!loanId,
+  })
+}
+
 export function useDisburseLoan() {
   const qc = useQueryClient()
   return useMutation({

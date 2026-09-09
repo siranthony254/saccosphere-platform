@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { api } from '@saccosphere/api-client'
-import { useAdminLoans, useReviewLoan, useDisburseLoan } from '../../hooks/useLoans'
+import { useAdminLoans, useReviewLoan, useDisburseLoan, useRunCRBCheck } from '../../hooks/useLoans'
 
 const STATUS_COLORS: Record<string, { bg: string; color: string }> = {
   PENDING_APPROVAL: { bg: 'bg-amber-50', color: 'text-amber-700' },
@@ -30,6 +30,7 @@ export function LoansList() {
   const { data, isLoading } = useAdminLoans({ status: statusFilter === 'all' ? undefined : statusFilter })
   const { mutate: reviewLoan, isPending: reviewing } = useReviewLoan()
   const { mutate: disburseLoan, isPending: disbursing } = useDisburseLoan()
+  const { mutate: runCRB, isPending: crbRunning } = useRunCRBCheck()
   const [activeId, setActiveId] = useState<string | null>(null)
   const [notes, setNotes] = useState('')
   const [overrideReason, setOverrideReason] = useState('')
@@ -71,6 +72,25 @@ export function LoansList() {
           showAlert('error', error?.response?.data?.detail || error?.message || 'Failed to process loan. Please try again.')
         }
       }
+    )
+  }
+
+  const handleRunCRB = (loan: any) => {
+    runCRB(
+      { loanId: loan.loan_id },
+      {
+        onSuccess: (res) => {
+          const band = res.band || '—'
+          const score = res.score != null ? res.score : 'n/a'
+          showAlert(
+            'success',
+            `CRB check ${res.cached ? '(cached) ' : ''}complete — band ${band}, score ${score}${res.listed_negative ? ' · NEGATIVE LISTING' : ''}`,
+          )
+        },
+        onError: (error: any) => {
+          showAlert('error', error?.response?.data?.detail || error?.message || 'CRB check failed. Try again.')
+        },
+      },
     )
   }
 
@@ -213,6 +233,24 @@ export function LoansList() {
                           ⚠️ CRB Warning: Negative listing detected. Approval requires an override reason (min 10 chars).
                         </div>
                       )}
+
+                      <div className="mt-2.5 flex items-center gap-2">
+                        <button
+                          className={`px-2.5 py-1 rounded-[6px] border border-ink-faint bg-white hover:bg-surface-2 text-ink text-[11px] font-semibold cursor-pointer transition-colors ${crbRunning ? 'opacity-60' : ''}`}
+                          onClick={() => handleRunCRB(loan)}
+                          disabled={crbRunning}
+                        >
+                          {crbRunning ? 'Checking…' : loan.crb_checked_at ? '↻ Re-run CRB check' : '🔎 Run CRB check'}
+                        </button>
+                        {!loan.crb_checked_at && (
+                          <span className="text-[10px] text-amber-700">Required before approval</span>
+                        )}
+                        {loan.crb_checked_at && (
+                          <span className="text-[10px] text-ink-faint">
+                            Last checked {new Date(loan.crb_checked_at).toLocaleDateString()}
+                          </span>
+                        )}
+                      </div>
                     </div>
 
                     <div>

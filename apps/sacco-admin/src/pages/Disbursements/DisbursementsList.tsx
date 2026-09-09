@@ -1,6 +1,41 @@
 import React, { useState } from 'react'
-import { useAdminLoans, useManualDisburseLoan, useDisbursementHistory, useB2CStatus } from '../../hooks/useLoans'
+import { useAdminLoans, useManualDisburseLoan, useDisbursementHistory, useB2CStatus, useLoanDisbursementAudit } from '../../hooks/useLoans'
 import { useDisbursementsDashboard } from '../../hooks/useSaccoAdminDashboard'
+
+function DisbursementAuditTrail({ loanId }: { loanId: string }) {
+  const { data, isLoading } = useLoanDisbursementAudit(loanId)
+
+  return (
+    <div className="mt-4 bg-white border border-[#e5ede9] rounded-lg p-4">
+      <div className="font-semibold text-xs text-ink-soft mb-3 uppercase tracking-wider">Disbursement audit trail</div>
+      {isLoading ? (
+        <div className="text-xs text-ink-muted">Loading audit trail…</div>
+      ) : !data || data.audit_log.length === 0 ? (
+        <div className="text-xs text-ink-muted italic">
+          No disbursement attempts recorded yet
+          {data?.current_status ? ` · status: ${data.current_status}` : ''}.
+        </div>
+      ) : (
+        <div className="space-y-2">
+          <div className="text-[11px] text-ink-muted">
+            Status: <span className="font-medium text-ink">{data.current_status || '—'}</span>
+            {data.mpesa_transaction_id && <span className="ml-2 font-mono">TXN {data.mpesa_transaction_id}</span>}
+          </div>
+          {data.audit_log.map((e, i) => (
+            <div key={i} className="flex gap-3 text-xs border-b border-ink-faint last:border-0 py-1.5">
+              <span className="text-ink-faint whitespace-nowrap">
+                {e.created_at ? new Date(e.created_at).toLocaleString('en-KE') : '—'}
+              </span>
+              <span className="font-semibold text-ink whitespace-nowrap">{e.event || '—'}</span>
+              {e.actor_role && <span className="text-ink-muted">{e.actor_role}</span>}
+              {e.mpesa_ref && <span className="font-mono text-ink-muted">{e.mpesa_ref}</span>}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
 
 function B2CStatusBadge({ conversationId }: { conversationId: string }) {
   const { data } = useB2CStatus(conversationId)
@@ -187,16 +222,16 @@ export function DisbursementsList() {
                                   <div className="flex gap-3">
                                     <button
                                       className={`px-5 py-2.5 rounded-lg border-none bg-[#0d7a4e] text-white text-sm font-bold cursor-pointer hover:bg-[#0b6340] transition-colors ${disbursing ? 'opacity-60' : ''}`}
-                                      onClick={() => disburse({ 
-                                        loanId: loanId, 
-                                        amount: Number(amount), 
+                                      onClick={() => disburse({
+                                        loanId: loanId,
+                                        amount: Number(amount),
                                         phone_number: phone,
                                         remarks: 'Loan disbursement via M-Pesa B2C'
-                                      }, { 
-                                        onSuccess: (data: any) => { 
-                                          setActiveId(null); 
+                                      }, {
+                                        onSuccess: (data: any) => {
+                                          setActiveId(null);
                                           setLastConvId(data.conversation_id || data.checkout_request_id);
-                                        } 
+                                        }
                                       })}
                                       disabled={disbursing || !phone || !amount}
                                     >
@@ -211,6 +246,7 @@ export function DisbursementsList() {
                                   </div>
                                 </div>
                               </div>
+                              <DisbursementAuditTrail loanId={loanId} />
                             </div>
                           </td>
                         </tr>

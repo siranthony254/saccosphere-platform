@@ -1,4 +1,4 @@
-import { useInvoices, useResendInvoice, useDownloadInvoice } from '../../hooks/useBilling'
+import { useInvoices, useCurrentMonthBilling, useDownloadInvoice } from '../../hooks/useBilling'
 import type { MonthlyInvoice } from '@saccosphere/schemas'
 
 const statusStyles: Record<string, { bg: string; color: string }> = {
@@ -9,7 +9,7 @@ const statusStyles: Record<string, { bg: string; color: string }> = {
 
 export function Billing() {
   const { data: invoiceData, isLoading } = useInvoices()
-  const { mutate: resendInvoice } = useResendInvoice()
+  const { data: currentMonth } = useCurrentMonthBilling()
   const { mutate: downloadInvoice } = useDownloadInvoice()
 
   const handleDownload = (id: string, format: 'pdf' | 'csv') => {
@@ -31,13 +31,6 @@ export function Billing() {
     )
   }
 
-  const handleResend = (id: string) => {
-    resendInvoice(id, {
-      onSuccess: () => alert('Invoice email resent successfully.'),
-      onError: (err: any) => alert(err?.message || 'Failed to resend invoice.'),
-    })
-  }
-
   return (
     <div className="p-5">
       {/* Header */}
@@ -47,6 +40,28 @@ export function Billing() {
           <div className="text-xs text-ink-muted">Monthly platform subscription invoices and payment status</div>
         </div>
       </div>
+
+      {/* Current month running total (preview — invoice cut on the 1st) */}
+      {currentMonth && (
+        <div className="mb-5 bg-white border border-[#e5ede9] rounded-[10px] p-4">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <div className="text-[11px] text-ink-muted font-medium uppercase tracking-wide">
+                Current month so far{currentMonth.billing_month ? ` · ${currentMonth.billing_month}` : ''}
+              </div>
+              <div className="text-2xl font-bold text-ink mt-0.5">
+                KES {currentMonth.projected_invoice_total.toLocaleString()}
+              </div>
+              <div className="text-xs text-ink-muted">
+                {currentMonth.transactions_count.toLocaleString()} billable transactions
+              </div>
+            </div>
+            {currentMonth.note && (
+              <p className="text-[11px] text-ink-faint max-w-xs text-right">{currentMonth.note}</p>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Invoices Table */}
       <div className="bg-white border border-[#e5ede9] rounded-[10px] overflow-hidden">
@@ -91,20 +106,12 @@ export function Billing() {
                     <td className="px-3 py-3 text-xs text-ink-muted">{inv.due_date}</td>
                     <td className="px-3 py-3 text-xs text-ink-muted">{inv.paid_date ?? '—'}</td>
                     <td className="px-3 py-3">
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => handleDownload(inv.id, 'pdf')}
-                          className="px-2.5 py-1 rounded border border-ink-faint bg-white text-ink text-[11px] font-medium hover:bg-surface-2"
-                        >
-                          PDF
-                        </button>
-                        <button
-                          onClick={() => handleResend(inv.id)}
-                          className="px-2.5 py-1 rounded bg-violet-50 text-violet-700 text-[11px] font-medium hover:bg-violet-100"
-                        >
-                          Email Invoice
-                        </button>
-                      </div>
+                      <button
+                        onClick={() => handleDownload(inv.id, 'pdf')}
+                        className="px-2.5 py-1 rounded border border-ink-faint bg-white text-ink text-[11px] font-medium hover:bg-surface-2"
+                      >
+                        PDF
+                      </button>
                     </td>
                   </tr>
                 )

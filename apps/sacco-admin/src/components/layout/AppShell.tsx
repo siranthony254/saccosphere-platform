@@ -36,7 +36,6 @@ export function AppShell() {
     { path: '/contributions', label: 'Contributions', icon: '📥', badge: null },
     { path: '/ledger', label: 'General Ledger', icon: '📖', badge: null },
     { path: '/dividends', label: 'Dividends', icon: '💎', badge: null },
-    { path: '/notifications', label: 'Notifications Hub', icon: '🔔', badge: null },
     { path: '/sms', label: 'Bulk SMS', icon: '💬', badge: null },
     { path: '/reports', label: 'Reports', icon: '📈', badge: null },
     { path: '/reports/sasra', label: 'SASRA Returns', icon: '🏛️', badge: null },

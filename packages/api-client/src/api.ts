@@ -1897,6 +1897,42 @@ export const api = {
     // SaccoApplication list (or a membership-status endpoint) exists, there is
     // no working approve/reject call to wrap.
 
+    // Custom member-profile fields.
+    // SaccoFieldDefinitionAdminListCreateView / ...DetailView (IsSaccoAdmin).
+    // The SACCO is derived server-side from the admin's role, so no id is sent.
+    getMemberFieldDefinitions: async () => {
+      const response = await apiCall<any>('GET', '/members/admin/field-definitions/')
+      const items: any[] = Array.isArray(response) ? response : response.results ?? response.data ?? []
+      return items.map((f: any) => ({
+        id: String(f.id),
+        label: f.label ?? '',
+        field_type: String(f.field_type ?? 'TEXT') as
+          | 'TEXT' | 'NUMBER' | 'DATE' | 'SELECT' | 'BOOLEAN' | 'FILE',
+        is_required: Boolean(f.is_required),
+        options: Array.isArray(f.options) ? (f.options as string[]) : null,
+        display_order: Number(f.display_order ?? 0),
+      }))
+    },
+
+    createMemberFieldDefinition: (data: {
+      label: string
+      field_type: 'TEXT' | 'NUMBER' | 'DATE' | 'SELECT' | 'BOOLEAN' | 'FILE'
+      is_required?: boolean
+      options?: string[] | null
+      display_order?: number
+    }) =>
+      apiCall<any>('POST', '/members/admin/field-definitions/', {
+        label: data.label,
+        field_type: data.field_type,
+        is_required: data.is_required ?? true,
+        // The serializer only accepts a non-empty string list for SELECT.
+        options: data.field_type === 'SELECT' ? (data.options ?? []) : null,
+        display_order: data.display_order ?? 0,
+      }),
+
+    deleteMemberFieldDefinition: (id: string) =>
+      apiCall<void>('DELETE', `/members/admin/field-definitions/${uuid(id)}/`),
+
     // Role management
     // UserRolesView is IsSaccoAdminOrSuperAdmin (read OK), paginated, and
     // RoleSerializer returns role_name (display label), user_email, sacco_name,
@@ -1995,6 +2031,47 @@ export const api = {
       }, {
         idempotent: true,
       }),
+
+    // CRBCheckView (IsSaccoAdmin). Runs a Metropol credit check and stores the
+    // result; a cached result within 30 days is returned unless force_refresh.
+    // A CRB check record MUST exist before a loan can be moved to APPROVED.
+    runCRBCheck: (loanId: string, opts?: { force_refresh?: boolean }) =>
+      apiCall<{
+        id: string
+        score: number | null
+        band: string | null
+        listed_negative: boolean
+        provider: string | null
+        reference: string | null
+        checked_at: string
+        cached: boolean
+      }>('POST', `/services/loans/${uuid(loanId)}/crb-check/`, undefined, {
+        params: opts?.force_refresh ? { force_refresh: 'true' } : undefined,
+      }),
+
+    // LoanDisbursementAuditView (IsSaccoAdminOrSuperAdmin). Full M-Pesa B2C
+    // audit trail for one loan.
+    getLoanDisbursementAudit: async (loanId: string) => {
+      const response = await apiCall<any>(
+        'GET',
+        `/services/loans/${uuid(loanId)}/disbursement-audit/`,
+      )
+      return {
+        loan_id: String(response.loan_id ?? loanId),
+        current_status: response.current_status ?? '',
+        mpesa_conversation_id: response.mpesa_conversation_id ?? '',
+        mpesa_transaction_id: response.mpesa_transaction_id ?? '',
+        audit_log: Array.isArray(response.audit_log)
+          ? (response.audit_log as any[]).map((e: any) => ({
+              event: e.event ?? '',
+              actor_role: e.actor_role ?? '',
+              details: e.details ?? null,
+              mpesa_ref: e.mpesa_ref ?? '',
+              created_at: e.created_at ?? null,
+            }))
+          : [],
+      }
+    },
 
     getContributions: async (_params?: { date?: string; member?: string }) => {
       const dashboard = await api.saccoAdmin.getContributionsDashboard()
@@ -2249,6 +2326,26 @@ export const api = {
     getInvoice: (id: string) =>
       apiCall<any>('GET', `/billing/invoices/${uuid(id)}/`),
 
+    // CurrentMonthTransactionPreviewView (IsSaccoAdmin). Running total of this
+    // month's uninvoiced platform fees; the final invoice is cut on the 1st.
+    getCurrentMonthBilling: async () => {
+      const response = await apiCall<any>('GET', '/billing/transactions/current-month/')
+      return {
+        billing_month: response.billing_month ?? '',
+        projected_invoice_total: Number(response.projected_invoice_total ?? 0),
+        transactions_count: Number(response.transactions_count ?? 0),
+        by_type: (response.by_type ?? {}) as Record<
+          string,
+          { count: number; total_fee: number | string; total_gross_amount: number | string }
+        >,
+        note: response.note ?? '',
+      }
+    },
+
+    // NOTE: /billing/invoices/{id}/resend/ resolves a MonthlySaccoInvoice, but
+    // the invoice list/detail endpoints return Invoice rows (a different table).
+    // No endpoint exposes MonthlySaccoInvoice ids, so this cannot be called
+    // with a valid id from the sacco-admin console — kept only for super-admin.
     resendInvoice: (id: string) =>
       apiCall<void>('POST', `/billing/invoices/${uuid(id)}/resend/`),
 
@@ -2387,58 +2484,11 @@ export const api = {
     sendSMSCampaign: (id: string) =>
       apiCall<any>('POST', `/management/sms/campaigns/${uuid(id)}/send/`),
 
-    // Multi-Channel Notifications Control
-    getNotificationLogs: async (params?: { channel?: string; category?: string; status?: string }) => {
-      const response = await apiCall<any>('GET', '/notifications/', undefined, { params }).catch(() => null)
-      const items = unwrapResults(response ?? [])
-      return {
-        count: Number(response?.count ?? items.length),
-        results: items.map((item: any) => ({
-          id: item.id,
-          title: item.title,
-          message: item.message,
-          category: item.category ?? 'SYSTEM',
-          channel: item.channel ?? (item.push_sent ? 'PUSH' : 'SMS'),
-          user_email: item.user?.email ?? item.user_email ?? '—',
-          is_read: Boolean(item.is_read),
-          push_sent: Boolean(item.push_sent),
-          created_at: item.created_at ?? new Date().toISOString(),
-        })),
-      }
-    },
-
-    getNotificationSettings: async () =>
-      apiCall<any>('GET', '/management/notifications/settings/').catch(() => ({
-        sms_enabled: true,
-        email_enabled: true,
-        push_enabled: true,
-        at_username: 'sandbox',
-        at_api_key_configured: true,
-        fcm_project_id_configured: true,
-        triggers: {
-          loan_approval: true,
-          loan_overdue: true,
-          guarantor_request: true,
-          liquidity_warning: true,
-          dividend_declaration: true,
-        },
-      })),
-
-    updateNotificationSettings: (data: any) =>
-      apiCall<any>('PATCH', '/management/notifications/settings/', data).catch(() => data),
-
-    sendMultiChannelBroadcast: (data: {
-      title: string
-      message: string
-      channels: Array<'SMS' | 'EMAIL' | 'PUSH'>
-      recipient_type: string
-    }) =>
-      apiCall<any>('POST', '/management/sms/campaigns/', {
-        title: data.title,
-        message: data.message,
-        recipient_type: data.recipient_type,
-        channels: data.channels,
-      }),
+    // NOTE: there is no multi-channel broadcast, delivery-log, or gateway-
+    // settings API for a SACCO admin. `/notifications/` returns only the
+    // caller's own notifications and `/management/notifications/settings/`
+    // does not exist. Member-facing messaging is bulk SMS only — see
+    // createSMSCampaign / getSMSCampaigns above (the Bulk SMS page).
 
     // SASRA Returns. Backend params: type (par|financial_position|membership),
     // as_of_date (par / financial_position), period_start + period_end

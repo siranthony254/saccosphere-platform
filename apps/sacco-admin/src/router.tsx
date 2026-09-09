@@ -22,7 +22,6 @@ import { ExternalGuarantors } from './pages/ExternalGuarantors'
 import { SASRAReturns } from './pages/Reports/SASRAReturns'
 import { LiquidityNPLDashboard } from './pages/Analytics/LiquidityNPLDashboard'
 import { LedgerManagement } from './pages/Ledger/LedgerManagement'
-import { NotificationsHub } from './pages/Notifications/NotificationsHub'
 import { BulkSMS } from './pages/BulkSMS/BulkSMS'
 
 export const router = createBrowserRouter([
@@ -49,7 +48,6 @@ export const router = createBrowserRouter([
       { path: 'contributions', element: <ContributionsFeed /> },
       { path: 'ledger', element: <LedgerManagement /> },
       { path: 'dividends', element: <Dividends /> },
-      { path: 'notifications', element: <NotificationsHub /> },
       { path: 'sms', element: <BulkSMS /> },
       { path: 'billing', element: <Billing /> },
       { path: 'reports', element: <Reports /> },
