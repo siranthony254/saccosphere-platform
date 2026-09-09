@@ -45,6 +45,31 @@ export const clearTokens = (): void => {
   _saccoId = null
 }
 
+// ─── AUTH EVENT LISTENERS ─────────────────────────────────────────────────────
+// Cross-platform hooks the host app registers so it can persist a rotated
+// refresh token or react to a forced logout. React Native has a `window`
+// global but no `window.addEventListener` / `CustomEvent`, so the old
+// window-event approach crashed on native — these callbacks work everywhere.
+
+type TokenRotatedListener = (refreshToken: string) => void
+type ForcedLogoutListener = (reason: string) => void
+
+let _tokenRotatedListener: TokenRotatedListener | null = null
+let _forcedLogoutListener: ForcedLogoutListener | null = null
+
+export const onTokenRotated = (cb: TokenRotatedListener | null): void => {
+  _tokenRotatedListener = cb
+}
+
+export const onForcedLogout = (cb: ForcedLogoutListener | null): void => {
+  _forcedLogoutListener = cb
+}
+
+const canDispatchWindowEvent = (): boolean =>
+  typeof window !== 'undefined' &&
+  typeof window.dispatchEvent === 'function' &&
+  typeof CustomEvent === 'function'
+
 // ─── AXIOS INSTANCE ───────────────────────────────────────────────────────────
 
 const normalizeBaseUrl = (url: string): string => {
@@ -121,10 +146,10 @@ axiosInstance.interceptors.response.use(
         setAccessToken(newToken)
         if (newRefreshToken) {
           setRefreshToken(newRefreshToken)
-          // Also need to save it to persistent storage if on mobile/web
-          // However, core.ts shouldn't know about SecureStore/localStorage directly
-          // We can dispatch an event or use a callback
-          if (typeof window !== 'undefined') {
+          // Persist the rotated token via the host callback (native + web),
+          // and keep the window event for existing web listeners.
+          _tokenRotatedListener?.(newRefreshToken)
+          if (canDispatchWindowEvent()) {
             window.dispatchEvent(new CustomEvent('saccosphere:token_rotated', {
               detail: { refreshToken: newRefreshToken }
             }))
@@ -140,7 +165,8 @@ axiosInstance.interceptors.response.use(
       } catch (refreshError) {
         clearTokens()
         refreshQueue = []
-        if (typeof window !== 'undefined') {
+        _forcedLogoutListener?.('token_refresh_failed')
+        if (canDispatchWindowEvent()) {
           window.dispatchEvent(new CustomEvent('saccosphere:logout', {
             detail: { reason: 'token_refresh_failed' }
           }))

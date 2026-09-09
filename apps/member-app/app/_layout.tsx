@@ -5,7 +5,7 @@ import { router, usePathname } from 'expo-router'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { StatusBar } from 'expo-status-bar'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
-import { api, setAccessToken, clearTokens } from '@saccosphere/api-client'
+import { api, setAccessToken, clearTokens, onTokenRotated } from '@saccosphere/api-client'
 import { useAuthStore } from '../store/useAuthStore'
 import { clearStoredRefreshToken, loadRefreshToken, saveRefreshToken } from '../hooks/useAuth'
 import { useAutoRegisterDeviceToken } from '../hooks/useNotifications'
@@ -27,15 +27,11 @@ export default function RootLayout() {
   const initialPathname = useRef(pathname)
 
   useEffect(() => {
-    // Listen for token rotation from api-client
-    const handleTokenRotated = (event: any) => {
-      const { refreshToken } = event.detail
+    // Persist a rotated refresh token from api-client (works on native + web;
+    // `window.addEventListener` does not exist on React Native).
+    onTokenRotated((refreshToken) => {
       saveRefreshToken(refreshToken)
-    }
-
-    if (typeof window !== 'undefined') {
-      window.addEventListener('saccosphere:token_rotated' as any, handleTokenRotated)
-    }
+    })
 
     const initAuth = async () => {
       const startupPathname = initialPathname.current
@@ -79,9 +75,7 @@ export default function RootLayout() {
     initAuth()
 
     return () => {
-      if (typeof window !== 'undefined') {
-        window.removeEventListener('saccosphere:token_rotated' as any, handleTokenRotated)
-      }
+      onTokenRotated(null)
     }
   }, [clearAuth, setAuth, setAuthReady])
 
