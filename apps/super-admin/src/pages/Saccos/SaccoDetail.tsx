@@ -30,6 +30,12 @@ export function SaccoDetail() {
 
       />
 
+      <p className="text-[11px] text-ink-faint mb-4">
+        This console is read-only for SACCO records. Onboarding a SACCO, suspending or
+        reactivating one is done in platform administration — there is no API for it here.
+        Billing suspensions clear automatically when an invoice is marked paid on the Billing page.
+      </p>
+
       {/* Profile banner */}
       <div className="bg-violet-25 border border-violet-100 rounded-[10px] p-4 mb-5 flex items-center gap-4">
         <SaccoAvatar name={sacco.name} color={sacco.color} initials={sacco.initials} size="lg" />

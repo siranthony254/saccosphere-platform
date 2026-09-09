@@ -89,7 +89,6 @@ export const QueryKeys = {
   allMembers: (filters?: object) => ['all-members', filters] as const,
   platformTransactions: (filters?: object) => ['platform-transactions', filters] as const,
   revenue: (period?: string) => ['revenue', period] as const,
-  amlFlags: () => ['aml-flags'] as const,
 } as const
 
 

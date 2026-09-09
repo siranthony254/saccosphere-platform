@@ -108,11 +108,14 @@ export function Roles() {
                 roles.map((role: any) => (
                   <div key={role.id} className="flex items-center justify-between p-2 bg-surface-2 rounded-lg">
                     <div>
-                      <div className="text-sm font-medium">{role.name.replace('_', ' ')}</div>
+                      <div className="text-sm font-medium">{role.role_label}</div>
                       <div className="text-xs text-ink-muted">
-                        {role.sacco ? `SACCO: ${role.sacco?.name || role.sacco}` : 'Platform-wide'}
+                        {role.sacco_name ? `SACCO: ${role.sacco_name}` : 'Platform-wide'}
                       </div>
-                      <div className="text-[10px] text-ink-muted">User: {role.user?.email || role.user?.first_name || '—'}</div>
+                      <div className="text-[10px] text-ink-muted">
+                        {role.user_email || '—'}
+                        {role.created_at ? ` · granted ${new Date(role.created_at).toLocaleDateString()}` : ''}
+                      </div>
                     </div>
                     <button
                       onClick={() => handleRevoke(role.id)}

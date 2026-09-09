@@ -16,10 +16,12 @@ function kycVariant(status: string | null | undefined): 'success' | 'warning' | 
 export function MembersList() {
   const [search, setSearch] = useState('')
   const [saccoFilter, setSaccoFilter] = useState('')
+  const [page, setPage] = useState(1)
 
   const { data, isLoading, isError, refetch } = useAllMembers({
     search: search || undefined,
     sacco: saccoFilter || undefined,
+    page,
   })
   const { data: saccosData } = useAllSaccos()
 
@@ -30,17 +32,22 @@ export function MembersList() {
         subtitle={`${data?.count ?? 0} total members`}
       />
 
+      <p className="text-[11px] text-ink-faint mb-3">
+        Platform-wide directory. Per-member detail (savings, loans, transactions) is SACCO-scoped
+        on the backend and isn't exposed to platform admins — use the SACCO admin console for that.
+      </p>
+
       <div className="flex gap-2.5 mb-4">
         <input
           className="flex-1 py-2 px-3 border border-mid rounded-lg text-[13px] outline-none"
           placeholder="Search by name or email..."
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => { setSearch(e.target.value); setPage(1) }}
         />
         <select
           className="py-2 px-3 border border-mid rounded-lg text-[13px] outline-none bg-surface"
           value={saccoFilter}
-          onChange={(e) => setSaccoFilter(e.target.value)}
+          onChange={(e) => { setSaccoFilter(e.target.value); setPage(1) }}
         >
           <option value="">All SACCOs</option>
           {(saccosData?.results ?? []).map((sacco: any) => (
@@ -72,6 +79,13 @@ export function MembersList() {
               ),
             },
             {
+              key: 'phone_number',
+              header: 'Phone',
+              render: (row: PlatformMember) => (
+                <span className="text-ink-muted">{row.phone_number || '—'}</span>
+              ),
+            },
+            {
               key: 'kyc_status',
               header: 'KYC',
               render: (row: PlatformMember) => <Badge variant={kycVariant(row.kyc_status)}>{row.kyc_status ?? 'Unknown'}</Badge>,
@@ -95,8 +109,26 @@ export function MembersList() {
       )}
 
       {data && data.count > 0 && (
-        <div className="text-xs text-ink-muted mt-2 text-right">
-          Showing {data.results.length} of {data.count} total members
+        <div className="flex items-center justify-between mt-3">
+          <div className="text-xs text-ink-muted">
+            Page {page} · showing {data.results.length} of {data.count} total members
+          </div>
+          <div className="flex gap-2">
+            <button
+              className="px-3 py-1.5 border border-mid rounded-lg text-[13px] bg-surface disabled:opacity-40"
+              disabled={!data.previous}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+            >
+              ← Prev
+            </button>
+            <button
+              className="px-3 py-1.5 border border-mid rounded-lg text-[13px] bg-surface disabled:opacity-40"
+              disabled={!data.next}
+              onClick={() => setPage((p) => p + 1)}
+            >
+              Next →
+            </button>
+          </div>
         </div>
       )}
     </div>

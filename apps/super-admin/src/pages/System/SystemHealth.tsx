@@ -1,24 +1,8 @@
 import { useSystemHealth } from '../../hooks/usePlatformData'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { Card } from '../../components/ui/Card'
-import { Badge } from '../../components/ui/Badge'
 import { HealthDot } from '../../components/ui/HealthDot'
 import { MetricCard } from '../../components/ui/MetricCard'
-import { DataTable } from '../../components/ui/DataTable'
-
-interface ServiceItem {
-  name: string
-  status: string
-  [key: string]: unknown
-}
-
-interface SystemEvent {
-  id: string
-  time: string
-  event: string
-  severity: string
-  resolution: string
-}
 
 export function SystemHealth() {
   const { data: health, isLoading, error } = useSystemHealth()
@@ -38,114 +22,89 @@ export function SystemHealth() {
     )
   }
 
-  const services = (health.services ?? []) as ServiceItem[]
-  const readiness = (health.readiness as { status: string; checks?: Record<string, boolean> }) ?? { status: 'unknown', checks: {} }
-  const checks = readiness.checks ?? {}
+  const readiness =
+    (health.readiness as { status: string; checks?: Record<string, boolean> }) ?? {
+      status: 'unknown',
+      checks: {},
+    }
+  const checkEntries = Object.entries(readiness.checks ?? {})
+  const passing = checkEntries.filter(([, ok]) => ok).length
+  const total = checkEntries.length
 
-  const operationalCount = services.filter((s) =>
-    String(s.status).toLowerCase().includes('operational') ||
-    String(s.status).toLowerCase() === 'healthy'
-  ).length
-
-  const events: SystemEvent[] = Array.isArray((health as any).events)
-    ? (health as any).events.map((e: any) => ({
-        id: e.id ?? `${e.time ?? ''}-${e.event ?? ''}`,
-        time: e.time ?? e.created_at ?? '—',
-        event: e.event ?? e.message ?? e.description ?? 'System event',
-        severity: e.severity ?? 'INFO',
-        resolution: e.resolution ?? e.status ?? '—',
-      }))
-    : []
+  const readinessLabel =
+    readiness.status === 'ok'
+      ? 'Ready'
+      : readiness.status === 'unavailable'
+        ? 'Unavailable'
+        : 'Unknown'
 
   return (
     <div className="p-5">
       <PageHeader
         title="System & API health"
-        subtitle="Platform infrastructure · All integrations"
+        subtitle="Platform infrastructure readiness"
         actions={
-          <div className="flex items-center gap-1.5 text-xs py-1.5 px-3 rounded-md bg-mint-50 text-mint-700">
-            <div className="w-1.5 h-1.5 rounded-full bg-mint-500" />
-            {operationalCount} of {services.length || '—'} services operational
+          <div
+            className={`flex items-center gap-1.5 text-xs py-1.5 px-3 rounded-md ${
+              total > 0 && passing === total ? 'bg-mint-50 text-mint-700' : 'bg-amber-50 text-amber-700'
+            }`}
+          >
+            <div
+              className={`w-1.5 h-1.5 rounded-full ${
+                total > 0 && passing === total ? 'bg-mint-500' : 'bg-amber-500'
+              }`}
+            />
+            {passing} of {total || '—'} checks passing
           </div>
         }
       />
 
-      <div className="grid grid-cols-3 gap-4 mb-5">
+      <div className="grid grid-cols-2 gap-4 mb-5">
         <MetricCard
           label="Readiness status"
-          value={readiness.status === 'ok' ? 'Ready' : readiness.status === 'unavailable' ? 'Unavailable' : 'Unknown'}
+          value={readinessLabel}
           accent={readiness.status === 'ok'}
         />
         <MetricCard
-          label="Connected services"
-          value={`${operationalCount}`}
-          delta={`${services.length - operationalCount} issue${services.length - operationalCount === 1 ? '' : 's'}`}
-        />
-        <MetricCard
-          label="Recent events"
-          value={`${events.length}`}
+          label="Infrastructure checks"
+          value={total > 0 ? `${passing}/${total}` : '—'}
+          delta={total === 0 ? 'No checks reported' : passing === total ? 'All passing' : 'Degraded'}
         />
       </div>
 
-      <div className="grid grid-cols-3 gap-4 mb-5">
-        <Card title="Core Infrastructure">
+      <div className="grid grid-cols-3 gap-4">
+        <Card title="Core infrastructure">
           <div className="space-y-2">
-            {Object.entries(checks).map(([name, status]) => (
-              <div key={name} className="flex justify-between items-center py-2 border-b border-surface-2 last:border-0 text-xs">
+            {checkEntries.map(([name, ok]) => (
+              <div
+                key={name}
+                className="flex justify-between items-center py-2 border-b border-surface-2 last:border-0 text-xs"
+              >
                 <span className="text-ink-muted capitalize">{name}</span>
-                <HealthDot status={status ? 'healthy' : 'critical'} />
+                <HealthDot status={ok ? 'healthy' : 'critical'} />
               </div>
             ))}
-            {Object.keys(checks).length === 0 && (
+            {checkEntries.length === 0 && (
               <div className="text-xs text-ink-muted">No infrastructure checks reported.</div>
             )}
           </div>
         </Card>
 
-
-        <Card title="External Integrations">
+        <Card title="External integrations">
           <div className="text-xs text-ink-muted py-4 px-2">
-            External service health (M-Pesa, SMS, IPRS) is monitored via transaction success rates and system alerts.
+            External service health (M-Pesa, SMS, IPRS) is not exposed as a dedicated
+            endpoint. It surfaces indirectly through transaction success rates on the
+            Transactions feed and through platform alerts on Compliance.
           </div>
         </Card>
 
-        <Card title="SACCO API Status">
+        <Card title="Per-SACCO API status">
           <div className="text-xs text-ink-muted py-4 px-2">
-            Individual SACCO API health is visible in the SACCO Directory and Top SACCOs dashboard.
+            Individual SACCO health is shown in the SACCO directory and the Top SACCOs
+            panel on the overview.
           </div>
         </Card>
       </div>
-
-
-      {events.length > 0 && (
-        <Card title="Recent system events">
-          <DataTable
-            columns={[
-              { key: 'time', header: 'Time' },
-              { key: 'event', header: 'Event' },
-              {
-                key: 'severity',
-                header: 'Severity',
-                render: (row) => {
-                  const severity = String(row.severity).toLowerCase()
-                  const variant =
-                    severity === 'critical' ? 'error' : severity === 'warning' ? 'warning' : severity === 'resolved' ? 'success' : 'info'
-                  return <Badge variant={variant}>{row.severity}</Badge>
-                },
-              },
-              { key: 'resolution', header: 'Resolution' },
-            ]}
-            data={events}
-            keyExtractor={(row) => row.id}
-          />
-        </Card>
-      )}
-
-      {services.length === 0 && events.length === 0 && (
-        <div className="bg-surface border border-mid rounded-[10px] p-4 text-xs text-ink-muted">
-          Readiness checks are operational. Detailed service-by-service health and event logs will appear here as the platform infrastructure scaling completes.
-        </div>
-      )}
     </div>
   )
 }

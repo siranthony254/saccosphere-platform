@@ -32,7 +32,6 @@ import {
   STKPushInputSchema,
   AdminMemberSchema,
   AdminLoanSchema,
-  AMLFlagSchema,
   SuperAdminSaccoSchema,
   TransactionSchema,
   UserSchema,
@@ -69,6 +68,22 @@ const isUuid = (value: string) => z.string().uuid().safeParse(value).success
 const requiredString = (value: string) => z.string().min(1).parse(value)
 const unwrapResults = <T>(value: T[] | PaginatedResponse<T>): T[] =>
   Array.isArray(value) ? value : value.results
+
+// Shared invoice shape for both consoles. No invoice endpoint returns a SACCO
+// name, so callers can only attribute rows by filtering on ?sacco_id=.
+const normalizeInvoice = (item: any) => ({
+  id: String(item.id),
+  invoice_number: item.invoice_number ?? '',
+  period: item.billing_month ?? item.period ?? '',
+  amount: Number(item.total_amount ?? item.amount ?? 0),
+  status: String(item.status ?? 'pending').toLowerCase(),
+  due_date: item.due_date ?? '',
+  sent_at: item.sent_at ?? null,
+  paid_date: item.paid_at ?? item.paid_date ?? null,
+  line_items_count: Number(item.line_items_count ?? 0),
+  days_overdue: Number(item.days_overdue ?? 0),
+  pdf_url: item.pdf_url ?? '',
+})
 
 const normalizeStkPushResponse = (payload: any): STKPushResponse => ({
   checkout_request_id: String(payload.checkout_request_id ?? ''),
@@ -2270,10 +2285,10 @@ export const api = {
     // capacity is recomputed automatically (services.engines.guarantor_logic)
     // and frees up when the loan or guarantor status changes.
 
-    // Audit logs
-    getAuditLogs: async (params?: { action?: string; resource_type?: string; user?: string; cursor?: string }) => {
-      // SystemAuditLogSerializer: created_at (not timestamp), user_email (user
-      // is a bare UUID), old_values / new_values (no `details`).
+    // Audit logs (IsSuperAdmin, paginated). Passed through with the real
+    // SystemAuditLogSerializer field names — created_at, user_email,
+    // ip_address, old_values / new_values.
+    getAuditLogs: async (params?: { action?: string; resource_type?: string; user?: string; page?: number }) => {
       const response = await apiCall<any>('GET', '/management/audit-logs/', undefined, { params })
       const items = Array.isArray(response) ? response : response.results ?? response.data ?? []
       return {
@@ -2281,50 +2296,48 @@ export const api = {
         next: response.next ?? null,
         previous: response.previous ?? null,
         results: items.map((item: any) => ({
-          id: item.id,
-          timestamp: item.created_at ?? item.timestamp ?? null,
-          user:
+          id: String(item.id),
+          created_at: item.created_at ?? null,
+          user_email:
             item.user_email ??
-            (typeof item.user === 'object' ? item.user?.email : item.user) ??
-            '—',
-          action: item.action,
-          resource_type: item.resource_type,
-          resource_id: item.resource_id,
-          details:
-            item.old_values != null || item.new_values != null
-              ? { old_values: item.old_values ?? null, new_values: item.new_values ?? null }
-              : (item.details ?? null),
+            (typeof item.user === 'object' ? item.user?.email : null) ??
+            null,
+          action: item.action ?? '',
+          resource_type: item.resource_type ?? '',
+          resource_id: item.resource_id ?? null,
+          ip_address: item.ip_address ?? null,
+          user_agent: item.user_agent ?? null,
+          old_values: item.old_values ?? null,
+          new_values: item.new_values ?? null,
         })),
       }
     },
 
-    // Billing/Invoices
-    getInvoices: async () => {
-      // InvoiceListSerializer: billing_month / total_amount / paid_at
-      // (no `period` / `amount` / `paid_date` / `sacco`).
-      const response = await apiCall<any>('GET', '/billing/invoices/')
+    // Billing/Invoices. InvoiceListSerializer: billing_month / total_amount /
+    // paid_at / sent_at (no `period` / `amount` / `paid_date`, and no SACCO name
+    // on any invoice endpoint). InvoiceListView accepts ?status=, ?billing_month=
+    // and — for a super admin — ?sacco_id=.
+    getInvoices: async (params?: { status?: string; billing_month?: string; sacco_id?: string }) => {
+      const response = await apiCall<any>('GET', '/billing/invoices/', undefined, { params })
       const items = Array.isArray(response) ? response : response.data ?? response.results ?? []
       return {
         count: items.length,
         next: response.next ?? null,
         previous: response.previous ?? null,
-        results: items.map((item: any) => ({
-          id: String(item.id),
-          invoice_number: item.invoice_number ?? '',
-          period: item.billing_month ?? item.period ?? '',
-          amount: Number(item.total_amount ?? item.amount ?? 0),
-          status: String(item.status ?? 'pending').toLowerCase(),
-          due_date: item.due_date ?? '',
-          paid_date: item.paid_at ?? item.paid_date ?? null,
-          line_items_count: Number(item.line_items_count ?? 0),
-          days_overdue: Number(item.days_overdue ?? 0),
-          pdf_url: item.pdf_url ?? '',
-        })),
+        results: items.map(normalizeInvoice),
       }
     },
 
-    getInvoice: (id: string) =>
-      apiCall<any>('GET', `/billing/invoices/${uuid(id)}/`),
+    getInvoice: async (id: string) => {
+      // InvoiceDetailSerializer extends the list serializer with line_items /
+      // by_type. Map it to the same shape as the list rows so the two agree.
+      const item = await apiCall<any>('GET', `/billing/invoices/${uuid(id)}/`)
+      return {
+        ...normalizeInvoice(item),
+        line_items: Array.isArray(item.line_items) ? item.line_items : [],
+        by_type: item.by_type ?? {},
+      }
+    },
 
     // CurrentMonthTransactionPreviewView (IsSaccoAdmin). Running total of this
     // month's uninvoiced platform fees; the final invoice is cut on the 1st.
@@ -2342,12 +2355,10 @@ export const api = {
       }
     },
 
-    // NOTE: /billing/invoices/{id}/resend/ resolves a MonthlySaccoInvoice, but
-    // the invoice list/detail endpoints return Invoice rows (a different table).
-    // No endpoint exposes MonthlySaccoInvoice ids, so this cannot be called
-    // with a valid id from the sacco-admin console — kept only for super-admin.
-    resendInvoice: (id: string) =>
-      apiCall<void>('POST', `/billing/invoices/${uuid(id)}/resend/`),
+    // NOTE: no invoice "resend" wrapper. /billing/invoices/{id}/resend/ resolves
+    // a MonthlySaccoInvoice, but every invoice list/detail endpoint returns
+    // Invoice rows (a different table) and nothing exposes MonthlySaccoInvoice
+    // ids — so the call can never be made with a valid id from either console.
 
     downloadInvoice: async (id: string, format: 'csv' | 'pdf' = 'pdf') => {
       const response = await axiosInstance.get(`/billing/invoices/${uuid(id)}/download/`, {
@@ -2622,17 +2633,38 @@ export const api = {
     },
 
     getSacco: async (id: string) => {
-      const sacco = await api.saccos.get(id)
-      const stats = await apiCall<any>('GET', '/management/stats/', undefined, {
-        params: { sacco_id: sacco.id }
-      }).catch(() => null)
+      // The superadmin SACCO list is the only source that includes suspended /
+      // non-publicly-listed SACCOs. The public detail endpoint 404s on those
+      // for a role-only super admin, so it is best-effort enrichment only.
+      // /management/stats/ is IsSaccoAdmin + SACCO-scoped — it 403s here and is
+      // not used.
+      const [detail, list] = await Promise.all([
+        api.saccos.get(id).catch(() => null),
+        api.superAdmin.getSaccos(),
+      ])
+      const row = list.results.find((s: any) => s.id === id) ?? null
 
+      if (!detail && !row) {
+        throw { code: 'NOT_FOUND', message: 'SACCO not found.' }
+      }
+
+      const merged = {
+        id,
+        ...(detail ?? {}),
+        ...(row ?? {}),
+        name: (detail as any)?.name ?? row?.name ?? 'SACCO',
+        is_active: row?.is_active ?? (detail as any)?.is_active ?? true,
+        member_count: row?.member_count ?? (detail as any)?.member_count ?? 0,
+        health_status: row?.health_status ?? 'GOOD',
+        created_at: row?.created_at ?? (detail as any)?.created_at ?? null,
+        last_transaction_at: row?.last_transaction_at ?? null,
+      }
+
+      const normalized = normalizeSuperAdminSacco(merged)
       return {
-        ...normalizeSuperAdminSacco({
-          ...sacco,
-          transaction_volume_mtd_kes: stats?.transaction_volume_mtd_kes ?? stats?.monthly_contributions ?? 0,
-          platform_fee_kes: stats?.platform_fee_kes ?? 0,
-        }),
+        ...normalized,
+        created_at: merged.created_at ?? normalized.created_at,
+        joined_platform_at: merged.created_at ?? normalized.joined_platform_at,
         admin_team: [],
       }
     },
@@ -2643,15 +2675,31 @@ export const api = {
     revokeRole: (roleId: string) =>
       apiCall<void>('DELETE', `/management/roles/${uuid(roleId)}/`),
 
-    getUserRoles: (userId: string) =>
-      apiCall<any[]>('GET', '/management/roles/', undefined, { params: { user_id: userId } }),
+    // UserRolesView is paginated and RoleSerializer returns role_name (display
+    // label), user_email, sacco_name, created_at — no machine `name`, no nested
+    // user / sacco objects.
+    getUserRoles: async (userId: string) => {
+      const response = await apiCall<any>('GET', '/management/roles/', undefined, {
+        params: { user_id: userId },
+      })
+      const items = Array.isArray(response) ? response : response.results ?? response.data ?? []
+      return items.map((r: any) => ({
+        id: String(r.id),
+        role_label: r.role_name ?? r.name ?? '—',
+        user_email: r.user_email ?? r.user?.email ?? '',
+        sacco_name: r.sacco_name ?? r.sacco?.name ?? null,
+        created_at: r.created_at ?? null,
+      }))
+    },
 
-    getAllMembers: async (params?: { sacco?: string; search?: string; cursor?: string }) => {
+    // AllMembersListView uses PageNumberPagination (?page= / ?page_size=),
+    // not cursor pagination. next / previous come back as full URLs or null.
+    getAllMembers: async (params?: { sacco?: string; search?: string; page?: number }) => {
       const response = await apiCall<any>('GET', '/management/superadmin/members/', undefined, {
         params: {
           sacco_id: params?.sacco,
           search: params?.search,
-          cursor: params?.cursor,
+          page: params?.page,
         }
       })
       const items = response.results ?? []
@@ -2660,6 +2708,7 @@ export const api = {
         count: Number(response.count ?? items.length),
         next: response.next || null,
         previous: response.previous || null,
+        page: Number(params?.page ?? 1),
         results: items.map((item: any) => ({
           id: item.id,
           full_name: item.full_name,
@@ -2712,32 +2761,80 @@ export const api = {
       )
     },
 
+    // RevenueSummaryView (IsSuperAdmin). Platform-wide invoiced/paid totals,
+    // outstanding + overdue counts, suspended SACCOs, and per-SACCO / per-month
+    // breakdowns. DecimalFields serialize as strings.
+    getRevenueSummary: async () => {
+      const r = await apiCall<any>('GET', '/billing/revenue/summary/')
+      return {
+        total_revenue_all_time: Number(r.total_revenue_all_time ?? 0),
+        revenue_this_month: Number(r.revenue_this_month ?? 0),
+        revenue_last_month: Number(r.revenue_last_month ?? 0),
+        outstanding_invoices_count: Number(r.outstanding_invoices_count ?? 0),
+        outstanding_invoices_total: Number(r.outstanding_invoices_total ?? 0),
+        overdue_invoices_count: Number(r.overdue_invoices_count ?? 0),
+        suspended_saccos_count: Number(r.suspended_saccos_count ?? 0),
+        by_sacco: (Array.isArray(r.by_sacco) ? r.by_sacco : []).map((s: any) => ({
+          sacco_name: s.sacco_name ?? '—',
+          total_invoiced: Number(s.total_invoiced ?? 0),
+          total_paid: Number(s.total_paid ?? 0),
+          outstanding: Number(s.outstanding ?? 0),
+        })),
+        by_month: (Array.isArray(r.by_month) ? r.by_month : []).map((m: any) => ({
+          month: m.month ?? '',
+          total_invoiced: Number(m.total_invoiced ?? 0),
+          total_paid: Number(m.total_paid ?? 0),
+        })),
+      }
+    },
+
+    // InvoiceMarkPaidView (IsSuperAdmin). Resolves an Invoice (not
+    // MonthlySaccoInvoice) so the id from getInvoices is valid. Records the
+    // payment and immediately clears the SACCO's billing suspension.
+    // payment_method ∈ mpesa | bank | internal; amount must be >= invoice total.
+    markInvoicePaid: (id: string, data: { amount: number; payment_ref: string; payment_method: 'mpesa' | 'bank' | 'internal' }) =>
+      apiCall<{ detail: string; invoice_id: string; payment_id: string; status: string }>(
+        'POST',
+        `/billing/invoices/${uuid(id)}/mark-paid/`,
+        { amount: data.amount, payment_ref: data.payment_ref, payment_method: data.payment_method },
+      ),
+
     getTopSaccos: async () => {
       const response = await apiCall<any>('GET', '/management/superadmin/top-saccos/')
       const items = Array.isArray(response) ? response : response.results || []
-      return items.map((item: any) =>
-        TopSaccosSchema.parse({
+      // Backend TopSaccosSerializer emits health_status as GOOD / REVIEW /
+      // API_ISSUE (uppercase). Keep it uppercase to match TopSaccosSchema.
+      const HEALTH = new Set(['GOOD', 'REVIEW', 'API_ISSUE'])
+      return items.map((item: any) => {
+        const health = String(item.health_status ?? 'GOOD').toUpperCase()
+        return TopSaccosSchema.parse({
           sacco_id: item.sacco_id,
           sacco_name: item.sacco_name,
           member_count: Number(item.member_count || 0),
           txn_volume_this_month: Number(item.txn_volume_this_month || 0),
           platform_fee_this_month: Number(item.platform_fee_this_month || 0),
-          health_status: String(item.health_status ?? 'GOOD').toLowerCase(),
+          health_status: HEALTH.has(health) ? health : 'GOOD',
         })
-      )
+      })
     },
 
     getPlatformAlerts: async () => {
       const response = await apiCall<any>('GET', '/management/superadmin/alerts/')
       const items = Array.isArray(response) ? response : response.results || []
+      // PlatformAlertSerializer returns { sacco_name, flag_type, description,
+      // severity, created_at } and NO id — synthesize a stable key from the
+      // content so React keys don't churn between refetches.
       return items.map((item: any) =>
         PlatformAlertSchema.parse({
-          id: item.id ?? `${item.sacco_name ?? 'alert'}-${Date.now()}-${Math.random()}`,
-          sacco_name: item.sacco_name,
-          flag_type: item.flag_type,
-          description: item.description,
-          severity: item.severity,
-          created_at: item.created_at,
+          id:
+            item.id != null
+              ? String(item.id)
+              : `${item.sacco_name ?? 'alert'}·${item.flag_type ?? ''}·${item.created_at ?? ''}`,
+          sacco_name: item.sacco_name ?? '—',
+          flag_type: item.flag_type ?? '',
+          description: item.description ?? '',
+          severity: String(item.severity ?? ''),
+          created_at: item.created_at ?? '',
         })
       )
     },
@@ -2747,53 +2844,29 @@ export const api = {
       return unwrapResults(response)
     },
 
-    getAMLFlags: async () => {
-      try {
-        const queue = await api.superAdmin.getKycQueue()
-        const normalizeRisk = (value: unknown): 'low' | 'medium' | 'high' => {
-          const level = String(value ?? 'medium').toLowerCase()
-          if (level === 'low' || level === 'high') return level
-          return 'medium'
-        }
-        const normalizeStatus = (value: unknown): 'open' | 'under_review' | 'resolved' | 'escalated' => {
-          const status = String(value ?? 'open').toLowerCase()
-          if (status === 'under_review' || status === 'resolved' || status === 'escalated') return status
-          return 'open'
-        }
-
-        return queue.map((item: any) =>
-          AMLFlagSchema.parse({
-            id: item.id,
-            member_name:
-              item.user?.full_name ??
-              `${item.user?.first_name ?? ''} ${item.user?.last_name ?? ''}`.trim(),
-            sacco_name: item.sacco?.name ?? item.membership?.sacco_name ?? '',
-            transaction_ref: item.reference ?? '',
-            flag_reason: item.review_notes ?? item.status ?? 'KYC review required',
-            amount: Number(item.amount ?? 0),
-            risk_level: normalizeRisk(item.risk_level),
-            status: normalizeStatus(item.status),
-            flagged_at: item.created_at ?? item.flagged_at ?? new Date().toISOString(),
-          })
-        )
-      } catch {
-        return []
-      }
-    },
-
-    resolveAMLFlag: (_id: string, _notes: string) =>
-      apiCall<void>('PATCH', `/management/kyc/${uuid(_id)}/review/`, {
-        status: 'APPROVED',
-        review_notes: _notes,
-      }),
+    // NOTE: no AML / transaction-monitoring API exists. ComplianceFlag is
+    // exposed only as the read-only /management/superadmin/alerts/ list
+    // (see getPlatformAlerts) with no detail / resolve / investigate action.
 
     getSystemHealth: async () => {
-      const [stats, readiness] = await Promise.all([
-        apiCall<Record<string, unknown>>('GET', '/management/stats/').catch(() => ({} as Record<string, unknown>)),
-        apiCall<{ status: string; checks?: Record<string, boolean> }>('GET', '/health/ready/').catch(() => ({ status: 'unknown' })),
-      ])
+      // The only platform-health source available to a super admin is the
+      // unauthenticated readiness probe ({ status, checks: { database, cache } }).
+      // There is no per-service registry endpoint, so `services` is always empty.
+      // validateStatus lets us read the body on a 503 (degraded) response.
+      let readiness: { status: string; checks?: Record<string, boolean> } = {
+        status: 'unknown',
+        checks: {},
+      }
+      try {
+        const res = await axiosInstance.get('/health/ready/', { validateStatus: () => true })
+        if (res.data && typeof res.data === 'object') {
+          readiness = res.data as { status: string; checks?: Record<string, boolean> }
+        }
+      } catch {
+        readiness = { status: 'unavailable', checks: {} }
+      }
       return {
-        services: Array.isArray(stats.services) ? stats.services : [],
+        services: [] as Array<{ name: string; status: string }>,
         readiness,
       }
     },

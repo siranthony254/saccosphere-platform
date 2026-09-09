@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { usePlatformLiveFeed } from '../../hooks/usePlatformData'
+import { usePlatformLiveFeed, useRevenueSummary } from '../../hooks/usePlatformData'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { MetricCard } from '../../components/ui/MetricCard'
 import { DataTable } from '../../components/ui/DataTable'
@@ -10,6 +10,7 @@ const today = new Date().toISOString().slice(0, 10)
 export function TransactionsFeed() {
   const [range, setRange] = useState<'today' | 'week' | 'month'>('today')
   const { feed, connected } = usePlatformLiveFeed()
+  const { data: revenue } = useRevenueSummary()
 
   const filtered = useMemo(() => {
     const now = new Date()
@@ -47,7 +48,11 @@ export function TransactionsFeed() {
           delta={`${filtered.length} transactions`}
           accent
         />
-        <MetricCard label="Platform fees earned" value="N/A" delta="Not provided by backend" />
+        <MetricCard
+          label="Platform revenue (MTD)"
+          value={revenue ? `KES ${revenue.revenue_this_month.toLocaleString()}` : '—'}
+          delta="Paid invoices this month"
+        />
         <MetricCard label="Successful" value={successful.toString()} delta="All SACCOs" />
         <MetricCard
           label="Failed transactions"
@@ -71,6 +76,11 @@ export function TransactionsFeed() {
           Auto-updating every 10 seconds
         </div>
       </div>
+
+      <p className="text-[11px] text-ink-faint mb-3">
+        Live window — the backend feed returns the most recent 50 transactions, so the week / month
+        views only cover what's in that window.
+      </p>
 
       <DataTable
         columns={[

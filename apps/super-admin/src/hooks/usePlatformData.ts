@@ -4,6 +4,7 @@ import { api } from '@saccosphere/api-client'
 
 type LiveTransaction = {
   id: string
+  date: string
   time: string
   member: string
   sacco: string
@@ -24,6 +25,7 @@ const toLiveTransaction = (txn: {
   status: string
 }): LiveTransaction => ({
   id: txn.id,
+  date: txn.date,
   time: new Date(txn.date).toLocaleTimeString('en-KE', {
     hour: '2-digit',
     minute: '2-digit',
@@ -52,6 +54,14 @@ export function useRevenueChart() {
     queryKey: ['revenue-chart'],
     queryFn: api.superAdmin.getRevenueChart,
     staleTime: 300_000, // 5 minutes
+  })
+}
+
+export function useRevenueSummary() {
+  return useQuery({
+    queryKey: ['revenue-summary'],
+    queryFn: api.superAdmin.getRevenueSummary,
+    staleTime: 120_000,
   })
 }
 
@@ -87,13 +97,6 @@ export function useSaccoDetail(id: string) {
   })
 }
 
-export function useAMLFlags() {
-  return useQuery({
-    queryKey: QueryKeys.amlFlags(),
-    queryFn: api.superAdmin.getAMLFlags,
-  })
-}
-
 export function useKycQueue() {
   return useQuery({
     queryKey: ['kyc-queue'],
@@ -101,7 +104,7 @@ export function useKycQueue() {
   })
 }
 
-export function useAllMembers(params?: { sacco?: string; search?: string }) {
+export function useAllMembers(params?: { sacco?: string; search?: string; page?: number }) {
   return useQuery({
     queryKey: QueryKeys.allMembers(params),
     queryFn: () => api.superAdmin.getAllMembers(params),

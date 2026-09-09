@@ -26,19 +26,18 @@ export function Compliance() {
           delta="From platform-wide KYC queue"
         />
         <MetricCard
-          label="Active AML flags / alerts"
+          label="Open compliance flags"
           value={(flags?.length ?? 0).toString()}
-          delta={flags?.length ? `${flags.length} open alerts requiring action` : 'No open alerts'}
+          delta={flags?.length ? `${flags.length} open / investigating` : 'No open flags'}
           accent={!!flags?.length}
         />
       </div>
 
-
-      {flags && flags.length > 0 && (
-        <div className="bg-red-50 border-l-4 border-red-500 rounded-r-lg p-2.5 mb-2.5 text-xs text-red-900">
-          {flags.length} platform alert{flags.length === 1 ? '' : 's'} require review
-        </div>
-      )}
+      <p className="text-[11px] text-ink-faint mb-3">
+        Compliance flags are raised automatically by the platform's detectors. This view is
+        read-only — flags are worked and closed in platform administration; there is no
+        resolve action here. There is no separate transaction-level AML monitoring feed.
+      </p>
 
       <div className="grid grid-cols-2 gap-4">
         <Card title="KYC status by SACCO">
@@ -96,21 +95,18 @@ export function Compliance() {
                   },
                 },
                 {
+                  key: 'created_at',
+                  header: 'Raised',
+                  render: (row: PlatformAlert) =>
+                    row.created_at ? new Date(row.created_at).toLocaleDateString() : '—',
+                },
+                {
                   key: 'description',
                   header: 'Description',
                   render: (row: PlatformAlert) => (
-                    <div className="max-w-48 overflow-hidden text-ellipsis whitespace-nowrap text-ink-muted">
+                    <div className="max-w-64 overflow-hidden text-ellipsis whitespace-nowrap text-ink-muted">
                       {row.description}
                     </div>
-                  ),
-                },
-                {
-                  key: 'action',
-                  header: 'Action',
-                  render: () => (
-                    <button className="px-2.5 py-0.5 rounded text-xs font-semibold bg-violet-50 text-violet-700 hover:bg-violet-100">
-                      Review
-                    </button>
                   ),
                 },
               ]}

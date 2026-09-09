@@ -43,12 +43,13 @@ export function PlatformSettings() {
 
         <Card title="Editable settings">
           <div className="text-sm text-ink-muted leading-relaxed">
-            The current backend contract does not expose platform-wide settings endpoints
-            (platform identity, global fee configuration, super admin team, KYC/AML policy toggles).
-            Once those endpoints are available, this panel will fetch and edit them dynamically.
+            Platform-wide configuration — platform identity, global fee schedule, the super-admin
+            team, KYC / AML policy — has no API and is managed directly in platform administration
+            (Django admin), not this console. SACCO-level policy lives in each SACCO's own admin
+            settings.
           </div>
           <div className="mt-4 text-xs text-ink-faint">
-            No hard-coded configuration values are stored in the frontend.
+            This screen deliberately holds no editable fields and no hard-coded config values.
           </div>
         </Card>
       </div>

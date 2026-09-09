@@ -74,7 +74,9 @@ export function AuditLogs() {
                     <span className="text-[9px] text-ink-faint block font-mono">{log.resource_id}</span>
                   </td>
                   <td className="py-2.5 px-3 text-ink-muted text-xs max-w-xs truncate">
-                    {JSON.stringify(log.new_values || log.details) || '—'}
+                    {log.new_values || log.old_values
+                      ? JSON.stringify(log.new_values ?? log.old_values)
+                      : '—'}
                   </td>
                 </tr>
               ))

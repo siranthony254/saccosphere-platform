@@ -1,10 +1,8 @@
-import { useRevenueChart, useTopSaccos } from '../../hooks/usePlatformData'
+import { useRevenueChart, useRevenueSummary } from '../../hooks/usePlatformData'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { MetricCard } from '../../components/ui/MetricCard'
 import { Card } from '../../components/ui/Card'
 import { DataTable } from '../../components/ui/DataTable'
-import { Badge } from '../../components/ui/Badge'
-import type { TopSaccos } from '@saccosphere/schemas'
 
 function formatKes(value: number): string {
   if (value >= 1_000_000) return `KES ${(value / 1_000_000).toFixed(1)}M`
@@ -12,9 +10,16 @@ function formatKes(value: number): string {
   return `KES ${value.toLocaleString()}`
 }
 
+type SaccoRevenueRow = {
+  sacco_name: string
+  total_invoiced: number
+  total_paid: number
+  outstanding: number
+}
+
 export function Revenue() {
   const { data: revenueData, isLoading: revenueLoading, error: revenueError } = useRevenueChart()
-  const { data: topSaccos, isLoading: topLoading } = useTopSaccos()
+  const { data: summary, isLoading: summaryLoading } = useRevenueSummary()
 
   if (revenueLoading) return <div className="p-6 text-ink-muted">Loading revenue data...</div>
 
@@ -32,24 +37,39 @@ export function Revenue() {
   }
 
   const rows = revenueData
-  const totalSaaS = rows.reduce((sum: number, item: any) => sum + item.saas_fees, 0)
-  const totalTxnFees = rows.reduce((sum: number, item: any) => sum + item.transaction_fees, 0)
-  const totalMRR = rows.reduce((sum: number, item: any) => sum + item.total_mrr, 0)
   const maxMRR = Math.max(...rows.map((r: any) => r.total_mrr), 1)
+  const bySacco = (summary?.by_sacco ?? []) as SaccoRevenueRow[]
 
   return (
     <div className="p-5">
-      <PageHeader title="Revenue & billing" subtitle="Platform-wide earnings" />
+      <PageHeader title="Revenue & billing" subtitle="Platform-wide earnings, collections and arrears" />
 
       <div className="grid grid-cols-4 gap-3 mb-5">
-        <MetricCard label="Total MRR" value={formatKes(totalMRR)} delta="Total over period" accent />
-        <MetricCard label="SaaS fees" value={formatKes(totalSaaS)} delta="From SACCO subscriptions" />
-        <MetricCard label="Transaction fees" value={formatKes(totalTxnFees)} delta="From platform transactions" />
-        <MetricCard label="Active SACCOs" value={`${topSaccos?.length ?? 0}`} delta="Contributing revenue" />
+        <MetricCard
+          label="Revenue — all time"
+          value={summary ? formatKes(summary.total_revenue_all_time) : '—'}
+          delta="Paid invoices, lifetime"
+          accent
+        />
+        <MetricCard
+          label="Revenue this month"
+          value={summary ? formatKes(summary.revenue_this_month) : '—'}
+          delta={summary ? `Last month ${formatKes(summary.revenue_last_month)}` : ''}
+        />
+        <MetricCard
+          label="Outstanding"
+          value={summary ? formatKes(summary.outstanding_invoices_total) : '—'}
+          delta={summary ? `${summary.outstanding_invoices_count} open · ${summary.overdue_invoices_count} overdue` : ''}
+        />
+        <MetricCard
+          label="Suspended SACCOs"
+          value={summary ? `${summary.suspended_saccos_count}` : '—'}
+          delta="Billing-blocked"
+        />
       </div>
 
       <div className="grid grid-cols-2 gap-4">
-        <Card title="Revenue growth">
+        <Card title="Monthly recurring revenue">
           {rows.length === 0 ? (
             <div className="text-xs text-ink-muted">No revenue data returned from the backend.</div>
           ) : (
@@ -73,46 +93,29 @@ export function Revenue() {
           )}
         </Card>
 
-        <Card title="Revenue breakdown by SACCO">
-          {topLoading ? (
+        <Card title="Invoiced vs collected by SACCO">
+          {summaryLoading ? (
             <div className="text-xs text-ink-muted">Loading SACCO revenue...</div>
-          ) : (topSaccos ?? []).length === 0 ? (
+          ) : bySacco.length === 0 ? (
             <div className="text-xs text-ink-muted">No SACCO revenue data returned from the backend.</div>
           ) : (
             <DataTable
               columns={[
-                { key: 'sacco_name', header: 'SACCO', render: (row: TopSaccos) => row.sacco_name },
+                { key: 'sacco_name', header: 'SACCO', render: (row: SaccoRevenueRow) => row.sacco_name },
+                { key: 'total_invoiced', header: 'Invoiced', render: (row: SaccoRevenueRow) => formatKes(row.total_invoiced) },
+                { key: 'total_paid', header: 'Collected', render: (row: SaccoRevenueRow) => formatKes(row.total_paid) },
                 {
-                  key: 'platform_fee_this_month',
-                  header: 'SaaS fee',
-                  render: (row: TopSaccos) => formatKes(row.platform_fee_this_month),
-                },
-                {
-                  key: 'txn_volume_this_month',
-                  header: 'Txn volume',
-                  render: (row: TopSaccos) => formatKes(row.txn_volume_this_month),
-                },
-                {
-                  key: 'total',
-                  header: 'Total',
-                  render: (row: TopSaccos) => (
-                    <span className="font-semibold">
-                      {formatKes(row.platform_fee_this_month + Math.round(row.txn_volume_this_month * 0.01))}
+                  key: 'outstanding',
+                  header: 'Outstanding',
+                  render: (row: SaccoRevenueRow) => (
+                    <span className={row.outstanding > 0 ? 'font-semibold text-red-700' : 'text-ink-muted'}>
+                      {formatKes(row.outstanding)}
                     </span>
                   ),
                 },
-                {
-                  key: 'health',
-                  header: 'Health',
-                  render: (row: TopSaccos) => (
-                    <Badge variant={row.health_status === 'GOOD' ? 'success' : 'warning'}>
-                      {row.health_status}
-                    </Badge>
-                  ),
-                },
               ]}
-              data={topSaccos ?? []}
-              keyExtractor={(row: TopSaccos) => row.sacco_id}
+              data={bySacco}
+              keyExtractor={(row: SaccoRevenueRow) => row.sacco_name}
             />
           )}
         </Card>

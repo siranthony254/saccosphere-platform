@@ -192,18 +192,9 @@ export const PlatformTransactionSchema = TransactionSchema.extend({
 })
 export type PlatformTransaction = z.infer<typeof PlatformTransactionSchema>
 
-export const AMLFlagSchema = z.object({
-  id: z.string().uuid(),
-  member_name: z.string(),
-  sacco_name: z.string(),
-  transaction_ref: z.string(),
-  flag_reason: z.string(),
-  amount: z.number(),
-  risk_level: z.enum(['low', 'medium', 'high']),
-  status: z.enum(['open', 'under_review', 'resolved', 'escalated']),
-  flagged_at: z.string().datetime(),
-})
-export type AMLFlag = z.infer<typeof AMLFlagSchema>
+// NOTE: no AML schema — there is no transaction-monitoring / AML endpoint in
+// the backend. Compliance surfaces read-only ComplianceFlag rows only
+// (PlatformAlertSchema).
 
 export const RevenueChartSchema = z.object({
   month: z.string(), // YYYY-MM format
@@ -223,16 +214,17 @@ export const TopSaccosSchema = z.object({
 })
 export type TopSaccos = z.infer<typeof TopSaccosSchema>
 
+// Mirrors PlatformAlertSerializer exactly: sacco_name, flag_type, description,
+// severity (LOW/MEDIUM/HIGH/CRITICAL), created_at — and no id (synthesized
+// client-side). severity/created_at kept as plain strings so one odd value
+// can't reject the whole alerts list.
 export const PlatformAlertSchema = z.object({
   id: z.string(),
   sacco_name: z.string(),
   flag_type: z.string(),
   description: z.string(),
-  severity: z.enum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']),
-  created_at: z.string().datetime(),
-  risk_level: z.enum(['low', 'medium', 'high']),
-  flag_reason: z.string(),
-  member_name: z.string(),
+  severity: z.string(),
+  created_at: z.string(),
 })
 export type PlatformAlert = z.infer<typeof PlatformAlertSchema>
 

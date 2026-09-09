@@ -31,7 +31,7 @@ export function KycReview() {
         <table className="w-full border-collapse text-[13px]">
           <thead>
             <tr className="bg-surface-2">
-              {['Member', 'IPRS', 'Docs', 'Submitted', 'Status', 'Actions'].map(h => (
+              {['KYC record', 'IPRS', 'Docs', 'Submitted', 'Status', 'Actions'].map(h => (
                 <th key={h} className="text-left py-2 px-3 text-[11px] text-ink-muted font-medium border-b border-mid uppercase tracking-tighter">{h}</th>
               ))}
             </tr>
@@ -51,10 +51,10 @@ export function KycReview() {
                 return (
                   <tr key={kyc.id} className={`border-b border-surface-2 ${isExpanded ? 'bg-violet-25' : ''}`}>
                     <td className="py-3 px-3">
-                      <div className="font-medium text-xs text-ink">
-                        {kyc.user?.full_name || `${kyc.user?.first_name} ${kyc.user?.last_name}`}
+                      <div className="font-medium text-xs text-ink">{kyc.status_display || kyc.status}</div>
+                      <div className="text-[10px] text-ink-faint">
+                        {kyc.admin_review_reason || `#${String(kyc.id).slice(0, 8)}`}
                       </div>
-                      <div className="text-[10px] text-ink-faint">{kyc.user?.email}</div>
                     </td>
                     <td className="py-3 px-3">
                        <Badge variant={kyc.iprs_verified ? 'success' : 'warning'}>
@@ -94,7 +94,10 @@ export function KycReview() {
                               <div className="p-6 border-b border-surface-3 flex justify-between items-center">
                                  <div>
                                    <h3 className="text-lg font-bold text-ink">Identity Verification</h3>
-                                   <p className="text-xs text-ink-muted">{kyc.user?.full_name} · {kyc.user?.email}</p>
+                                   <p className="text-xs text-ink-muted">
+                                     {kyc.status_display || kyc.status}
+                                     {kyc.admin_review_reason ? ` · ${kyc.admin_review_reason}` : ''}
+                                   </p>
                                  </div>
                                  <button onClick={() => setSelectedId(null)} className="text-ink-faint hover:text-ink">✕</button>
                               </div>
@@ -116,8 +119,8 @@ export function KycReview() {
 
                                  <div className="bg-surface-2 rounded-xl p-4 border border-surface-3 mb-8 grid grid-cols-3 gap-4">
                                     <div>
-                                       <div className="text-[10px] text-ink-faint uppercase font-bold mb-1">ID Number</div>
-                                       <div className="text-sm font-bold text-ink-soft">{kyc.id_number || '—'}</div>
+                                       <div className="text-[10px] text-ink-faint uppercase font-bold mb-1">Review reason</div>
+                                       <div className="text-sm font-bold text-ink-soft">{kyc.admin_review_reason || kyc.iprs_error || '—'}</div>
                                     </div>
                                     <div>
                                        <div className="text-[10px] text-ink-faint uppercase font-bold mb-1">IPRS Verification</div>
@@ -126,8 +129,10 @@ export function KycReview() {
                                        </div>
                                     </div>
                                     <div>
-                                       <div className="text-[10px] text-ink-faint uppercase font-bold mb-1">Reference</div>
-                                       <div className="text-xs font-mono text-ink-faint">{kyc.iprs_reference || '—'}</div>
+                                       <div className="text-[10px] text-ink-faint uppercase font-bold mb-1">IPRS checked</div>
+                                       <div className="text-xs font-mono text-ink-faint">
+                                          {kyc.iprs_attempted_at ? new Date(kyc.iprs_attempted_at).toLocaleString() : '—'}
+                                       </div>
                                     </div>
                                  </div>
 
