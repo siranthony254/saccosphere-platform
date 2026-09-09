@@ -1,14 +1,22 @@
 node_modules
 dist
+build
 .expo
 .next
 .turbo
 coverage
 *.local
 .env
-.env.development
-.env.staging
-.env.production
+.env.*
+!.env.example
 *.tsbuildinfo
 
 .vercel
+
+# Logs & scratch output (never commit — may leak local paths / data)
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+files.txt
+scratch/*.json
