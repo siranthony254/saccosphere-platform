@@ -10,6 +10,7 @@ const NAV: { path: string; label: string; icon: IconName; badge: string | null; 
   { path: '/transactions', label: 'Transactions',       icon: 'arrow-left-right', badge: null, live: true },
   { path: '/roles',        label: 'Role Management',    icon: 'shield',           badge: null },
   { path: '/kyc',          label: 'KYC Review',         icon: 'scan-face',        badge: null },
+  { path: '/disbursement-disputes', label: 'Disbursement Disputes', icon: 'alert-triangle', badge: null },
   { path: '/audit-logs',   label: 'Audit Logs',         icon: 'clipboard-list',   badge: null },
   { path: '/billing',      label: 'Billing & Invoices', icon: 'receipt',          badge: null },
   { path: '/compliance',   label: 'Compliance',         icon: 'shield-check',     badge: null },

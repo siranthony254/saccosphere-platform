@@ -15,6 +15,7 @@ import { KycReview } from './pages/Kyc/KycReview'
 import { AuditLogs } from './pages/AuditLogs/AuditLogs'
 import { Billing } from './pages/Billing/Billing'
 import { SystemHealth } from './pages/System/SystemHealth'
+import { DisbursementDisputes } from './pages/Disputes/DisbursementDisputes'
 
 export const router = createBrowserRouter([
   {
@@ -42,6 +43,7 @@ export const router = createBrowserRouter([
       { path: 'settings', element: <PlatformSettings /> },
       { path: 'roles', element: <Roles /> },
       { path: 'kyc', element: <KycReview /> },
+      { path: 'disbursement-disputes', element: <DisbursementDisputes /> },
       { path: 'audit-logs', element: <AuditLogs /> },
       { path: 'billing', element: <Billing /> },
       { path: '*', element: <Navigate to="/overview" replace /> },
