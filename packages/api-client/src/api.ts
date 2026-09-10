@@ -1534,20 +1534,20 @@ export const api = {
     // that the backend delivers by SMS / push as
     // `{FRONTEND_BASE_URL}/confirm-disbursement/?token=…`. The token embeds the
     // loan id and expires after 24h — there is no loan_id / POST form.
+    // Backend is POST-only (link-prefetch bots must not trigger it) and reads
+    // `token` (and `reason`) from the request body, not the query string.
     confirmDisbursement: (token: string) =>
       apiCall<{ status: string; message: string }>(
-        'GET',
+        'POST',
         '/services/loans/confirm-disbursement/',
-        undefined,
-        { params: { token: requiredString(token) } }
+        { token: requiredString(token) }
       ),
 
     disputeDisbursement: (token: string, reason?: string) =>
       apiCall<{ status: string; message: string }>(
-        'GET',
+        'POST',
         '/services/loans/dispute-disbursement/',
-        undefined,
-        { params: { token: requiredString(token), ...(reason ? { reason } : {}) } }
+        { token: requiredString(token), ...(reason ? { reason } : {}) }
       ),
   },
 
