@@ -1,4 +1,5 @@
 
+import { useMemo } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '@saccosphere/api-client'
 import { useSacco } from './useSacco'
@@ -61,13 +62,29 @@ export function useSaccoSettings() {
     },
   })
 
+  // Memoise so the returned `data` reference is stable across renders —
+  // otherwise a `useEffect([data])` in the page loops forever.
+  const data = useMemo(
+    () =>
+      q.data
+        ? {
+            sacco:
+              q.data.sacco ?? {
+                name: 'SACCO',
+                id: '',
+                sector: '',
+                county: '',
+                sasra_reg_no: '',
+                member_count: 0,
+              },
+            settings: q.data.settings,
+          }
+        : null,
+    [q.data]
+  )
+
   return {
-    data: q.data
-      ? {
-          sacco: q.data.sacco ?? { name: 'SACCO', id: '', sector: '', county: '', sasra_reg_no: '', member_count: 0 },
-          settings: q.data.settings,
-        }
-      : null,
+    data,
     isLoading: q.isLoading,
     error: q.error,
     isPending: m.isPending,

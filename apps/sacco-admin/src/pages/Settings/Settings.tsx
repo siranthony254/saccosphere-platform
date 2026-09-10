@@ -150,19 +150,19 @@ export function Settings() {
     sms_daily_limit: '',
   })
 
+  const settings = data?.settings
   useEffect(() => {
-    if (data?.settings) {
-      setFormData({
-        min_loan_amount: String(data.settings.min_loan_amount ?? 1000),
-        max_loan_amount: String(data.settings.max_loan_amount ?? 500000),
-        loan_multiplier: String(data.settings.loan_multiplier ?? 3),
-        guarantor_type_allowed: data.settings.guarantor_type_allowed ?? 'BOTH',
-        registration_fee: String(data.settings.registration_fee ?? 0),
-        monthly_contribution_amount: String(data.settings.monthly_contribution_amount ?? 0),
-        sms_daily_limit: String(data.settings.sms_daily_limit ?? 1000),
-      })
-    }
-  }, [data])
+    if (!settings) return
+    setFormData({
+      min_loan_amount: String(settings.min_loan_amount ?? 1000),
+      max_loan_amount: String(settings.max_loan_amount ?? 500000),
+      loan_multiplier: String(settings.loan_multiplier ?? 3),
+      guarantor_type_allowed: settings.guarantor_type_allowed ?? 'BOTH',
+      registration_fee: String(settings.registration_fee ?? 0),
+      monthly_contribution_amount: String(settings.monthly_contribution_amount ?? 0),
+      sms_daily_limit: String(settings.sms_daily_limit ?? 1000),
+    })
+  }, [settings])
 
   const handleSave = () => {
     save({

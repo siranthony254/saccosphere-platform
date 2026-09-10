@@ -67,8 +67,12 @@ export function useAuthBootstrap() {
         // Invalidate all queries to ensure fresh data on page load
         queryClient.invalidateQueries()
       } catch (error) {
-        // Clear tokens on any error (401, network, etc.)
-        console.error('Auth bootstrap failed:', error)
+        // A 401 here just means the stored refresh token expired/rotated —
+        // that's a normal "please log in again", not an error worth shouting.
+        const status = (error as { response?: { status?: number } })?.response?.status
+        if (status !== 401) {
+          console.error('Auth bootstrap failed:', error)
+        }
         clearTokens()
         await clearStoredRefreshToken()
         clearAuth()
