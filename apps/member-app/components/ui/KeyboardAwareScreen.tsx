@@ -1,12 +1,7 @@
 import { ReactNode } from 'react'
-import {
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleProp,
-  ViewStyle,
-} from 'react-native'
+import { StyleProp, ViewStyle } from 'react-native'
 import { SafeAreaView, Edge } from 'react-native-safe-area-context'
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller'
 import { AppBackground } from '../../theme/AppBackground'
 
 type Props = {
@@ -19,24 +14,20 @@ type Props = {
   contentContainerStyle?: StyleProp<ViewStyle>
   /** Vertically centre the content when it fits (typical for auth screens). */
   centerContent?: boolean
-  /** iOS only — extra offset above the keyboard (e.g. a fixed header height). */
-  keyboardVerticalOffset?: number
+  /** Gap kept between the focused field and the top of the keyboard. */
+  bottomOffset?: number
   /** Disable scrolling (rare — only for screens that must never scroll). */
   scrollEnabled?: boolean
 }
 
 /**
- * Wraps a screen so the on-screen keyboard never covers focused inputs.
+ * Wraps a screen so the on-screen keyboard never covers the focused input.
  *
- * - Android: the window is `adjustResize` (see AndroidManifest), so the
- *   ScrollView shrinks above the keyboard and Android scrolls the focused
- *   TextInput into view automatically.
- * - iOS: `behavior="padding"` + `automaticallyAdjustKeyboardInsets` insets
- *   the content and scrolls the focused field above the keyboard.
- *
- * Use `keyboardShouldPersistTaps="handled"` semantics are built in, so tapping
- * another field while the keyboard is open focuses it instead of just
- * dismissing.
+ * Uses `react-native-keyboard-controller`'s KeyboardAwareScrollView, which
+ * tracks the IME height (works with Android 15 edge-to-edge, where
+ * `windowSoftInputMode=adjustResize` is ignored) and scrolls the focused
+ * TextInput above the keyboard on both platforms. `KeyboardProvider` is
+ * mounted once in app/_layout.tsx.
  */
 export function KeyboardAwareScreen({
   children,
@@ -44,7 +35,7 @@ export function KeyboardAwareScreen({
   edges = ['bottom', 'left', 'right'],
   contentContainerStyle,
   centerContent = true,
-  keyboardVerticalOffset = 0,
+  bottomOffset = 24,
   scrollEnabled = true,
 }: Props) {
   const inner = (
@@ -52,26 +43,20 @@ export function KeyboardAwareScreen({
       style={{ flex: 1, backgroundColor: background ?? 'transparent' }}
       edges={edges}
     >
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={keyboardVerticalOffset}
+      <KeyboardAwareScrollView
+        scrollEnabled={scrollEnabled}
+        bottomOffset={bottomOffset}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={[
+          { flexGrow: 1 },
+          centerContent && { justifyContent: 'center' },
+          contentContainerStyle,
+        ]}
       >
-        <ScrollView
-          scrollEnabled={scrollEnabled}
-          keyboardShouldPersistTaps="handled"
-          keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
-          automaticallyAdjustKeyboardInsets
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={[
-            { flexGrow: 1 },
-            centerContent && { justifyContent: 'center' },
-            contentContainerStyle,
-          ]}
-        >
-          {children}
-        </ScrollView>
-      </KeyboardAvoidingView>
+        {children}
+      </KeyboardAwareScrollView>
     </SafeAreaView>
   )
 

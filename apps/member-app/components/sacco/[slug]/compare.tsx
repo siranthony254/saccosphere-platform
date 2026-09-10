@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { View, Text, ScrollView, TouchableOpacity, TextInput } from 'react-native'
+import { View, Text, TouchableOpacity, TextInput } from 'react-native'
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller'
 import { router, useLocalSearchParams } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useLoanComparison } from '../../../hooks/useLoans'
@@ -16,9 +17,12 @@ export default function LoanCompareScreen() {
 
   return (
     <DeepSpaceBackground>
-      <ScrollView
+      <KeyboardAwareScrollView
         className="flex-1"
         contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 40, paddingTop: insets.top }}
+        keyboardShouldPersistTaps="handled"
+        bottomOffset={24}
+        showsVerticalScrollIndicator={false}
       >
         <View className="flex-row items-center mb-1">
           <TouchableOpacity onPress={() => router.back()} className="mr-3">
@@ -108,7 +112,7 @@ export default function LoanCompareScreen() {
         )}
 
         <Text className="text-white/30 text-[10px] text-center mt-4">Rates as of April 2024. Subject to SACCO board approval.</Text>
-      </ScrollView>
+      </KeyboardAwareScrollView>
     </DeepSpaceBackground>
   )
 }

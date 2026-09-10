@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
-import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native'
+import { ActivityIndicator, Alert, Text, TextInput, TouchableOpacity, View } from 'react-native'
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { router, useLocalSearchParams } from 'expo-router'
 import { useQuery } from '@tanstack/react-query'
@@ -87,11 +88,10 @@ export default function WithdrawScreen() {
           <Text style={{ color: c.textMuted, fontSize: 13 }}>No withdrawable savings account was found for this SACCO.</Text>
         </View>
       ) : (
-        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView
+        <KeyboardAwareScrollView
           contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 32 }}
           keyboardShouldPersistTaps="handled"
-          automaticallyAdjustKeyboardInsets
+          bottomOffset={24}
           showsVerticalScrollIndicator={false}
         >
           {savings.length > 1 ? (
@@ -151,8 +151,7 @@ export default function WithdrawScreen() {
           >
             {withdraw.isPending ? <ActivityIndicator color="#fff" /> : <Text style={{ color: '#fff', fontSize: 14, fontWeight: '800' }}>Withdraw to M-Pesa</Text>}
           </TouchableOpacity>
-        </ScrollView>
-        </KeyboardAvoidingView>
+        </KeyboardAwareScrollView>
       )}
     </SafeAreaView>
   )

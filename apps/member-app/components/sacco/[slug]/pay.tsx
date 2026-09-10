@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
-import { ActivityIndicator, Alert, Text, TextInput, TouchableOpacity, View, ScrollView } from 'react-native'
+import { ActivityIndicator, Alert, Text, TextInput, TouchableOpacity, View } from 'react-native'
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller'
 import { router, useLocalSearchParams } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useQuery } from '@tanstack/react-query'
@@ -205,9 +206,12 @@ export default function PayScreen() {
 
   return (
     <DeepSpaceBackground>
-      <ScrollView
+      <KeyboardAwareScrollView
         className="flex-1"
         contentContainerStyle={{ padding: 20, paddingTop: insets.top, paddingBottom: insets.bottom + 40 }}
+        keyboardShouldPersistTaps="handled"
+        bottomOffset={24}
+        showsVerticalScrollIndicator={false}
       >
         <View className="flex-row items-center mb-6">
           <TouchableOpacity onPress={() => router.back()} className="mr-3">
@@ -249,7 +253,7 @@ export default function PayScreen() {
         >
           <Text style={{ color: '#fff', fontSize: 14, fontWeight: '800' }}>CONTINUE TO PAYMENT →</Text>
         </TouchableOpacity>
-      </ScrollView>
+      </KeyboardAwareScrollView>
     </DeepSpaceBackground>
   )
 }

@@ -2,7 +2,8 @@ import { View, Text, TouchableOpacity, ScrollView, TextInput, ActivityIndicator,
 import { useLocalSearchParams } from 'expo-router'
 import { useState } from 'react'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { Dimensions, KeyboardAvoidingView, Platform } from 'react-native'
+import { Dimensions } from 'react-native'
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller'
 import { useMutation } from '@tanstack/react-query'
 import { api } from '@saccosphere/api-client'
 import { Icon } from '../../components/ui/Icon'
@@ -72,12 +73,11 @@ export default function GuarantorRequest() {
   }
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-    <ScrollView
+    <KeyboardAwareScrollView
       contentContainerStyle={{ paddingHorizontal: PADDING_H, paddingBottom: insets.bottom + 20 }}
       className="bg-surface py-8"
       keyboardShouldPersistTaps="handled"
-      automaticallyAdjustKeyboardInsets
+      bottomOffset={24}
       showsVerticalScrollIndicator={false}
     >
       <View className="mb-4">
@@ -199,7 +199,6 @@ export default function GuarantorRequest() {
       <Text className="text-ink-muted text-[10px] text-center leading-4">
         By accepting, you agree to the SACCO Bylaws collateral lien rules. Funds are auto-released once the borrower repays the loan.
       </Text>
-    </ScrollView>
-    </KeyboardAvoidingView>
+    </KeyboardAwareScrollView>
   )
 }
