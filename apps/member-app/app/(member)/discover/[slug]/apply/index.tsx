@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { View, Text, TouchableOpacity, ScrollView, TextInput, ActivityIndicator } from 'react-native'
+import { View, Text, TouchableOpacity, ScrollView, TextInput, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native'
 import { useLocalSearchParams, router } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useMembershipApplicationStore } from '../../../../../store/useMembershipApplicationStore'
@@ -101,9 +101,13 @@ export default function ApplyStep1Screen() {
 
   return (
     <DeepSpaceBackground>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView
         className="flex-1"
         contentContainerStyle={{ paddingBottom: insets.bottom + 24, paddingTop: insets.top }}
+        keyboardShouldPersistTaps="handled"
+        automaticallyAdjustKeyboardInsets
+        showsVerticalScrollIndicator={false}
       >
         {/* Header */}
         <View className="px-4 py-2.5 border-b border-white/10 flex-row items-center mb-4">
@@ -272,6 +276,7 @@ export default function ApplyStep1Screen() {
           </Text>
         </TouchableOpacity>
       </ScrollView>
+      </KeyboardAvoidingView>
     </DeepSpaceBackground>
   )
 }

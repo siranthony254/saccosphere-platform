@@ -1,5 +1,6 @@
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Dimensions, ActivityIndicator, Alert } from 'react-native'
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
+import { View, Text, TextInput, TouchableOpacity, Dimensions, ActivityIndicator, Alert } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { KeyboardAwareScreen } from '../../../components/ui/KeyboardAwareScreen'
 import { router } from 'expo-router'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -145,17 +146,14 @@ export default function RegisterStep1() {
 
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: BACKGROUND }} edges={['bottom', 'left', 'right']}>
-      <ScrollView
-        contentContainerStyle={{
-          flexGrow: 1,
-          justifyContent: 'center',
-          paddingHorizontal: PADDING_H,
-          paddingBottom: insets.bottom + 20,
-          paddingTop: insets.top + 20,
-        }}
-        keyboardShouldPersistTaps="handled"
-      >
+    <KeyboardAwareScreen
+      background={BACKGROUND}
+      contentContainerStyle={{
+        paddingHorizontal: PADDING_H,
+        paddingBottom: insets.bottom + 20,
+        paddingTop: insets.top + 20,
+      }}
+    >
         {/* Brand */}
       <Text style={{ color: VIOLET, fontWeight: '700', fontSize: 40, marginBottom: 14, fontFamily: 'Fraunces_700Bold' }}>
         Saccosphere
@@ -413,8 +411,7 @@ export default function RegisterStep1() {
         <Text className="text-white text-xs font-semibold">Continue →</Text>
       </TouchableOpacity>
 
-    </ScrollView>
-    </SafeAreaView>
+    </KeyboardAwareScreen>
   )
 }
 

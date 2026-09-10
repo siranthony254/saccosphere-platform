@@ -8,9 +8,9 @@ import {
   ActivityIndicator,
   Alert,
   Dimensions,
-  ScrollView,
 } from 'react-native'
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { KeyboardAwareScreen } from '../../../components/ui/KeyboardAwareScreen'
 import { router } from 'expo-router'
 import { useRegistrationStore } from '../../../store/useRegistrationStore'
 import { api } from '@saccosphere/api-client'
@@ -153,17 +153,14 @@ export default function RegisterOTP() {
     : ''
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: BACKGROUND }} edges={['bottom', 'left', 'right']}>
-      <ScrollView
-        contentContainerStyle={{
-          flexGrow: 1,
-          justifyContent: 'center',
-          paddingHorizontal: PADDING_H,
-          paddingBottom: insets.bottom + 20,
-          paddingTop: insets.top + 20,
-        }}
-        keyboardShouldPersistTaps="handled"
-      >
+    <KeyboardAwareScreen
+      background={BACKGROUND}
+      contentContainerStyle={{
+        paddingHorizontal: PADDING_H,
+        paddingBottom: insets.bottom + 20,
+        paddingTop: insets.top + 20,
+      }}
+    >
         <View className="flex-row gap-1 mb-1.5">
           {[0, 1, 2, 3].map((i) => (
             <View
@@ -371,8 +368,7 @@ export default function RegisterOTP() {
             <Text className="text-xs font-semibold" style={{ color: VIOLET }}>Change</Text>
           </TouchableOpacity>
         </View>
-      </ScrollView>
-    </SafeAreaView>
+    </KeyboardAwareScreen>
   )
 }
 
