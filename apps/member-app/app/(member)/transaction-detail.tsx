@@ -3,6 +3,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { router, useLocalSearchParams } from 'expo-router'
 import { useTransaction } from '../../hooks/useTransactions'
 import { Badge } from '../../components/ui/Badge'
+import { useMoney } from '../../lib/money'
 
 const BACKGROUND = '#06091A'
 const FROSTED_DARK = 'rgba(255, 255, 255, 0.06)'
@@ -22,11 +23,8 @@ const STATUS_VARIANT: Record<string, 'success' | 'warning' | 'error' | 'neutral'
   reversed: 'error',
 }
 
-function money(n?: number) {
-  return `KES ${Number(n ?? 0).toLocaleString()}`
-}
-
 export default function TransactionDetailScreen() {
+  const money = useMoney()
   const insets = useSafeAreaInsets()
   const { id } = useLocalSearchParams<{ id?: string }>()
   const { data: txn, isLoading } = useTransaction(id ?? '')

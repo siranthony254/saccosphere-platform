@@ -5,6 +5,8 @@ import { useQuery } from '@tanstack/react-query'
 import { api } from '@saccosphere/api-client'
 import { Icon } from '../../components/ui/Icon'
 import { Badge } from '../../components/ui/Badge'
+import { useMoney } from '../../lib/money'
+import { BalanceToggle } from '../../components/ui/BalanceToggle'
 
 const BACKGROUND = '#06091A'
 const FROSTED = 'rgba(255, 255, 255, 0.08)'
@@ -24,6 +26,7 @@ function formatDate(value: string | null) {
 }
 
 export default function MemberDividendsScreen() {
+  const money = useMoney()
   const insets = useSafeAreaInsets()
 
   const { data: dividendPayouts = [], isLoading, refetch, isRefetching } = useQuery({
@@ -59,9 +62,12 @@ export default function MemberDividendsScreen() {
             <Text style={{ color: TEXT_MUTED, fontSize: 11, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 4 }}>
               Total Dividends Received
             </Text>
-            <Text style={{ color: TEXT, fontSize: 26, fontWeight: '800' }}>
-              KES {totalNetDividends.toLocaleString()}
-            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+              <Text style={{ color: TEXT, fontSize: 26, fontWeight: '800' }}>
+                {money(totalNetDividends)}
+              </Text>
+              <BalanceToggle />
+            </View>
             <View className="flex-row items-center gap-1.5 mt-2">
               <Icon name="check" size={14} color={MINT} />
               <Text style={{ color: MINT, fontSize: 11, fontWeight: '600' }}>
@@ -149,7 +155,7 @@ export default function MemberDividendsScreen() {
                   )}
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingTop: 6, borderTopWidth: 0.5, borderTopColor: BORDER_WHITE }}>
                     <Text style={{ color: TEXT, fontSize: 12, fontWeight: '700' }}>Amount credited</Text>
-                    <Text style={{ color: MINT, fontSize: 13, fontWeight: '800' }}>KES {item.net_dividend.toLocaleString()}</Text>
+                    <Text style={{ color: MINT, fontSize: 13, fontWeight: '800' }}>{money(item.net_dividend)}</Text>
                   </View>
                 </View>
               </View>

@@ -4,9 +4,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useMembershipBySacco } from '../../hooks/useMembership'
 import { useLoans } from '../../hooks/useLoans'
 import { DeepSpaceBackground } from '../DeepSpaceBackground'
+import { useMoney } from '../../lib/money'
+import { BalanceToggle } from '../ui/BalanceToggle'
 
 export default function SaccoDetailScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>()
+  const money = useMoney()
   const insets = useSafeAreaInsets()
   const { data: membership, isLoading, refetch, isRefetching } = useMembershipBySacco(slug)
   const { data: loans } = useLoans({ sacco: slug })
@@ -51,7 +54,10 @@ export default function SaccoDetailScreen() {
         {/* Balance hero */}
         <View className="p-5 items-center mb-0 mt-4 mx-4 rounded-2xl" style={{ backgroundColor: membership.sacco_color + '25' }}>
           <Text className="text-white/60 text-xs tracking-wider mb-1">Total savings balance</Text>
-          <Text className="text-3xl font-bold mb-1 text-white">KES {totalSavings.toLocaleString()}</Text>
+          <View className="flex-row items-center gap-2.5 mb-1">
+            <Text className="text-3xl font-bold text-white">{money(totalSavings)}</Text>
+            <BalanceToggle />
+          </View>
           <View className="bg-white/10 px-2.5 py-0.5 rounded-full mt-1">
             <Text className="text-white/80 text-[10px] font-medium">Active Member</Text>
           </View>
@@ -84,12 +90,12 @@ export default function SaccoDetailScreen() {
 
             <View key={row.label} className={`flex-row justify-between py-2.5 ${i !== arr.length - 1 ? 'border-b border-white/5' : ''}`}>
               <Text className="text-white/60 text-xs">{row.label}</Text>
-              <Text className="text-white text-xs font-semibold">KES {row.value.toLocaleString()}</Text>
+              <Text className="text-white text-xs font-semibold">{money(row.value)}</Text>
             </View>
           ))}
           <View className="mt-2 pt-2 border-t border-white/10 flex-row justify-between">
             <Text className="text-white/60 text-xs">Loan limit</Text>
-            <Text className="text-mint-400 text-xs font-semibold">KES {(membership.loan_limit || 0).toLocaleString()}</Text>
+            <Text className="text-mint-400 text-xs font-semibold">{money(membership.loan_limit || 0)}</Text>
           </View>
         </View>
 
@@ -104,7 +110,7 @@ export default function SaccoDetailScreen() {
             </View>
             <View className="flex-row justify-between py-2">
               <Text className="text-white/60 text-xs">{activeLoan.loan_product_label}</Text>
-              <Text className="text-white text-xs font-semibold">KES {activeLoan.amount_requested.toLocaleString()}</Text>
+              <Text className="text-white text-xs font-semibold">{money(activeLoan.amount_requested)}</Text>
             </View>
 
             {/* Progress bar */}

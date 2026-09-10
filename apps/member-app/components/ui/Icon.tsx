@@ -14,6 +14,7 @@ export type IconName =
   | 'guarantor' | 'arrow-right' | 'check' | 'close'
   | 'camera' | 'cash' | 'send' | 'receive' | 'swap'
   | 'calendar' | 'bulb' | 'scale' | 'mail' | 'link' | 'search' | 'chart'
+  | 'eye' | 'eye-off'
 
 interface Props {
   name: IconName
@@ -56,6 +57,8 @@ export function Icon({ name, size = 20, color = '#111827', style }: Props) {
     case 'chart': return io('bar-chart-outline')
     case 'lock': return io('lock-closed-outline')
     case 'close': return io('close-outline')
+    case 'eye': return io('eye-outline')
+    case 'eye-off': return io('eye-off-outline')
 
     case 'savings': return mci('piggy-bank-outline')
     case 'withdraw': return mci('cash-minus')

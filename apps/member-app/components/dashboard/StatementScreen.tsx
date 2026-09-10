@@ -11,11 +11,13 @@ import { useMembershipBySacco } from '../../hooks/useMembership'
 import { Icon, type IconName } from '../ui/Icon'
 import type { Transaction } from '@saccosphere/schemas'
 import { DeepSpaceBackground } from '../DeepSpaceBackground'
+import { useMoney, useBalanceHidden, MONEY_MASK } from '../../lib/money'
 
 const FILTERS = ['All', 'Contributions', 'Withdrawals', 'Transfers', 'Loans', 'Dividends', 'Fees']
 
 export default function StatementScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>()
+  const money = useMoney()
   const insets = useSafeAreaInsets()
   const [monthDate, setMonthDate] = useState(startOfMonth(new Date()))
   const [filter, setFilter] = useState('All')
@@ -148,10 +150,10 @@ export default function StatementScreen() {
         {/* Summary Card */}
         <View className="bg-white/5 mx-4 mb-6 rounded-2xl p-4 border border-white/10">
           {[
-            { label: 'Opening balance', value: `KES ${openingBalance.toLocaleString()}` },
-            { label: 'Total contributions', value: `+KES ${(statementData?.total_credits ?? totalCredits).toLocaleString()}`, color: '#4ade80' },
-            { label: 'Loan repayments', value: `-KES ${(statementData?.total_debits ?? totalDebits).toLocaleString()}`, color: '#f87171' },
-            { label: 'Closing balance', value: `KES ${closingBalance.toLocaleString()}`, bold: true },
+            { label: 'Opening balance', value: money(openingBalance) },
+            { label: 'Total contributions', value: `+${money(statementData?.total_credits ?? totalCredits)}`, color: '#4ade80' },
+            { label: 'Loan repayments', value: `-${money(statementData?.total_debits ?? totalDebits)}`, color: '#f87171' },
+            { label: 'Closing balance', value: money(closingBalance), bold: true },
           ].map((row, i, arr) => (
             <View key={row.label} className={`flex-row justify-between py-2.5 ${i !== arr.length - 1 ? 'border-b border-white/5' : ''}`}>
               <Text className="text-white/60 text-xs">{row.label}</Text>
@@ -202,6 +204,7 @@ export default function StatementScreen() {
 }
 
 function TxnRow({ txn }: { txn: Transaction }) {
+  const hidden = useBalanceHidden()
   const isCredit = txn.direction === 'credit'
   const type = txn.txn_type.toLowerCase()
 
@@ -231,7 +234,7 @@ function TxnRow({ txn }: { txn: Transaction }) {
         </Text>
       </View>
       <Text className={`text-xs font-bold ${isCredit ? 'text-green-400' : 'text-red-400'}`}>
-        {isCredit ? '+' : '-'}{txn.amount.toLocaleString()}
+        {isCredit ? '+' : '-'}{hidden ? MONEY_MASK : txn.amount.toLocaleString()}
       </Text>
     </TouchableOpacity>
   )

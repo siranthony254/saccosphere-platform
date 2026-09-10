@@ -7,6 +7,7 @@ import { useConsents, useSetConsent, useExportMyData, useRequestDataErasure } fr
 import { useLinkGoogle } from '../../hooks/useAuth'
 import { GoogleSignin, isGoogleSignInConfigured, configureGoogleSignIn } from '../../lib/googleAuth'
 import { Icon } from '../../components/ui/Icon'
+import { usePreferencesStore } from '../../store/usePreferencesStore'
 
 const BACKGROUND = '#06091A'
 const FROSTED_DARK = 'rgba(255, 255, 255, 0.06)'
@@ -41,6 +42,9 @@ export default function PrivacyScreen() {
   const [pendingType, setPendingType] = useState<string | null>(null)
   const [confirmDelete, setConfirmDelete] = useState('')
   const [deleting, setDeleting] = useState(false)
+
+  const balanceHidden = usePreferencesStore((s) => s.balanceHidden)
+  const setBalanceHidden = usePreferencesStore((s) => s.setBalanceHidden)
 
   const toggle = (row: any) => {
     const next = !isGranted(row)
@@ -128,6 +132,29 @@ export default function PrivacyScreen() {
       </View>
 
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 32 }}>
+        {/* Appearance */}
+        <Text style={{ color: TEXT_MUTED, fontSize: 11, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 10 }}>
+          Appearance
+        </Text>
+        <View style={{ backgroundColor: FROSTED_DARK, borderRadius: 12, borderWidth: 1, borderColor: BORDER_WHITE, marginBottom: 20 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', padding: 14 }}>
+            <View style={{ flex: 1, paddingRight: 12 }}>
+              <Text style={{ color: TEXT, fontSize: 13, fontWeight: '600' }}>Hide balances</Text>
+              <Text style={{ color: TEXT_MUTED, fontSize: 11, lineHeight: 16, marginTop: 2 }}>
+                Mask your savings, loan and transaction amounts across the app. Tap the eye on any balance to switch it back.
+              </Text>
+            </View>
+            <TouchableOpacity
+              onPress={() => setBalanceHidden(!balanceHidden)}
+              accessibilityRole="switch"
+              accessibilityState={{ checked: balanceHidden }}
+              style={{ width: 48, height: 28, borderRadius: 14, backgroundColor: balanceHidden ? MINT : FROSTED_DARK, borderWidth: 1, borderColor: balanceHidden ? MINT : BORDER_WHITE, padding: 2, justifyContent: 'center' }}
+            >
+              <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: '#fff', alignSelf: balanceHidden ? 'flex-end' : 'flex-start' }} />
+            </TouchableOpacity>
+          </View>
+        </View>
+
         {/* Consents */}
         <Text style={{ color: TEXT_MUTED, fontSize: 11, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 10 }}>
           Your consents

@@ -20,10 +20,10 @@ import {
 } from '../../lib/membership'
 import { Badge } from '../ui/Badge'
 import { Icon, type IconName } from '../ui/Icon'
+import { BalanceToggle } from '../ui/BalanceToggle'
+import { useMoney } from '../../lib/money'
 
 type QuickAction = 'contribute' | 'loan' | 'statement' | 'repay'
-
-const money = (value?: number | null) => `KES ${Number(value ?? 0).toLocaleString('en-KE')}`
 
 // ─── Brand palette constants ──────────────────────────────────────────────
 const BACKGROUND = '#06091A'
@@ -439,6 +439,7 @@ function SingleSaccoDashboard({
   onAction: (action: QuickAction) => void
   onViewDetail?: () => void
 }) {
+  const money = useMoney()
   const { data: loans = [] } = useLoans({ sacco: membership.sacco_slug })
   const activeLoan = loans.find((l) => l.status === 'active' || l.status === 'disbursed' || l.status === 'approved')
   const totalSavings = getMembershipSavings(membership)
@@ -490,14 +491,16 @@ function SingleSaccoDashboard({
             </View>
           )}
         </View>
-        <Text
-          style={{
-            fontSize: 30, fontWeight: '700', color: '#fff',
-            lineHeight: 34, marginBottom: 14,
-          }}
-        >
-          {money(totalSavings + membership.share_capital)}
-        </Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 14 }}>
+          <Text
+            style={{
+              fontSize: 30, fontWeight: '700', color: '#fff', lineHeight: 34,
+            }}
+          >
+            {money(totalSavings + membership.share_capital)}
+          </Text>
+          <BalanceToggle />
+        </View>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
           <StatLight label="BOSA" value={money(membership.bosa_balance)} />
           <StatLight label="FOSA" value={money(membership.fosa_balance)} />
@@ -618,6 +621,7 @@ function UnifiedDashboard({
   onAction: (action: QuickAction) => void
   onSelectSacco: (slug: string) => void
 }) {
+  const money = useMoney()
   return (
     <View>
       {/* ── Total portfolio hero card ── */}
@@ -654,14 +658,16 @@ function UnifiedDashboard({
         >
           Total portfolio value
         </Text>
-        <Text
-          style={{
-            fontSize: 30, fontWeight: '700', color: '#fff',
-            lineHeight: 34, marginBottom: 14,
-          }}
-        >
-          {money(dashboard.total_balance)}
-        </Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 14 }}>
+          <Text
+            style={{
+              fontSize: 30, fontWeight: '700', color: '#fff', lineHeight: 34,
+            }}
+          >
+            {money(dashboard.total_balance)}
+          </Text>
+          <BalanceToggle />
+        </View>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
           <StatLight label="Savings" value={money(dashboard.total_savings)} />
           <StatLight label="Active loans" value={money(dashboard.active_loans_balance)} />
@@ -792,6 +798,7 @@ function QuickActionButton({
 }
 
 function SaccoRow({ membership, onPress }: { membership: Membership; onPress: () => void }) {
+  const money = useMoney()
   const totalSavings = getMembershipSavings(membership)
 
   return (
@@ -868,6 +875,7 @@ function RecentTransactions({ transactions, title }: { transactions: Transaction
 }
 
 function TransactionRow({ transaction }: { transaction: Transaction }) {
+  const money = useMoney()
   const isCredit = transaction.direction === 'credit'
   const type = transaction.txn_type.toLowerCase()
 

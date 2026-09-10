@@ -3,6 +3,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { router, useLocalSearchParams } from 'expo-router'
 import { useLoan } from '../../hooks/useLoans'
 import { Badge } from '../../components/ui/Badge'
+import { useMoney } from '../../lib/money'
 
 const BACKGROUND = '#06091A'
 const FROSTED_DARK = 'rgba(255, 255, 255, 0.06)'
@@ -25,9 +26,6 @@ const STATUS_VARIANT: Record<string, 'success' | 'warning' | 'error' | 'neutral'
   disbursement_pending: 'warning',
 }
 
-function money(n?: number) {
-  return `KES ${Number(n ?? 0).toLocaleString()}`
-}
 function date(v?: string | null) {
   if (!v) return '—'
   const d = new Date(v)
@@ -35,6 +33,7 @@ function date(v?: string | null) {
 }
 
 export default function LoanDetailScreen() {
+  const money = useMoney()
   const insets = useSafeAreaInsets()
   const { id } = useLocalSearchParams<{ id?: string }>()
   const { data: loan, isLoading } = useLoan(id ?? '')
