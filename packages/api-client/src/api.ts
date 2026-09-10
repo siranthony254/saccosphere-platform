@@ -2861,5 +2861,30 @@ export const api = {
         readiness,
       }
     },
+
+    // LoanDisbursementDisputeListView (IsSuperAdmin). Loans a member has
+    // reported as "not received" — DISPUTED / UNDER_REVIEW. Read-only queue;
+    // resolution happens via the member's confirm-disbursement token or a
+    // re-disbursement, not from here.
+    getDisbursementDisputes: async () => {
+      const response = await apiCall<any>('GET', '/services/loans/disputes/')
+      const items = Array.isArray(response) ? response : response?.results ?? []
+      return items.map((item: any) => ({
+        loan_id: String(item.loan_id ?? ''),
+        sacco: String(item.sacco ?? '—'),
+        member: String(item.member ?? '').trim() || '—',
+        amount: Number(item.amount ?? 0),
+        status: String(item.status ?? ''),
+        disputed_at: item.disputed_at ?? null,
+        dispute_reason: String(item.dispute_reason ?? ''),
+        mpesa_conversation_id: String(item.mpesa_conversation_id ?? ''),
+        audit_log_count: Number(item.audit_log_count ?? 0),
+      }))
+    },
+
+    // Delegates to the shared LoanDisbursementAuditView
+    // (IsSaccoAdminOrSuperAdmin) — the drill-down for one dispute row.
+    getDisbursementAudit: (loanId: string) =>
+      api.saccoAdmin.getLoanDisbursementAudit(loanId),
   },
 }
