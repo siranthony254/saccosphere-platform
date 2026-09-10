@@ -2421,8 +2421,38 @@ export const api = {
         id: String(item.id),
         name: String(item.name ?? ''),
         description: item.description ?? '',
+        interest_rate: Number(item.interest_rate ?? 0),
+        minimum_contribution: Number(item.minimum_contribution ?? 0),
+        is_active: item.is_active !== false,
+        allows_multiple_accounts: !!item.allows_multiple_accounts,
       }))
     },
+
+    // SavingsTypeViewSet write ops (IsSaccoAdmin). `sacco` is read-only —
+    // the backend scopes it from the caller's SACCO_ADMIN role.
+    createSavingsType: (data: {
+      name: string
+      description?: string
+      interest_rate: number
+      minimum_contribution: number
+      is_active?: boolean
+      allows_multiple_accounts?: boolean
+    }) => apiCall<any>('POST', '/services/savings-types/', data),
+
+    updateSavingsType: (
+      id: string,
+      data: Partial<{
+        name: string
+        description: string
+        interest_rate: number
+        minimum_contribution: number
+        is_active: boolean
+        allows_multiple_accounts: boolean
+      }>,
+    ) => apiCall<any>('PATCH', `/services/savings-types/${uuid(id)}/`, data),
+
+    deleteSavingsType: (id: string) =>
+      apiCall<void>('DELETE', `/services/savings-types/${uuid(id)}/`),
 
     getDividendDeclaration: (id: string) =>
       apiCall<any>('GET', `/management/dividends/declarations/${uuid(id)}/`),
