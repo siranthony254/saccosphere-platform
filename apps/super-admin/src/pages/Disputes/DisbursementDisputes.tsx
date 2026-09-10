@@ -10,6 +10,14 @@ import {
   type DisbursementDispute,
 } from '../../hooks/useDisbursementDisputes'
 
+type AuditEntry = {
+  event: string
+  actor_role: string
+  details: unknown
+  mpesa_ref: string
+  created_at: string | null
+}
+
 function formatKes(value: number): string {
   return `KES ${Number(value || 0).toLocaleString('en-KE')}`
 }
@@ -157,22 +165,22 @@ export function DisbursementDisputes() {
               {audit.audit_log.length === 0 ? (
                 <div className="text-xs text-ink-muted">No audit-log entries recorded.</div>
               ) : (
-                <DataTable
-                  data={audit.audit_log}
+                <DataTable<AuditEntry>
+                  data={audit.audit_log as AuditEntry[]}
                   keyExtractor={(_row, i) => String(i)}
                   columns={[
-                    { key: 'event', header: 'Event', render: (r: { event: string }) => r.event || '—' },
-                    { key: 'actor_role', header: 'Actor', render: (r: { actor_role: string }) => r.actor_role || '—' },
-                    { key: 'mpesa_ref', header: 'M-Pesa ref', render: (r: { mpesa_ref: string }) => r.mpesa_ref || '—' },
+                    { key: 'event', header: 'Event', render: (r) => r.event || '—' },
+                    { key: 'actor_role', header: 'Actor', render: (r) => r.actor_role || '—' },
+                    { key: 'mpesa_ref', header: 'M-Pesa ref', render: (r) => r.mpesa_ref || '—' },
                     {
                       key: 'created_at',
                       header: 'When',
-                      render: (r: { created_at: string | null }) => formatDateTime(r.created_at),
+                      render: (r) => formatDateTime(r.created_at),
                     },
                     {
                       key: 'details',
                       header: 'Details',
-                      render: (r: { details: unknown }) => (
+                      render: (r) => (
                         <div className="max-w-80 overflow-hidden text-ellipsis whitespace-nowrap text-ink-muted">
                           {r.details ? JSON.stringify(r.details) : '—'}
                         </div>
