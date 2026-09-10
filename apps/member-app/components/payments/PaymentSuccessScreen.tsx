@@ -2,9 +2,8 @@ import { View, Text, TouchableOpacity, ScrollView } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { DeepSpaceBackground } from '../DeepSpaceBackground'
 import { Icon } from '../ui/Icon'
+import { useTheme } from '../../theme/ThemeProvider'
 
-const BRAND_MINT = '#10B981'
-const BRAND_VIOLET = '#6D28D9'
 
 interface PaymentSuccessScreenProps {
   amount: number
@@ -27,6 +26,7 @@ export default function PaymentSuccessScreen({
   onBackToDashboard,
   onViewReceipt,
 }: PaymentSuccessScreenProps) {
+  const { colors: c } = useTheme()
   const insets = useSafeAreaInsets()
   const purposeLabel = purpose === 'LOAN_REPAYMENT' ? 'Loan repayment' : 'Contribution'
   const isContribution = purpose === 'SAVING_DEPOSIT'
@@ -62,7 +62,7 @@ export default function PaymentSuccessScreen({
               width: 44,
               height: 44,
               borderRadius: 22,
-              backgroundColor: BRAND_MINT,
+              backgroundColor: c.success,
               alignItems: 'center',
               justifyContent: 'center',
             }}
@@ -101,12 +101,12 @@ export default function PaymentSuccessScreen({
             borderColor: 'rgba(255,255,255,0.1)',
           }}
         >
-          <SuccessRow label="Amount Paid" value={`KES ${amount.toLocaleString()}`} valueColor={BRAND_MINT} />
+          <SuccessRow label="Amount Paid" value={`KES ${amount.toLocaleString()}`} valueColor={c.success} />
           <SuccessRow label="M-Pesa Reference" value={mpesaRef} monospace />
           <SuccessRow label="Saccosphere Ref" value={saccosphereRef} monospace />
           <SuccessRow label="Transaction Time" value={new Date().toLocaleTimeString('en-KE', { hour: '2-digit', minute: '2-digit' })} />
           {newBalance !== undefined && (
-            <SuccessRow label={`New ${saccoName} Balance`} value={`KES ${newBalance.toLocaleString()}`} valueColor={BRAND_MINT} />
+            <SuccessRow label={`New ${saccoName} Balance`} value={`KES ${newBalance.toLocaleString()}`} valueColor={c.success} />
           )}
         </View>
 
@@ -115,7 +115,7 @@ export default function PaymentSuccessScreen({
           style={{
             backgroundColor: 'rgba(16, 185, 129, 0.1)',
             borderLeftWidth: 4,
-            borderLeftColor: BRAND_MINT,
+            borderLeftColor: c.success,
             borderRadius: 12,
             padding: 14,
             width: '100%',
@@ -132,7 +132,7 @@ export default function PaymentSuccessScreen({
           onPress={onBackToDashboard}
           activeOpacity={0.8}
           style={{
-            backgroundColor: BRAND_VIOLET,
+            backgroundColor: c.accent,
             borderRadius: 16,
             paddingVertical: 16,
             alignItems: 'center',

@@ -5,9 +5,8 @@ import { useLoans } from '../../../../hooks/useLoans'
 import { useMemberships } from '../../../../hooks/useMembership'
 import { getActiveMemberships, getMembershipSavings } from '../../../../lib/membership'
 import { Icon } from '../../../ui/Icon'
+import { useTheme } from '../../../../theme/ThemeProvider'
 
-const VIOLET = '#6D28D9'
-const MINT = '#10B981'
 const SURFACE = '#FFFFFF'
 const SURFACE2 = '#F8FAFC'
 const SURFACE3 = '#F1F5F9'
@@ -19,6 +18,7 @@ const BORDER = 'rgba(0,0,0,0.07)'
 
 
 export default function SaccoLoanSelectorScreen() {
+  const { colors: c } = useTheme()
   const { data: memberships = [], isLoading } = useMemberships()
   const { data: loans = [] } = useLoans()
 
@@ -36,7 +36,7 @@ export default function SaccoLoanSelectorScreen() {
   if (isLoading) {
     return (
       <View style={{ flex: 1, backgroundColor: SURFACE, alignItems: 'center', justifyContent: 'center' }}>
-        <ActivityIndicator color={VIOLET} />
+        <ActivityIndicator color={c.accent} />
         <Text style={{ color: INK_MUTED, fontSize: 12, marginTop: 12 }}>Loading SACCOs...</Text>
       </View>
     )
@@ -53,7 +53,7 @@ export default function SaccoLoanSelectorScreen() {
         <TouchableOpacity
           onPress={() => router.push('/(member)/discover')}
           style={{
-            backgroundColor: VIOLET,
+            backgroundColor: c.accent,
             borderRadius: 12,
             paddingVertical: 12,
             paddingHorizontal: 24,
@@ -137,7 +137,7 @@ export default function SaccoLoanSelectorScreen() {
             <TouchableOpacity
               onPress={handleCompare}
               style={{
-                backgroundColor: VIOLET,
+                backgroundColor: c.accent,
                 borderRadius: 8,
                 paddingVertical: 8,
                 paddingHorizontal: 12,
@@ -163,7 +163,7 @@ export default function SaccoLoanSelectorScreen() {
 
         {activeMemberships.map((membership) => {
           const totalSavings = getMembershipSavings(membership)
-          const saccoColor = membership.sacco_color || VIOLET
+          const saccoColor = membership.sacco_color || c.accent
           const initials = membership.sacco_initials || 'SA'
           const activeLoanCount = loans.filter(
             (l) =>
@@ -207,7 +207,7 @@ export default function SaccoLoanSelectorScreen() {
                     Savings: KES {totalSavings.toLocaleString()}
                   </Text>
                   <Text style={{ fontSize: 10, color: INK_FAINT }}>·</Text>
-                  <Text style={{ fontSize: 10, color: MINT, fontWeight: '500' }}>
+                  <Text style={{ fontSize: 10, color: c.success, fontWeight: '500' }}>
                     Limit: KES {membership.loan_limit.toLocaleString()}
                   </Text>
                 </View>
@@ -287,7 +287,7 @@ export default function SaccoLoanSelectorScreen() {
                     <View
                       style={{
                         height: '100%',
-                        backgroundColor: MINT,
+                        backgroundColor: c.success,
                         borderRadius: 2,
                         width: `${getRepaymentProgress(loan)}%`,
                       }}

@@ -15,20 +15,14 @@ import { router } from 'expo-router'
 import { useRegistrationStore } from '../../../store/useRegistrationStore'
 import { api } from '@saccosphere/api-client'
 import type { ApiError } from '@saccosphere/api-client'
+import { useTheme } from '../../../theme/ThemeProvider'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 const PADDING_H = Math.max(16, Math.min(24, SCREEN_WIDTH * 0.05))
 
-const BACKGROUND = '#06091A'
-const FROSTED = 'rgba(255, 255, 255, 0.08)'
-const FROSTED_DARK = 'rgba(255, 255, 255, 0.06)'
-const BORDER_WHITE = 'rgba(255, 255, 255, 0.1)'
-const TEXT = '#F8FAFC'
-const TEXT_MUTED = 'rgba(248, 250, 252, 0.68)'
-const VIOLET = '#6D28D9'
-const MINT = '#10B981'
 
 export default function RegisterOTP() {
+  const { colors: c } = useTheme()
   const insets = useSafeAreaInsets()
   const [code, setCode] = useState('')
   const [loading, setLoading] = useState(false)
@@ -154,7 +148,7 @@ export default function RegisterOTP() {
 
   return (
     <KeyboardAwareScreen
-      background={BACKGROUND}
+      background={c.bg}
       contentContainerStyle={{
         paddingHorizontal: PADDING_H,
         paddingBottom: insets.bottom + 20,
@@ -166,26 +160,26 @@ export default function RegisterOTP() {
             <View
               key={i}
               className="flex-1 h-0.5 rounded"
-              style={{ backgroundColor: i < 2 ? VIOLET : BORDER_WHITE }}
+              style={{ backgroundColor: i < 2 ? c.accent : c.border }}
             />
           ))}
         </View>
 
-        <Text className="text-xs mb-5" style={{ color: TEXT_MUTED }}>
+        <Text className="text-xs mb-5" style={{ color: c.textMuted }}>
           Step 2 of 4 — Verify your contact
         </Text>
 
-        <Text style={{ color: VIOLET, fontWeight: '700', fontSize: 14, marginBottom: 14, fontFamily: 'Fraunces_700Bold' }}>
+        <Text style={{ color: c.accent, fontWeight: '700', fontSize: 14, marginBottom: 14, fontFamily: 'Fraunces_700Bold' }}>
           Saccosphere
         </Text>
 
         {/* ── PHASE: choose delivery channel (nothing sent yet) ────────────── */}
         {phase === 'select' && (
           <>
-            <Text className="text-base font-bold mb-1" style={{ color: TEXT }}>
+            <Text className="text-base font-bold mb-1" style={{ color: c.text }}>
               How should we send your code?
             </Text>
-            <Text className="text-xs mb-5" style={{ color: TEXT_MUTED, lineHeight: 18 }}>
+            <Text className="text-xs mb-5" style={{ color: c.textMuted, lineHeight: 18 }}>
               Pick a channel. We only send the 6-digit code once you choose.
             </Text>
 
@@ -197,43 +191,43 @@ export default function RegisterOTP() {
 
             <TouchableOpacity
               className="border rounded-xl p-3.5 mb-2.5 flex-row items-center"
-              style={{ borderColor: BORDER_WHITE, backgroundColor: FROSTED_DARK, opacity: loading ? 0.6 : 1 }}
+              style={{ borderColor: c.border, backgroundColor: c.surface, opacity: loading ? 0.6 : 1 }}
               onPress={() => sendOtpRequest('PHONE')}
               disabled={loading}
             >
               <View className="flex-1">
-                <Text className="text-sm font-semibold" style={{ color: TEXT }}>Text message (SMS)</Text>
-                <Text className="text-xs mt-0.5" style={{ color: TEXT_MUTED }}>
+                <Text className="text-sm font-semibold" style={{ color: c.text }}>Text message (SMS)</Text>
+                <Text className="text-xs mt-0.5" style={{ color: c.textMuted }}>
                   {maskedPhone || step1?.phone_number || 'your phone'}
                 </Text>
               </View>
               {loading && channel === 'PHONE' ? (
-                <ActivityIndicator color={VIOLET} />
+                <ActivityIndicator color={c.accent} />
               ) : (
-                <Text className="text-xs font-semibold" style={{ color: VIOLET }}>Send →</Text>
+                <Text className="text-xs font-semibold" style={{ color: c.accent }}>Send →</Text>
               )}
             </TouchableOpacity>
 
             {step1?.email ? (
               <TouchableOpacity
                 className="border rounded-xl p-3.5 mb-2.5 flex-row items-center"
-                style={{ borderColor: BORDER_WHITE, backgroundColor: FROSTED_DARK, opacity: loading ? 0.6 : 1 }}
+                style={{ borderColor: c.border, backgroundColor: c.surface, opacity: loading ? 0.6 : 1 }}
                 onPress={() => sendOtpRequest('EMAIL')}
                 disabled={loading}
               >
                 <View className="flex-1">
-                  <Text className="text-sm font-semibold" style={{ color: TEXT }}>Email</Text>
-                  <Text className="text-xs mt-0.5" style={{ color: TEXT_MUTED }}>{maskedEmail}</Text>
+                  <Text className="text-sm font-semibold" style={{ color: c.text }}>Email</Text>
+                  <Text className="text-xs mt-0.5" style={{ color: c.textMuted }}>{maskedEmail}</Text>
                 </View>
                 {loading && channel === 'EMAIL' ? (
-                  <ActivityIndicator color={VIOLET} />
+                  <ActivityIndicator color={c.accent} />
                 ) : (
-                  <Text className="text-xs font-semibold" style={{ color: VIOLET }}>Send →</Text>
+                  <Text className="text-xs font-semibold" style={{ color: c.accent }}>Send →</Text>
                 )}
               </TouchableOpacity>
             ) : null}
 
-            <Text className="text-xs mt-2" style={{ color: TEXT_MUTED, lineHeight: 16 }}>
+            <Text className="text-xs mt-2" style={{ color: c.textMuted, lineHeight: 16 }}>
               SMS is the fastest for M-Pesa phones. Email delivery depends on your account being
               set up for it.
             </Text>
@@ -243,13 +237,13 @@ export default function RegisterOTP() {
         {/* ── PHASE: enter the code that was sent ──────────────────────────── */}
         {phase === 'code' && (
           <>
-        <Text className="text-base font-bold mb-1" style={{ color: TEXT }}>
+        <Text className="text-base font-bold mb-1" style={{ color: c.text }}>
           Enter the code
         </Text>
-        <Text className="text-xs mb-1" style={{ color: TEXT_MUTED, lineHeight: 18 }}>
+        <Text className="text-xs mb-1" style={{ color: c.textMuted, lineHeight: 18 }}>
           We sent a 6-digit code to your {channel === 'EMAIL' ? 'email' : 'phone'}
         </Text>
-        <Text className="text-sm font-semibold mb-5" style={{ color: TEXT }}>
+        <Text className="text-sm font-semibold mb-5" style={{ color: c.text }}>
           {channel === 'EMAIL' ? maskedEmail : (maskedPhone || (step1?.phone_number ?? '+254 712 ··· 678'))}
         </Text>
 
@@ -267,7 +261,7 @@ export default function RegisterOTP() {
                 setPhase('select')
               }}
             >
-              <Text className="text-xs font-semibold" style={{ color: VIOLET }}>Choose another method</Text>
+              <Text className="text-xs font-semibold" style={{ color: c.accent }}>Choose another method</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -285,11 +279,11 @@ export default function RegisterOTP() {
                 className="w-10 h-12 rounded-xl items-center justify-center"
                 style={{
                   borderWidth: focused ? 2 : 1.5,
-                  borderColor: focused ? VIOLET : filled ? MINT : BORDER_WHITE,
-                  backgroundColor: filled ? 'rgba(16, 185, 129, 0.2)' : FROSTED_DARK,
+                  borderColor: focused ? c.accent : filled ? c.success : c.border,
+                  backgroundColor: filled ? 'rgba(16, 185, 129, 0.2)' : c.surface,
                 }}
               >
-                <Text className="text-lg font-semibold" style={{ color: filled ? MINT : TEXT }}>
+                <Text className="text-lg font-semibold" style={{ color: filled ? c.success : c.text }}>
                   {filled ? code[i] : ''}
                 </Text>
               </View>
@@ -313,7 +307,7 @@ export default function RegisterOTP() {
           />
         </Pressable>
 
-        <Text className="text-xs text-center mb-4" style={{ color: TEXT_MUTED }}>
+        <Text className="text-xs text-center mb-4" style={{ color: c.textMuted }}>
           Tap the boxes above and type the 6-digit code.
         </Text>
 
@@ -321,18 +315,18 @@ export default function RegisterOTP() {
           {canResend ? (
             <>
               <TouchableOpacity onPress={() => handleResend('PHONE')}>
-                <Text className="text-xs font-semibold" style={{ color: VIOLET }}>
+                <Text className="text-xs font-semibold" style={{ color: c.accent }}>
                   Resend SMS
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={() => handleResend('EMAIL')}>
-                <Text className="text-xs font-semibold" style={{ color: VIOLET }}>
+                <Text className="text-xs font-semibold" style={{ color: c.accent }}>
                   Resend Email
                 </Text>
               </TouchableOpacity>
             </>
           ) : (
-            <Text className="text-xs font-semibold text-center" style={{ color: TEXT_MUTED }}>
+            <Text className="text-xs font-semibold text-center" style={{ color: c.textMuted }}>
               Resend in {Math.floor(countdown / 60)}:{(countdown % 60).toString().padStart(2, '0')}
             </Text>
           )}
@@ -343,17 +337,17 @@ export default function RegisterOTP() {
           style={{
             backgroundColor: 'rgba(16, 185, 129, 0.15)',
             borderLeftWidth: 3,
-            borderLeftColor: MINT,
+            borderLeftColor: c.success,
           }}
         >
-          <Text className="text-xs leading-5" style={{ color: MINT }}>
+          <Text className="text-xs leading-5" style={{ color: c.success }}>
             Code expires in <Text style={{ fontWeight: '600' }}>{Math.floor(expiryCountdown / 60)} minutes {expiryCountdown % 60} seconds</Text>. Check your SMS or Email.
           </Text>
         </View>
 
         <TouchableOpacity
           className="rounded-xl py-3.5 items-center mb-3"
-          style={{ backgroundColor: VIOLET, opacity: code.length < 6 || !otpSent || otpError ? 0.5 : 1 }}
+          style={{ backgroundColor: c.accent, opacity: code.length < 6 || !otpSent || otpError ? 0.5 : 1 }}
           onPress={handleVerify}
           disabled={loading || code.length < 6 || !otpSent || Boolean(otpError)}
         >
@@ -363,9 +357,9 @@ export default function RegisterOTP() {
         )}
 
         <View className="flex-row justify-center">
-          <Text className="text-xs" style={{ color: TEXT_MUTED }}>Wrong details? </Text>
+          <Text className="text-xs" style={{ color: c.textMuted }}>Wrong details? </Text>
           <TouchableOpacity onPress={() => router.back()}>
-            <Text className="text-xs font-semibold" style={{ color: VIOLET }}>Change</Text>
+            <Text className="text-xs font-semibold" style={{ color: c.accent }}>Change</Text>
           </TouchableOpacity>
         </View>
     </KeyboardAwareScreen>

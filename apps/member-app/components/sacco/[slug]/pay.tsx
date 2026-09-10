@@ -13,10 +13,11 @@ import PaymentMethodSelector from '../../payments/PaymentMethodSelector'
 import PaymentSuccessScreen from '../../payments/PaymentSuccessScreen'
 import PaymentProcessingScreen from '../../payments/PaymentProcessingScreen'
 import { DeepSpaceBackground } from '../../DeepSpaceBackground'
+import { useTheme } from '../../../theme/ThemeProvider'
 
-const VIOLET = '#6D28D9'
 
 export default function PayScreen() {
+  const { colors: c } = useTheme()
   const { slug, type, loanId, step } = useLocalSearchParams<{ slug: string; type?: string; loanId?: string; step?: string }>()
   const insets = useSafeAreaInsets()
   const isRepayment = type === 'repayment'
@@ -123,7 +124,7 @@ export default function PayScreen() {
     return (
       <DeepSpaceBackground>
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-          <ActivityIndicator color={VIOLET} />
+          <ActivityIndicator color={c.accent} />
           <Text style={{ color: 'rgba(255,255,255,0.4)', fontSize: 12, marginTop: 10 }}>Loading payment details...</Text>
         </View>
       </DeepSpaceBackground>
@@ -192,7 +193,7 @@ export default function PayScreen() {
             {isRepayment && selectedLoan ? <BankRow label="Loan Reference" value={selectedLoan.ref} /> : null}
           </View>
           <TouchableOpacity
-            style={{ backgroundColor: VIOLET, borderRadius: 16, paddingVertical: 14, alignItems: 'center' }}
+            style={{ backgroundColor: c.accent, borderRadius: 16, paddingVertical: 14, alignItems: 'center' }}
             onPress={() => setMethodStep('method')}
           >
             <Text style={{ color: '#fff', fontSize: 14, fontWeight: '700' }}>Back to methods</Text>
@@ -220,7 +221,7 @@ export default function PayScreen() {
 
         <Text className="text-white/60 text-[10px] font-bold uppercase mb-3 ml-1">Enter Amount (KES)</Text>
         <TextInput
-          style={{ color: '#fff', fontSize: 42, fontWeight: '800', borderBottomWidth: 2, borderBottomColor: VIOLET, paddingBottom: 12, marginBottom: 32 }}
+          style={{ color: '#fff', fontSize: 42, fontWeight: '800', borderBottomWidth: 2, borderBottomColor: c.accent, paddingBottom: 12, marginBottom: 32 }}
           value={amount}
           onChangeText={setAmount}
           placeholder={defaultAmount ? String(Math.round(defaultAmount)) : '0'}
@@ -242,7 +243,7 @@ export default function PayScreen() {
         </View>
 
         <TouchableOpacity
-          style={{ backgroundColor: VIOLET, borderRadius: 16, paddingVertical: 16, alignItems: 'center', opacity: numericAmount ? 1 : 0.5 }}
+          style={{ backgroundColor: c.accent, borderRadius: 16, paddingVertical: 16, alignItems: 'center', opacity: numericAmount ? 1 : 0.5 }}
           disabled={!numericAmount}
           onPress={() => setMethodStep('method')}
         >

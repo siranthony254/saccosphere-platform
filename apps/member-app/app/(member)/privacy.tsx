@@ -8,15 +8,8 @@ import { useLinkGoogle } from '../../hooks/useAuth'
 import { GoogleSignin, isGoogleSignInConfigured, configureGoogleSignIn } from '../../lib/googleAuth'
 import { Icon } from '../../components/ui/Icon'
 import { usePreferencesStore } from '../../store/usePreferencesStore'
+import { useTheme } from '../../theme/ThemeProvider'
 
-const BACKGROUND = '#06091A'
-const FROSTED_DARK = 'rgba(255, 255, 255, 0.06)'
-const BORDER_WHITE = 'rgba(255, 255, 255, 0.1)'
-const TEXT = '#F8FAFC'
-const TEXT_MUTED = 'rgba(248, 250, 252, 0.68)'
-const VIOLET = '#6D28D9'
-const MINT = '#10B981'
-const RED = '#EF4444'
 
 const CONSENT_COPY: Record<string, string> = {
   TERMS: 'You accept the SaccoSphere terms of use.',
@@ -32,6 +25,7 @@ function isGranted(row: any): boolean {
 }
 
 export default function PrivacyScreen() {
+  const { colors: c } = useTheme()
   const insets = useSafeAreaInsets()
   const { data: consents = [], isLoading } = useConsents()
   const setConsent = useSetConsent()
@@ -45,6 +39,8 @@ export default function PrivacyScreen() {
 
   const balanceHidden = usePreferencesStore((s) => s.balanceHidden)
   const setBalanceHidden = usePreferencesStore((s) => s.setBalanceHidden)
+  const themeMode = usePreferencesStore((s) => s.themeMode)
+  const setThemeMode = usePreferencesStore((s) => s.setThemeMode)
 
   const toggle = (row: any) => {
     const next = !isGranted(row)
@@ -123,24 +119,51 @@ export default function PrivacyScreen() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: BACKGROUND }} edges={['bottom', 'left', 'right']}>
-      <View style={{ paddingTop: insets.top + 12, paddingHorizontal: 16, paddingBottom: 12, borderBottomWidth: 0.5, borderBottomColor: BORDER_WHITE }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: c.bg }} edges={['bottom', 'left', 'right']}>
+      <View style={{ paddingTop: insets.top + 12, paddingHorizontal: 16, paddingBottom: 12, borderBottomWidth: 0.5, borderBottomColor: c.border }}>
         <TouchableOpacity onPress={() => router.back()} style={{ marginBottom: 12 }}>
-          <Text style={{ color: VIOLET, fontSize: 12, fontWeight: '600' }}>← Back</Text>
+          <Text style={{ color: c.accent, fontSize: 12, fontWeight: '600' }}>← Back</Text>
         </TouchableOpacity>
-        <Text style={{ color: TEXT, fontSize: 20, fontWeight: '700' }}>Privacy & Data</Text>
+        <Text style={{ color: c.text, fontSize: 20, fontWeight: '700' }}>Privacy & Data</Text>
       </View>
 
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 32 }}>
         {/* Appearance */}
-        <Text style={{ color: TEXT_MUTED, fontSize: 11, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 10 }}>
+        <Text style={{ color: c.textMuted, fontSize: 11, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 10 }}>
           Appearance
         </Text>
-        <View style={{ backgroundColor: FROSTED_DARK, borderRadius: 12, borderWidth: 1, borderColor: BORDER_WHITE, marginBottom: 20 }}>
+        <View style={{ backgroundColor: c.surface, borderRadius: 12, borderWidth: 1, borderColor: c.border, marginBottom: 20 }}>
+          {/* Theme */}
+          <View style={{ padding: 14, borderBottomWidth: 0.5, borderBottomColor: c.border }}>
+            <Text style={{ color: c.text, fontSize: 13, fontWeight: '600', marginBottom: 2 }}>Theme</Text>
+            <Text style={{ color: c.textMuted, fontSize: 11, lineHeight: 16, marginBottom: 10 }}>
+              Choose a light or dark appearance, or follow your device setting.
+            </Text>
+            <View style={{ flexDirection: 'row', backgroundColor: c.surfaceAlt, borderRadius: 10, padding: 3 }}>
+              {(['system', 'light', 'dark'] as const).map((mode) => {
+                const on = themeMode === mode
+                return (
+                  <TouchableOpacity
+                    key={mode}
+                    onPress={() => setThemeMode(mode)}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: on }}
+                    style={{ flex: 1, paddingVertical: 8, borderRadius: 8, alignItems: 'center', backgroundColor: on ? c.accent : 'transparent' }}
+                  >
+                    <Text style={{ color: on ? c.onAccent : c.textMuted, fontSize: 12, fontWeight: '600', textTransform: 'capitalize' }}>
+                      {mode}
+                    </Text>
+                  </TouchableOpacity>
+                )
+              })}
+            </View>
+          </View>
+
+          {/* Hide balances */}
           <View style={{ flexDirection: 'row', alignItems: 'center', padding: 14 }}>
             <View style={{ flex: 1, paddingRight: 12 }}>
-              <Text style={{ color: TEXT, fontSize: 13, fontWeight: '600' }}>Hide balances</Text>
-              <Text style={{ color: TEXT_MUTED, fontSize: 11, lineHeight: 16, marginTop: 2 }}>
+              <Text style={{ color: c.text, fontSize: 13, fontWeight: '600' }}>Hide balances</Text>
+              <Text style={{ color: c.textMuted, fontSize: 11, lineHeight: 16, marginTop: 2 }}>
                 Mask your savings, loan and transaction amounts across the app. Tap the eye on any balance to switch it back.
               </Text>
             </View>
@@ -148,7 +171,7 @@ export default function PrivacyScreen() {
               onPress={() => setBalanceHidden(!balanceHidden)}
               accessibilityRole="switch"
               accessibilityState={{ checked: balanceHidden }}
-              style={{ width: 48, height: 28, borderRadius: 14, backgroundColor: balanceHidden ? MINT : FROSTED_DARK, borderWidth: 1, borderColor: balanceHidden ? MINT : BORDER_WHITE, padding: 2, justifyContent: 'center' }}
+              style={{ width: 48, height: 28, borderRadius: 14, backgroundColor: balanceHidden ? c.success : c.surfaceAlt, borderWidth: 1, borderColor: balanceHidden ? c.success : c.border, padding: 2, justifyContent: 'center' }}
             >
               <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: '#fff', alignSelf: balanceHidden ? 'flex-end' : 'flex-start' }} />
             </TouchableOpacity>
@@ -156,14 +179,14 @@ export default function PrivacyScreen() {
         </View>
 
         {/* Consents */}
-        <Text style={{ color: TEXT_MUTED, fontSize: 11, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 10 }}>
+        <Text style={{ color: c.textMuted, fontSize: 11, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 10 }}>
           Your consents
         </Text>
-        <View style={{ backgroundColor: FROSTED_DARK, borderRadius: 12, borderWidth: 1, borderColor: BORDER_WHITE, marginBottom: 20 }}>
+        <View style={{ backgroundColor: c.surface, borderRadius: 12, borderWidth: 1, borderColor: c.border, marginBottom: 20 }}>
           {isLoading ? (
-            <View style={{ padding: 24, alignItems: 'center' }}><ActivityIndicator color={VIOLET} /></View>
+            <View style={{ padding: 24, alignItems: 'center' }}><ActivityIndicator color={c.accent} /></View>
           ) : consents.length === 0 ? (
-            <Text style={{ color: TEXT_MUTED, fontSize: 12, padding: 16 }}>No consent records yet.</Text>
+            <Text style={{ color: c.textMuted, fontSize: 12, padding: 16 }}>No consent records yet.</Text>
           ) : (
             consents.map((row: any, i: number) => {
               const granted = isGranted(row)
@@ -171,22 +194,22 @@ export default function PrivacyScreen() {
               return (
                 <View
                   key={row.consent_type}
-                  style={{ flexDirection: 'row', alignItems: 'center', padding: 14, borderTopWidth: i === 0 ? 0 : 0.5, borderTopColor: BORDER_WHITE }}
+                  style={{ flexDirection: 'row', alignItems: 'center', padding: 14, borderTopWidth: i === 0 ? 0 : 0.5, borderTopColor: c.border }}
                 >
                   <View style={{ flex: 1, paddingRight: 12 }}>
-                    <Text style={{ color: TEXT, fontSize: 13, fontWeight: '600' }}>
+                    <Text style={{ color: c.text, fontSize: 13, fontWeight: '600' }}>
                       {row.consent_type_display ?? row.consent_type}
                     </Text>
-                    <Text style={{ color: TEXT_MUTED, fontSize: 11, lineHeight: 16, marginTop: 2 }}>
+                    <Text style={{ color: c.textMuted, fontSize: 11, lineHeight: 16, marginTop: 2 }}>
                       {CONSENT_COPY[row.consent_type] ?? ''}
                     </Text>
                   </View>
                   {busy ? (
-                    <ActivityIndicator color={MINT} />
+                    <ActivityIndicator color={c.success} />
                   ) : (
                     <TouchableOpacity
                       onPress={() => toggle(row)}
-                      style={{ width: 48, height: 28, borderRadius: 14, backgroundColor: granted ? MINT : FROSTED_DARK, borderWidth: 1, borderColor: granted ? MINT : BORDER_WHITE, padding: 2, justifyContent: 'center' }}
+                      style={{ width: 48, height: 28, borderRadius: 14, backgroundColor: granted ? c.success : c.surface, borderWidth: 1, borderColor: granted ? c.success : c.border, padding: 2, justifyContent: 'center' }}
                     >
                       <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: '#fff', alignSelf: granted ? 'flex-end' : 'flex-start' }} />
                     </TouchableOpacity>
@@ -201,34 +224,34 @@ export default function PrivacyScreen() {
         <TouchableOpacity
           onPress={handleConnectGoogle}
           disabled={linkGoogle.isPending}
-          style={{ backgroundColor: FROSTED_DARK, borderRadius: 12, padding: 16, borderWidth: 1, borderColor: BORDER_WHITE, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}
+          style={{ backgroundColor: c.surface, borderRadius: 12, padding: 16, borderWidth: 1, borderColor: c.border, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}
         >
           <View style={{ flex: 1, paddingRight: 12 }}>
-            <Text style={{ color: TEXT, fontSize: 14, fontWeight: '600', marginBottom: 4 }}>Connect Google account</Text>
-            <Text style={{ color: TEXT_MUTED, fontSize: 12 }}>Sign in faster next time with Google.</Text>
+            <Text style={{ color: c.text, fontSize: 14, fontWeight: '600', marginBottom: 4 }}>Connect Google account</Text>
+            <Text style={{ color: c.textMuted, fontSize: 12 }}>Sign in faster next time with Google.</Text>
           </View>
-          {linkGoogle.isPending ? <ActivityIndicator color={MINT} /> : <Text style={{ color: TEXT_MUTED, fontSize: 18 }}>{'>'}</Text>}
+          {linkGoogle.isPending ? <ActivityIndicator color={c.success} /> : <Text style={{ color: c.textMuted, fontSize: 18 }}>{'>'}</Text>}
         </TouchableOpacity>
 
         {/* Export */}
         <TouchableOpacity
           onPress={handleExport}
           disabled={exportData.isPending}
-          style={{ backgroundColor: FROSTED_DARK, borderRadius: 12, padding: 16, borderWidth: 1, borderColor: BORDER_WHITE, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}
+          style={{ backgroundColor: c.surface, borderRadius: 12, padding: 16, borderWidth: 1, borderColor: c.border, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}
         >
           <View style={{ flex: 1, paddingRight: 12 }}>
-            <Text style={{ color: TEXT, fontSize: 14, fontWeight: '600', marginBottom: 4 }}>Export my data</Text>
-            <Text style={{ color: TEXT_MUTED, fontSize: 12 }}>Your consent history and who has accessed your records.</Text>
+            <Text style={{ color: c.text, fontSize: 14, fontWeight: '600', marginBottom: 4 }}>Export my data</Text>
+            <Text style={{ color: c.textMuted, fontSize: 12 }}>Your consent history and who has accessed your records.</Text>
           </View>
-          {exportData.isPending ? <ActivityIndicator color={MINT} /> : <Icon name="file" size={18} color={TEXT_MUTED} />}
+          {exportData.isPending ? <ActivityIndicator color={c.success} /> : <Icon name="file" size={18} color={c.textMuted} />}
         </TouchableOpacity>
 
         {/* Danger zone */}
-        <Text style={{ color: RED, fontSize: 11, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 10 }}>
+        <Text style={{ color: c.danger, fontSize: 11, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 10 }}>
           Delete my account & data
         </Text>
         <View style={{ backgroundColor: 'rgba(239,68,68,0.08)', borderRadius: 12, borderWidth: 1, borderColor: 'rgba(239,68,68,0.3)', padding: 16 }}>
-          <Text style={{ color: TEXT_MUTED, fontSize: 12, lineHeight: 18, marginBottom: 12 }}>
+          <Text style={{ color: c.textMuted, fontSize: 12, lineHeight: 18, marginBottom: 12 }}>
             This requests permanent erasure of your personal data. If a regulatory or dispute hold applies, the request is queued until it clears. Type DELETE to confirm.
           </Text>
           <TextInput
@@ -236,13 +259,13 @@ export default function PrivacyScreen() {
             onChangeText={setConfirmDelete}
             placeholder="DELETE"
             autoCapitalize="characters"
-            placeholderTextColor={TEXT_MUTED}
-            style={{ borderWidth: 1, borderColor: 'rgba(239,68,68,0.4)', borderRadius: 10, padding: 12, color: TEXT, backgroundColor: FROSTED_DARK, marginBottom: 12 }}
+            placeholderTextColor={c.textMuted}
+            style={{ borderWidth: 1, borderColor: 'rgba(239,68,68,0.4)', borderRadius: 10, padding: 12, color: c.text, backgroundColor: c.surface, marginBottom: 12 }}
           />
           <TouchableOpacity
             onPress={handleErasure}
             disabled={deleting || confirmDelete.trim().toUpperCase() !== 'DELETE'}
-            style={{ backgroundColor: RED, borderRadius: 10, padding: 14, alignItems: 'center', opacity: deleting || confirmDelete.trim().toUpperCase() !== 'DELETE' ? 0.5 : 1 }}
+            style={{ backgroundColor: c.danger, borderRadius: 10, padding: 14, alignItems: 'center', opacity: deleting || confirmDelete.trim().toUpperCase() !== 'DELETE' ? 0.5 : 1 }}
           >
             {deleting ? <ActivityIndicator color="#fff" /> : <Text style={{ color: '#fff', fontSize: 13, fontWeight: '700' }}>Request data erasure</Text>}
           </TouchableOpacity>

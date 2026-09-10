@@ -26,6 +26,7 @@ import * as LocalAuthentication from 'expo-local-authentication'
 import { api, setAccessToken } from '@saccosphere/api-client'
 import { useAuthStore } from '../../store/useAuthStore'
 import { Icon } from '../../components/ui/Icon'
+import { useTheme } from '../../theme/ThemeProvider'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 const PADDING_H = Math.max(16, Math.min(24, SCREEN_WIDTH * 0.05))
@@ -40,14 +41,6 @@ const loginSchema = z.object({
 })
 type LoginForm = z.infer<typeof loginSchema>
 
-const BACKGROUND = '#06091A'
-const FROSTED = 'rgba(255, 255, 255, 0.08)'
-const FROSTED_DARK = 'rgba(255, 255, 255, 0.06)'
-const BORDER_WHITE = 'rgba(255, 255, 255, 0.1)'
-const TEXT = '#F8FAFC'
-const TEXT_MUTED = 'rgba(248, 250, 252, 0.68)'
-const VIOLET = '#6D28D9'
-const VIOLET_LIGHT = '#EDE9FE'
 const SURFACE = '#FFFFFF'
 const SURFACE2 = '#F8FAFC'
 const SURFACE3 = '#F1F5F9'
@@ -59,6 +52,7 @@ const BORDER = 'rgba(0,0,0,0.08)'
 const BORDER_MID = 'rgba(0,0,0,0.13)'
 
 export default function LoginScreen() {
+  const { colors: c } = useTheme()
   const insets = useSafeAreaInsets()
   const { mutate: login, isPending } = useLogin()
   const { mutate: googleAuth, isPending: isGooglePending } = useGoogleAuth()
@@ -185,7 +179,7 @@ export default function LoginScreen() {
 
   return (
     <KeyboardAwareScreen
-      background={BACKGROUND}
+      background={c.bg}
       contentContainerStyle={{
         paddingBottom: insets.bottom + 20,
         paddingHorizontal: PADDING_H,
@@ -193,52 +187,52 @@ export default function LoginScreen() {
       }}
     >
       {/* Brand */}
-      <Text style={{ color: VIOLET, fontWeight: '700', fontSize: 40, marginBottom: 24, fontFamily: 'Fraunces_700Bold' }}>
+      <Text style={{ color: c.accent, fontWeight: '700', fontSize: 40, marginBottom: 24, fontFamily: 'Fraunces_700Bold' }}>
         Saccosphere
       </Text>
 
       {/* Heading */}
-      <Text className="text-lg font-bold mb-1" style={{ color: TEXT }}>Welcome back</Text>
-      <Text className="text-xs mb-6" style={{ color: TEXT_MUTED, lineHeight: 20 }}>
+      <Text className="text-lg font-bold mb-1" style={{ color: c.text }}>Welcome back</Text>
+      <Text className="text-xs mb-6" style={{ color: c.textMuted, lineHeight: 20 }}>
         Sign in to your account
       </Text>
 
       {/* Social login buttons */}
       <TouchableOpacity
         className="w-full flex-row items-center justify-center gap-2 py-2.5 rounded-xl mb-2"
-        style={{ borderWidth: 1, borderColor: BORDER_WHITE, backgroundColor: FROSTED_DARK }}
+        style={{ borderWidth: 1, borderColor: c.border, backgroundColor: c.surface }}
         onPress={handleGoogleSignIn}
         disabled={isGooglePending}
       >
         {isGooglePending ? (
-          <ActivityIndicator size="small" color={TEXT} />
+          <ActivityIndicator size="small" color={c.text} />
         ) : (
           <View className="w-4 h-4 rounded-full" style={{ backgroundColor: '#4285F4' }} />
         )}
-        <Text className="text-xs font-medium" style={{ color: TEXT }}>
+        <Text className="text-xs font-medium" style={{ color: c.text }}>
           {isGooglePending ? 'Signing in...' : 'Continue with Google'}
         </Text>
       </TouchableOpacity>
 
       <TouchableOpacity
         className="w-full flex-row items-center justify-center gap-2 py-2.5 rounded-xl mb-3"
-        style={{ borderWidth: 1, borderColor: BORDER_WHITE, backgroundColor: FROSTED_DARK }}
+        style={{ borderWidth: 1, borderColor: c.border, backgroundColor: c.surface }}
       >
         <View className="w-4 h-4 rounded-full" style={{ backgroundColor: '#00a550' }} />
-        <Text className="text-xs font-medium" style={{ color: TEXT }}>
+        <Text className="text-xs font-medium" style={{ color: c.text }}>
           Continue with M-Pesa number
         </Text>
       </TouchableOpacity>
 
       {/* Divider */}
       <View className="flex-row items-center gap-3 mb-4">
-        <View className="flex-1 h-px" style={{ backgroundColor: BORDER_WHITE }} />
-        <Text className="text-xs" style={{ color: TEXT_MUTED }}>or use email</Text>
-        <View className="flex-1 h-px" style={{ backgroundColor: BORDER_WHITE }} />
+        <View className="flex-1 h-px" style={{ backgroundColor: c.border }} />
+        <Text className="text-xs" style={{ color: c.textMuted }}>or use email</Text>
+        <View className="flex-1 h-px" style={{ backgroundColor: c.border }} />
       </View>
 
       {/* Email */}
-      <Text className="text-xs font-medium mb-1.5" style={{ color: TEXT_MUTED }}>
+      <Text className="text-xs font-medium mb-1.5" style={{ color: c.textMuted }}>
         Email address
       </Text>
       <Controller
@@ -248,16 +242,16 @@ export default function LoginScreen() {
           <TextInput
             className="border rounded-xl p-3 text-sm mb-2"
             style={{
-              borderColor: errors.email ? '#EF4444' : BORDER_WHITE,
-              color: TEXT,
-              backgroundColor: FROSTED_DARK,
+              borderColor: errors.email ? '#EF4444' : c.border,
+              color: c.text,
+              backgroundColor: c.surface,
             }}
             onChangeText={onChange}
             value={value}
             placeholder="you@email.com"
             keyboardType="email-address"
             autoCapitalize="none"
-            placeholderTextColor={TEXT_MUTED}
+            placeholderTextColor={c.textMuted}
           />
         )}
       />
@@ -265,11 +259,11 @@ export default function LoginScreen() {
 
       {/* Password + Forgot password */}
       <View className="flex-row justify-between items-center mb-1">
-        <Text className="text-xs font-medium" style={{ color: TEXT_MUTED }}>
+        <Text className="text-xs font-medium" style={{ color: c.textMuted }}>
           Password
         </Text>
         <TouchableOpacity onPress={() => router.push('/(auth)/forgot-password')}>
-          <Text className="text-xs font-semibold" style={{ color: VIOLET }}>
+          <Text className="text-xs font-semibold" style={{ color: c.accent }}>
             Forgot password?
           </Text>
         </TouchableOpacity>
@@ -280,16 +274,16 @@ export default function LoginScreen() {
         render={({ field: { onChange, value } }) => (
           <View
             className="flex-row items-center border rounded-xl mb-1"
-            style={{ borderColor: errors.password ? '#EF4444' : BORDER_WHITE, backgroundColor: FROSTED_DARK }}
+            style={{ borderColor: errors.password ? '#EF4444' : c.border, backgroundColor: c.surface }}
           >
             <TextInput
               className="flex-1 p-3 pr-2 text-sm"
-              style={{ color: TEXT }}
+              style={{ color: c.text }}
               onChangeText={onChange}
               value={value}
               placeholder="········"
               secureTextEntry={!showPassword}
-              placeholderTextColor={TEXT_MUTED}
+              placeholderTextColor={c.textMuted}
             />
             <TouchableOpacity
               className="px-3 py-3"
@@ -297,7 +291,7 @@ export default function LoginScreen() {
               accessibilityRole="button"
               accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
             >
-              <Text className="text-xs font-semibold" style={{ color: VIOLET }}>
+              <Text className="text-xs font-semibold" style={{ color: c.accent }}>
                 {showPassword ? 'Hide' : 'Show'}
               </Text>
             </TouchableOpacity>
@@ -338,11 +332,11 @@ export default function LoginScreen() {
 
       {/* Create account prompt */}
       <View className="flex-row justify-center mt-6">
-        <Text className="text-xs" style={{ color: TEXT_MUTED }}>
+        <Text className="text-xs" style={{ color: c.textMuted }}>
           No account?{' '}
         </Text>
         <TouchableOpacity onPress={() => router.push('/(auth)/register')}>
-          <Text className="text-xs font-semibold" style={{ color: VIOLET }}>
+          <Text className="text-xs font-semibold" style={{ color: c.accent }}>
             Create one
           </Text>
         </TouchableOpacity>

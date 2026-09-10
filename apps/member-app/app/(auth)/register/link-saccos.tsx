@@ -19,18 +19,11 @@ import { useLinkMembership } from '../../../hooks/useLinkMembership'
 import { useMemberships } from '../../../hooks/useMembership'
 import { useRegister, useGoogleAuth } from '../../../hooks/useAuth'
 import { Icon } from '../../../components/ui/Icon'
+import { useTheme } from '../../../theme/ThemeProvider'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 const PADDING_H = Math.max(16, Math.min(24, SCREEN_WIDTH * 0.05))
 
-const BACKGROUND = '#06091A'
-const FROSTED = 'rgba(255, 255, 255, 0.08)'
-const FROSTED_DARK = 'rgba(255, 255, 255, 0.06)'
-const BORDER_WHITE = 'rgba(255, 255, 255, 0.1)'
-const TEXT = '#F8FAFC'
-const TEXT_MUTED = 'rgba(248, 250, 252, 0.68)'
-const VIOLET = '#6D28D9'
-const MINT = '#10B981'
 const MINT_LIGHT = '#E6F7F1'
 const MINT_500 = '#10B981'
 const SURFACE = '#FFFFFF'
@@ -43,6 +36,7 @@ const BORDER = 'rgba(0,0,0,0.08)'
 const BORDER_MID = 'rgba(0,0,0,0.13)'
 
 export default function LinkSaccos() {
+  const { colors: c } = useTheme()
   const insets = useSafeAreaInsets()
   const [search, setSearch] = useState('')
   const {
@@ -219,7 +213,7 @@ export default function LinkSaccos() {
 
   return (
     <KeyboardAwareScreen
-      background={BACKGROUND}
+      background={c.bg}
       contentContainerStyle={{
         paddingHorizontal: PADDING_H,
         paddingBottom: insets.bottom + 20,
@@ -233,36 +227,36 @@ export default function LinkSaccos() {
           <View
             key={i}
             className="flex-1 h-0.5 rounded"
-            style={{ backgroundColor: i < 4 ? VIOLET : BORDER_WHITE }}
+            style={{ backgroundColor: i < 4 ? c.accent : c.border }}
           />
         ))}
       </View>
-      <Text className="text-xs mb-3" style={{ color: TEXT_MUTED }}>
+      <Text className="text-xs mb-3" style={{ color: c.textMuted }}>
         Step 4 of 4 — Link your SACCOs
       </Text>
 
       {/* Brand */}
       <Text
         className="text-sm font-bold mb-4"
-        style={{ color: VIOLET, fontFamily: 'Fraunces_700Bold' }}
+        style={{ color: c.accent, fontFamily: 'Fraunces_700Bold' }}
       >
         Saccosphere
       </Text>
 
       {/* Heading */}
-      <Text className="text-base font-bold mb-1" style={{ color: TEXT }}>
+      <Text className="text-base font-bold mb-1" style={{ color: c.text }}>
         Which SACCOs are you a member of?
       </Text>
-      <Text className="text-xs mb-4" style={{ color: TEXT_MUTED, lineHeight: 18 }}>
+      <Text className="text-xs mb-4" style={{ color: c.textMuted, lineHeight: 18 }}>
         Select all that apply. You can add more later.
       </Text>
 
       {/* Search */}
       <View
         className="border rounded-xl p-3 text-sm mb-3"
-        style={{ borderColor: BORDER_WHITE, backgroundColor: FROSTED_DARK }}
+        style={{ borderColor: c.border, backgroundColor: c.surface }}
       >
-        <Text className="text-xs" style={{ color: TEXT_MUTED }}>
+        <Text className="text-xs" style={{ color: c.textMuted }}>
           Search {saccos.length} SACCOs...
         </Text>
       </View>
@@ -272,13 +266,13 @@ export default function LinkSaccos() {
         value={search}
         onChangeText={setSearch}
         placeholder="Search SACCOs..."
-        placeholderTextColor={TEXT_MUTED}
+        placeholderTextColor={c.textMuted}
       />
 
       {/* SACCO list */}
       {saccosLoading ? (
         <View className="py-8 items-center">
-          <Text className="text-xs" style={{ color: TEXT_MUTED }}>
+          <Text className="text-xs" style={{ color: c.textMuted }}>
             Loading SACCOs...
           </Text>
         </View>
@@ -291,9 +285,9 @@ export default function LinkSaccos() {
               key={sacco.id}
               className="flex-row items-center p-3 rounded-xl mb-2"
               style={{
-                backgroundColor: isSelected ? 'rgba(16, 185, 129, 0.15)' : FROSTED_DARK,
+                backgroundColor: isSelected ? 'rgba(16, 185, 129, 0.15)' : c.surface,
                 borderWidth: isSelected ? 1.5 : 1,
-                borderColor: isSelected ? MINT : BORDER_WHITE,
+                borderColor: isSelected ? c.success : c.border,
                 opacity: isAlreadyLinked ? 0.6 : 1,
               }}
               onPress={() => toggle(sacco.slug)}
@@ -301,28 +295,28 @@ export default function LinkSaccos() {
             >
               <View
                 className="w-10 h-10 rounded-xl items-center justify-center"
-                style={{ backgroundColor: sacco.color || VIOLET }}
+                style={{ backgroundColor: sacco.color || c.accent }}
               >
                 <Text className="text-white text-xs font-bold">
                   {sacco.initials || 'SA'}
                 </Text>
               </View>
               <View className="flex-1 ml-3">
-                <Text className="text-xs font-semibold" style={{ color: TEXT }}>{sacco.name}</Text>
-                <Text className="text-xs mt-0.5" style={{ color: TEXT_MUTED }}>
+                <Text className="text-xs font-semibold" style={{ color: c.text }}>{sacco.name}</Text>
+                <Text className="text-xs mt-0.5" style={{ color: c.textMuted }}>
                   {sacco.sector}
                   {isAlreadyLinked ? ' · Already linked' : ''}
                 </Text>
               </View>
               {isSelected && (
-                <Icon name="check" size={16} color={MINT} />
+                <Icon name="check" size={16} color={c.success} />
               )}
               {!isSelected && (
                 <View
                   className="w-4 h-4 rounded-full"
                   style={{
                     borderWidth: 2,
-                    borderColor: BORDER_WHITE,
+                    borderColor: c.border,
                   }}
                 />
               )}
@@ -334,7 +328,7 @@ export default function LinkSaccos() {
       {/* Finish */}
       <TouchableOpacity
         className="rounded-xl py-3.5 items-center mb-2"
-        style={{ backgroundColor: VIOLET, opacity: pending || !step1 ? 0.6 : 1 }}
+        style={{ backgroundColor: c.accent, opacity: pending || !step1 ? 0.6 : 1 }}
         onPress={handleFinish}
         disabled={pending || !step1}
       >
@@ -350,15 +344,15 @@ export default function LinkSaccos() {
         onPress={handleContinueWithoutSacco}
         className="rounded-xl py-3 border items-center mb-3"
         style={{
-          borderColor: BORDER_WHITE,
-          backgroundColor: FROSTED_DARK,
+          borderColor: c.border,
+          backgroundColor: c.surface,
         }}
         disabled={pending || !step1}
       >
-        <Text className="text-xs font-semibold" style={{ color: TEXT }}>
+        <Text className="text-xs font-semibold" style={{ color: c.text }}>
           Not in a SACCO yet? Browse & join
         </Text>
-        <Text className="text-xs mt-1" style={{ color: TEXT_MUTED }}>
+        <Text className="text-xs mt-1" style={{ color: c.textMuted }}>
           Your account will work without a linked SACCO
         </Text>
       </TouchableOpacity>

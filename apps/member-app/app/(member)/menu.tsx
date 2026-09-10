@@ -12,17 +12,11 @@ import { getActiveMemberships } from '../../lib/membership'
 import { api } from '@saccosphere/api-client'
 import { Icon, IconName } from '../../components/ui/Icon'
 import { Badge } from '../../components/ui/Badge'
+import { useTheme } from '../../theme/ThemeProvider'
 
-const BACKGROUND = '#06091A'
-const FROSTED = 'rgba(255, 255, 255, 0.08)'
-const FROSTED_DARK = 'rgba(255, 255, 255, 0.06)'
-const BORDER_WHITE = 'rgba(255, 255, 255, 0.1)'
-const TEXT = '#F8FAFC'
-const TEXT_MUTED = 'rgba(248, 250, 252, 0.68)'
-const VIOLET = '#6D28D9'
-const MINT = '#10B981'
 
 export default function MenuScreen() {
+  const { colors: c } = useTheme()
   const insets = useSafeAreaInsets()
   const user = useCurrentUser()
   const { data: memberships = [] } = useMemberships()
@@ -94,20 +88,20 @@ export default function MenuScreen() {
 
   return (
     <>
-      <SafeAreaView style={{ flex: 1, backgroundColor: BACKGROUND }} edges={['bottom', 'left', 'right']}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: c.bg }} edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}>
         {/* Header */}
-        <View style={{ paddingTop: 52, paddingHorizontal: 16, paddingBottom: 12, backgroundColor: BACKGROUND, borderBottomWidth: 0.5, borderBottomColor: BORDER_WHITE }}>
+        <View style={{ paddingTop: 52, paddingHorizontal: 16, paddingBottom: 12, backgroundColor: c.bg, borderBottomWidth: 0.5, borderBottomColor: c.border }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
             <View>
-              <Text style={{ color: TEXT, fontSize: 20, fontWeight: '700' }}>Menu</Text>
-              <Text style={{ color: TEXT_MUTED, fontSize: 12, marginTop: 2 }}>Saccosphere features and SACCO utilities</Text>
+              <Text style={{ color: c.text, fontSize: 20, fontWeight: '700' }}>Menu</Text>
+              <Text style={{ color: c.textMuted, fontSize: 12, marginTop: 2 }}>Saccosphere features and SACCO utilities</Text>
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <TouchableOpacity style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: FROSTED_DARK, alignItems: 'center', justifyContent: 'center' }} onPress={() => router.push('/(member)/notifications')}>
-                <Icon name="bell" size={18} color={TEXT} />
+              <TouchableOpacity style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: c.surface, alignItems: 'center', justifyContent: 'center' }} onPress={() => router.push('/(member)/notifications')}>
+                <Icon name="bell" size={18} color={c.text} />
               </TouchableOpacity>
-              <TouchableOpacity style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: VIOLET, alignItems: 'center', justifyContent: 'center' }} onPress={() => router.push('/(member)/profile')}>
+              <TouchableOpacity style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: c.accent, alignItems: 'center', justifyContent: 'center' }} onPress={() => router.push('/(member)/profile')}>
                 <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700' }}>{initials}</Text>
               </TouchableOpacity>
             </View>
@@ -115,80 +109,80 @@ export default function MenuScreen() {
         </View>
 
         {/* User Card */}
-        <View style={{ backgroundColor: FROSTED_DARK, marginHorizontal: 14, marginVertical: 14, borderRadius: 12, padding: 16, borderWidth: 1, borderColor: BORDER_WHITE }}>
+        <View style={{ backgroundColor: c.surface, marginHorizontal: 14, marginVertical: 14, borderRadius: 12, padding: 16, borderWidth: 1, borderColor: c.border }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-            <View style={{ width: 56, height: 56, borderRadius: 16, backgroundColor: VIOLET, alignItems: 'center', justifyContent: 'center' }}>
+            <View style={{ width: 56, height: 56, borderRadius: 16, backgroundColor: c.accent, alignItems: 'center', justifyContent: 'center' }}>
               <Text style={{ color: '#fff', fontSize: 18, fontWeight: '700' }}>{initials}</Text>
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={{ color: TEXT, fontSize: 14, fontWeight: '600' }}>{user ? `${user.first_name} ${user.last_name}` : 'Member'}</Text>
-              <Text style={{ color: TEXT_MUTED, fontSize: 12 }}>{user?.email ?? 'No email saved'}</Text>
-              <Text style={{ color: TEXT_MUTED, fontSize: 12 }}>{user?.phone ?? user?.phone_number ?? 'No phone saved'}</Text>
+              <Text style={{ color: c.text, fontSize: 14, fontWeight: '600' }}>{user ? `${user.first_name} ${user.last_name}` : 'Member'}</Text>
+              <Text style={{ color: c.textMuted, fontSize: 12 }}>{user?.email ?? 'No email saved'}</Text>
+              <Text style={{ color: c.textMuted, fontSize: 12 }}>{user?.phone ?? user?.phone_number ?? 'No phone saved'}</Text>
             </View>
             <TouchableOpacity onPress={() => router.push('/(member)/profile')}>
-              <Text style={{ color: VIOLET, fontSize: 12, fontWeight: '600' }}>Profile</Text>
+              <Text style={{ color: c.accent, fontSize: 12, fontWeight: '600' }}>Profile</Text>
             </TouchableOpacity>
           </View>
         </View>
 
         {/* Features Menu */}
-        <View style={{ backgroundColor: FROSTED_DARK, marginHorizontal: 14, marginVertical: 14, borderRadius: 12, padding: 16, borderWidth: 1, borderColor: BORDER_WHITE }}>
-          <Text style={{ color: TEXT_MUTED, fontSize: 12, fontWeight: '600', letterSpacing: 1, marginBottom: 12 }}>ACTIONS & UTILITIES</Text>
+        <View style={{ backgroundColor: c.surface, marginHorizontal: 14, marginVertical: 14, borderRadius: 12, padding: 16, borderWidth: 1, borderColor: c.border }}>
+          <Text style={{ color: c.textMuted, fontSize: 12, fontWeight: '600', letterSpacing: 1, marginBottom: 12 }}>ACTIONS & UTILITIES</Text>
           {menuItems.map((item, index) => (
             <TouchableOpacity
               key={item.label}
-              style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 14, borderBottomWidth: 0.5, borderBottomColor: index === menuItems.length - 1 ? 'transparent' : BORDER_WHITE, opacity: item.disabled ? 0.4 : 1 }}
+              style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 14, borderBottomWidth: 0.5, borderBottomColor: index === menuItems.length - 1 ? 'transparent' : c.border, opacity: item.disabled ? 0.4 : 1 }}
               onPress={item.action}
               disabled={item.disabled}
             >
-              <View style={{ width: 36, height: 36, borderRadius: 12, backgroundColor: FROSTED, alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
-                <Icon name={item.icon} size={20} color={TEXT} />
+              <View style={{ width: 36, height: 36, borderRadius: 12, backgroundColor: c.surfaceAlt, alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
+                <Icon name={item.icon} size={20} color={c.text} />
               </View>
               <View style={{ flex: 1, paddingRight: 12 }}>
-                <Text style={{ color: TEXT, fontSize: 12, fontWeight: '600' }}>{item.label}</Text>
-                <Text style={{ color: TEXT_MUTED, fontSize: 12, marginTop: 2 }}>{item.helper}</Text>
+                <Text style={{ color: c.text, fontSize: 12, fontWeight: '600' }}>{item.label}</Text>
+                <Text style={{ color: c.textMuted, fontSize: 12, marginTop: 2 }}>{item.helper}</Text>
               </View>
-              <Icon name="arrow-right" size={16} color={TEXT_MUTED} />
+              <Icon name="arrow-right" size={16} color={c.textMuted} />
             </TouchableOpacity>
           ))}
         </View>
 
         {/* Linked Saccos Quick Access */}
-        <View style={{ backgroundColor: FROSTED_DARK, marginHorizontal: 14, marginVertical: 14, borderRadius: 12, padding: 16, borderWidth: 1, borderColor: BORDER_WHITE }}>
-          <Text style={{ color: TEXT_MUTED, fontSize: 12, fontWeight: '600', letterSpacing: 1, marginBottom: 12 }}>MY SACCOS</Text>
+        <View style={{ backgroundColor: c.surface, marginHorizontal: 14, marginVertical: 14, borderRadius: 12, padding: 16, borderWidth: 1, borderColor: c.border }}>
+          <Text style={{ color: c.textMuted, fontSize: 12, fontWeight: '600', letterSpacing: 1, marginBottom: 12 }}>MY SACCOS</Text>
           {activeMemberships.length ? (
             activeMemberships.map((membership) => (
-              <View key={membership.id} style={{ paddingVertical: 12, borderBottomWidth: 0.5, borderBottomColor: BORDER_WHITE }}>
+              <View key={membership.id} style={{ paddingVertical: 12, borderBottomWidth: 0.5, borderBottomColor: c.border }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                  <Text style={{ color: TEXT, fontSize: 12, fontWeight: '600' }}>{membership.sacco_name}</Text>
+                  <Text style={{ color: c.text, fontSize: 12, fontWeight: '600' }}>{membership.sacco_name}</Text>
                   <Badge label={membership.status} variant="success" />
                 </View>
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
                   <TouchableOpacity
-                    style={{ backgroundColor: FROSTED, borderWidth: 1, borderColor: BORDER_WHITE, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6 }}
+                    style={{ backgroundColor: c.surfaceAlt, borderWidth: 1, borderColor: c.border, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6 }}
                     onPress={() => router.push({ pathname: '/sacco/[slug]', params: { slug: membership.sacco_slug } })}
                   >
-                    <Text style={{ color: TEXT, fontSize: 12, fontWeight: '600' }}>Dashboard</Text>
+                    <Text style={{ color: c.text, fontSize: 12, fontWeight: '600' }}>Dashboard</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
-                    style={{ backgroundColor: FROSTED, borderWidth: 1, borderColor: BORDER_WHITE, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6 }}
+                    style={{ backgroundColor: c.surfaceAlt, borderWidth: 1, borderColor: c.border, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6 }}
                     onPress={() => router.push({ pathname: '/sacco/[slug]/pay', params: { slug: membership.sacco_slug } })}
                   >
-                    <Text style={{ color: TEXT, fontSize: 12, fontWeight: '600' }}>Pay</Text>
+                    <Text style={{ color: c.text, fontSize: 12, fontWeight: '600' }}>Pay</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
-                    style={{ backgroundColor: FROSTED, borderWidth: 1, borderColor: BORDER_WHITE, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6 }}
+                    style={{ backgroundColor: c.surfaceAlt, borderWidth: 1, borderColor: c.border, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6 }}
                     onPress={() => router.push({ pathname: '/sacco/[slug]/statement', params: { slug: membership.sacco_slug } })}
                   >
-                    <Text style={{ color: TEXT, fontSize: 12, fontWeight: '600' }}>Statement</Text>
+                    <Text style={{ color: c.text, fontSize: 12, fontWeight: '600' }}>Statement</Text>
                   </TouchableOpacity>
                 </View>
               </View>
             ))
           ) : (
             <View style={{ paddingVertical: 8 }}>
-              <Text style={{ color: TEXT_MUTED, fontSize: 12, marginBottom: 12 }}>No active SACCOs linked yet.</Text>
-              <TouchableOpacity style={{ backgroundColor: VIOLET, borderRadius: 12, paddingVertical: 8, paddingHorizontal: 16, alignItems: 'flex-start' }} onPress={() => router.push('/(member)/discover')}>
+              <Text style={{ color: c.textMuted, fontSize: 12, marginBottom: 12 }}>No active SACCOs linked yet.</Text>
+              <TouchableOpacity style={{ backgroundColor: c.accent, borderRadius: 12, paddingVertical: 8, paddingHorizontal: 16, alignItems: 'flex-start' }} onPress={() => router.push('/(member)/discover')}>
                 <Text style={{ color: '#fff', fontSize: 12, fontWeight: '600' }}>Browse & join SACCOs</Text>
               </TouchableOpacity>
             </View>
@@ -200,7 +194,7 @@ export default function MenuScreen() {
           <Text style={{ color: '#F87171', fontSize: 12, fontWeight: '600' }}>Sign out</Text>
         </TouchableOpacity>
 
-        <Text style={{ textAlign: 'center', color: TEXT_MUTED, fontSize: 12, marginBottom: 40 }}>Saccosphere v1.0 • SASRA Regulated</Text>
+        <Text style={{ textAlign: 'center', color: c.textMuted, fontSize: 12, marginBottom: 40 }}>Saccosphere v1.0 • SASRA Regulated</Text>
       </ScrollView>
       </SafeAreaView>
 
@@ -222,22 +216,22 @@ export default function MenuScreen() {
       {/* Referrals Modal */}
       <Modal visible={referralsVisible} transparent animationType="fade" onRequestClose={() => setReferralsVisible(false)}>
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.5)', paddingHorizontal: 24 }}>
-          <View style={{ backgroundColor: FROSTED_DARK, width: '100%', maxWidth: 400, borderRadius: 16, padding: 20, borderWidth: 1, borderColor: BORDER_WHITE }}>
-            <Text style={{ color: TEXT, fontSize: 18, fontWeight: '700', marginBottom: 6, textAlign: 'center' }}>Refer & Earn</Text>
-            <Text style={{ color: TEXT_MUTED, fontSize: 12, textAlign: 'center', lineHeight: 18, marginBottom: 20 }}>
+          <View style={{ backgroundColor: c.surface, width: '100%', maxWidth: 400, borderRadius: 16, padding: 20, borderWidth: 1, borderColor: c.border }}>
+            <Text style={{ color: c.text, fontSize: 18, fontWeight: '700', marginBottom: 6, textAlign: 'center' }}>Refer & Earn</Text>
+            <Text style={{ color: c.textMuted, fontSize: 12, textAlign: 'center', lineHeight: 18, marginBottom: 20 }}>
               Invite your friends to Saccosphere. When they link their first SACCO and make a contribution, you both earn KES 200.
             </Text>
 
-            <View style={{ backgroundColor: FROSTED, borderRadius: 12, padding: 12, borderWidth: 1, borderColor: BORDER_WHITE, alignItems: 'center', marginBottom: 20 }}>
-              <Text style={{ color: TEXT_MUTED, fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>Your Referral Code</Text>
-              <Text style={{ color: TEXT, fontSize: 20, fontWeight: '700', fontFamily: 'monospace', marginBottom: 8 }}>{referralCode}</Text>
-              <TouchableOpacity style={{ backgroundColor: VIOLET, paddingHorizontal: 16, paddingVertical: 6, borderRadius: 8 }} onPress={handleCopyReferral}>
+            <View style={{ backgroundColor: c.surfaceAlt, borderRadius: 12, padding: 12, borderWidth: 1, borderColor: c.border, alignItems: 'center', marginBottom: 20 }}>
+              <Text style={{ color: c.textMuted, fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>Your Referral Code</Text>
+              <Text style={{ color: c.text, fontSize: 20, fontWeight: '700', fontFamily: 'monospace', marginBottom: 8 }}>{referralCode}</Text>
+              <TouchableOpacity style={{ backgroundColor: c.accent, paddingHorizontal: 16, paddingVertical: 6, borderRadius: 8 }} onPress={handleCopyReferral}>
                 <Text style={{ color: '#fff', fontSize: 12, fontWeight: '600' }}>Copy Code</Text>
               </TouchableOpacity>
             </View>
 
-            <TouchableOpacity style={{ borderWidth: 1, borderColor: BORDER_WHITE, paddingVertical: 10, borderRadius: 12, alignItems: 'center' }} onPress={() => setReferralsVisible(false)}>
-              <Text style={{ color: TEXT, fontSize: 12, fontWeight: '600' }}>Close</Text>
+            <TouchableOpacity style={{ borderWidth: 1, borderColor: c.border, paddingVertical: 10, borderRadius: 12, alignItems: 'center' }} onPress={() => setReferralsVisible(false)}>
+              <Text style={{ color: c.text, fontSize: 12, fontWeight: '600' }}>Close</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -246,10 +240,10 @@ export default function MenuScreen() {
       {/* What's New Modal */}
       <Modal visible={whatsNewVisible} transparent animationType="slide" onRequestClose={() => setWhatsNewVisible(false)}>
         <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.45)' }}>
-          <View style={{ backgroundColor: FROSTED_DARK, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, maxHeight: '80%' }}>
-            <View style={{ width: 36, height: 4, backgroundColor: BORDER_WHITE, borderRadius: 2, alignSelf: 'center', marginBottom: 16 }} />
-            <Text style={{ color: TEXT, fontSize: 18, fontWeight: '700', marginBottom: 6 }}>What's New</Text>
-            <Text style={{ color: TEXT_MUTED, fontSize: 12, marginBottom: 16 }}>Latest updates and news from your SACCOs and the Saccosphere platform.</Text>
+          <View style={{ backgroundColor: c.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, maxHeight: '80%' }}>
+            <View style={{ width: 36, height: 4, backgroundColor: c.border, borderRadius: 2, alignSelf: 'center', marginBottom: 16 }} />
+            <Text style={{ color: c.text, fontSize: 18, fontWeight: '700', marginBottom: 6 }}>What's New</Text>
+            <Text style={{ color: c.textMuted, fontSize: 12, marginBottom: 16 }}>Latest updates and news from your SACCOs and the Saccosphere platform.</Text>
 
             <ScrollView showsVerticalScrollIndicator={false} style={{ marginBottom: 20 }}>
               {[
@@ -272,22 +266,22 @@ export default function MenuScreen() {
                   badge: 'New SACCO',
                 },
               ].map((update, idx) => (
-                <View key={idx} style={{ borderBottomWidth: 0.5, borderBottomColor: BORDER_WHITE, paddingVertical: 14 }}>
+                <View key={idx} style={{ borderBottomWidth: 0.5, borderBottomColor: c.border, paddingVertical: 14 }}>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
                     <View style={{ flex: 1, paddingRight: 8 }}>
-                      <Text style={{ color: TEXT, fontSize: 12, fontWeight: '600' }}>{update.title}</Text>
+                      <Text style={{ color: c.text, fontSize: 12, fontWeight: '600' }}>{update.title}</Text>
                     </View>
                     <View style={{ backgroundColor: 'rgba(109, 40, 217, 0.15)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>
-                      <Text style={{ color: VIOLET, fontSize: 10, fontWeight: '600' }}>{update.badge}</Text>
+                      <Text style={{ color: c.accent, fontSize: 10, fontWeight: '600' }}>{update.badge}</Text>
                     </View>
                   </View>
-                  <Text style={{ color: TEXT_MUTED, fontSize: 12, lineHeight: 18, marginBottom: 4 }}>{update.desc}</Text>
-                  <Text style={{ color: TEXT_MUTED, fontSize: 10 }}>{update.date}</Text>
+                  <Text style={{ color: c.textMuted, fontSize: 12, lineHeight: 18, marginBottom: 4 }}>{update.desc}</Text>
+                  <Text style={{ color: c.textMuted, fontSize: 10 }}>{update.date}</Text>
                 </View>
               ))}
             </ScrollView>
 
-            <TouchableOpacity style={{ backgroundColor: VIOLET, paddingVertical: 12, borderRadius: 12, alignItems: 'center' }} onPress={() => setWhatsNewVisible(false)}>
+            <TouchableOpacity style={{ backgroundColor: c.accent, paddingVertical: 12, borderRadius: 12, alignItems: 'center' }} onPress={() => setWhatsNewVisible(false)}>
               <Text style={{ color: '#fff', fontSize: 12, fontWeight: '600' }}>Got it</Text>
             </TouchableOpacity>
           </View>

@@ -22,19 +22,11 @@ import { Badge } from '../ui/Badge'
 import { Icon, type IconName } from '../ui/Icon'
 import { BalanceToggle } from '../ui/BalanceToggle'
 import { useMoney } from '../../lib/money'
+import { useTheme } from '../../theme/ThemeProvider'
 
 type QuickAction = 'contribute' | 'loan' | 'statement' | 'repay'
 
 // ─── Brand palette constants ──────────────────────────────────────────────
-const BACKGROUND = '#06091A'
-const FROSTED = 'rgba(255, 255, 255, 0.08)'
-const FROSTED_DARK = 'rgba(255, 255, 255, 0.06)'
-const BORDER_WHITE = 'rgba(255, 255, 255, 0.1)'
-const TEXT = '#F8FAFC'
-const TEXT_MUTED = 'rgba(248, 250, 252, 0.68)'
-const NAVY = '#06091A'
-const VIOLET = '#6D28D9'
-const MINT = '#10B981'
 const SURFACE = '#FFFFFF'
 const SURFACE2 = '#F8FAFC'
 const SURFACE3 = '#F1F5F9'
@@ -46,6 +38,7 @@ const BORDER = 'rgba(0,0,0,0.07)'
 const BORDER_MID = 'rgba(0,0,0,0.13)'
 
 export default function HomeScreen() {
+  const { colors: c } = useTheme()
   const insets = useSafeAreaInsets()
   const dashboardQuery = useDashboard()
   const membershipsQuery = useMemberships()
@@ -118,8 +111,8 @@ export default function HomeScreen() {
     return (
       <DeepSpaceBackground>
         <SafeAreaView style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }} edges={['bottom', 'left', 'right']}>
-          <ActivityIndicator color={MINT} size="small" />
-          <Text style={{ color: TEXT_MUTED, fontSize: 12, marginTop: 12 }}>Loading your dashboard...</Text>
+          <ActivityIndicator color={c.success} size="small" />
+          <Text style={{ color: c.textMuted, fontSize: 12, marginTop: 12 }}>Loading your dashboard...</Text>
         </SafeAreaView>
       </DeepSpaceBackground>
     )
@@ -129,13 +122,13 @@ export default function HomeScreen() {
     return (
       <DeepSpaceBackground>
         <SafeAreaView style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 }} edges={['bottom', 'left', 'right']}>
-          <Text style={{ fontSize: 14, fontWeight: '600', color: TEXT, marginBottom: 8 }}>Could not load your SACCOs</Text>
-          <Text style={{ fontSize: 12, color: TEXT_MUTED, textAlign: 'center', marginBottom: 20 }}>
+          <Text style={{ fontSize: 14, fontWeight: '600', color: c.text, marginBottom: 8 }}>Could not load your SACCOs</Text>
+          <Text style={{ fontSize: 12, color: c.textMuted, textAlign: 'center', marginBottom: 20 }}>
             Check your internet connection and try again.
           </Text>
           <TouchableOpacity
             onPress={refetch}
-            style={{ backgroundColor: VIOLET, borderRadius: 12, paddingVertical: 12, paddingHorizontal: 24 }}
+            style={{ backgroundColor: c.accent, borderRadius: 12, paddingVertical: 12, paddingHorizontal: 24 }}
           >
             <Text style={{ color: '#fff', fontSize: 12, fontWeight: '600' }}>Try again</Text>
           </TouchableOpacity>
@@ -155,7 +148,7 @@ export default function HomeScreen() {
         <ScrollView
           contentContainerStyle={{ paddingBottom: insets.bottom + 32 }}
           refreshControl={
-            <RefreshControl refreshing={isRefreshing} onRefresh={refetch} tintColor={MINT} colors={[MINT]} />
+            <RefreshControl refreshing={isRefreshing} onRefresh={refetch} tintColor={c.success} colors={[c.success]} />
           }
         >
         {/* ── Top bar ── */}
@@ -164,33 +157,33 @@ export default function HomeScreen() {
             paddingHorizontal: 16,
             paddingTop: 12,
             paddingBottom: 12,
-            backgroundColor: BACKGROUND,
+            backgroundColor: c.bg,
             borderBottomWidth: 0.5,
-            borderBottomColor: BORDER_WHITE,
+            borderBottomColor: c.border,
             flexDirection: 'row',
             justifyContent: 'space-between',
             alignItems: 'center',
           }}
         >
           <View>
-            <Text style={{ fontSize: 10, color: TEXT_MUTED, fontWeight: '500' }}>{greeting}</Text>
-            <Text style={{ fontSize: 15, fontWeight: '600', color: TEXT }}>{name}</Text>
+            <Text style={{ fontSize: 10, color: c.textMuted, fontWeight: '500' }}>{greeting}</Text>
+            <Text style={{ fontSize: 15, fontWeight: '600', color: c.text }}>{name}</Text>
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <TouchableOpacity
               onPress={() => router.push('/(member)/notifications')}
               style={{
                 width: 32, height: 32, borderRadius: 16,
-                backgroundColor: FROSTED_DARK, alignItems: 'center', justifyContent: 'center',
+                backgroundColor: c.surface, alignItems: 'center', justifyContent: 'center',
                 position: 'relative',
               }}
             >
-              <Icon name="bell" size={16} color={TEXT} />
+              <Icon name="bell" size={16} color={c.text} />
               <View
                 style={{
                   position: 'absolute', top: 4, right: 4,
                   width: 8, height: 8, borderRadius: 4,
-                  backgroundColor: '#DC2626', borderWidth: 1.5, borderColor: BACKGROUND,
+                  backgroundColor: '#DC2626', borderWidth: 1.5, borderColor: c.bg,
                 }}
               />
             </TouchableOpacity>
@@ -198,7 +191,7 @@ export default function HomeScreen() {
               onPress={() => router.push('/(member)/profile')}
               style={{
                 width: 32, height: 32, borderRadius: 16,
-                backgroundColor: VIOLET, alignItems: 'center', justifyContent: 'center',
+                backgroundColor: c.accent, alignItems: 'center', justifyContent: 'center',
               }}
             >
               <Text style={{ color: '#fff', fontSize: 11, fontWeight: '700' }}>{initials}</Text>
@@ -261,6 +254,7 @@ export default function HomeScreen() {
 // ═══════════════════════════════════════════════════════════════════════════
 
 function NoSaccoDashboard({ publicStats }: { publicStats: { total_saccos?: number; total_members_on_app?: number } | undefined }) {
+  const { colors: c } = useTheme()
   const saccoCount = publicStats?.total_saccos ?? 0
 
   return (
@@ -268,10 +262,10 @@ function NoSaccoDashboard({ publicStats }: { publicStats: { total_saccos?: numbe
       {/* ── Empty state hero ── */}
       <View
         style={{
-          backgroundColor: FROSTED_DARK,
+          backgroundColor: c.surface,
           borderWidth: 1.5,
           borderStyle: 'dashed',
-          borderColor: BORDER_WHITE,
+          borderColor: c.border,
           borderRadius: 16,
           paddingVertical: 32,
           paddingHorizontal: 18,
@@ -287,14 +281,14 @@ function NoSaccoDashboard({ publicStats }: { publicStats: { total_saccos?: numbe
             marginBottom: 12,
           }}
         >
-          <Icon name="bank" size={28} color={VIOLET} />
+          <Icon name="bank" size={28} color={c.accent} />
         </View>
-        <Text style={{ fontSize: 16, fontWeight: '700', color: TEXT, marginBottom: 6 }}>
+        <Text style={{ fontSize: 16, fontWeight: '700', color: c.text, marginBottom: 6 }}>
           No SACCOs linked yet
         </Text>
         <Text
           style={{
-            fontSize: 12, color: TEXT_MUTED, lineHeight: 20,
+            fontSize: 12, color: c.textMuted, lineHeight: 20,
             textAlign: 'center', marginBottom: 20, paddingHorizontal: 8,
           }}
         >
@@ -303,7 +297,7 @@ function NoSaccoDashboard({ publicStats }: { publicStats: { total_saccos?: numbe
         <TouchableOpacity
           onPress={() => router.push('/(member)/discover')}
           style={{
-            backgroundColor: VIOLET, borderRadius: 12,
+            backgroundColor: c.accent, borderRadius: 12,
             paddingVertical: 12, width: '100%', alignItems: 'center',
             marginBottom: 8,
           }}
@@ -315,11 +309,11 @@ function NoSaccoDashboard({ publicStats }: { publicStats: { total_saccos?: numbe
         <TouchableOpacity
           onPress={() => router.push('/(member)/discover')}
           style={{
-            backgroundColor: FROSTED, borderRadius: 12,
+            backgroundColor: c.surfaceAlt, borderRadius: 12,
             paddingVertical: 12, width: '100%', alignItems: 'center',
           }}
         >
-          <Text style={{ color: TEXT, fontSize: 12, fontWeight: '500' }}>
+          <Text style={{ color: c.text, fontSize: 12, fontWeight: '500' }}>
             Link existing membership
           </Text>
         </TouchableOpacity>
@@ -335,6 +329,7 @@ function NoSaccoDashboard({ publicStats }: { publicStats: { total_saccos?: numbe
 // ═══════════════════════════════════════════════════════════════════════════
 
 function PendingOnlyDashboard({ pendingMemberships }: { pendingMemberships: Membership[] }) {
+  const { colors: c } = useTheme()
   const primary = pendingMemberships[0]
 
   return (
@@ -352,7 +347,7 @@ function PendingOnlyDashboard({ pendingMemberships }: { pendingMemberships: Memb
         <Text style={{ fontSize: 14, fontWeight: '700', color: '#FDBA74', marginBottom: 4 }}>
           Application under review
         </Text>
-        <Text style={{ fontSize: 12, color: TEXT_MUTED, lineHeight: 20, marginBottom: 10 }}>
+        <Text style={{ fontSize: 12, color: c.textMuted, lineHeight: 20, marginBottom: 10 }}>
           {primary?.sacco_name ?? 'Your SACCO'} is reviewing your application. You can keep browsing other SACCOs while you wait.
         </Text>
         <InfoRow label="Reference" value={primary?.member_number || primary?.id || 'Pending'} />
@@ -362,11 +357,11 @@ function PendingOnlyDashboard({ pendingMemberships }: { pendingMemberships: Memb
 
       <View
         style={{
-          backgroundColor: FROSTED_DARK, borderWidth: 1, borderColor: BORDER_WHITE,
+          backgroundColor: c.surface, borderWidth: 1, borderColor: c.border,
           borderRadius: 14, padding: 14, marginBottom: 16,
         }}
       >
-        <Text style={{ fontSize: 11, fontWeight: '600', color: TEXT_MUTED, letterSpacing: 0.6, marginBottom: 10, textTransform: 'uppercase' }}>
+        <Text style={{ fontSize: 11, fontWeight: '600', color: c.textMuted, letterSpacing: 0.6, marginBottom: 10, textTransform: 'uppercase' }}>
           Application Tracker
         </Text>
         <TrackerStep label="Submitted" active />
@@ -377,11 +372,11 @@ function PendingOnlyDashboard({ pendingMemberships }: { pendingMemberships: Memb
       {pendingMemberships.length > 1 ? (
         <View
           style={{
-            backgroundColor: FROSTED_DARK, borderWidth: 1, borderColor: BORDER_WHITE,
+            backgroundColor: c.surface, borderWidth: 1, borderColor: c.border,
             borderRadius: 14, padding: 14, marginBottom: 16,
           }}
         >
-          <Text style={{ fontSize: 10, fontWeight: '600', color: TEXT_MUTED, letterSpacing: 0.6, marginBottom: 10, textTransform: 'uppercase' }}>
+          <Text style={{ fontSize: 10, fontWeight: '600', color: c.textMuted, letterSpacing: 0.6, marginBottom: 10, textTransform: 'uppercase' }}>
             Other Applications
           </Text>
           {pendingMemberships.slice(1).map((m) => (
@@ -393,7 +388,7 @@ function PendingOnlyDashboard({ pendingMemberships }: { pendingMemberships: Memb
       <TouchableOpacity
         onPress={() => router.push('/(member)/discover')}
         style={{
-          backgroundColor: VIOLET, borderRadius: 12,
+          backgroundColor: c.accent, borderRadius: 12,
           paddingVertical: 12, alignItems: 'center',
         }}
       >
@@ -406,6 +401,7 @@ function PendingOnlyDashboard({ pendingMemberships }: { pendingMemberships: Memb
 }
 
 function PendingBanner({ pendingMemberships }: { pendingMemberships: Membership[] }) {
+  const { colors: c } = useTheme()
   const names = pendingMemberships.map((m) => m.sacco_name).join(', ')
   return (
     <View
@@ -419,7 +415,7 @@ function PendingBanner({ pendingMemberships }: { pendingMemberships: Membership[
       }}
     >
       <Text style={{ fontSize: 11, fontWeight: '700', color: '#FDBA74' }}>Pending application</Text>
-      <Text style={{ fontSize: 11, color: TEXT_MUTED, marginTop: 4 }}>
+      <Text style={{ fontSize: 11, color: c.textMuted, marginTop: 4 }}>
         {names} {pendingMemberships.length === 1 ? 'is' : 'are'} under review. Active SACCOs remain available below.
       </Text>
     </View>
@@ -439,6 +435,7 @@ function SingleSaccoDashboard({
   onAction: (action: QuickAction) => void
   onViewDetail?: () => void
 }) {
+  const { colors: c } = useTheme()
   const money = useMoney()
   const { data: loans = [] } = useLoans({ sacco: membership.sacco_slug })
   const activeLoan = loans.find((l) => l.status === 'active' || l.status === 'disbursed' || l.status === 'approved')
@@ -451,7 +448,7 @@ function SingleSaccoDashboard({
         onPress={onViewDetail}
         activeOpacity={onViewDetail ? 0.85 : 1}
         style={{
-          backgroundColor: NAVY,
+          backgroundColor: c.card,
           borderRadius: 16,
           paddingHorizontal: 20,
           paddingVertical: 20,
@@ -514,13 +511,13 @@ function SingleSaccoDashboard({
       {/* ── Account breakdown ── */}
       <View
         style={{
-          backgroundColor: FROSTED_DARK,
-          borderWidth: 1, borderColor: BORDER_WHITE,
+          backgroundColor: c.surface,
+          borderWidth: 1, borderColor: c.border,
           borderRadius: 14, padding: 14,
           marginBottom: 12,
         }}
       >
-        <Text style={{ fontSize: 12, fontWeight: '600', color: TEXT, marginBottom: 8 }}>
+        <Text style={{ fontSize: 12, fontWeight: '600', color: c.text, marginBottom: 8 }}>
           Account breakdown
         </Text>
         <InfoRow label="BOSA savings" value={money(membership.bosa_balance)} />
@@ -530,7 +527,7 @@ function SingleSaccoDashboard({
         <InfoRow
           label="Loan limit"
           value={money(membership.loan_limit)}
-          valueColor={MINT}
+          valueColor={c.success}
         />
       </View>
 
@@ -538,8 +535,8 @@ function SingleSaccoDashboard({
       {activeLoan ? (
         <View
           style={{
-            backgroundColor: FROSTED_DARK,
-            borderWidth: 1, borderColor: BORDER_WHITE,
+            backgroundColor: c.surface,
+            borderWidth: 1, borderColor: c.border,
             borderRadius: 14, padding: 14,
             marginBottom: 12,
           }}
@@ -550,7 +547,7 @@ function SingleSaccoDashboard({
               alignItems: 'center', marginBottom: 8,
             }}
           >
-            <Text style={{ fontSize: 12, fontWeight: '600', color: TEXT }}>Active loan</Text>
+            <Text style={{ fontSize: 12, fontWeight: '600', color: c.text }}>Active loan</Text>
             <Badge
               label={activeLoan.status === 'active' || activeLoan.status === 'disbursed' ? 'In repayment' : 'Approved'}
               variant="warning"
@@ -559,13 +556,13 @@ function SingleSaccoDashboard({
           <InfoRow label={activeLoan.loan_product_label} value={money(activeLoan.amount_requested)} />
           <View
             style={{
-              height: 5, backgroundColor: FROSTED, borderRadius: 3,
+              height: 5, backgroundColor: c.surfaceAlt, borderRadius: 3,
               overflow: 'hidden', marginTop: 6, marginBottom: 4,
             }}
           >
             <View
               style={{
-                height: '100%', backgroundColor: MINT, borderRadius: 3,
+                height: '100%', backgroundColor: c.success, borderRadius: 3,
                 width: `${getLoanProgress(activeLoan.amount_requested, activeLoan.balance_remaining)}%`,
               }}
             />
@@ -576,10 +573,10 @@ function SingleSaccoDashboard({
               marginBottom: 10,
             }}
           >
-            <Text style={{ fontSize: 10, color: TEXT_MUTED }}>
+            <Text style={{ fontSize: 10, color: c.textMuted }}>
               {getLoanProgress(activeLoan.amount_requested, activeLoan.balance_remaining)}% repaid
             </Text>
-            <Text style={{ fontSize: 10, color: TEXT_MUTED }}>
+            <Text style={{ fontSize: 10, color: c.textMuted }}>
               Remaining: {money(activeLoan.balance_remaining)}
             </Text>
           </View>
@@ -591,7 +588,7 @@ function SingleSaccoDashboard({
               })
             }
             style={{
-              backgroundColor: VIOLET, borderRadius: 12,
+              backgroundColor: c.accent, borderRadius: 12,
               paddingVertical: 10, alignItems: 'center',
             }}
           >
@@ -621,13 +618,14 @@ function UnifiedDashboard({
   onAction: (action: QuickAction) => void
   onSelectSacco: (slug: string) => void
 }) {
+  const { colors: c } = useTheme()
   const money = useMoney()
   return (
     <View>
       {/* ── Total portfolio hero card ── */}
       <View
         style={{
-          backgroundColor: NAVY,
+          backgroundColor: c.card,
           borderRadius: 16,
           paddingHorizontal: 20,
           paddingVertical: 20,
@@ -682,7 +680,7 @@ function UnifiedDashboard({
       <Text
         style={{
           fontSize: 10, fontWeight: '600', letterSpacing: 0.6,
-          color: TEXT_MUTED, marginBottom: 8, marginTop: 4, textTransform: 'uppercase',
+          color: c.textMuted, marginBottom: 8, marginTop: 4, textTransform: 'uppercase',
         }}
       >
         My SACCOs
@@ -698,7 +696,7 @@ function UnifiedDashboard({
         onPress={() => router.push('/(member)/discover')}
         style={{ paddingVertical: 10, marginBottom: 12 }}
       >
-        <Text style={{ color: VIOLET, fontSize: 12, fontWeight: '600', textAlign: 'center' }}>
+        <Text style={{ color: c.accent, fontSize: 12, fontWeight: '600', textAlign: 'center' }}>
           + Add another SACCO
         </Text>
       </TouchableOpacity>
@@ -764,6 +762,7 @@ function QuickActionButton({
   tone: 'mint' | 'blue' | 'amber' | 'violet'
   onPress: () => void
 }) {
+  const { colors: c } = useTheme()
   const bgMap = {
     mint: 'rgba(16, 185, 129, 0.08)',
     blue: 'rgba(37, 99, 235, 0.06)',
@@ -790,7 +789,7 @@ function QuickActionButton({
       >
         <Icon name={icon} size={20} color={iconColor[tone]} />
       </View>
-      <Text style={{ fontSize: 9, fontWeight: '500', color: TEXT_MUTED, textAlign: 'center', lineHeight: 13 }}>
+      <Text style={{ fontSize: 9, fontWeight: '500', color: c.textMuted, textAlign: 'center', lineHeight: 13 }}>
         {label}
       </Text>
     </TouchableOpacity>
@@ -798,6 +797,7 @@ function QuickActionButton({
 }
 
 function SaccoRow({ membership, onPress }: { membership: Membership; onPress: () => void }) {
+  const { colors: c } = useTheme()
   const money = useMoney()
   const totalSavings = getMembershipSavings(membership)
 
@@ -808,9 +808,9 @@ function SaccoRow({ membership, onPress }: { membership: Membership; onPress: ()
         flexDirection: 'row',
         alignItems: 'center',
         gap: 12,
-        backgroundColor: FROSTED_DARK,
+        backgroundColor: c.surface,
         borderWidth: 1,
-        borderColor: BORDER_WHITE,
+        borderColor: c.border,
         borderRadius: 14,
         padding: 13,
         marginBottom: 10,
@@ -820,7 +820,7 @@ function SaccoRow({ membership, onPress }: { membership: Membership; onPress: ()
       <View
         style={{
           width: 40, height: 40, borderRadius: 10,
-          backgroundColor: membership.sacco_color || VIOLET,
+          backgroundColor: membership.sacco_color || c.accent,
           alignItems: 'center', justifyContent: 'center',
         }}
       >
@@ -829,43 +829,44 @@ function SaccoRow({ membership, onPress }: { membership: Membership; onPress: ()
         </Text>
       </View>
       <View style={{ flex: 1 }}>
-        <Text style={{ fontSize: 13, fontWeight: '600', color: TEXT }}>{membership.sacco_name}</Text>
-        <Text style={{ fontSize: 10, color: TEXT_MUTED }}>
+        <Text style={{ fontSize: 13, fontWeight: '600', color: c.text }}>{membership.sacco_name}</Text>
+        <Text style={{ fontSize: 10, color: c.textMuted }}>
           Member No. {membership.member_number || 'Pending'}
         </Text>
       </View>
 
       <View style={{ alignItems: 'flex-end' }}>
-        <Text style={{ fontSize: 13, fontWeight: '600', color: TEXT }}>{money(totalSavings)}</Text>
-        <Text style={{ fontSize: 9, color: TEXT_MUTED }}>Savings</Text>
+        <Text style={{ fontSize: 13, fontWeight: '600', color: c.text }}>{money(totalSavings)}</Text>
+        <Text style={{ fontSize: 9, color: c.textMuted }}>Savings</Text>
       </View>
-      <Icon name="arrow-right" size={14} color={TEXT_MUTED} />
+      <Icon name="arrow-right" size={14} color={c.textMuted} />
     </TouchableOpacity>
   )
 }
 
 function RecentTransactions({ transactions, title }: { transactions: Transaction[]; title: string }) {
+  const { colors: c } = useTheme()
   return (
     <View>
       <Text
         style={{
           fontSize: 10, fontWeight: '600', letterSpacing: 0.6,
-          color: TEXT_MUTED, marginBottom: 8, textTransform: 'uppercase',
+          color: c.textMuted, marginBottom: 8, textTransform: 'uppercase',
         }}
       >
         {title}
       </Text>
       <View
         style={{
-          backgroundColor: FROSTED_DARK,
-          borderWidth: 1, borderColor: BORDER_WHITE,
+          backgroundColor: c.surface,
+          borderWidth: 1, borderColor: c.border,
           borderRadius: 14, padding: 12,
         }}
       >
         {transactions.length > 0 ? (
           transactions.map((txn) => <TransactionRow key={txn.id} transaction={txn} />)
         ) : (
-          <Text style={{ color: TEXT_MUTED, fontSize: 12, textAlign: 'center', paddingVertical: 16 }}>
+          <Text style={{ color: c.textMuted, fontSize: 12, textAlign: 'center', paddingVertical: 16 }}>
             No recent activity yet.
           </Text>
         )}
@@ -875,6 +876,7 @@ function RecentTransactions({ transactions, title }: { transactions: Transaction
 }
 
 function TransactionRow({ transaction }: { transaction: Transaction }) {
+  const { colors: c } = useTheme()
   const money = useMoney()
   const isCredit = transaction.direction === 'credit'
   const type = transaction.txn_type.toLowerCase()
@@ -897,7 +899,7 @@ function TransactionRow({ transaction }: { transaction: Transaction }) {
         gap: 10,
         paddingVertical: 9,
         borderBottomWidth: 0.5,
-        borderBottomColor: BORDER_WHITE,
+        borderBottomColor: c.border,
       }}
     >
       <View
@@ -907,20 +909,20 @@ function TransactionRow({ transaction }: { transaction: Transaction }) {
           alignItems: 'center', justifyContent: 'center',
         }}
       >
-        <Icon name={getIcon()} size={16} color={isCredit ? MINT : '#F87171'} />
+        <Icon name={getIcon()} size={16} color={isCredit ? c.success : '#F87171'} />
       </View>
       <View style={{ flex: 1 }}>
-        <Text style={{ fontSize: 12, fontWeight: '500', color: TEXT }}>
+        <Text style={{ fontSize: 12, fontWeight: '500', color: c.text }}>
           {transaction.description}
         </Text>
-        <Text style={{ fontSize: 10, color: TEXT_MUTED }}>
+        <Text style={{ fontSize: 10, color: c.textMuted }}>
           {transaction.sacco_name} · {formatDate(transaction.date)}
         </Text>
       </View>
       <Text
         style={{
           fontSize: 12, fontWeight: '600',
-          color: isCredit ? MINT : '#F87171',
+          color: isCredit ? c.success : '#F87171',
         }}
       >
         {isCredit ? '+' : '-'}{money(transaction.amount)}
@@ -939,6 +941,7 @@ function StatLight({ label, value }: { label: string; value: string }) {
 }
 
 function InfoRow({ label, value, valueColor }: { label: string; value: string; valueColor?: string }) {
+  const { colors: c } = useTheme()
   return (
     <View
       style={{
@@ -946,13 +949,13 @@ function InfoRow({ label, value, valueColor }: { label: string; value: string; v
         justifyContent: 'space-between',
         paddingVertical: 7,
         borderBottomWidth: 0.5,
-        borderBottomColor: BORDER_WHITE,
+        borderBottomColor: c.border,
       }}
     >
-      <Text style={{ fontSize: 11, color: TEXT_MUTED }}>{label}</Text>
+      <Text style={{ fontSize: 11, color: c.textMuted }}>{label}</Text>
       <Text
         style={{
-          fontSize: 11, fontWeight: '600', color: valueColor ?? TEXT,
+          fontSize: 11, fontWeight: '600', color: valueColor ?? c.text,
           textAlign: 'right', flex: 1, marginLeft: 12,
         }}
       >
@@ -963,14 +966,15 @@ function InfoRow({ label, value, valueColor }: { label: string; value: string; v
 }
 
 function TrackerStep({ label, active }: { label: string; active?: boolean }) {
+  const { colors: c } = useTheme()
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 8 }}>
       <View
         style={{
           width: 22, height: 22, borderRadius: 11,
-          backgroundColor: active ? MINT : FROSTED,
+          backgroundColor: active ? c.success : c.surfaceAlt,
           borderWidth: active ? 0 : 1,
-          borderColor: BORDER_WHITE,
+          borderColor: c.border,
           alignItems: 'center', justifyContent: 'center',
         }}
       >
@@ -980,7 +984,7 @@ function TrackerStep({ label, active }: { label: string; active?: boolean }) {
           <View className="w-1 h-1 rounded-full bg-white/30" />
         )}
       </View>
-      <Text style={{ fontSize: 12, fontWeight: '500', color: active ? TEXT : TEXT_MUTED }}>
+      <Text style={{ fontSize: 12, fontWeight: '500', color: active ? c.text : c.textMuted }}>
         {label}
       </Text>
     </View>

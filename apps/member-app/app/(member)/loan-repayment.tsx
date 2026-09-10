@@ -5,9 +5,8 @@ import { useLoans } from '../../hooks/useLoans'
 import { useMemberships } from '../../hooks/useMembership'
 import { api } from '@saccosphere/api-client'
 import { Icon } from '../../components/ui/Icon'
+import { useTheme } from '../../theme/ThemeProvider'
 
-const VIOLET = '#6D28D9'
-const MINT = '#10B981'
 const SURFACE = '#FFFFFF'
 const SURFACE2 = '#F8FAFC'
 const INK = '#111827'
@@ -26,6 +25,7 @@ interface ScheduleItem {
 }
 
 export default function LoanRepaymentRoute() {
+  const { colors: c } = useTheme()
   const { data: loans = [], isLoading } = useLoans()
   const { data: memberships = [] } = useMemberships()
   const [selectedScheduleLoan, setSelectedScheduleLoan] = useState<any | null>(null)
@@ -54,7 +54,7 @@ export default function LoanRepaymentRoute() {
   if (isLoading) {
     return (
       <View style={{ flex: 1, backgroundColor: SURFACE, alignItems: 'center', justifyContent: 'center' }}>
-        <ActivityIndicator color={VIOLET} />
+        <ActivityIndicator color={c.accent} />
         <Text style={{ color: INK_MUTED, fontSize: 12, marginTop: 10 }}>Loading your loans...</Text>
       </View>
     )
@@ -92,7 +92,7 @@ export default function LoanRepaymentRoute() {
                   <Text style={{ color: INK_FAINT, fontSize: 11, marginTop: 2 }}>{loan.loan_product_label}</Text>
                 </View>
                 <View style={{ backgroundColor: 'rgba(16,185,129,0.1)', borderRadius: 20, paddingHorizontal: 8, paddingVertical: 3 }}>
-                  <Text style={{ color: MINT, fontSize: 10, fontWeight: '700' }}>{loan.status.replace(/_/g, ' ')}</Text>
+                  <Text style={{ color: c.success, fontSize: 10, fontWeight: '700' }}>{loan.status.replace(/_/g, ' ')}</Text>
                 </View>
               </View>
 
@@ -112,9 +112,9 @@ export default function LoanRepaymentRoute() {
                 <TouchableOpacity
                   activeOpacity={0.8}
                   onPress={() => handleOpenSchedule(loan)}
-                  style={{ flex: 1, paddingVertical: 10, borderRadius: 10, borderWidth: 1, borderColor: VIOLET, alignItems: 'center', backgroundColor: 'rgba(109, 40, 217, 0.05)' }}
+                  style={{ flex: 1, paddingVertical: 10, borderRadius: 10, borderWidth: 1, borderColor: c.accent, alignItems: 'center', backgroundColor: 'rgba(109, 40, 217, 0.05)' }}
                 >
-                  <Text style={{ color: VIOLET, fontSize: 12, fontWeight: '700' }}>View Schedule</Text>
+                  <Text style={{ color: c.accent, fontSize: 12, fontWeight: '700' }}>View Schedule</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -129,7 +129,7 @@ export default function LoanRepaymentRoute() {
                       },
                     })
                   }
-                  style={{ flex: 1, paddingVertical: 10, borderRadius: 10, backgroundColor: VIOLET, alignItems: 'center' }}
+                  style={{ flex: 1, paddingVertical: 10, borderRadius: 10, backgroundColor: c.accent, alignItems: 'center' }}
                 >
                   <Text style={{ color: '#FFF', fontSize: 12, fontWeight: '700' }}>Pay via M-Pesa</Text>
                 </TouchableOpacity>
@@ -155,7 +155,7 @@ export default function LoanRepaymentRoute() {
 
             {loadingSchedule ? (
               <View style={{ paddingVertical: 40, alignItems: 'center' }}>
-                <ActivityIndicator color={VIOLET} size="large" />
+                <ActivityIndicator color={c.accent} size="large" />
                 <Text style={{ color: INK_MUTED, fontSize: 12, marginTop: 12 }}>Fetching schedule breakdown...</Text>
               </View>
             ) : scheduleData.length === 0 ? (
@@ -193,7 +193,7 @@ export default function LoanRepaymentRoute() {
                             style={{
                               fontSize: 10,
                               fontWeight: '700',
-                              color: isPaid ? MINT : isOverdue ? '#EF4444' : '#D97706',
+                              color: isPaid ? c.success : isOverdue ? '#EF4444' : '#D97706',
                             }}
                           >
                             {item.status}
@@ -215,7 +215,7 @@ export default function LoanRepaymentRoute() {
 
                       <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingTop: 6, borderTopWidth: 0.5, borderTopColor: BORDER }}>
                         <Text style={{ color: INK, fontSize: 12, fontWeight: '700' }}>Total Amount</Text>
-                        <Text style={{ color: VIOLET, fontSize: 12, fontWeight: '700' }}>KES {item.amount.toLocaleString()}</Text>
+                        <Text style={{ color: c.accent, fontSize: 12, fontWeight: '700' }}>KES {item.amount.toLocaleString()}</Text>
                       </View>
                     </View>
                   )

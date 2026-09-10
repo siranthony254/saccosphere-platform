@@ -5,16 +5,11 @@ import { api } from '@saccosphere/api-client'
 import { router } from 'expo-router'
 import { useState } from 'react'
 import { Icon } from '../../components/ui/Icon'
+import { useTheme } from '../../theme/ThemeProvider'
 
-const BACKGROUND = '#06091A'
-const TEXT = '#F8FAFC'
-const TEXT_MUTED = 'rgba(248, 250, 252, 0.68)'
-const VIOLET = '#6D28D9'
-const MINT = '#10B981'
-const FROSTED_DARK = 'rgba(255, 255, 255, 0.06)'
-const BORDER_WHITE = 'rgba(255, 255, 255, 0.1)'
 
 export default function GuarantorInbox() {
+  const { colors: c } = useTheme()
   const insets = useSafeAreaInsets()
   const { data: notifications, isLoading, refetch, isRefetching } = useNotifications()
   const [actingOn, setActingOn] = useState<string | null>(null)
@@ -39,39 +34,39 @@ export default function GuarantorInbox() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: BACKGROUND }} edges={['bottom', 'left', 'right']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: c.bg }} edges={['bottom', 'left', 'right']}>
       <ScrollView
         contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}
-        refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={MINT} />}
+        refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={c.success} />}
       >
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingTop: 52, paddingHorizontal: 16, paddingBottom: 12, borderBottomWidth: 0.5, borderBottomColor: BORDER_WHITE }}>
-          <TouchableOpacity onPress={() => router.back()}><Icon name="arrow-right" size={24} color={TEXT} className="rotate-180" /></TouchableOpacity>
-          <Text style={{ color: TEXT, fontSize: 20, fontWeight: '700' }}>Guarantor Requests</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingTop: 52, paddingHorizontal: 16, paddingBottom: 12, borderBottomWidth: 0.5, borderBottomColor: c.border }}>
+          <TouchableOpacity onPress={() => router.back()}><Icon name="arrow-right" size={24} color={c.text} className="rotate-180" /></TouchableOpacity>
+          <Text style={{ color: c.text, fontSize: 20, fontWeight: '700' }}>Guarantor Requests</Text>
         </View>
 
         <View style={{ padding: 16 }}>
           {isLoading ? (
-            <ActivityIndicator color={VIOLET} style={{ marginTop: 40 }} />
+            <ActivityIndicator color={c.accent} style={{ marginTop: 40 }} />
           ) : requests.length === 0 ? (
             <View style={{ alignItems: 'center', marginTop: 80 }}>
               <View className="mb-4 w-20 h-20 rounded-full bg-violet-500/10 items-center justify-center border border-violet-500/20">
-                <Icon name="guarantor" size={40} color={VIOLET} />
+                <Icon name="guarantor" size={40} color={c.accent} />
               </View>
-              <Text style={{ color: TEXT, fontSize: 16, fontWeight: '600', marginBottom: 8 }}>No pending requests</Text>
-              <Text style={{ color: TEXT_MUTED, fontSize: 13, textAlign: 'center', paddingHorizontal: 40 }}>
+              <Text style={{ color: c.text, fontSize: 16, fontWeight: '600', marginBottom: 8 }}>No pending requests</Text>
+              <Text style={{ color: c.textMuted, fontSize: 13, textAlign: 'center', paddingHorizontal: 40 }}>
                 When your friends or colleagues ask you to guarantee their loans, they'll appear here.
               </Text>
             </View>
           ) : (
             requests.map((n: any) => (
-              <View key={n.id} style={{ backgroundColor: FROSTED_DARK, borderRadius: 16, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: BORDER_WHITE }}>
+              <View key={n.id} style={{ backgroundColor: c.surface, borderRadius: 16, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: c.border }}>
                 <View style={{ flexDirection: 'row', gap: 12, marginBottom: 12 }}>
                   <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(109, 40, 217, 0.15)', alignItems: 'center', justifyContent: 'center' }}>
-                    <Icon name="guarantor" size={20} color={VIOLET} />
+                    <Icon name="guarantor" size={20} color={c.accent} />
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={{ color: TEXT, fontSize: 14, fontWeight: '700', marginBottom: 2 }}>{n.title}</Text>
-                    <Text style={{ color: TEXT_MUTED, fontSize: 12, lineHeight: 18 }}>{n.message}</Text>
+                    <Text style={{ color: c.text, fontSize: 14, fontWeight: '700', marginBottom: 2 }}>{n.title}</Text>
+                    <Text style={{ color: c.textMuted, fontSize: 12, lineHeight: 18 }}>{n.message}</Text>
                   </View>
                 </View>
 
@@ -79,7 +74,7 @@ export default function GuarantorInbox() {
                   <TouchableOpacity
                     onPress={() => handleRespond(n.id, (n as any).related_object_id || '', 'approve')}
                     disabled={!!actingOn}
-                    style={{ flex: 1, backgroundColor: VIOLET, borderRadius: 10, paddingVertical: 10, alignItems: 'center' }}
+                    style={{ flex: 1, backgroundColor: c.accent, borderRadius: 10, paddingVertical: 10, alignItems: 'center' }}
                   >
                     <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700' }}>Review Request</Text>
                   </TouchableOpacity>

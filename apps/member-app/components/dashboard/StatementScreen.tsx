@@ -12,10 +12,12 @@ import { Icon, type IconName } from '../ui/Icon'
 import type { Transaction } from '@saccosphere/schemas'
 import { DeepSpaceBackground } from '../DeepSpaceBackground'
 import { useMoney, useBalanceHidden, MONEY_MASK } from '../../lib/money'
+import { useTheme } from '../../theme/ThemeProvider'
 
 const FILTERS = ['All', 'Contributions', 'Withdrawals', 'Transfers', 'Loans', 'Dividends', 'Fees']
 
 export default function StatementScreen() {
+  const { colors: c } = useTheme()
   const { slug } = useLocalSearchParams<{ slug: string }>()
   const money = useMoney()
   const insets = useSafeAreaInsets()
@@ -115,22 +117,23 @@ export default function StatementScreen() {
         contentContainerStyle={{ paddingBottom: insets.bottom + 20, paddingTop: insets.top }}
       >
         {/* Header */}
-        <View className="flex-row justify-between items-center px-4 py-3 border-b border-white/10">
+        <View className="flex-row justify-between items-center px-4 py-3" style={{ borderBottomWidth: 1, borderBottomColor: c.border }}>
           <View className="flex-row items-center gap-3">
-            <TouchableOpacity onPress={() => router.back()} className="w-8 h-8 rounded-full bg-white/10 items-center justify-center">
-              <Text className="text-white/80 text-xs">←</Text>
+            <TouchableOpacity onPress={() => router.back()} className="w-8 h-8 rounded-full items-center justify-center" style={{ backgroundColor: c.surfaceAlt }}>
+              <Text className="text-xs" style={{ color: c.textMuted }}>←</Text>
             </TouchableOpacity>
             <View>
-              <Text className="text-white text-base font-bold">Statement</Text>
-              <Text className="text-white/40 text-[10px] uppercase font-bold tracking-wider">{membership?.sacco_name || 'SACCO'}</Text>
+              <Text className="text-base font-bold" style={{ color: c.text }}>Statement</Text>
+              <Text className="text-[10px] uppercase font-bold tracking-wider" style={{ color: c.textFaint }}>{membership?.sacco_name || 'SACCO'}</Text>
             </View>
           </View>
           <TouchableOpacity
-            className={`bg-violet-600 rounded-lg px-4 py-2 ${isDownloading ? 'opacity-50' : ''}`}
+            className="rounded-lg px-4 py-2"
+            style={{ backgroundColor: c.accent, opacity: isDownloading ? 0.5 : 1 }}
             onPress={handleDownload}
             disabled={isDownloading}
           >
-            <Text className="text-white text-xs font-bold uppercase tracking-tighter">
+            <Text className="text-xs font-bold uppercase tracking-tighter" style={{ color: c.onAccent }}>
               {isDownloading ? '...' : 'PDF'}
             </Text>
           </TouchableOpacity>
@@ -139,25 +142,29 @@ export default function StatementScreen() {
         {/* Month Selector */}
         <View className="flex-row justify-center items-center py-5 gap-6">
           <TouchableOpacity onPress={() => setMonthDate((current) => addMonths(current, -1))}>
-            <Text className="text-violet-400 text-2xl font-light">‹</Text>
+            <Text className="text-2xl font-light" style={{ color: c.accent }}>‹</Text>
           </TouchableOpacity>
-          <Text className="text-white text-lg font-bold min-w-[140px] text-center">{month}</Text>
+          <Text className="text-lg font-bold min-w-[140px] text-center" style={{ color: c.text }}>{month}</Text>
           <TouchableOpacity onPress={() => setMonthDate((current) => addMonths(current, 1))}>
-            <Text className="text-violet-400 text-2xl font-light">›</Text>
+            <Text className="text-2xl font-light" style={{ color: c.accent }}>›</Text>
           </TouchableOpacity>
         </View>
 
         {/* Summary Card */}
-        <View className="bg-white/5 mx-4 mb-6 rounded-2xl p-4 border border-white/10">
+        <View className="mx-4 mb-6 rounded-2xl p-4" style={{ backgroundColor: c.surface, borderWidth: 1, borderColor: c.border }}>
           {[
             { label: 'Opening balance', value: money(openingBalance) },
-            { label: 'Total contributions', value: `+${money(statementData?.total_credits ?? totalCredits)}`, color: '#4ade80' },
-            { label: 'Loan repayments', value: `-${money(statementData?.total_debits ?? totalDebits)}`, color: '#f87171' },
+            { label: 'Total contributions', value: `+${money(statementData?.total_credits ?? totalCredits)}`, color: c.success },
+            { label: 'Loan repayments', value: `-${money(statementData?.total_debits ?? totalDebits)}`, color: c.danger },
             { label: 'Closing balance', value: money(closingBalance), bold: true },
           ].map((row, i, arr) => (
-            <View key={row.label} className={`flex-row justify-between py-2.5 ${i !== arr.length - 1 ? 'border-b border-white/5' : ''}`}>
-              <Text className="text-white/60 text-xs">{row.label}</Text>
-              <Text className={`text-xs font-bold ${row.bold ? 'text-base text-white' : ''}`} style={{ color: row.color || 'rgba(255,255,255,0.9)' }}>
+            <View
+              key={row.label}
+              className="flex-row justify-between py-2.5"
+              style={i !== arr.length - 1 ? { borderBottomWidth: 1, borderBottomColor: c.border } : undefined}
+            >
+              <Text className="text-xs" style={{ color: c.textMuted }}>{row.label}</Text>
+              <Text className={`font-bold ${row.bold ? 'text-base' : 'text-xs'}`} style={{ color: row.color || c.text }}>
                 {row.value}
               </Text>
             </View>
@@ -171,28 +178,34 @@ export default function StatementScreen() {
           className="mb-4"
           contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}
         >
-          {FILTERS.map((item) => (
-            <TouchableOpacity
-              key={item}
-              className={`px-5 py-2 rounded-full border ${
-                filter === item ? 'bg-violet-600 border-violet-600' : 'bg-white/5 border-white/10'
-              }`}
-              onPress={() => setFilter(item)}
-            >
-              <Text className={`text-xs font-bold ${filter === item ? 'text-white' : 'text-white/40'}`}>
-                {item}
-              </Text>
-            </TouchableOpacity>
-          ))}
+          {FILTERS.map((item) => {
+            const on = filter === item
+            return (
+              <TouchableOpacity
+                key={item}
+                className="px-5 py-2 rounded-full"
+                style={{
+                  borderWidth: 1,
+                  backgroundColor: on ? c.accent : c.surface,
+                  borderColor: on ? c.accent : c.border,
+                }}
+                onPress={() => setFilter(item)}
+              >
+                <Text className="text-xs font-bold" style={{ color: on ? c.onAccent : c.textFaint }}>
+                  {item}
+                </Text>
+              </TouchableOpacity>
+            )
+          })}
         </ScrollView>
 
         {/* Transactions List */}
         <View className="px-4">
           {isLoading ? (
-            [1, 2, 3].map((item) => <View key={item} className="h-16 bg-white/5 rounded-2xl mb-2 border border-white/5" />)
+            [1, 2, 3].map((item) => <View key={item} className="h-16 rounded-2xl mb-2" style={{ backgroundColor: c.surface }} />)
           ) : filtered.length === 0 ? (
             <View className="py-20 items-center">
-              <Text className="text-white/30 text-xs font-medium">No transactions for this period.</Text>
+              <Text className="text-xs font-medium" style={{ color: c.textFaint }}>No transactions for this period.</Text>
             </View>
           ) : (
             filtered.map((transaction) => <TxnRow key={transaction.id} txn={transaction} />)
@@ -204,6 +217,7 @@ export default function StatementScreen() {
 }
 
 function TxnRow({ txn }: { txn: Transaction }) {
+  const { colors: c } = useTheme()
   const hidden = useBalanceHidden()
   const isCredit = txn.direction === 'credit'
   const type = txn.txn_type.toLowerCase()
@@ -222,18 +236,19 @@ function TxnRow({ txn }: { txn: Transaction }) {
     <TouchableOpacity
       activeOpacity={0.7}
       onPress={() => router.push({ pathname: '/(member)/transaction-detail', params: { id: txn.id } } as any)}
-      className="flex-row items-center gap-4 py-3.5 border-b border-white/5 bg-white/5 px-4 rounded-2xl mb-2 border border-white/5"
+      className="flex-row items-center gap-4 py-3.5 px-4 rounded-2xl mb-2"
+      style={{ backgroundColor: c.surface, borderWidth: 1, borderColor: c.border }}
     >
-      <View className={`w-10 h-10 rounded-xl items-center justify-center ${isCredit ? 'bg-green-500/10' : 'bg-red-500/10'}`}>
-        <Icon name={getIcon()} size={16} color={isCredit ? '#4ade80' : '#f87171'} />
+      <View className="w-10 h-10 rounded-xl items-center justify-center" style={{ backgroundColor: (isCredit ? c.success : c.danger) + '1A' }}>
+        <Icon name={getIcon()} size={16} color={isCredit ? c.success : c.danger} />
       </View>
       <View className="flex-1">
-        <Text className="text-white text-xs font-bold">{txn.description}</Text>
-        <Text className="text-white/40 text-[10px] uppercase font-bold mt-0.5">
+        <Text className="text-xs font-bold" style={{ color: c.text }}>{txn.description}</Text>
+        <Text className="text-[10px] uppercase font-bold mt-0.5" style={{ color: c.textFaint }}>
           {new Date(txn.date).toLocaleDateString('en-KE', { day: 'numeric', month: 'short' })} · {txn.txn_type.replace('_', ' ')}
         </Text>
       </View>
-      <Text className={`text-xs font-bold ${isCredit ? 'text-green-400' : 'text-red-400'}`}>
+      <Text className="text-xs font-bold" style={{ color: isCredit ? c.success : c.danger }}>
         {isCredit ? '+' : '-'}{hidden ? MONEY_MASK : txn.amount.toLocaleString()}
       </Text>
     </TouchableOpacity>

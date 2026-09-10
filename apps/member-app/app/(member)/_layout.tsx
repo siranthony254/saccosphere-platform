@@ -2,26 +2,25 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { Tabs } from 'expo-router'
 import { Text, View } from 'react-native'
 import { Icon, type IconName } from '../../components/ui/Icon'
+import { useTheme } from '../../theme/ThemeProvider'
 
-const BACKGROUND = '#06091A'
-const VIOLET = '#6D28D9'
-const BORDER_WHITE = 'rgba(255, 255, 255, 0.1)'
 
 export default function MemberTabLayout() {
+  const { colors: c } = useTheme()
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: BACKGROUND }} edges={['top', 'bottom']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: c.bg }} edges={['top', 'bottom']}>
       <Tabs
         screenOptions={{
           headerShown: false,
-          tabBarActiveTintColor: VIOLET,
-          tabBarInactiveTintColor: 'rgba(248, 250, 252, 0.5)',
+          tabBarActiveTintColor: c.accent,
+          tabBarInactiveTintColor: c.textFaint,
           tabBarStyle: {
-            borderTopColor: BORDER_WHITE,
+            borderTopColor: c.border,
             borderTopWidth: 0.5,
             paddingBottom: 6,
             paddingTop: 6,
             height: 65,
-            backgroundColor: BACKGROUND,
+            backgroundColor: c.bg,
             elevation: 8,
             shadowColor: '#000',
             shadowOpacity: 0.08,
@@ -87,6 +86,7 @@ export default function MemberTabLayout() {
 
 
 function TabIcon({ icon, color, focused }: { icon: IconName; color: string; focused: boolean }) {
+  const { colors: c } = useTheme()
   return (
     <View style={{
       width: 28,
@@ -105,7 +105,7 @@ function TabIcon({ icon, color, focused }: { icon: IconName; color: string; focu
           width: 6,
           height: 6,
           borderRadius: 3,
-          backgroundColor: VIOLET,
+          backgroundColor: c.accent,
         }} />
       )}
     </View>

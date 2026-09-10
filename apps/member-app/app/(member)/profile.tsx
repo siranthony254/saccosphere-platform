@@ -14,15 +14,8 @@ import { getActiveMemberships } from '../../lib/membership'
 import { api } from '@saccosphere/api-client'
 import { Icon, IconName } from '../../components/ui/Icon'
 import { Badge } from '../../components/ui/Badge'
+import { useTheme } from '../../theme/ThemeProvider'
 
-const BACKGROUND = '#06091A'
-const FROSTED = 'rgba(255, 255, 255, 0.08)'
-const FROSTED_DARK = 'rgba(255, 255, 255, 0.06)'
-const BORDER_WHITE = 'rgba(255, 255, 255, 0.1)'
-const TEXT = '#F8FAFC'
-const TEXT_MUTED = 'rgba(248, 250, 252, 0.68)'
-const VIOLET = '#6D28D9'
-const MINT = '#10B981'
 
 const getKycLabel = (status?: string, iprsVerified?: boolean) => {
   if (status === 'verified') return iprsVerified ? 'Official Identity Verified' : 'KYC Verified'
@@ -42,6 +35,7 @@ const getKycVariant = (status?: string): any => {
 }
 
 export default function ProfileScreen() {
+  const { colors: c } = useTheme()
   const insets = useSafeAreaInsets()
   const user = useCurrentUser()
   const { mutate: logout } = useLogout()
@@ -93,19 +87,19 @@ export default function ProfileScreen() {
 
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: BACKGROUND }} edges={['bottom', 'left', 'right']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: c.bg }} edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}>
-      <View style={{ paddingTop: 52, paddingHorizontal: 16, paddingBottom: 12, backgroundColor: BACKGROUND, borderBottomWidth: 0.5, borderBottomColor: BORDER_WHITE }}>
-        <Text style={{ color: TEXT, fontSize: 20, fontWeight: '700' }}>Profile</Text>
+      <View style={{ paddingTop: 52, paddingHorizontal: 16, paddingBottom: 12, backgroundColor: c.bg, borderBottomWidth: 0.5, borderBottomColor: c.border }}>
+        <Text style={{ color: c.text, fontSize: 20, fontWeight: '700' }}>Profile</Text>
       </View>
 
       {/* Avatar + info */}
-      <View style={{ alignItems: 'center', paddingVertical: 24, backgroundColor: BACKGROUND, borderBottomWidth: 0.5, borderBottomColor: BORDER_WHITE }}>
-        <View style={{ width: 72, height: 72, borderRadius: 16, backgroundColor: VIOLET, alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}>
+      <View style={{ alignItems: 'center', paddingVertical: 24, backgroundColor: c.bg, borderBottomWidth: 0.5, borderBottomColor: c.border }}>
+        <View style={{ width: 72, height: 72, borderRadius: 16, backgroundColor: c.accent, alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}>
           <Text style={{ color: '#fff', fontSize: 24, fontWeight: '700' }}>{initials}</Text>
         </View>
-        <Text style={{ color: TEXT, fontSize: 16, fontWeight: '600', marginBottom: 2 }}>{user?.first_name} {user?.last_name}</Text>
-        <Text style={{ color: TEXT_MUTED, fontSize: 12, marginBottom: 10 }}>
+        <Text style={{ color: c.text, fontSize: 16, fontWeight: '600', marginBottom: 2 }}>{user?.first_name} {user?.last_name}</Text>
+        <Text style={{ color: c.textMuted, fontSize: 12, marginBottom: 10 }}>
           {user?.id ? `ID: ${user.id.slice(0, 8).toUpperCase()}` : ''} · Joined {user?.created_at ? new Date(user.created_at).toLocaleDateString(undefined, { month: 'short', year: 'numeric' }) : 'recently'}
         </Text>
         <Badge
@@ -116,40 +110,40 @@ export default function ProfileScreen() {
       </View>
 
       {/* SACCO memberships summary */}
-      <View style={{ backgroundColor: FROSTED_DARK, marginHorizontal: 14, marginVertical: 14, borderRadius: 12, padding: 16, borderWidth: 1, borderColor: BORDER_WHITE }}>
-        <Text style={{ color: TEXT_MUTED, fontSize: 12, fontWeight: '600', letterSpacing: 1, marginBottom: 12 }}>MY SACCOS</Text>
+      <View style={{ backgroundColor: c.surface, marginHorizontal: 14, marginVertical: 14, borderRadius: 12, padding: 16, borderWidth: 1, borderColor: c.border }}>
+        <Text style={{ color: c.textMuted, fontSize: 12, fontWeight: '600', letterSpacing: 1, marginBottom: 12 }}>MY SACCOS</Text>
         {activeMemberships.length > 0 ? (
           activeMemberships.map((membership) => (
-            <View key={membership.id} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8, borderBottomWidth: 0.5, borderBottomColor: BORDER_WHITE }}>
-              <Text style={{ color: TEXT_MUTED, fontSize: 12 }}>{membership.sacco_name}</Text>
+            <View key={membership.id} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8, borderBottomWidth: 0.5, borderBottomColor: c.border }}>
+              <Text style={{ color: c.textMuted, fontSize: 12 }}>{membership.sacco_name}</Text>
               <View style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8 }}>
-                <Text style={{ color: MINT, fontSize: 12, fontWeight: '600', textTransform: 'capitalize' }}>{membership.status}</Text>
+                <Text style={{ color: c.success, fontSize: 12, fontWeight: '600', textTransform: 'capitalize' }}>{membership.status}</Text>
               </View>
             </View>
           ))
         ) : (
-          <Text style={{ color: TEXT_MUTED, fontSize: 12, marginBottom: 12 }}>No active SACCOs linked yet.</Text>
+          <Text style={{ color: c.textMuted, fontSize: 12, marginBottom: 12 }}>No active SACCOs linked yet.</Text>
         )}
         <TouchableOpacity onPress={() => router.push('/(member)/discover')}>
-          <Text style={{ color: VIOLET, fontSize: 12, fontWeight: '600', marginTop: 12 }}>+ Link another SACCO</Text>
+          <Text style={{ color: c.accent, fontSize: 12, fontWeight: '600', marginTop: 12 }}>+ Link another SACCO</Text>
         </TouchableOpacity>
       </View>
 
       {/* Settings list */}
-      <View style={{ backgroundColor: FROSTED_DARK, marginHorizontal: 14, marginVertical: 14, borderRadius: 12, padding: 16, borderWidth: 1, borderColor: BORDER_WHITE }}>
-        <Text style={{ color: TEXT_MUTED, fontSize: 12, fontWeight: '600', letterSpacing: 1, marginBottom: 12 }}>ACCOUNT SETTINGS</Text>
+      <View style={{ backgroundColor: c.surface, marginHorizontal: 14, marginVertical: 14, borderRadius: 12, padding: 16, borderWidth: 1, borderColor: c.border }}>
+        <Text style={{ color: c.textMuted, fontSize: 12, fontWeight: '600', letterSpacing: 1, marginBottom: 12 }}>ACCOUNT SETTINGS</Text>
         {settings.map((s, i) => (
-          <TouchableOpacity key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, borderBottomWidth: 0.5, borderBottomColor: i === settings.length - 1 ? 'transparent' : BORDER_WHITE }} onPress={s.action}>
-            <View style={{ width: 34, height: 34, borderRadius: 8, backgroundColor: FROSTED, alignItems: 'center', justifyContent: 'center' }}>
-              <Icon name={s.icon} size={18} color={TEXT} />
+          <TouchableOpacity key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, borderBottomWidth: 0.5, borderBottomColor: i === settings.length - 1 ? 'transparent' : c.border }} onPress={s.action}>
+            <View style={{ width: 34, height: 34, borderRadius: 8, backgroundColor: c.surfaceAlt, alignItems: 'center', justifyContent: 'center' }}>
+              <Icon name={s.icon} size={18} color={c.text} />
             </View>
-            <Text style={{ flex: 1, color: TEXT, fontSize: 12, fontWeight: '500' }}>{s.label}</Text>
+            <Text style={{ flex: 1, color: c.text, fontSize: 12, fontWeight: '500' }}>{s.label}</Text>
             {('toggle' in s && (s as any).toggle) ? (
-              <View style={{ width: 38, height: 22, borderRadius: 11, backgroundColor: VIOLET }} />
+              <View style={{ width: 38, height: 22, borderRadius: 11, backgroundColor: c.accent }} />
             ) : (
               <>
-                {s.value && <Text style={{ color: TEXT_MUTED, fontSize: 12, marginRight: 4 }}>{s.value}</Text>}
-                <Icon name="arrow-right" size={16} color={TEXT_MUTED} />
+                {s.value && <Text style={{ color: c.textMuted, fontSize: 12, marginRight: 4 }}>{s.value}</Text>}
+                <Icon name="arrow-right" size={16} color={c.textMuted} />
               </>
             )}
           </TouchableOpacity>
@@ -161,7 +155,7 @@ export default function ProfileScreen() {
         <Text style={{ color: '#F87171', fontSize: 12, fontWeight: '600' }}>Sign out</Text>
       </TouchableOpacity>
 
-      <Text style={{ textAlign: 'center', color: TEXT_MUTED, fontSize: 12, marginBottom: 40 }}>Saccosphere v1.0 · SASRA regulated · CBK licensed</Text>
+      <Text style={{ textAlign: 'center', color: c.textMuted, fontSize: 12, marginBottom: 40 }}>Saccosphere v1.0 · SASRA regulated · CBK licensed</Text>
     </ScrollView>
     </SafeAreaView>
   )

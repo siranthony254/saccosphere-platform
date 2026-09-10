@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react'
 import { View, Text, ActivityIndicator, TouchableOpacity } from 'react-native'
 import { usePaymentStatus } from '../../hooks/usePayment'
+import { useTheme } from '../../theme/ThemeProvider'
 
-const BRAND_VIOLET = '#6D28D9'
-const BRAND_MINT = '#10B981'
 const SURFACE = '#FFFFFF'
 const SURFACE2 = '#F8FAFC'
 const INK = '#111827'
@@ -30,6 +29,7 @@ export default function PaymentProcessingScreen({
   onComplete,
   onCancel,
 }: PaymentProcessingScreenProps) {
+  const { colors: c } = useTheme()
   const { data: status, isLoading } = usePaymentStatus(checkoutRequestId ?? '')
   const [pollCount, setPollCount] = useState(0)
   const [hasStartedPolling, setHasStartedPolling] = useState(false)
@@ -122,7 +122,7 @@ export default function PaymentProcessingScreen({
           }}
         >
           <Text style={{ fontSize: 12, fontWeight: '600', color: INK }}>Total</Text>
-          <Text style={{ fontSize: 14, fontWeight: '700', color: BRAND_MINT }}>
+          <Text style={{ fontSize: 14, fontWeight: '700', color: c.success }}>
             KES {totalAmount.toLocaleString()}
           </Text>
         </View>
@@ -133,7 +133,7 @@ export default function PaymentProcessingScreen({
         style={{
           backgroundColor: 'rgba(109, 40, 217, 0.06)',
           borderLeftWidth: 3,
-          borderLeftColor: BRAND_VIOLET,
+          borderLeftColor: c.accent,
           borderRadius: 8,
           padding: 12,
           width: '100%',
@@ -156,7 +156,7 @@ export default function PaymentProcessingScreen({
             }}
             activeOpacity={0.8}
             style={{
-              backgroundColor: BRAND_VIOLET,
+              backgroundColor: c.accent,
               borderRadius: 12,
               paddingVertical: 14,
               alignItems: 'center',
@@ -177,7 +177,7 @@ export default function PaymentProcessingScreen({
         <>
           {/* Animated loader */}
           <View style={{ marginBottom: 16 }}>
-            <ActivityIndicator size="large" color={BRAND_VIOLET} />
+            <ActivityIndicator size="large" color={c.accent} />
           </View>
           <Text style={{ fontSize: 12, color: INK_MUTED }}>
             Polling payment status... ({pollCount}/30)

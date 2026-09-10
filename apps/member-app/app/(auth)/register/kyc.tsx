@@ -10,14 +10,6 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window')
 
 const PADDING_H = Math.max(16, Math.min(24, SCREEN_WIDTH * 0.05))
 
-const BACKGROUND = '#06091A'
-const FROSTED = 'rgba(255, 255, 255, 0.08)'
-const FROSTED_DARK = 'rgba(255, 255, 255, 0.06)'
-const BORDER_WHITE = 'rgba(255, 255, 255, 0.1)'
-const TEXT = '#F8FAFC'
-const TEXT_MUTED = 'rgba(248, 250, 252, 0.68)'
-const VIOLET = '#6D28D9'
-const MINT = '#10B981'
 const MINT_LIGHT = '#E6F7F1'
 const MINT_700 = '#084D32'
 const SURFACE = '#FFFFFF'
@@ -31,6 +23,7 @@ const BORDER = 'rgba(0,0,0,0.08)'
 const BORDER_MID = 'rgba(0,0,0,0.13)'
 
 import { Icon } from '../../../components/ui/Icon'
+import { useTheme } from '../../../theme/ThemeProvider'
 
 type PickedDocument = {
   uri: string
@@ -46,6 +39,7 @@ type IdSide = 'id_front' | 'id_back' | 'passport' | 'huduma'
 type DocType = 'id_card' | 'passport' | 'huduma_card'
 
 export default function RegisterKYC() {
+  const { colors: c } = useTheme()
   const insets = useSafeAreaInsets()
   const {
     step1,
@@ -129,7 +123,7 @@ export default function RegisterKYC() {
 
   return (
     <KeyboardAwareScreen
-      background={BACKGROUND}
+      background={c.bg}
       contentContainerStyle={{
         paddingHorizontal: PADDING_H,
         paddingBottom: insets.bottom + 20,
@@ -142,25 +136,25 @@ export default function RegisterKYC() {
           <View
             key={i}
             className="flex-1 h-0.5 rounded"
-            style={{ backgroundColor: i < 3 ? VIOLET : BORDER_WHITE }}
+            style={{ backgroundColor: i < 3 ? c.accent : c.border }}
           />
         ))}
       </View>
-      <Text className="text-xs mb-4" style={{ color: TEXT_MUTED }}>
+      <Text className="text-xs mb-4" style={{ color: c.textMuted }}>
         Step 3 of 4 — Verify your identity
       </Text>
 
-      <Text className="text-sm font-bold mb-4" style={{ color: VIOLET, fontFamily: 'Fraunces_700Bold' }}>
+      <Text className="text-sm font-bold mb-4" style={{ color: c.accent, fontFamily: 'Fraunces_700Bold' }}>
         Saccosphere
       </Text>
 
-      <Text className="text-base font-bold mb-1" style={{ color: TEXT }}>ID verification</Text>
-      <Text className="text-xs mb-5" style={{ color: TEXT_MUTED, lineHeight: 18 }}>
+      <Text className="text-base font-bold mb-1" style={{ color: c.text }}>ID verification</Text>
+      <Text className="text-xs mb-5" style={{ color: c.textMuted, lineHeight: 18 }}>
         Required by SASRA regulations. Your documents are encrypted and never shared.
       </Text>
 
       {/* Document Type Selector */}
-      <Text className="text-xs font-medium mb-1.5" style={{ color: TEXT_MUTED }}>
+      <Text className="text-xs font-medium mb-1.5" style={{ color: c.textMuted }}>
         Select Document Type
       </Text>
       <View className="flex-row gap-2 mb-4">
@@ -170,13 +164,13 @@ export default function RegisterKYC() {
             onPress={() => setDocType(type)}
             className="flex-1 py-2 px-1 border rounded-lg items-center justify-center"
             style={{
-              borderColor: docType === type ? VIOLET : BORDER_WHITE,
-              backgroundColor: docType === type ? 'rgba(109, 40, 217, 0.1)' : FROSTED_DARK
+              borderColor: docType === type ? c.accent : c.border,
+              backgroundColor: docType === type ? 'rgba(109, 40, 217, 0.1)' : c.surface
             }}
           >
             <Text
               className="text-[10px] font-bold uppercase text-center"
-              style={{ color: docType === type ? VIOLET : TEXT_MUTED }}
+              style={{ color: docType === type ? c.accent : c.textMuted }}
             >
               {type.replace('_', ' ')}
             </Text>
@@ -185,38 +179,38 @@ export default function RegisterKYC() {
       </View>
 
       {/* ID Number */}
-      <Text className="text-xs font-medium mb-1.5" style={{ color: TEXT_MUTED }}>
+      <Text className="text-xs font-medium mb-1.5" style={{ color: c.textMuted }}>
         {docType === 'passport' ? 'Passport Number' : 'National ID Number'}
       </Text>
       <TextInput
         className="border rounded-xl p-3 text-sm mb-3"
         style={{
-          borderColor: BORDER_WHITE,
-          color: TEXT,
-          backgroundColor: FROSTED_DARK,
+          borderColor: c.border,
+          color: c.text,
+          backgroundColor: c.surface,
         }}
         value={idNumber}
         onChangeText={setIdNumber}
         placeholder={docType === 'passport' ? 'A12345678' : '12345678'}
         autoCapitalize="characters"
-        placeholderTextColor={TEXT_MUTED}
+        placeholderTextColor={c.textMuted}
       />
 
       {/* Date of Birth */}
-      <Text className="text-xs font-medium mb-1.5" style={{ color: TEXT_MUTED }}>
+      <Text className="text-xs font-medium mb-1.5" style={{ color: c.textMuted }}>
         Date of Birth (YYYY-MM-DD)
       </Text>
       <TextInput
         className="border rounded-xl p-3 text-sm mb-4"
         style={{
-          borderColor: BORDER_WHITE,
-          color: TEXT,
-          backgroundColor: FROSTED_DARK,
+          borderColor: c.border,
+          color: c.text,
+          backgroundColor: c.surface,
         }}
         value={dob}
         onChangeText={setDob}
         placeholder="1990-01-01"
-        placeholderTextColor={TEXT_MUTED}
+        placeholderTextColor={c.textMuted}
       />
 
       {/* Conditional Document Uploads */}
@@ -273,7 +267,7 @@ export default function RegisterKYC() {
       {/* Submit */}
       <TouchableOpacity
         className="rounded-xl py-3.5 items-center"
-        style={{ backgroundColor: VIOLET, opacity: !canContinue ? 0.5 : 1 }}
+        style={{ backgroundColor: c.accent, opacity: !canContinue ? 0.5 : 1 }}
         onPress={handleContinue}
         disabled={!canContinue || loading}
       >
@@ -298,15 +292,16 @@ function KycUploadButton({
   document: PickedDocument | null,
   onUpload: () => void
 }) {
+  const { colors: c } = useTheme()
   if (document) {
     return (
-      <View className="flex-row items-center gap-3 rounded-xl p-3 mb-2.5" style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)', borderWidth: 1, borderColor: MINT }}>
-        <View className="w-5 h-5 rounded-full items-center justify-center" style={{ backgroundColor: MINT }}>
+      <View className="flex-row items-center gap-3 rounded-xl p-3 mb-2.5" style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)', borderWidth: 1, borderColor: c.success }}>
+        <View className="w-5 h-5 rounded-full items-center justify-center" style={{ backgroundColor: c.success }}>
           <Icon name="check" size={12} color="#fff" />
         </View>
         <View>
-          <Text className="text-xs font-semibold" style={{ color: MINT }}>{label}</Text>
-          <Text className="text-xs" style={{ color: TEXT_MUTED }}>Ready to upload securely</Text>
+          <Text className="text-xs font-semibold" style={{ color: c.success }}>{label}</Text>
+          <Text className="text-xs" style={{ color: c.textMuted }}>Ready to upload securely</Text>
         </View>
         <TouchableOpacity onPress={onUpload} className="ml-auto">
           <Text className="text-[10px] text-violet-400 font-bold uppercase">Change</Text>
@@ -318,14 +313,14 @@ function KycUploadButton({
   return (
     <TouchableOpacity
       className="border-2 border-dashed rounded-xl p-4 items-center mb-3"
-      style={{ borderColor: BORDER_WHITE, backgroundColor: FROSTED_DARK }}
+      style={{ borderColor: c.border, backgroundColor: c.surface }}
       onPress={onUpload}
     >
-      <View className="w-8 h-8 rounded-xl items-center justify-center mb-2" style={{ backgroundColor: FROSTED }}>
-        <Icon name="file" size={18} color={TEXT} />
+      <View className="w-8 h-8 rounded-xl items-center justify-center mb-2" style={{ backgroundColor: c.surfaceAlt }}>
+        <Icon name="file" size={18} color={c.text} />
       </View>
-      <Text className="text-xs font-semibold mb-0.5" style={{ color: TEXT }}>{label}</Text>
-      <Text className="text-xs" style={{ color: TEXT_MUTED }}>JPG or PNG · Max 5MB</Text>
+      <Text className="text-xs font-semibold mb-0.5" style={{ color: c.text }}>{label}</Text>
+      <Text className="text-xs" style={{ color: c.textMuted }}>JPG or PNG · Max 5MB</Text>
     </TouchableOpacity>
   )
 }

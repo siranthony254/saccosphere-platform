@@ -10,18 +10,13 @@ import { api } from '@saccosphere/api-client'
 import { useCurrentUser } from '../../store/useAuthStore'
 import { loadRefreshToken } from '../../hooks/useAuth'
 import { Icon } from '../../components/ui/Icon'
+import { useTheme } from '../../theme/ThemeProvider'
 
 const BIOMETRIC_TOKEN_KEY = 'saccosphere_biometric_refresh_token'
 
-const BACKGROUND = '#06091A'
-const FROSTED_DARK = 'rgba(255, 255, 255, 0.06)'
-const BORDER_WHITE = 'rgba(255, 255, 255, 0.1)'
-const TEXT = '#F8FAFC'
-const TEXT_MUTED = 'rgba(248, 250, 252, 0.68)'
-const VIOLET = '#6D28D9'
-const MINT = '#10B981'
 
 export default function SettingsScreen() {
+  const { colors: c } = useTheme()
   const insets = useSafeAreaInsets()
   const user = useCurrentUser()
   const [biometricSupported, setBiometricSupported] = useState(false)
@@ -210,24 +205,24 @@ export default function SettingsScreen() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: BACKGROUND }} edges={['bottom', 'left', 'right']}>
-      <View style={{ paddingTop: insets.top + 12, paddingHorizontal: 16, paddingBottom: 12, borderBottomWidth: 0.5, borderBottomColor: BORDER_WHITE }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: c.bg }} edges={['bottom', 'left', 'right']}>
+      <View style={{ paddingTop: insets.top + 12, paddingHorizontal: 16, paddingBottom: 12, borderBottomWidth: 0.5, borderBottomColor: c.border }}>
         <TouchableOpacity onPress={() => router.back()} style={{ marginBottom: 12 }}>
-          <Text style={{ color: VIOLET, fontSize: 12, fontWeight: '600' }}>← Back</Text>
+          <Text style={{ color: c.accent, fontSize: 12, fontWeight: '600' }}>← Back</Text>
         </TouchableOpacity>
-        <Text style={{ color: TEXT, fontSize: 20, fontWeight: '700' }}>Security & Settings</Text>
+        <Text style={{ color: c.text, fontSize: 20, fontWeight: '700' }}>Security & Settings</Text>
       </View>
 
       <View style={{ padding: 16 }}>
         {/* Biometrics */}
-        <View style={{ backgroundColor: FROSTED_DARK, borderRadius: 12, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: BORDER_WHITE }}>
+        <View style={{ backgroundColor: c.surface, borderRadius: 12, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: c.border }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
             <View style={{ flex: 1, paddingRight: 16 }}>
-              <Text style={{ color: TEXT, fontSize: 14, fontWeight: '600', marginBottom: 4 }}>Biometric Login</Text>
-              <Text style={{ color: TEXT_MUTED, fontSize: 12 }}>Use FaceID or Fingerprint to log in securely without entering your password.</Text>
+              <Text style={{ color: c.text, fontSize: 14, fontWeight: '600', marginBottom: 4 }}>Biometric Login</Text>
+              <Text style={{ color: c.textMuted, fontSize: 12 }}>Use FaceID or Fingerprint to log in securely without entering your password.</Text>
             </View>
             <TouchableOpacity 
-              style={{ width: 48, height: 28, borderRadius: 14, backgroundColor: biometricEnabled ? MINT : FROSTED_DARK, borderWidth: 1, borderColor: biometricEnabled ? MINT : BORDER_WHITE, padding: 2, justifyContent: 'center' }}
+              style={{ width: 48, height: 28, borderRadius: 14, backgroundColor: biometricEnabled ? c.success : c.surface, borderWidth: 1, borderColor: biometricEnabled ? c.success : c.border, padding: 2, justifyContent: 'center' }}
               onPress={toggleBiometric}
               disabled={loadingBiometrics}
             >
@@ -238,58 +233,58 @@ export default function SettingsScreen() {
 
         {/* Change Password */}
         <TouchableOpacity 
-          style={{ backgroundColor: FROSTED_DARK, borderRadius: 12, padding: 16, borderWidth: 1, borderColor: BORDER_WHITE, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}
+          style={{ backgroundColor: c.surface, borderRadius: 12, padding: 16, borderWidth: 1, borderColor: c.border, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}
           onPress={() => setPasswordModalVisible(true)}
         >
           <View>
-            <Text style={{ color: TEXT, fontSize: 14, fontWeight: '600', marginBottom: 4 }}>Change Password</Text>
-            <Text style={{ color: TEXT_MUTED, fontSize: 12 }}>Update your account password securely.</Text>
+            <Text style={{ color: c.text, fontSize: 14, fontWeight: '600', marginBottom: 4 }}>Change Password</Text>
+            <Text style={{ color: c.textMuted, fontSize: 12 }}>Update your account password securely.</Text>
           </View>
-          <Text style={{ color: TEXT_MUTED, fontSize: 18 }}>{'>'}</Text>
+          <Text style={{ color: c.textMuted, fontSize: 18 }}>{'>'}</Text>
         </TouchableOpacity>
 
         {/* Upload KYC */}
         <TouchableOpacity
-          style={{ backgroundColor: FROSTED_DARK, borderRadius: 12, padding: 16, borderWidth: 1, borderColor: BORDER_WHITE, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}
+          style={{ backgroundColor: c.surface, borderRadius: 12, padding: 16, borderWidth: 1, borderColor: c.border, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}
           onPress={() => setKycModalVisible(true)}
         >
           <View>
-            <Text style={{ color: TEXT, fontSize: 14, fontWeight: '600', marginBottom: 4 }}>Upload KYC</Text>
-            <Text style={{ color: TEXT_MUTED, fontSize: 12 }}>Upload ID or documents for account verification.</Text>
+            <Text style={{ color: c.text, fontSize: 14, fontWeight: '600', marginBottom: 4 }}>Upload KYC</Text>
+            <Text style={{ color: c.textMuted, fontSize: 12 }}>Upload ID or documents for account verification.</Text>
           </View>
-          <Text style={{ color: TEXT_MUTED, fontSize: 18 }}>{'>'}</Text>
+          <Text style={{ color: c.textMuted, fontSize: 18 }}>{'>'}</Text>
         </TouchableOpacity>
 
         {/* Privacy & Data */}
         <TouchableOpacity
-          style={{ backgroundColor: FROSTED_DARK, borderRadius: 12, padding: 16, borderWidth: 1, borderColor: BORDER_WHITE, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}
+          style={{ backgroundColor: c.surface, borderRadius: 12, padding: 16, borderWidth: 1, borderColor: c.border, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}
           onPress={() => router.push('/(member)/privacy')}
         >
           <View>
-            <Text style={{ color: TEXT, fontSize: 14, fontWeight: '600', marginBottom: 4 }}>Privacy & Data</Text>
-            <Text style={{ color: TEXT_MUTED, fontSize: 12 }}>Manage consents, connect Google, export or delete your data.</Text>
+            <Text style={{ color: c.text, fontSize: 14, fontWeight: '600', marginBottom: 4 }}>Privacy & Data</Text>
+            <Text style={{ color: c.textMuted, fontSize: 12 }}>Manage consents, connect Google, export or delete your data.</Text>
           </View>
-          <Text style={{ color: TEXT_MUTED, fontSize: 18 }}>{'>'}</Text>
+          <Text style={{ color: c.textMuted, fontSize: 18 }}>{'>'}</Text>
         </TouchableOpacity>
 
         {/* Trusted Registered Devices */}
-        <View style={{ backgroundColor: FROSTED_DARK, borderRadius: 12, padding: 16, borderWidth: 1, borderColor: BORDER_WHITE }}>
+        <View style={{ backgroundColor: c.surface, borderRadius: 12, padding: 16, borderWidth: 1, borderColor: c.border }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
             <View>
-              <Text style={{ color: TEXT, fontSize: 14, fontWeight: '600' }}>Trusted Devices</Text>
-              <Text style={{ color: TEXT_MUTED, fontSize: 12 }}>Manage devices with biometric/trusted access.</Text>
+              <Text style={{ color: c.text, fontSize: 14, fontWeight: '600' }}>Trusted Devices</Text>
+              <Text style={{ color: c.textMuted, fontSize: 12 }}>Manage devices with biometric/trusted access.</Text>
             </View>
-            {loadingDevices && <ActivityIndicator color={MINT} size="small" />}
+            {loadingDevices && <ActivityIndicator color={c.success} size="small" />}
           </View>
 
           {devices.length === 0 && !loadingDevices ? (
-            <Text style={{ color: TEXT_MUTED, fontSize: 12, fontStyle: 'italic' }}>No registered trusted devices found.</Text>
+            <Text style={{ color: c.textMuted, fontSize: 12, fontStyle: 'italic' }}>No registered trusted devices found.</Text>
           ) : (
             devices.map((d: any) => (
-              <View key={d.device_id || d.id} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 10, borderTopWidth: 0.5, borderTopColor: BORDER_WHITE }}>
+              <View key={d.device_id || d.id} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 10, borderTopWidth: 0.5, borderTopColor: c.border }}>
                 <View style={{ flex: 1, paddingRight: 8 }}>
-                  <Text style={{ color: TEXT, fontSize: 12, fontWeight: '600' }}>{d.device_name || d.device_id || 'Device'}</Text>
-                  <Text style={{ color: TEXT_MUTED, fontSize: 10 }}>Platform: {d.platform || 'Mobile'} · Biometric: {d.biometric_enabled ? 'Yes' : 'No'}</Text>
+                  <Text style={{ color: c.text, fontSize: 12, fontWeight: '600' }}>{d.device_name || d.device_id || 'Device'}</Text>
+                  <Text style={{ color: c.textMuted, fontSize: 10 }}>Platform: {d.platform || 'Mobile'} · Biometric: {d.biometric_enabled ? 'Yes' : 'No'}</Text>
                 </View>
                 <TouchableOpacity
                   style={{ backgroundColor: 'rgba(239, 68, 68, 0.2)', borderWidth: 1, borderColor: 'rgba(239, 68, 68, 0.4)', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4 }}
@@ -309,37 +304,37 @@ export default function SettingsScreen() {
           style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.5)' }}
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
-          <View style={{ backgroundColor: '#0F172A', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, borderTopWidth: 1, borderColor: BORDER_WHITE }}>
-            <View style={{ width: 36, height: 4, backgroundColor: BORDER_WHITE, borderRadius: 2, alignSelf: 'center', marginBottom: 20 }} />
-            <Text style={{ color: TEXT, fontSize: 18, fontWeight: '700', marginBottom: 16 }}>Change Password</Text>
+          <View style={{ backgroundColor: '#0F172A', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, borderTopWidth: 1, borderColor: c.border }}>
+            <View style={{ width: 36, height: 4, backgroundColor: c.border, borderRadius: 2, alignSelf: 'center', marginBottom: 20 }} />
+            <Text style={{ color: c.text, fontSize: 18, fontWeight: '700', marginBottom: 16 }}>Change Password</Text>
 
             <TextInput
-              style={{ borderWidth: 1, borderColor: BORDER_WHITE, borderRadius: 12, padding: 12, fontSize: 14, marginBottom: 12, color: TEXT, backgroundColor: FROSTED_DARK }}
+              style={{ borderWidth: 1, borderColor: c.border, borderRadius: 12, padding: 12, fontSize: 14, marginBottom: 12, color: c.text, backgroundColor: c.surface }}
               placeholder="Current Password"
-              placeholderTextColor={TEXT_MUTED}
+              placeholderTextColor={c.textMuted}
               secureTextEntry
               value={oldPassword}
               onChangeText={setOldPassword}
             />
             <TextInput
-              style={{ borderWidth: 1, borderColor: BORDER_WHITE, borderRadius: 12, padding: 12, fontSize: 14, marginBottom: 12, color: TEXT, backgroundColor: FROSTED_DARK }}
+              style={{ borderWidth: 1, borderColor: c.border, borderRadius: 12, padding: 12, fontSize: 14, marginBottom: 12, color: c.text, backgroundColor: c.surface }}
               placeholder="New Password"
-              placeholderTextColor={TEXT_MUTED}
+              placeholderTextColor={c.textMuted}
               secureTextEntry
               value={newPassword}
               onChangeText={setNewPassword}
             />
             <TextInput
-              style={{ borderWidth: 1, borderColor: BORDER_WHITE, borderRadius: 12, padding: 12, fontSize: 14, marginBottom: 24, color: TEXT, backgroundColor: FROSTED_DARK }}
+              style={{ borderWidth: 1, borderColor: c.border, borderRadius: 12, padding: 12, fontSize: 14, marginBottom: 24, color: c.text, backgroundColor: c.surface }}
               placeholder="Confirm New Password"
-              placeholderTextColor={TEXT_MUTED}
+              placeholderTextColor={c.textMuted}
               secureTextEntry
               value={confirmPassword}
               onChangeText={setConfirmPassword}
             />
 
             <TouchableOpacity
-              style={{ backgroundColor: VIOLET, borderRadius: 12, padding: 16, alignItems: 'center', marginBottom: 12 }}
+              style={{ backgroundColor: c.accent, borderRadius: 12, padding: 16, alignItems: 'center', marginBottom: 12 }}
               onPress={handleChangePassword}
               disabled={changingPassword || !oldPassword || !newPassword || !confirmPassword}
             >
@@ -347,7 +342,7 @@ export default function SettingsScreen() {
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={{ borderWidth: 1, borderColor: BORDER_WHITE, borderRadius: 12, padding: 16, alignItems: 'center' }}
+              style={{ borderWidth: 1, borderColor: c.border, borderRadius: 12, padding: 16, alignItems: 'center' }}
               onPress={() => {
                 setPasswordModalVisible(false)
                 setOldPassword('')
@@ -355,7 +350,7 @@ export default function SettingsScreen() {
                 setConfirmPassword('')
               }}
             >
-              <Text style={{ color: TEXT, fontSize: 14, fontWeight: '600' }}>Cancel</Text>
+              <Text style={{ color: c.text, fontSize: 14, fontWeight: '600' }}>Cancel</Text>
             </TouchableOpacity>
           </View>
         </KeyboardAvoidingView>
@@ -364,10 +359,10 @@ export default function SettingsScreen() {
       {/* Upload KYC Modal */}
       <Modal visible={kycModalVisible} transparent animationType="slide">
         <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.5)' }}>
-          <View style={{ backgroundColor: '#0F172A', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, borderTopWidth: 1, borderColor: BORDER_WHITE }}>
-            <View style={{ width: 36, height: 4, backgroundColor: BORDER_WHITE, borderRadius: 2, alignSelf: 'center', marginBottom: 20 }} />
-            <Text style={{ color: TEXT, fontSize: 18, fontWeight: '700', marginBottom: 8 }}>Upload KYC Document</Text>
-            <Text style={{ color: TEXT_MUTED, fontSize: 12, marginBottom: 24 }}>Select a document type to upload for verification.</Text>
+          <View style={{ backgroundColor: '#0F172A', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, borderTopWidth: 1, borderColor: c.border }}>
+            <View style={{ width: 36, height: 4, backgroundColor: c.border, borderRadius: 2, alignSelf: 'center', marginBottom: 20 }} />
+            <Text style={{ color: c.text, fontSize: 18, fontWeight: '700', marginBottom: 8 }}>Upload KYC Document</Text>
+            <Text style={{ color: c.textMuted, fontSize: 12, marginBottom: 24 }}>Select a document type to upload for verification.</Text>
 
             {kycImage ? (
               <View style={{ alignItems: 'center', marginBottom: 24 }}>
@@ -379,24 +374,24 @@ export default function SettingsScreen() {
             ) : (
               <View style={{ flexDirection: 'row', gap: 12, marginBottom: 24 }}>
                 <TouchableOpacity
-                  style={{ flex: 1, backgroundColor: FROSTED_DARK, borderRadius: 16, padding: 20, alignItems: 'center', borderWidth: 1, borderColor: BORDER_WHITE }}
+                  style={{ flex: 1, backgroundColor: c.surface, borderRadius: 16, padding: 20, alignItems: 'center', borderWidth: 1, borderColor: c.border }}
                   onPress={() => pickImage(true)}
                 >
                   <Icon name="camera" size={24} color="#6D28D9" style={{ marginBottom: 8 }} />
-                  <Text style={{ color: TEXT, fontSize: 12, fontWeight: '600' }}>Take Photo</Text>
+                  <Text style={{ color: c.text, fontSize: 12, fontWeight: '600' }}>Take Photo</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={{ flex: 1, backgroundColor: FROSTED_DARK, borderRadius: 16, padding: 20, alignItems: 'center', borderWidth: 1, borderColor: BORDER_WHITE }}
+                  style={{ flex: 1, backgroundColor: c.surface, borderRadius: 16, padding: 20, alignItems: 'center', borderWidth: 1, borderColor: c.border }}
                   onPress={() => pickImage(false)}
                 >
                   <Icon name="folder" size={24} color="#6D28D9" style={{ marginBottom: 8 }} />
-                  <Text style={{ color: TEXT, fontSize: 12, fontWeight: '600' }}>Choose File</Text>
+                  <Text style={{ color: c.text, fontSize: 12, fontWeight: '600' }}>Choose File</Text>
                 </TouchableOpacity>
               </View>
             )}
 
             <TouchableOpacity
-              style={{ backgroundColor: kycImage ? VIOLET : 'rgba(109, 40, 217, 0.3)', borderRadius: 12, padding: 16, alignItems: 'center', marginBottom: 12 }}
+              style={{ backgroundColor: kycImage ? c.accent : 'rgba(109, 40, 217, 0.3)', borderRadius: 12, padding: 16, alignItems: 'center', marginBottom: 12 }}
               onPress={handleUploadKyc}
               disabled={uploadingKyc || !kycImage}
             >
@@ -404,13 +399,13 @@ export default function SettingsScreen() {
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={{ borderWidth: 1, borderColor: BORDER_WHITE, borderRadius: 12, padding: 16, alignItems: 'center' }}
+              style={{ borderWidth: 1, borderColor: c.border, borderRadius: 12, padding: 16, alignItems: 'center' }}
               onPress={() => {
                 setKycModalVisible(false)
                 setKycImage(null)
               }}
             >
-              <Text style={{ color: TEXT, fontSize: 14, fontWeight: '600' }}>Cancel</Text>
+              <Text style={{ color: c.text, fontSize: 14, fontWeight: '600' }}>Cancel</Text>
             </TouchableOpacity>
           </View>
         </View>

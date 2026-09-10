@@ -2,9 +2,8 @@ import { View, Text, TouchableOpacity, ScrollView } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { DeepSpaceBackground } from '../DeepSpaceBackground'
 import { Icon } from '../ui/Icon'
+import { useTheme } from '../../theme/ThemeProvider'
 
-const BRAND_VIOLET = '#6D28D9'
-const BRAND_MINT = '#10B981'
 
 interface PaymentMethodSelectorProps {
   title: string
@@ -33,6 +32,7 @@ export default function PaymentMethodSelector({
   onSelectBank,
   onCancel,
 }: PaymentMethodSelectorProps) {
+  const { colors: c } = useTheme()
   const insets = useSafeAreaInsets()
 
   return (
@@ -85,7 +85,7 @@ export default function PaymentMethodSelector({
                   width: 44,
                   height: 44,
                   borderRadius: 12,
-                  backgroundColor: BRAND_VIOLET,
+                  backgroundColor: c.accent,
                   alignItems: 'center',
                   justifyContent: 'center',
                 }}
@@ -96,7 +96,7 @@ export default function PaymentMethodSelector({
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={{ fontSize: 14, fontWeight: '700', color: '#fff' }}>{saccoName}</Text>
-                <Text style={{ fontSize: 12, color: BRAND_MINT, fontWeight: '700', marginTop: 2 }}>
+                <Text style={{ fontSize: 12, color: c.success, fontWeight: '700', marginTop: 2 }}>
                   {amount ? `KES ${Number(amount).toLocaleString()}` : '—'}
                 </Text>
               </View>
@@ -154,7 +154,7 @@ export default function PaymentMethodSelector({
               </Text>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8 }}>
                 <View style={{ backgroundColor: 'rgba(16, 185, 129, 0.2)', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 }}>
-                  <Text style={{ fontSize: 9, color: BRAND_MINT, fontWeight: '800', textTransform: 'uppercase' }}>
+                  <Text style={{ fontSize: 9, color: c.success, fontWeight: '800', textTransform: 'uppercase' }}>
                     {mpesaDisabled ? 'Unavailable' : 'Instant'}
                   </Text>
                 </View>

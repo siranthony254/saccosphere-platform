@@ -19,6 +19,7 @@ import { usePublicStats } from '../hooks/usePublicStats'
 import { useMemberships } from '../hooks/useMembership'
 import { api } from '@saccosphere/api-client'
 import { Icon } from '../components/ui/Icon'
+import { useTheme } from '../theme/ThemeProvider'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 const PADDING_H = Math.max(16, Math.min(24, SCREEN_WIDTH * 0.05))
@@ -35,16 +36,7 @@ const CARD_SUBTITLE_SIZE = Math.max(12, Math.min(16, CARD_REF_WIDTH * 0.085))
 const TRUST_STRIP_OVERFLOW = 18
 
 // ─── Brand palette ────────────────────────────────────────────────────
-const BACKGROUND = '#06091A'
-const FROSTED = 'rgba(255, 255, 255, 0.08)'
-const FROSTED_DARK = 'rgba(255, 255, 255, 0.06)'
-const BORDER_WHITE = 'rgba(255, 255, 255, 0.1)'
 const TOP_BAR_SURFACE = 'rgba(8, 12, 28, 0.96)'
-const TEXT = '#F8FAFC'
-const TEXT_MUTED = 'rgba(248, 250, 252, 0.68)'
-const VIOLET = '#6D28D9'
-const VIOLET_LIGHT = '#EDE9FE'
-const MINT = '#10B981'
 const MINT_LIGHT = '#E6F7F1'
 const MINT_50 = '#F0FAF6'
 const SURFACE = '#FFFFFF'
@@ -58,6 +50,7 @@ const BORDER = 'rgba(0,0,0,0.07)'
 const BORDER_MID = 'rgba(0,0,0,0.13)'
 
 export default function LandingScreen() {
+  const { colors: c } = useTheme()
   const insets = useSafeAreaInsets()
   const { data: stats } = usePublicStats()
   const [lookupVisible, setLookupVisible] = useState(false)
@@ -68,7 +61,7 @@ export default function LandingScreen() {
   return (
     <>
       <StatusBar style="light" translucent />
-      <View style={{ flex: 1, backgroundColor: BACKGROUND }}>
+      <View style={{ flex: 1, backgroundColor: c.bg }}>
         <View
           style={StyleSheet.absoluteFillObject}
         />
@@ -149,13 +142,13 @@ export default function LandingScreen() {
           <View className="flex-row items-center gap-2">
             <View
               className="w-8 h-8 rounded-lg items-center justify-center"
-              style={{ backgroundColor: VIOLET }}
+              style={{ backgroundColor: c.accent }}
             >
               <Text className="text-white font-bold text-xs">S</Text>
             </View>
             <Text
               className="font-bold text-lg"
-              style={{ color: TEXT, fontFamily: 'Fraunces_700Bold' }}
+              style={{ color: c.text, fontFamily: 'Fraunces_700Bold' }}
             >
               Saccosphere
             </Text>
@@ -182,9 +175,9 @@ export default function LandingScreen() {
             className="pt-10 items-center w-full"
             style={{
               width: '100%',
-              backgroundColor: FROSTED,
+              backgroundColor: c.surfaceAlt,
               borderWidth: 1,
-              borderColor: BORDER_WHITE,
+              borderColor: c.border,
               borderRadius: 28,
               paddingHorizontal: 24,
               paddingVertical: 24,
@@ -200,7 +193,7 @@ export default function LandingScreen() {
                   borderColor: 'rgba(255,255,255,0.14)',
                 }}
               >
-                <Text className="text-xs font-semibold" style={{ color: TEXT }}>
+                <Text className="text-xs font-semibold" style={{ color: c.text }}>
                   SASRA regulated · CBK licensed
                 </Text>
               </View>
@@ -208,17 +201,17 @@ export default function LandingScreen() {
               {/* Hero heading */}
               <Text
                 className="text-center mb-3"
-                style={{ color: TEXT, fontSize: 28, fontWeight: '800', lineHeight: 38 }}
+                style={{ color: c.text, fontSize: 28, fontWeight: '800', lineHeight: 38 }}
               >
                 The Future of{' '}
-                <Text style={{ color: VIOLET }}>SACCOs</Text>
+                <Text style={{ color: c.accent }}>SACCOs</Text>
               </Text>
 
               {/* CTA buttons */}
               <View className="flex-row gap-2.5 justify-center w-full">
                 <TouchableOpacity
                   className="flex-1 py-3 px-5 rounded-xl items-center"
-                  style={{ backgroundColor: VIOLET }}
+                  style={{ backgroundColor: c.accent }}
                   onPress={() => router.push('/(auth)/register')}
                 >
                   <Text className="text-white text-xs font-semibold">Create account</Text>
@@ -232,7 +225,7 @@ export default function LandingScreen() {
                   }}
                   onPress={() => router.push('/(auth)/login')}
                 >
-                  <Text className="text-xs font-semibold" style={{ color: TEXT }}>
+                  <Text className="text-xs font-semibold" style={{ color: c.text }}>
                     Log in
                   </Text>
                 </TouchableOpacity>
@@ -249,10 +242,10 @@ export default function LandingScreen() {
                 }}
                 onPress={() => setLookupVisible(true)}
               >
-                <Text className="text-xs font-semibold" style={{ color: TEXT }}>
+                <Text className="text-xs font-semibold" style={{ color: c.text }}>
                   Link my existing SACCOs
                 </Text>
-                <Text className="text-xs mt-1" style={{ color: TEXT_MUTED }}>
+                <Text className="text-xs mt-1" style={{ color: c.textMuted }}>
                   Already a member? Sync your data in one tap
                 </Text>
               </TouchableOpacity>
@@ -262,7 +255,7 @@ export default function LandingScreen() {
             <View className="py-2 w-full">
               <Text
                 className="text-xs font-semibold text-center mb-4 tracking-widest uppercase"
-                style={{ color: TEXT_MUTED }}
+                style={{ color: c.textMuted }}
               >
                 Everything in one dashboard
               </Text>
@@ -278,7 +271,7 @@ export default function LandingScreen() {
               >
                 <FeatureCard
                   icon="B"
-                  color={MINT}
+                  color={c.success}
                   title="Unified balances"
                   subtitle="All SACCO savings in one view"
                 />
@@ -296,7 +289,7 @@ export default function LandingScreen() {
                 />
                 <FeatureCard
                   icon="S"
-                  color={VIOLET}
+                  color={c.accent}
                   title={`${totalSaccos} SACCOs`}
                   subtitle="Browse & apply to new ones"
                 />
@@ -323,7 +316,7 @@ export default function LandingScreen() {
             backgroundColor: 'rgba(255,255,255,0.06)',
             borderRadius: 0,
             borderWidth: 1,
-            borderColor: BORDER_WHITE,
+            borderColor: c.border,
             paddingVertical: 28,
             paddingHorizontal: 28,
             paddingBottom: 28 + insets.bottom,
@@ -382,6 +375,7 @@ function LinkExistingMembershipModal({
   onClose: () => void
   onSuccess: () => void
 }) {
+  const { colors: c } = useTheme()
   const [step, setStep] = useState<'search' | 'results'>('search')
   const [idNumber, setIdNumber] = useState('')
   const [phone, setPhone] = useState('')
@@ -463,72 +457,72 @@ function LinkExistingMembershipModal({
       <View className="flex-1 justify-end" style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)' }}>
         <View
           className="rounded-t-3xl p-5"
-          style={{ backgroundColor: 'rgba(15, 23, 42, 0.95)', maxHeight: '85%', borderTopWidth: 1, borderTopColor: BORDER_WHITE }}
+          style={{ backgroundColor: 'rgba(15, 23, 42, 0.95)', maxHeight: '85%', borderTopWidth: 1, borderTopColor: c.border }}
         >
           {/* Handle */}
           <View
             className="w-9 h-1 rounded-full mx-auto mb-4"
-            style={{ backgroundColor: BORDER_WHITE }}
+            style={{ backgroundColor: c.border }}
           />
 
           {step === 'search' ? (
             <>
-              <Text className="text-lg font-bold mb-1.5" style={{ color: TEXT }}>
+              <Text className="text-lg font-bold mb-1.5" style={{ color: c.text }}>
                 Link your SACCOs
               </Text>
-              <Text className="text-xs mb-5" style={{ color: TEXT_MUTED, lineHeight: 18 }}>
+              <Text className="text-xs mb-5" style={{ color: c.textMuted, lineHeight: 18 }}>
                 Enter your National ID number or M-Pesa phone number to check if you already
                 have existing SACCO memberships. We'll sync them to your dashboard.
               </Text>
 
               {/* ID Number */}
-              <Text className="text-xs font-medium mb-1" style={{ color: TEXT_MUTED }}>
+              <Text className="text-xs font-medium mb-1" style={{ color: c.textMuted }}>
                 National ID number
               </Text>
               <TextInput
                 className="border rounded-xl p-3 text-sm mb-3"
                 style={{
-                  borderColor: BORDER_WHITE,
-                  color: TEXT,
-                  backgroundColor: FROSTED_DARK,
+                  borderColor: c.border,
+                  color: c.text,
+                  backgroundColor: c.surface,
                 }}
                 value={idNumber}
                 onChangeText={setIdNumber}
                 placeholder="e.g. 28473910"
                 keyboardType="number-pad"
-                placeholderTextColor={TEXT_MUTED}
+                placeholderTextColor={c.textMuted}
               />
 
               <View className="flex-row items-center gap-3 mb-3">
-                <View className="flex-1 h-px" style={{ backgroundColor: BORDER_WHITE }} />
-                <Text className="text-xs" style={{ color: TEXT_MUTED }}>
+                <View className="flex-1 h-px" style={{ backgroundColor: c.border }} />
+                <Text className="text-xs" style={{ color: c.textMuted }}>
                   or
                 </Text>
-                <View className="flex-1 h-px" style={{ backgroundColor: BORDER_WHITE }} />
+                <View className="flex-1 h-px" style={{ backgroundColor: c.border }} />
               </View>
 
               {/* Phone */}
-              <Text className="text-xs font-medium mb-1" style={{ color: TEXT_MUTED }}>
+              <Text className="text-xs font-medium mb-1" style={{ color: c.textMuted }}>
                 Phone number (M-Pesa)
               </Text>
               <TextInput
                 className="border rounded-xl p-3 text-sm mb-5"
                 style={{
-                  borderColor: BORDER_WHITE,
-                  color: TEXT,
-                  backgroundColor: FROSTED_DARK,
+                  borderColor: c.border,
+                  color: c.text,
+                  backgroundColor: c.surface,
                 }}
                 value={phone}
                 onChangeText={setPhone}
                 placeholder="e.g. 0712345678"
                 keyboardType="phone-pad"
-                placeholderTextColor={TEXT_MUTED}
+                placeholderTextColor={c.textMuted}
               />
 
               <TouchableOpacity
                 className="py-3.5 rounded-xl items-center mb-3"
                 style={{
-                  backgroundColor: VIOLET,
+                  backgroundColor: c.accent,
                   opacity: loading ? 0.6 : 1,
                 }}
                 onPress={handleLookup}
@@ -545,22 +539,22 @@ function LinkExistingMembershipModal({
 
               <TouchableOpacity
                 className="py-2.5 rounded-xl items-center"
-                style={{ borderWidth: 1, borderColor: BORDER_WHITE, backgroundColor: FROSTED_DARK }}
+                style={{ borderWidth: 1, borderColor: c.border, backgroundColor: c.surface }}
                 onPress={onClose}
               >
-                <Text className="text-xs font-semibold" style={{ color: TEXT }}>
+                <Text className="text-xs font-semibold" style={{ color: c.text }}>
                   Skip for now
                 </Text>
               </TouchableOpacity>
             </>
           ) : (
             <>
-              <Text className="text-lg font-bold mb-1.5" style={{ color: TEXT }}>
+              <Text className="text-lg font-bold mb-1.5" style={{ color: c.text }}>
                 {results.length > 0
                   ? `Found ${results.length} SACCO${results.length > 1 ? 's' : ''}`
                   : 'No SACCOs found'}
               </Text>
-              <Text className="text-xs mb-4" style={{ color: TEXT_MUTED, lineHeight: 18 }}>
+              <Text className="text-xs mb-4" style={{ color: c.textMuted, lineHeight: 18 }}>
                 {results.length > 0
                   ? 'These SACCO memberships match your details. Confirm to sync data to your dashboard.'
                   : 'No existing SACCO memberships were found for your ID or phone number. You can create an account and join a SACCO from the directory.'}
@@ -573,34 +567,34 @@ function LinkExistingMembershipModal({
                     key={item.sacco_slug}
                     className="flex-row items-center p-3.5 rounded-xl mb-2"
                     style={{
-                      backgroundColor: isConfirmed ? 'rgba(16, 185, 129, 0.15)' : FROSTED_DARK,
+                      backgroundColor: isConfirmed ? 'rgba(16, 185, 129, 0.15)' : c.surface,
                       borderWidth: 1.5,
-                      borderColor: isConfirmed ? MINT : BORDER_WHITE,
+                      borderColor: isConfirmed ? c.success : c.border,
                     }}
                     onPress={() => toggleConfirm(item.sacco_slug)}
                   >
                     <View
                       className="w-10 h-10 rounded-xl items-center justify-center mr-3"
-                      style={{ backgroundColor: item.sacco_color || VIOLET }}
+                      style={{ backgroundColor: item.sacco_color || c.accent }}
                     >
                       <Text className="text-white text-xs font-bold">
                         {item.sacco_initials || initials(item.sacco_name)}
                       </Text>
                     </View>
                     <View className="flex-1">
-                      <Text className="text-xs font-semibold" style={{ color: TEXT }}>
+                      <Text className="text-xs font-semibold" style={{ color: c.text }}>
                         {item.sacco_name}
                       </Text>
-                      <Text className="text-xs mt-0.5" style={{ color: TEXT_MUTED }}>
+                      <Text className="text-xs mt-0.5" style={{ color: c.textMuted }}>
                         {item.member_name} · {item.member_number}
                       </Text>
                     </View>
                     <View
                       className="w-5 h-5 rounded-full items-center justify-center"
                       style={{
-                        backgroundColor: isConfirmed ? MINT : 'transparent',
+                        backgroundColor: isConfirmed ? c.success : 'transparent',
                         borderWidth: isConfirmed ? 0 : 2,
-                        borderColor: BORDER_WHITE,
+                        borderColor: c.border,
                       }}
                     >
                       {isConfirmed && (
@@ -616,7 +610,7 @@ function LinkExistingMembershipModal({
                   <TouchableOpacity
                     className="py-3.5 rounded-xl items-center mt-2 mb-2"
                     style={{
-                      backgroundColor: VIOLET,
+                      backgroundColor: c.accent,
                       opacity: syncing ? 0.6 : 1,
                     }}
                     onPress={handleConfirmAll}
@@ -634,7 +628,7 @@ function LinkExistingMembershipModal({
                   </TouchableOpacity>
                   <Text
                     className="text-xs text-center mt-1 mb-1"
-                    style={{ color: TEXT_MUTED }}
+                    style={{ color: c.textMuted }}
                   >
                     Select the SACCOs you belong to, then sync
                   </Text>
@@ -646,7 +640,7 @@ function LinkExistingMembershipModal({
                 {results.length === 0 && (
                   <TouchableOpacity
                     className="flex-1 py-3 rounded-xl items-center"
-                    style={{ backgroundColor: VIOLET }}
+                    style={{ backgroundColor: c.accent }}
                     onPress={() => {
                       onClose()
                       router.push('/(auth)/register')
@@ -659,13 +653,13 @@ function LinkExistingMembershipModal({
                 )}
                 <TouchableOpacity
                   className="flex-1 py-2.5 rounded-xl items-center"
-                  style={{ borderWidth: 1, borderColor: BORDER_WHITE, backgroundColor: FROSTED_DARK }}
+                  style={{ borderWidth: 1, borderColor: c.border, backgroundColor: c.surface }}
                   onPress={() => {
                     reset()
                     setStep('search')
                   }}
                 >
-                  <Text className="text-xs font-semibold" style={{ color: TEXT }}>
+                  <Text className="text-xs font-semibold" style={{ color: c.text }}>
                     Back to search
                   </Text>
                 </TouchableOpacity>
@@ -705,7 +699,7 @@ async function lookupExistingMemberships(
           sacco_slug: m.sacco_slug,
           member_number: m.member_number || 'Pending',
           member_name: '',
-          sacco_color: m.sacco_color || VIOLET,
+          sacco_color: m.sacco_color || '#6D28D9',
           sacco_initials: m.sacco_initials,
         }))
     )
@@ -744,14 +738,15 @@ function FeatureCard({
   title: string
   subtitle: string
 }) {
+  const { colors: c } = useTheme()
   return (
     <View
       className="rounded-xl p-4 border"
       style={{
         flexBasis: '48%',
         minHeight: CARD_HEIGHT,
-        backgroundColor: FROSTED_DARK,
-        borderColor: BORDER_WHITE,
+        backgroundColor: c.surface,
+        borderColor: c.border,
       }}
     >
       <View
@@ -764,10 +759,10 @@ function FeatureCard({
       >
         <Text style={{ color: '#fff', fontSize: Math.max(14, ICON_SIZE * 0.55), fontWeight: '700' }}>{icon}</Text>
       </View>
-      <Text style={{ color: TEXT, fontSize: CARD_TITLE_SIZE, fontWeight: '600', marginBottom: 6 }}>
+      <Text style={{ color: c.text, fontSize: CARD_TITLE_SIZE, fontWeight: '600', marginBottom: 6 }}>
         {title}
       </Text>
-      <Text style={{ color: TEXT_MUTED, fontSize: CARD_SUBTITLE_SIZE, lineHeight: CARD_SUBTITLE_SIZE * 1.5 }}>
+      <Text style={{ color: c.textMuted, fontSize: CARD_SUBTITLE_SIZE, lineHeight: CARD_SUBTITLE_SIZE * 1.5 }}>
         {subtitle}
       </Text>
     </View>
@@ -775,12 +770,13 @@ function FeatureCard({
 }
 
 function TrustStat({ value, label }: { value: string; label: string }) {
+  const { colors: c } = useTheme()
   return (
     <View className="items-center px-2 py-2 flex-1">
-      <Text className="text-lg font-bold mb-1" style={{ color: TEXT }}>
+      <Text className="text-lg font-bold mb-1" style={{ color: c.text }}>
         {value}
       </Text>
-      <Text className="text-xs" style={{ color: TEXT_MUTED }}>
+      <Text className="text-xs" style={{ color: c.textMuted }}>
         {label}
       </Text>
     </View>

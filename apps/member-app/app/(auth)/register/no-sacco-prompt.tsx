@@ -3,12 +3,11 @@ import { router } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Dimensions } from 'react-native'
 import { Icon } from '../../../components/ui/Icon'
+import { useTheme } from '../../../theme/ThemeProvider'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 const PADDING_H = Math.max(16, Math.min(24, SCREEN_WIDTH * 0.05))
 
-const VIOLET = '#6D28D9'
-const MINT = '#10B981'
 const SURFACE = '#FFFFFF'
 const SURFACE2 = '#F8FAFC'
 const SURFACE3 = '#F1F5F9'
@@ -20,6 +19,7 @@ const BORDER = 'rgba(0,0,0,0.08)'
 const BORDER_MID = 'rgba(0,0,0,0.13)'
 
 export default function NoSaccoPrompt() {
+  const { colors: c } = useTheme()
   const insets = useSafeAreaInsets()
 
   return (
@@ -33,17 +33,17 @@ export default function NoSaccoPrompt() {
       {/* Brand */}
       <Text
         className="text-sm font-bold mb-4"
-        style={{ color: VIOLET, fontFamily: 'Fraunces_700Bold' }}
+        style={{ color: c.accent, fontFamily: 'Fraunces_700Bold' }}
       >
         Saccosphere
       </Text>
 
       {/* Progress Bar */}
       <View className="flex-row gap-1 mb-1.5">
-        <View className="flex-1 h-0.5 rounded" style={{ backgroundColor: VIOLET }} />
-        <View className="flex-1 h-0.5 rounded" style={{ backgroundColor: VIOLET }} />
-        <View className="flex-1 h-0.5 rounded" style={{ backgroundColor: VIOLET }} />
-        <View className="flex-1 h-0.5 rounded" style={{ backgroundColor: VIOLET }} />
+        <View className="flex-1 h-0.5 rounded" style={{ backgroundColor: c.accent }} />
+        <View className="flex-1 h-0.5 rounded" style={{ backgroundColor: c.accent }} />
+        <View className="flex-1 h-0.5 rounded" style={{ backgroundColor: c.accent }} />
+        <View className="flex-1 h-0.5 rounded" style={{ backgroundColor: c.accent }} />
       </View>
       <Text className="text-xs mb-4" style={{ color: INK_FAINT }}>
         Step 4 of 4 — Link your SACCOs
@@ -90,7 +90,7 @@ export default function NoSaccoPrompt() {
         </Text>
         <TouchableOpacity
           className="w-full rounded-xl py-3 items-center mb-2"
-          style={{ backgroundColor: VIOLET }}
+          style={{ backgroundColor: c.accent }}
           onPress={() => router.push('/browse-saccos')}
         >
           <Text className="text-white text-xs font-semibold">
