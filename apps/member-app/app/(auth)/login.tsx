@@ -18,7 +18,8 @@ import { useLogin, useGoogleAuth, saveRefreshToken } from '../../hooks/useAuth'
 import {
   GoogleSignin,
   statusCodes,
-  isGoogleSignInAvailable,
+  isGoogleSignInConfigured,
+  configureGoogleSignIn,
 } from '../../lib/googleAuth'
 import * as SecureStore from 'expo-secure-store'
 import * as LocalAuthentication from 'expo-local-authentication'
@@ -75,11 +76,8 @@ export default function LoginScreen() {
 
   useEffect(() => {
     checkBiometrics()
-    if (!isGoogleSignInAvailable() || !GoogleSignin) return
-    GoogleSignin.configure({
-      webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || '',
-      offlineAccess: true,
-    })
+    // Crash-safe: no-op when the native module or web client ID is missing.
+    configureGoogleSignIn()
   }, [])
 
   const checkBiometrics = async () => {
@@ -136,10 +134,10 @@ export default function LoginScreen() {
   }
 
   const handleGoogleSignIn = async () => {
-    if (!isGoogleSignInAvailable() || !GoogleSignin) {
+    if (!isGoogleSignInConfigured() || !GoogleSignin) {
       Alert.alert(
         'Google Sign-In unavailable',
-        'Google Sign-In requires a custom development build. It does not work in Expo Go.'
+        'Google Sign-In is not configured for this build. Please sign in with your email and password.'
       )
       return
     }

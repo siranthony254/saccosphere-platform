@@ -5,7 +5,7 @@ import { router } from 'expo-router'
 import { api } from '@saccosphere/api-client'
 import { useConsents, useSetConsent, useExportMyData, useRequestDataErasure } from '../../hooks/useConsents'
 import { useLinkGoogle } from '../../hooks/useAuth'
-import { GoogleSignin, isGoogleSignInAvailable } from '../../lib/googleAuth'
+import { GoogleSignin, isGoogleSignInConfigured, configureGoogleSignIn } from '../../lib/googleAuth'
 import { Icon } from '../../components/ui/Icon'
 
 const BACKGROUND = '#06091A'
@@ -67,8 +67,9 @@ export default function PrivacyScreen() {
   }
 
   const handleConnectGoogle = async () => {
-    if (!isGoogleSignInAvailable() || !GoogleSignin) {
-      Alert.alert('Not available', 'Google sign-in needs a development or store build of the app.')
+    configureGoogleSignIn()
+    if (!isGoogleSignInConfigured() || !GoogleSignin) {
+      Alert.alert('Not available', 'Google sign-in is not configured for this build.')
       return
     }
     try {

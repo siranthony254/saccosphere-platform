@@ -12,7 +12,8 @@ import type { ApiError } from '@saccosphere/api-client'
 import {
   GoogleSignin,
   statusCodes,
-  isGoogleSignInAvailable,
+  isGoogleSignInConfigured,
+  configureGoogleSignIn,
 } from '../../../lib/googleAuth'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
@@ -69,19 +70,15 @@ export default function RegisterStep1() {
   const password = watch('password')
 
   useEffect(() => {
-
-    if (!isGoogleSignInAvailable() || !GoogleSignin) return
-    GoogleSignin.configure({
-      webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || '',
-      offlineAccess: true,
-    })
+    // Crash-safe: no-op when the native module or web client ID is missing.
+    configureGoogleSignIn()
   }, [])
 
   const handleGoogleSignUp = async () => {
-    if (!isGoogleSignInAvailable() || !GoogleSignin) {
+    if (!isGoogleSignInConfigured() || !GoogleSignin) {
       Alert.alert(
         'Google Sign-In unavailable',
-        'Google Sign-In requires a custom development build. It does not work in Expo Go.'
+        'Google Sign-In is not configured for this build. Please sign up with your email and password.'
       )
       return
     }

@@ -1,16 +1,24 @@
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Stack } from 'expo-router'
 import { router, usePathname } from 'expo-router'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { StatusBar } from 'expo-status-bar'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
+import * as SplashScreen from 'expo-splash-screen'
 import { api, setAccessToken, clearTokens, onTokenRotated } from '@saccosphere/api-client'
 import { useAuthStore } from '../store/useAuthStore'
 import { clearStoredRefreshToken, loadRefreshToken, saveRefreshToken } from '../hooks/useAuth'
 import { useAutoRegisterDeviceToken } from '../hooks/useNotifications'
 // @ts-ignore: Allow side-effect CSS import without type declarations
 import '../global.css'
+
+// Hold the native splash on screen until auth bootstrap finishes.
+SplashScreen.preventAutoHideAsync().catch(() => {})
+SplashScreen.setOptions?.({ fade: true, duration: 300 })
+
+// Keep the splash visible for at least this long so it doesn't just blink.
+const MIN_SPLASH_MS = 1200
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -25,6 +33,8 @@ export default function RootLayout() {
   const { setAuth, clearAuth, setAuthReady } = useAuthStore()
   const pathname = usePathname()
   const initialPathname = useRef(pathname)
+  const mountedAt = useRef(Date.now())
+  const [bootReady, setBootReady] = useState(false)
 
   useEffect(() => {
     // Persist a rotated refresh token from api-client (works on native + web;
@@ -69,6 +79,8 @@ export default function RootLayout() {
         if (!isAuthPath(startupPathname)) {
           router.replace('/')
         }
+      } finally {
+        setBootReady(true)
       }
     }
 
@@ -78,6 +90,16 @@ export default function RootLayout() {
       onTokenRotated(null)
     }
   }, [clearAuth, setAuth, setAuthReady])
+
+  // Dismiss the splash once auth is settled, but not before MIN_SPLASH_MS.
+  useEffect(() => {
+    if (!bootReady) return
+    const wait = Math.max(0, MIN_SPLASH_MS - (Date.now() - mountedAt.current))
+    const t = setTimeout(() => {
+      SplashScreen.hideAsync().catch(() => {})
+    }, wait)
+    return () => clearTimeout(t)
+  }, [bootReady])
 
   useEffect(() => {
     initialPathname.current = pathname
