@@ -99,9 +99,14 @@ axiosInstance.interceptors.request.use(
     if (_accessToken) {
       config.headers.Authorization = `Bearer ${_accessToken}`
     }
-    if (_saccoId) {
-      config.headers['X-Sacco-ID'] = _saccoId
-    }
+    // NOTE: we intentionally do NOT send an `X-Sacco-ID` header. The deployed
+    // backend's CORS_ALLOW_HEADERS only whitelists `x-request-id`, so any
+    // `x-sacco-id` header makes the browser's CORS preflight fail and blocks
+    // every admin request. The backend's SaccoScopedMixin already falls back
+    // to the caller's own SACCO_ADMIN role's SACCO when no header is present,
+    // which is what the single-SACCO admin apps need. If multi-SACCO
+    // switching is ever required, add `x-sacco-id` to CORS_ALLOW_HEADERS in
+    // the backend and restore the header here.
     config.headers['X-Request-ID'] = generateRequestId()
     return config
   },
