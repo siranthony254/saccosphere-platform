@@ -2,9 +2,10 @@
  * usePreferencesStore
  * Device-local, non-sensitive user preferences that survive app restarts.
  *
- * Persisted through expo-secure-store (already a dependency) so we don't pull
- * in a new native module. The blob is tiny and well under SecureStore's size
- * limit.
+ * Persisted through expo-secure-store on native (already a dependency, no new
+ * native module) and localStorage on web — expo-secure-store has no web
+ * implementation and throws (`setValueWithKeyAsync is not a function`) under
+ * `expo start --web`.
  *
  * `_hydrated` is false until the persisted value has been read back. Consumers
  * that care about privacy (see lib/money.ts) should treat "not hydrated yet"
@@ -12,16 +13,43 @@
  * to hide.
  */
 
+import { Platform } from 'react-native'
 import { create } from 'zustand'
-import { persist, createJSONStorage } from 'zustand/middleware'
+import { persist, createJSONStorage, type StateStorage } from 'zustand/middleware'
 import * as SecureStore from 'expo-secure-store'
 import type { ThemeId } from '../theme/tokens'
 
-const secureStorage = {
-  getItem: (name: string) => SecureStore.getItemAsync(name),
-  setItem: (name: string, value: string) => SecureStore.setItemAsync(name, value),
-  removeItem: (name: string) => SecureStore.deleteItemAsync(name),
+const webStorage: StateStorage = {
+  getItem: (name) => {
+    try {
+      return globalThis.localStorage?.getItem(name) ?? null
+    } catch {
+      return null
+    }
+  },
+  setItem: (name, value) => {
+    try {
+      globalThis.localStorage?.setItem(name, value)
+    } catch {
+      /* private mode / storage disabled */
+    }
+  },
+  removeItem: (name) => {
+    try {
+      globalThis.localStorage?.removeItem(name)
+    } catch {
+      /* ignore */
+    }
+  },
 }
+
+const nativeStorage: StateStorage = {
+  getItem: (name) => SecureStore.getItemAsync(name),
+  setItem: (name, value) => SecureStore.setItemAsync(name, value),
+  removeItem: (name) => SecureStore.deleteItemAsync(name),
+}
+
+const preferencesStorage = Platform.OS === 'web' ? webStorage : nativeStorage
 
 interface PreferencesState {
   /** Mask the member's own balances and amounts across the app. */
@@ -47,7 +75,7 @@ export const usePreferencesStore = create<PreferencesState>()(
     }),
     {
       name: 'saccosphere_preferences',
-      storage: createJSONStorage(() => secureStorage),
+      storage: createJSONStorage(() => preferencesStorage),
       partialize: (state) => ({
         balanceHidden: state.balanceHidden,
         themeId: state.themeId,
