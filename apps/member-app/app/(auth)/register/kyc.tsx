@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Dimensions, Alert, TextInput } from 'react-native'
+import { View, Text, TouchableOpacity, ActivityIndicator, Dimensions, Alert, TextInput } from 'react-native'
 import { router } from 'expo-router'
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { KeyboardAwareScreen } from '../../../components/ui/KeyboardAwareScreen'
 import * as ImagePicker from 'expo-image-picker'
 import { useRegistrationStore } from '../../../store/useRegistrationStore'
 
@@ -127,17 +128,14 @@ export default function RegisterKYC() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: BACKGROUND }} edges={['bottom', 'left', 'right']}>
-      <ScrollView
-        contentContainerStyle={{
-          flexGrow: 1,
-          justifyContent: 'center',
-          paddingHorizontal: PADDING_H,
-          paddingBottom: insets.bottom + 20,
-          paddingTop: insets.top + 20,
-        }}
-        keyboardShouldPersistTaps="handled"
-      >
+    <KeyboardAwareScreen
+      background={BACKGROUND}
+      contentContainerStyle={{
+        paddingHorizontal: PADDING_H,
+        paddingBottom: insets.bottom + 20,
+        paddingTop: insets.top + 20,
+      }}
+    >
       {/* Step progress bar */}
       <View className="flex-row gap-1 mb-1.5">
         {[0, 1, 2, 3].map((i) => (
@@ -285,8 +283,7 @@ export default function RegisterKYC() {
           <Text className="text-white text-xs font-semibold">Continue →</Text>
         )}
       </TouchableOpacity>
-    </ScrollView>
-    </SafeAreaView>
+    </KeyboardAwareScreen>
   )
 }
 

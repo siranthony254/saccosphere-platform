@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { View, Text, TouchableOpacity, Alert, ActivityIndicator, Modal, TextInput, Image, Platform } from 'react-native'
+import { View, Text, TouchableOpacity, Alert, ActivityIndicator, Modal, TextInput, Image, Platform, KeyboardAvoidingView } from 'react-native'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { router } from 'expo-router'
 import * as LocalAuthentication from 'expo-local-authentication'
@@ -305,7 +305,10 @@ export default function SettingsScreen() {
 
       {/* Change Password Modal */}
       <Modal visible={passwordModalVisible} transparent animationType="slide">
-        <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.5)' }}>
+        <KeyboardAvoidingView
+          style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.5)' }}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
           <View style={{ backgroundColor: '#0F172A', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, borderTopWidth: 1, borderColor: BORDER_WHITE }}>
             <View style={{ width: 36, height: 4, backgroundColor: BORDER_WHITE, borderRadius: 2, alignSelf: 'center', marginBottom: 20 }} />
             <Text style={{ color: TEXT, fontSize: 18, fontWeight: '700', marginBottom: 16 }}>Change Password</Text>
@@ -355,7 +358,7 @@ export default function SettingsScreen() {
               <Text style={{ color: TEXT, fontSize: 14, fontWeight: '600' }}>Cancel</Text>
             </TouchableOpacity>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* Upload KYC Modal */}

@@ -3,14 +3,14 @@ import {
   View,
   Text,
   TouchableOpacity,
-  ScrollView,
   TextInput,
   ActivityIndicator,
   Dimensions,
   Alert,
 } from 'react-native'
 import { router } from 'expo-router'
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { KeyboardAwareScreen } from '../../../components/ui/KeyboardAwareScreen'
 import { api } from '@saccosphere/api-client'
 import { useRegistrationStore } from '../../../store/useRegistrationStore'
 import { useSaccos } from '../../../hooks/useSaccos'
@@ -218,17 +218,14 @@ export default function LinkSaccos() {
   const pending = isLinkPending || isRegistering || isGooglePending
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: BACKGROUND }} edges={['bottom', 'left', 'right']}>
-      <ScrollView
-        contentContainerStyle={{
-          flexGrow: 1,
-          justifyContent: 'center',
-          paddingHorizontal: PADDING_H,
-          paddingBottom: insets.bottom + 20,
-          paddingTop: insets.top + 20,
-        }}
-        keyboardShouldPersistTaps="handled"
-      >
+    <KeyboardAwareScreen
+      background={BACKGROUND}
+      contentContainerStyle={{
+        paddingHorizontal: PADDING_H,
+        paddingBottom: insets.bottom + 20,
+        paddingTop: insets.top + 20,
+      }}
+    >
 
       {/* Step progress bar */}
       <View className="flex-row gap-1 mb-1.5">
@@ -365,7 +362,6 @@ export default function LinkSaccos() {
           Your account will work without a linked SACCO
         </Text>
       </TouchableOpacity>
-    </ScrollView>
-    </SafeAreaView>
+    </KeyboardAwareScreen>
   )
 }

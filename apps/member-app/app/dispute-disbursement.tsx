@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, Dimensions } from 'react-native'
 import { router, useLocalSearchParams } from 'expo-router'
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { api } from '@saccosphere/api-client'
+import { KeyboardAwareScreen } from '../components/ui/KeyboardAwareScreen'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 const PADDING_H = Math.max(16, Math.min(24, SCREEN_WIDTH * 0.05))
@@ -39,7 +40,10 @@ export default function DisputeDisbursement() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: BACKGROUND, justifyContent: 'center', paddingHorizontal: PADDING_H, paddingBottom: insets.bottom + 20, paddingTop: insets.top + 20 }} edges={['bottom', 'left', 'right']}>
+    <KeyboardAwareScreen
+      background={BACKGROUND}
+      contentContainerStyle={{ paddingHorizontal: PADDING_H, paddingBottom: insets.bottom + 20, paddingTop: insets.top + 20 }}
+    >
       <Text style={{ color: VIOLET, fontWeight: '700', fontSize: 20, marginBottom: 8 }}>Report non-receipt</Text>
       <Text style={{ color: TEXT_MUTED, fontSize: 12, lineHeight: 18, marginBottom: 24 }}>
         Tell us what happened. Your SACCO will be asked to preserve all disbursement records while this is investigated.
@@ -76,6 +80,6 @@ export default function DisputeDisbursement() {
       <TouchableOpacity onPress={() => router.replace('/(member)')} style={{ alignItems: 'center', marginTop: 8 }}>
         <Text style={{ color: VIOLET, fontSize: 12, fontWeight: '600' }}>Go to dashboard</Text>
       </TouchableOpacity>
-    </SafeAreaView>
+    </KeyboardAwareScreen>
   )
 }
