@@ -79,7 +79,10 @@ const normalizeBaseUrl = (url: string): string => {
 
 export const axiosInstance: AxiosInstance = axios.create({
   baseURL: normalizeBaseUrl(getApiUrl()),
-  withCredentials: true, 
+  // The backend is JWT-only (no SessionAuthentication, USE_SESSION_AUTH: False)
+  // so no cookies are ever needed. Sending credentials would force the browser
+  // into strict CORS (exact-origin + Allow-Credentials) for zero benefit.
+  withCredentials: false,
   headers: {
     'Content-Type': 'application/json',
     Accept: 'application/json',
