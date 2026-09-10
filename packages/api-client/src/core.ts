@@ -197,6 +197,8 @@ axiosInstance.interceptors.response.use(
 export interface ApiError {
   code: string
   message: string
+  /** HTTP status when the failure came from a server response (undefined for network/timeout/parse errors). */
+  status?: number
   field?: string
   fields?: Record<string, string[]>
   details?: Record<string, unknown>
@@ -257,6 +259,7 @@ export async function apiCall<T>(
         fields: responseData?.errors ?? undefined,
         details: typeof responseData === 'object' ? responseData : undefined,
       }
+      apiError.status = error.response.status
       throw apiError
     }
     const isTimeout =

@@ -19,7 +19,19 @@ function registerServiceWorker() {
 
 
 const queryClient = new QueryClient({
-  defaultOptions: { queries: { retry: 1, staleTime: 0, refetchOnWindowFocus: true } },
+  defaultOptions: {
+    queries: {
+      // Never retry a 4xx (403/404/400 won't fix themselves); retry
+      // 5xx / network once.
+      retry: (failureCount, error) => {
+        const status = (error as { status?: number })?.status
+        if (status && status >= 400 && status < 500) return false
+        return failureCount < 1
+      },
+      staleTime: 0,
+      refetchOnWindowFocus: true,
+    },
+  },
 })
 
 function App() {
