@@ -7,10 +7,11 @@ import {
   ViewStyle,
 } from 'react-native'
 import { SafeAreaView, Edge } from 'react-native-safe-area-context'
+import { useTheme } from '../../theme/ThemeProvider'
 
 type Props = {
   children: ReactNode
-  /** Screen background colour. */
+  /** Screen background colour. Defaults to the active theme's background. */
   background?: string
   /** Safe-area edges to apply. Defaults to bottom + sides (top is usually handled by content padding). */
   edges?: Edge[]
@@ -39,15 +40,16 @@ type Props = {
  */
 export function KeyboardAwareScreen({
   children,
-  background = '#06091A',
+  background,
   edges = ['bottom', 'left', 'right'],
   contentContainerStyle,
   centerContent = true,
   keyboardVerticalOffset = 0,
   scrollEnabled = true,
 }: Props) {
+  const { colors } = useTheme()
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: background }} edges={edges}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: background ?? colors.bg }} edges={edges}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
