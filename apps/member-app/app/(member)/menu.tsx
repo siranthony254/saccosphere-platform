@@ -88,7 +88,7 @@ export default function MenuScreen() {
 
   return (
     <>
-      <SafeAreaView style={{ flex: 1, backgroundColor: c.bg }} edges={['bottom', 'left', 'right']}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}>
         {/* Header */}
         <View style={{ paddingTop: 52, paddingHorizontal: 16, paddingBottom: 12, backgroundColor: c.bg, borderBottomWidth: 0.5, borderBottomColor: c.border }}>

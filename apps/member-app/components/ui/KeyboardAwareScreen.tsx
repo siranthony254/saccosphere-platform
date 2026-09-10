@@ -7,7 +7,7 @@ import {
   ViewStyle,
 } from 'react-native'
 import { SafeAreaView, Edge } from 'react-native-safe-area-context'
-import { useTheme } from '../../theme/ThemeProvider'
+import { AppBackground } from '../../theme/AppBackground'
 
 type Props = {
   children: ReactNode
@@ -47,9 +47,11 @@ export function KeyboardAwareScreen({
   keyboardVerticalOffset = 0,
   scrollEnabled = true,
 }: Props) {
-  const { colors } = useTheme()
-  return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: background ?? colors.bg }} edges={edges}>
+  const inner = (
+    <SafeAreaView
+      style={{ flex: 1, backgroundColor: background ?? 'transparent' }}
+      edges={edges}
+    >
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -72,4 +74,7 @@ export function KeyboardAwareScreen({
       </KeyboardAvoidingView>
     </SafeAreaView>
   )
+
+  // An explicit `background` prop opts out of the themed backdrop.
+  return background ? inner : <AppBackground>{inner}</AppBackground>
 }

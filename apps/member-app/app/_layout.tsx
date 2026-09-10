@@ -106,7 +106,7 @@ export default function RootLayout() {
         <SafeAreaProvider>
           <ThemedStatusBar />
           <AutoDeviceRegistrar />
-          <Stack screenOptions={{ headerShown: false }} />
+          <ThemedStack />
           {!splashDone && <AnimatedSplash onFinish={() => setSplashDone(true)} />}
         </SafeAreaProvider>
       </ThemeProvider>
@@ -117,6 +117,18 @@ export default function RootLayout() {
 function ThemedStatusBar() {
   const theme = useTheme()
   return <StatusBar style={theme.statusBar} />
+}
+
+function ThemedStack() {
+  const { colors } = useTheme()
+  return (
+    <Stack
+      screenOptions={{
+        headerShown: false,
+        contentStyle: { backgroundColor: colors.bg },
+      }}
+    />
+  )
 }
 
 function AutoDeviceRegistrar() {

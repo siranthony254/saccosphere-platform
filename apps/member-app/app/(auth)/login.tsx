@@ -179,7 +179,6 @@ export default function LoginScreen() {
 
   return (
     <KeyboardAwareScreen
-      background={c.bg}
       contentContainerStyle={{
         paddingBottom: insets.bottom + 20,
         paddingHorizontal: PADDING_H,

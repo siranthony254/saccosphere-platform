@@ -37,7 +37,7 @@ export default function NotificationsScreen() {
   const read = notifications?.filter(n => n.is_read) ?? []
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: c.bg }} edges={['bottom', 'left', 'right']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['bottom', 'left', 'right']}>
       <ScrollView
         contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}
         refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={c.success} />}

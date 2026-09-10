@@ -32,7 +32,7 @@ export default function MemberDividendsScreen() {
   const lastCreditedAt = dividendPayouts[0]?.disbursed_at ?? null
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: c.bg }} edges={['bottom', 'left', 'right']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['bottom', 'left', 'right']}>
       <ScrollView
         contentContainerStyle={{ paddingBottom: insets.bottom + 24, paddingTop: 52 }}
         refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={c.success} />}

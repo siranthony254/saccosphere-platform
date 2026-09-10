@@ -9,6 +9,7 @@ import { GoogleSignin, isGoogleSignInConfigured, configureGoogleSignIn } from '.
 import { Icon } from '../../components/ui/Icon'
 import { usePreferencesStore } from '../../store/usePreferencesStore'
 import { useTheme } from '../../theme/ThemeProvider'
+import { ThemePicker } from '../../components/ui/ThemePicker'
 
 
 const CONSENT_COPY: Record<string, string> = {
@@ -39,8 +40,6 @@ export default function PrivacyScreen() {
 
   const balanceHidden = usePreferencesStore((s) => s.balanceHidden)
   const setBalanceHidden = usePreferencesStore((s) => s.setBalanceHidden)
-  const themeMode = usePreferencesStore((s) => s.themeMode)
-  const setThemeMode = usePreferencesStore((s) => s.setThemeMode)
 
   const toggle = (row: any) => {
     const next = !isGranted(row)
@@ -119,7 +118,7 @@ export default function PrivacyScreen() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: c.bg }} edges={['bottom', 'left', 'right']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['bottom', 'left', 'right']}>
       <View style={{ paddingTop: insets.top + 12, paddingHorizontal: 16, paddingBottom: 12, borderBottomWidth: 0.5, borderBottomColor: c.border }}>
         <TouchableOpacity onPress={() => router.back()} style={{ marginBottom: 12 }}>
           <Text style={{ color: c.accent, fontSize: 12, fontWeight: '600' }}>← Back</Text>
@@ -136,27 +135,10 @@ export default function PrivacyScreen() {
           {/* Theme */}
           <View style={{ padding: 14, borderBottomWidth: 0.5, borderBottomColor: c.border }}>
             <Text style={{ color: c.text, fontSize: 13, fontWeight: '600', marginBottom: 2 }}>Theme</Text>
-            <Text style={{ color: c.textMuted, fontSize: 11, lineHeight: 16, marginBottom: 10 }}>
-              Choose a light or dark appearance, or follow your device setting.
+            <Text style={{ color: c.textMuted, fontSize: 11, lineHeight: 16, marginBottom: 12 }}>
+              Pick an appearance, or follow your device's light / dark setting.
             </Text>
-            <View style={{ flexDirection: 'row', backgroundColor: c.surfaceAlt, borderRadius: 10, padding: 3 }}>
-              {(['system', 'light', 'dark'] as const).map((mode) => {
-                const on = themeMode === mode
-                return (
-                  <TouchableOpacity
-                    key={mode}
-                    onPress={() => setThemeMode(mode)}
-                    accessibilityRole="button"
-                    accessibilityState={{ selected: on }}
-                    style={{ flex: 1, paddingVertical: 8, borderRadius: 8, alignItems: 'center', backgroundColor: on ? c.accent : 'transparent' }}
-                  >
-                    <Text style={{ color: on ? c.onAccent : c.textMuted, fontSize: 12, fontWeight: '600', textTransform: 'capitalize' }}>
-                      {mode}
-                    </Text>
-                  </TouchableOpacity>
-                )
-              })}
-            </View>
+            <ThemePicker />
           </View>
 
           {/* Hide balances */}

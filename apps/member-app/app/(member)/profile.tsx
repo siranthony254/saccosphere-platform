@@ -87,7 +87,7 @@ export default function ProfileScreen() {
 
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: c.bg }} edges={['bottom', 'left', 'right']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}>
       <View style={{ paddingTop: 52, paddingHorizontal: 16, paddingBottom: 12, backgroundColor: c.bg, borderBottomWidth: 0.5, borderBottomColor: c.border }}>
         <Text style={{ color: c.text, fontSize: 20, fontWeight: '700' }}>Profile</Text>

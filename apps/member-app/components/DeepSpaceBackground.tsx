@@ -1,26 +1,28 @@
 import React from 'react'
 import { View, StyleSheet } from 'react-native'
 import { useTheme } from '../theme/ThemeProvider'
+import { AppBackground } from '../theme/AppBackground'
 
 const VIOLET_GLOW = 'rgba(109, 40, 217, 0.15)'
 const MINT_GLOW = 'rgba(16, 185, 129, 0.12)'
 const GRID_COLOR = 'rgba(255, 255, 255, 0.03)'
 
 /**
- * App backdrop. In dark mode it renders the "deep space" ambience (violet/mint
- * glows + faint diagonal grid). In light mode it collapses to a plain themed
- * fill — the glows only read on a near-black background.
+ * App backdrop for member screens. Delegates to the theme's backdrop
+ * (solid / gradient / image) via AppBackground, and additionally paints the
+ * signature "deep space" glow + grid on the default Midnight theme.
  */
 export function DeepSpaceBackground({ children }: { children: React.ReactNode }) {
-  const { colors, isDark } = useTheme()
+  const theme = useTheme()
+  const isMidnight = theme.id === 'midnight'
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.bg }]}>
-      {isDark && (
+    <AppBackground>
+      {isMidnight && (
         <>
-          <View style={[styles.glow, styles.violetGlow]} />
-          <View style={[styles.glow, styles.mintGlow]} />
-          <View style={styles.gridContainer}>
+          <View style={[styles.glow, styles.violetGlow]} pointerEvents="none" />
+          <View style={[styles.glow, styles.mintGlow]} pointerEvents="none" />
+          <View style={styles.gridContainer} pointerEvents="none">
             {[...Array(20)].map((_, i) => (
               <View
                 key={`grid-${i}`}
@@ -32,15 +34,11 @@ export function DeepSpaceBackground({ children }: { children: React.ReactNode })
       )}
 
       <View style={styles.content}>{children}</View>
-    </View>
+    </AppBackground>
   )
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    position: 'relative',
-  },
   glow: {
     position: 'absolute',
     borderRadius: 200,

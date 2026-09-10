@@ -3,12 +3,14 @@ import { Tabs } from 'expo-router'
 import { Text, View } from 'react-native'
 import { Icon, type IconName } from '../../components/ui/Icon'
 import { useTheme } from '../../theme/ThemeProvider'
+import { AppBackground } from '../../theme/AppBackground'
 
 
 export default function MemberTabLayout() {
   const { colors: c } = useTheme()
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: c.bg }} edges={['top', 'bottom']}>
+    <AppBackground>
+    <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top', 'bottom']}>
       <Tabs
         screenOptions={{
           headerShown: false,
@@ -79,6 +81,7 @@ export default function MemberTabLayout() {
         <Tabs.Screen name="discover/[slug]/apply" options={{ href: null }} />
       </Tabs>
     </SafeAreaView>
+    </AppBackground>
   )
 }
 

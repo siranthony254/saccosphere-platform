@@ -24,7 +24,7 @@ export default function TransactionDetailScreen() {
   const { data: txn, isLoading } = useTransaction(id ?? '')
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: c.bg }} edges={['bottom', 'left', 'right']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['bottom', 'left', 'right']}>
       <View style={{ paddingTop: insets.top + 12, paddingHorizontal: 16, paddingBottom: 12, borderBottomWidth: 0.5, borderBottomColor: c.border }}>
         <TouchableOpacity onPress={() => router.back()} style={{ marginBottom: 12 }}>
           <Text style={{ color: c.accent, fontSize: 12, fontWeight: '600' }}>← Back</Text>

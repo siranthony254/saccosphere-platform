@@ -123,7 +123,6 @@ export default function RegisterKYC() {
 
   return (
     <KeyboardAwareScreen
-      background={c.bg}
       contentContainerStyle={{
         paddingHorizontal: PADDING_H,
         paddingBottom: insets.bottom + 20,

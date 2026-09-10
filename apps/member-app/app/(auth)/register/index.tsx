@@ -141,7 +141,6 @@ export default function RegisterStep1() {
 
   return (
     <KeyboardAwareScreen
-      background={c.bg}
       contentContainerStyle={{
         paddingHorizontal: PADDING_H,
         paddingBottom: insets.bottom + 20,

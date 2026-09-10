@@ -84,7 +84,7 @@ export default function ServicesScreen() {
 
   return (
     <>
-      <SafeAreaView style={{ flex: 1, backgroundColor: c.bg }} edges={['top', 'bottom', 'left', 'right']}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top', 'bottom', 'left', 'right']}>
         <ScrollView
           style={{ backgroundColor: c.bg }}
           contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}
