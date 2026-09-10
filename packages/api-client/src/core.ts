@@ -84,7 +84,9 @@ export const axiosInstance: AxiosInstance = axios.create({
     'Content-Type': 'application/json',
     Accept: 'application/json',
   },
-  timeout: 15_000, // 15 second timeout
+  // 30s — the Railway backend sleeps when idle and a cold start can take
+  // 15–25s, which would otherwise surface as "Unable to reach the server".
+  timeout: 30_000,
 })
 
 // ─── REQUEST INTERCEPTOR ──────────────────────────────────────────────────────
@@ -249,9 +251,14 @@ export async function apiCall<T>(
       }
       throw apiError
     }
+    const isTimeout =
+      axios.isAxiosError(error) &&
+      (error.code === 'ECONNABORTED' || /timeout/i.test(error.message ?? ''))
     const networkError: ApiError = {
       code: ErrorCode.NETWORK_ERROR,
-      message: 'Unable to reach the server. Check your connection.',
+      message: isTimeout
+        ? 'The server is taking too long to respond (it may be waking up). Please try again in a moment.'
+        : 'Unable to reach the server. Check your connection.',
     }
     throw networkError
   }

@@ -32,7 +32,12 @@ const fallbackStatusCodes: {
   PLAY_SERVICES_NOT_AVAILABLE: 'PLAY_SERVICES_NOT_AVAILABLE',
 }
 
-const GOOGLE_WEB_CLIENT_ID = (process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || '').trim()
+const RAW_GOOGLE_WEB_CLIENT_ID = (process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || '').trim()
+// Only accept a real OAuth web client ID; ignore empty strings and
+// placeholder values like "your-google-web-client-id".
+const GOOGLE_WEB_CLIENT_ID = RAW_GOOGLE_WEB_CLIENT_ID.endsWith('.apps.googleusercontent.com')
+  ? RAW_GOOGLE_WEB_CLIENT_ID
+  : ''
 
 let GoogleSignin: GoogleSigninType | null = null
 let moduleStatusCodes = fallbackStatusCodes
