@@ -10,15 +10,14 @@ import { api, setAccessToken, clearTokens, onTokenRotated } from '@saccosphere/a
 import { useAuthStore } from '../store/useAuthStore'
 import { clearStoredRefreshToken, loadRefreshToken, saveRefreshToken } from '../hooks/useAuth'
 import { useAutoRegisterDeviceToken } from '../hooks/useNotifications'
+import { AnimatedSplash } from '../components/AnimatedSplash'
 // @ts-ignore: Allow side-effect CSS import without type declarations
 import '../global.css'
 
-// Hold the native splash on screen until auth bootstrap finishes.
+// Hold the native splash (static white + logo) only until JS mounts — the
+// AnimatedSplash overlay then covers the launch animation seamlessly.
 SplashScreen.preventAutoHideAsync().catch(() => {})
-SplashScreen.setOptions?.({ fade: true, duration: 300 })
-
-// Keep the splash visible for at least this long so it doesn't just blink.
-const MIN_SPLASH_MS = 1200
+SplashScreen.setOptions?.({ fade: true, duration: 200 })
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -33,8 +32,15 @@ export default function RootLayout() {
   const { setAuth, clearAuth, setAuthReady } = useAuthStore()
   const pathname = usePathname()
   const initialPathname = useRef(pathname)
-  const mountedAt = useRef(Date.now())
-  const [bootReady, setBootReady] = useState(false)
+  const [splashDone, setSplashDone] = useState(false)
+
+  // Reveal the JS UI (behind the AnimatedSplash overlay) as soon as it mounts.
+  useEffect(() => {
+    const t = setTimeout(() => {
+      SplashScreen.hideAsync().catch(() => {})
+    }, 80)
+    return () => clearTimeout(t)
+  }, [])
 
   useEffect(() => {
     // Persist a rotated refresh token from api-client (works on native + web;
@@ -79,8 +85,6 @@ export default function RootLayout() {
         if (!isAuthPath(startupPathname)) {
           router.replace('/')
         }
-      } finally {
-        setBootReady(true)
       }
     }
 
@@ -90,16 +94,6 @@ export default function RootLayout() {
       onTokenRotated(null)
     }
   }, [clearAuth, setAuth, setAuthReady])
-
-  // Dismiss the splash once auth is settled, but not before MIN_SPLASH_MS.
-  useEffect(() => {
-    if (!bootReady) return
-    const wait = Math.max(0, MIN_SPLASH_MS - (Date.now() - mountedAt.current))
-    const t = setTimeout(() => {
-      SplashScreen.hideAsync().catch(() => {})
-    }, wait)
-    return () => clearTimeout(t)
-  }, [bootReady])
 
   useEffect(() => {
     initialPathname.current = pathname
@@ -111,6 +105,7 @@ export default function RootLayout() {
         <StatusBar style="light" />
         <AutoDeviceRegistrar />
         <Stack screenOptions={{ headerShown: false }} />
+        {!splashDone && <AnimatedSplash onFinish={() => setSplashDone(true)} />}
       </SafeAreaProvider>
     </QueryClientProvider>
   )
