@@ -4,19 +4,13 @@ import { router, useLocalSearchParams } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { api } from '@saccosphere/api-client'
 import { KeyboardAwareScreen } from '../components/ui/KeyboardAwareScreen'
+import { useTheme } from '../theme/ThemeProvider'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 const PADDING_H = Math.max(16, Math.min(24, SCREEN_WIDTH * 0.05))
 
-const BACKGROUND = '#06091A'
-const FROSTED_DARK = 'rgba(255, 255, 255, 0.06)'
-const BORDER_WHITE = 'rgba(255, 255, 255, 0.1)'
-const TEXT = '#F8FAFC'
-const TEXT_MUTED = 'rgba(248, 250, 252, 0.68)'
-const VIOLET = '#6D28D9'
-const MINT = '#10B981'
-
 export default function DisputeDisbursement() {
+  const { colors: c } = useTheme()
   const insets = useSafeAreaInsets()
   const { token: rawToken } = useLocalSearchParams()
   const token = Array.isArray(rawToken) ? rawToken[0] : rawToken ?? ''

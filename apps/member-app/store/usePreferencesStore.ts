@@ -15,6 +15,7 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import * as SecureStore from 'expo-secure-store'
+import type { ThemeMode } from '../theme/tokens'
 
 const secureStorage = {
   getItem: (name: string) => SecureStore.getItemAsync(name),
@@ -25,24 +26,32 @@ const secureStorage = {
 interface PreferencesState {
   /** Mask the member's own balances and amounts across the app. */
   balanceHidden: boolean
+  /** Colour theme: follow the OS, or force light / dark. */
+  themeMode: ThemeMode
   /** True once the persisted preferences have been loaded. */
   _hydrated: boolean
   toggleBalanceHidden: () => void
   setBalanceHidden: (hidden: boolean) => void
+  setThemeMode: (mode: ThemeMode) => void
 }
 
 export const usePreferencesStore = create<PreferencesState>()(
   persist(
     (set, get) => ({
       balanceHidden: false,
+      themeMode: 'dark',
       _hydrated: false,
       toggleBalanceHidden: () => set({ balanceHidden: !get().balanceHidden }),
       setBalanceHidden: (hidden) => set({ balanceHidden: hidden }),
+      setThemeMode: (mode) => set({ themeMode: mode }),
     }),
     {
       name: 'saccosphere_preferences',
       storage: createJSONStorage(() => secureStorage),
-      partialize: (state) => ({ balanceHidden: state.balanceHidden }),
+      partialize: (state) => ({
+        balanceHidden: state.balanceHidden,
+        themeMode: state.themeMode,
+      }),
       onRehydrateStorage: () => () => {
         usePreferencesStore.setState({ _hydrated: true })
       },

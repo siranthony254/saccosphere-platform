@@ -11,6 +11,7 @@ import { useAuthStore } from '../store/useAuthStore'
 import { clearStoredRefreshToken, loadRefreshToken, saveRefreshToken } from '../hooks/useAuth'
 import { useAutoRegisterDeviceToken } from '../hooks/useNotifications'
 import { AnimatedSplash } from '../components/AnimatedSplash'
+import { ThemeProvider, useTheme } from '../theme/ThemeProvider'
 // @ts-ignore: Allow side-effect CSS import without type declarations
 import '../global.css'
 
@@ -101,14 +102,21 @@ export default function RootLayout() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <SafeAreaProvider>
-        <StatusBar style="light" />
-        <AutoDeviceRegistrar />
-        <Stack screenOptions={{ headerShown: false }} />
-        {!splashDone && <AnimatedSplash onFinish={() => setSplashDone(true)} />}
-      </SafeAreaProvider>
+      <ThemeProvider>
+        <SafeAreaProvider>
+          <ThemedStatusBar />
+          <AutoDeviceRegistrar />
+          <Stack screenOptions={{ headerShown: false }} />
+          {!splashDone && <AnimatedSplash onFinish={() => setSplashDone(true)} />}
+        </SafeAreaProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   )
+}
+
+function ThemedStatusBar() {
+  const theme = useTheme()
+  return <StatusBar style={theme.statusBar} />
 }
 
 function AutoDeviceRegistrar() {

@@ -4,18 +4,13 @@ import { router, useLocalSearchParams } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { api } from '@saccosphere/api-client'
 import { KeyboardAwareScreen } from '../../components/ui/KeyboardAwareScreen'
+import { useTheme } from '../../theme/ThemeProvider'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 const PADDING_H = Math.max(16, Math.min(24, SCREEN_WIDTH * 0.05))
 
-const BACKGROUND = '#06091A'
-const FROSTED_DARK = 'rgba(255, 255, 255, 0.06)'
-const BORDER_WHITE = 'rgba(255, 255, 255, 0.1)'
-const TEXT = '#F8FAFC'
-const TEXT_MUTED = 'rgba(248, 250, 252, 0.68)'
-const VIOLET = '#6D28D9'
-
 export default function ResetPassword() {
+  const { colors: c } = useTheme()
   const insets = useSafeAreaInsets()
   const { identifier } = useLocalSearchParams()
   const phoneOrEmail = Array.isArray(identifier) ? identifier[0] : identifier ?? ''
@@ -62,49 +57,49 @@ export default function ResetPassword() {
 
   return (
     <KeyboardAwareScreen
-      background={BACKGROUND}
+      background={c.bg}
       contentContainerStyle={{ paddingHorizontal: PADDING_H, paddingBottom: insets.bottom + 20, paddingTop: insets.top + 20 }}
     >
-      <Text style={{ color: VIOLET, fontWeight: '700', fontSize: 20, marginBottom: 8 }}>Reset Password</Text>
-      <Text style={{ color: TEXT_MUTED, fontSize: 12, lineHeight: 18, marginBottom: 32 }}>
+      <Text style={{ color: c.accent, fontWeight: '700', fontSize: 20, marginBottom: 8 }}>Reset Password</Text>
+      <Text style={{ color: c.textMuted, fontSize: 12, lineHeight: 18, marginBottom: 32 }}>
         Enter the 6-digit code sent to {phoneOrEmail || 'your phone'} and choose a new password.
       </Text>
 
-      <Text style={{ color: TEXT_MUTED, fontSize: 12, fontWeight: '500', marginBottom: 6 }}>6-digit code</Text>
+      <Text style={{ color: c.textMuted, fontSize: 12, fontWeight: '500', marginBottom: 6 }}>6-digit code</Text>
       <TextInput
-        style={{ borderWidth: 1, borderColor: BORDER_WHITE, borderRadius: 12, padding: 12, fontSize: 14, marginBottom: 16, color: TEXT, backgroundColor: FROSTED_DARK, letterSpacing: 4 }}
+        style={{ borderWidth: 1, borderColor: c.border, borderRadius: 12, padding: 12, fontSize: 14, marginBottom: 16, color: c.text, backgroundColor: c.surface, letterSpacing: 4 }}
         value={code}
         onChangeText={(text) => setCode(text.replace(/[^0-9]/g, '').slice(0, 6))}
         placeholder="123456"
         keyboardType="number-pad"
         maxLength={6}
         autoCapitalize="none"
-        placeholderTextColor={TEXT_MUTED}
+        placeholderTextColor={c.textMuted}
       />
 
-      <Text style={{ color: TEXT_MUTED, fontSize: 12, fontWeight: '500', marginBottom: 6 }}>New password</Text>
-      <View style={{ flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: BORDER_WHITE, borderRadius: 12, marginBottom: 16, backgroundColor: FROSTED_DARK }}>
+      <Text style={{ color: c.textMuted, fontSize: 12, fontWeight: '500', marginBottom: 6 }}>New password</Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: c.border, borderRadius: 12, marginBottom: 16, backgroundColor: c.surface }}>
         <TextInput
-          style={{ flex: 1, padding: 12, fontSize: 14, color: TEXT }}
+          style={{ flex: 1, padding: 12, fontSize: 14, color: c.text }}
           value={newPassword}
           onChangeText={setNewPassword}
           placeholder="At least 8 characters, with a number"
           secureTextEntry={!showPassword}
-          placeholderTextColor={TEXT_MUTED}
+          placeholderTextColor={c.textMuted}
         />
         <TouchableOpacity style={{ padding: 12 }} onPress={() => setShowPassword(!showPassword)}>
-          <Text style={{ color: VIOLET, fontSize: 12, fontWeight: '600' }}>{showPassword ? 'Hide' : 'Show'}</Text>
+          <Text style={{ color: c.accent, fontSize: 12, fontWeight: '600' }}>{showPassword ? 'Hide' : 'Show'}</Text>
         </TouchableOpacity>
       </View>
 
-      <Text style={{ color: TEXT_MUTED, fontSize: 12, fontWeight: '500', marginBottom: 6 }}>Confirm new password</Text>
+      <Text style={{ color: c.textMuted, fontSize: 12, fontWeight: '500', marginBottom: 6 }}>Confirm new password</Text>
       <TextInput
-        style={{ borderWidth: 1, borderColor: BORDER_WHITE, borderRadius: 12, padding: 12, fontSize: 14, marginBottom: 24, color: TEXT, backgroundColor: FROSTED_DARK }}
+        style={{ borderWidth: 1, borderColor: c.border, borderRadius: 12, padding: 12, fontSize: 14, marginBottom: 24, color: c.text, backgroundColor: c.surface }}
         value={confirmPassword}
         onChangeText={setConfirmPassword}
         placeholder="Re-enter your new password"
         secureTextEntry={!showPassword}
-        placeholderTextColor={TEXT_MUTED}
+        placeholderTextColor={c.textMuted}
       />
 
       <TouchableOpacity
@@ -116,7 +111,7 @@ export default function ResetPassword() {
       </TouchableOpacity>
 
       <TouchableOpacity onPress={() => router.replace('/(auth)/login')} style={{ alignItems: 'center' }}>
-        <Text style={{ color: VIOLET, fontSize: 12, fontWeight: '600' }}>← Back to login</Text>
+        <Text style={{ color: c.accent, fontSize: 12, fontWeight: '600' }}>← Back to login</Text>
       </TouchableOpacity>
     </KeyboardAwareScreen>
   )

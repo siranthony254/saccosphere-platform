@@ -4,19 +4,13 @@ import { router } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { api } from '@saccosphere/api-client'
 import { KeyboardAwareScreen } from '../../components/ui/KeyboardAwareScreen'
+import { useTheme } from '../../theme/ThemeProvider'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 const PADDING_H = Math.max(16, Math.min(24, SCREEN_WIDTH * 0.05))
 
-const BACKGROUND = '#06091A'
-const FROSTED_DARK = 'rgba(255, 255, 255, 0.06)'
-const BORDER_WHITE = 'rgba(255, 255, 255, 0.1)'
-const TEXT = '#F8FAFC'
-const TEXT_MUTED = 'rgba(248, 250, 252, 0.68)'
-const VIOLET = '#6D28D9'
-const MINT = '#10B981'
-
 export default function ForgotPassword() {
+  const { colors: c } = useTheme()
   const insets = useSafeAreaInsets()
   const [value, setValue] = useState('')
   const [sent, setSent] = useState(false)
@@ -37,39 +31,39 @@ export default function ForgotPassword() {
 
   return (
     <KeyboardAwareScreen
-      background={BACKGROUND}
+      background={c.bg}
       contentContainerStyle={{ paddingHorizontal: PADDING_H, paddingBottom: insets.bottom + 20, paddingTop: insets.top + 20 }}
     >
-      <Text style={{ color: VIOLET, fontWeight: '700', fontSize: 20, marginBottom: 32 }}>Saccosphere</Text>
+      <Text style={{ color: c.accent, fontWeight: '700', fontSize: 20, marginBottom: 32 }}>Saccosphere</Text>
 
-      <Text style={{ color: TEXT_MUTED, fontSize: 12, fontWeight: '500', marginBottom: 6 }}>Email or phone number</Text>
+      <Text style={{ color: c.textMuted, fontSize: 12, fontWeight: '500', marginBottom: 6 }}>Email or phone number</Text>
       <TextInput
-        style={{ borderWidth: 1, borderColor: BORDER_WHITE, borderRadius: 12, padding: 12, fontSize: 14, marginBottom: 16, color: TEXT, backgroundColor: FROSTED_DARK }}
+        style={{ borderWidth: 1, borderColor: c.border, borderRadius: 12, padding: 12, fontSize: 14, marginBottom: 16, color: c.text, backgroundColor: c.surface }}
         value={value}
         onChangeText={setValue}
         placeholder="email or +254 7XX XXX XXX"
         keyboardType="email-address"
         autoCapitalize="none"
-        placeholderTextColor={TEXT_MUTED}
+        placeholderTextColor={c.textMuted}
       />
 
       <TouchableOpacity
-        className={`bg-violet-500 rounded-xl p-3.5 items-center mb-4 ${!value ? 'opacity-50' : ''}`}
+        style={{ backgroundColor: c.accent, borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginBottom: 16, opacity: !value ? 0.5 : 1 }}
         onPress={handleReset}
         disabled={!value || loading}
       >
-        {loading ? <ActivityIndicator color="#fff" /> : <Text className="text-white text-xs font-semibold">Send reset link</Text>}
+        {loading ? <ActivityIndicator color={c.onAccent} /> : <Text style={{ color: c.onAccent, fontSize: 12, fontWeight: '600' }}>Send reset link</Text>}
       </TouchableOpacity>
 
       {sent && (
-        <View style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)', borderRadius: 12, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: MINT }}>
-          <Text style={{ color: MINT, fontSize: 12, fontWeight: '600', marginBottom: 6 }}>Check your inbox</Text>
-          <Text style={{ color: TEXT_MUTED, fontSize: 12, lineHeight: 18 }}>A reset link was sent to {value}. Redirecting to reset page...</Text>
+        <View style={{ backgroundColor: c.success + '26', borderRadius: 12, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: c.success }}>
+          <Text style={{ color: c.success, fontSize: 12, fontWeight: '600', marginBottom: 6 }}>Check your inbox</Text>
+          <Text style={{ color: c.textMuted, fontSize: 12, lineHeight: 18 }}>A reset link was sent to {value}. Redirecting to reset page...</Text>
         </View>
       )}
 
       <TouchableOpacity onPress={() => router.back()} style={{ alignItems: 'center' }}>
-        <Text style={{ color: VIOLET, fontSize: 12, fontWeight: '600' }}>← Back to login</Text>
+        <Text style={{ color: c.accent, fontSize: 12, fontWeight: '600' }}>← Back to login</Text>
       </TouchableOpacity>
     </KeyboardAwareScreen>
   )
