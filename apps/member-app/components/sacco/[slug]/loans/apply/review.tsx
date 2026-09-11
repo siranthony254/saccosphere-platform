@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native'
 import { useLocalSearchParams, router } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -15,15 +16,19 @@ export default function LoanReview() {
   const { step1, loanId } = useLoanApplicationStore()
   const { data: config } = useSaccoConfig(slug)
 
-  if (!step1 || !loanId) {
-    router.replace({ pathname: '/sacco/[slug]/loans/apply', params: { slug } })
-    return null
-  }
+  useEffect(() => {
+    if (!step1 || !loanId) {
+      router.replace({ pathname: '/sacco/[slug]/loans/apply', params: { slug } })
+    }
+  }, [step1, loanId, slug])
 
   const { data: externalGuarantors, isLoading: isExternalLoading } = useQuery({
     queryKey: ['externalGuarantors', loanId],
-    queryFn: () => api.loans.getExternalGuarantors(loanId),
+    queryFn: () => api.loans.getExternalGuarantors(loanId!),
+    enabled: !!loanId,
   })
+
+  if (!step1 || !loanId) return null
 
   const selectedProduct = config?.loan_products.find(p => p.key === step1.loan_product_key)
   const interestRate = selectedProduct?.interest_rate_pct ?? 12

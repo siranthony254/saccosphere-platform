@@ -1,97 +1,103 @@
-
-import { View, Text, TouchableOpacity, ScrollView } from 'react-native'
+import { View, Text, TouchableOpacity, ScrollView, Dimensions } from 'react-native'
 import { useLocalSearchParams, router } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { Dimensions } from 'react-native'
 import { Icon } from '../../../ui/Icon'
+import { useTheme } from '../../../../theme/ThemeProvider'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 const PADDING_H = Math.max(16, Math.min(24, SCREEN_WIDTH * 0.05))
 
+// Masks all but the last 3 digits, regardless of the phone number's length
+// or prefix (+254..., 254..., 07...) — a fixed-shape regex only matched one
+// exact 10-digit format and silently rendered anything else unmasked.
+function maskPhone(phone: string): string {
+  const digits = phone.replace(/\D/g, '')
+  if (digits.length <= 3) return phone
+  return `•••• ${digits.slice(-3)}`
+}
+
 export default function LoanDisbursed() {
-  const { slug, amount, phone, ref, mpesaRef, date } = useLocalSearchParams<{ 
-    slug: string; 
-    amount?: string; 
-    phone?: string; 
-    ref?: string; 
-    mpesaRef?: string; 
-    date?: string 
+  const { slug, amount, phone, ref, mpesaRef, date } = useLocalSearchParams<{
+    slug: string;
+    amount?: string;
+    phone?: string;
+    ref?: string;
+    mpesaRef?: string;
+    date?: string
   }>()
   const insets = useSafeAreaInsets()
+  const { colors: c } = useTheme()
 
   return (
-    <ScrollView 
-      contentContainerStyle={{ 
-        paddingHorizontal: PADDING_H, 
-        paddingBottom: insets.bottom + 20 
+    <ScrollView
+      contentContainerStyle={{
+        paddingHorizontal: PADDING_H,
+        paddingTop: insets.top + 32,
+        paddingBottom: insets.bottom + 20,
+        alignItems: 'center',
       }}
-      className="bg-surface py-8 items-center"
+      style={{ backgroundColor: c.bg }}
     >
       {/* Success Icon */}
-      <View className="w-16 h-16 rounded-full bg-mint-50 justify-center items-center mb-4">
+      <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: 'rgba(16,185,129,0.12)', justifyContent: 'center', alignItems: 'center', marginBottom: 16 }}>
         <Icon name="cash" size={40} color="#10b981" />
       </View>
 
       {/* Title */}
-      <Text className="text-ink text-base font-bold mb-2">Loan approved!</Text>
-      <Text className="text-ink-muted text-xs text-center leading-5 mb-6">
+      <Text style={{ color: c.text, fontSize: 16, fontWeight: '700', marginBottom: 8 }}>Loan approved!</Text>
+      <Text style={{ color: c.textMuted, fontSize: 12, textAlign: 'center', lineHeight: 20, marginBottom: 24 }}>
         Your loan has been approved and sent to your M-Pesa account.
       </Text>
 
-      {/* Disbursement Card */}
-      <View 
-        className="rounded-2xl p-5 mb-4 w-full text-center bg-mint-600"
-      >
-        <Text className="text-white/60 text-xs font-semibold mb-1 tracking-wide uppercase">
+      {/* Disbursement Card — mint-600 is a fixed brand colour, safe for
+          white text regardless of theme. */}
+      <View style={{ borderRadius: 16, padding: 20, marginBottom: 16, width: '100%', alignItems: 'center', backgroundColor: '#059669' }}>
+        <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 12, fontWeight: '600', marginBottom: 4, letterSpacing: 0.5, textTransform: 'uppercase' }}>
           Amount received
         </Text>
-        <Text className="text-white text-3xl font-bold mb-2">
+        <Text style={{ color: '#fff', fontSize: 30, fontWeight: '700', marginBottom: 8 }}>
           KES {amount ? Number(amount).toLocaleString() : '---'}
         </Text>
-        <Text className="text-white/80 text-xs">
-          Sent to {phone ? phone.replace(/(\d{4})(\d{3})(\d{3})/, '$1 ··· $3') : '---'}
+        <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 12 }}>
+          Sent to {phone ? maskPhone(phone) : '---'}
         </Text>
       </View>
 
       {/* Receipt */}
-      <View className="bg-surface2 rounded-xl p-3.5 w-full mb-6">
+      <View style={{ backgroundColor: c.surfaceAlt, borderRadius: 12, padding: 14, width: '100%', marginBottom: 24 }}>
         {[
           { label: 'Loan reference', value: ref || 'Pending' },
           { label: 'M-Pesa reference', value: mpesaRef || 'Pending' },
           { label: 'Disbursement time', value: date || 'Pending' },
           { label: 'Status', value: 'Completed' },
         ].map((row) => (
-          <View 
-            key={row.label} 
-            className="flex-row justify-between py-2 border-b border-border"
+          <View
+            key={row.label}
+            style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: c.border }}
           >
-            <Text className="text-ink-muted text-xs">{row.label}</Text>
-            <Text className="text-ink text-xs font-semibold">{row.value}</Text>
+            <Text style={{ color: c.textMuted, fontSize: 12 }}>{row.label}</Text>
+            <Text style={{ color: c.text, fontSize: 12, fontWeight: '600' }}>{row.value}</Text>
           </View>
         ))}
       </View>
 
       {/* Info Box */}
-      <View className="bg-mint-50 rounded-xl p-3 mb-6">
-        <Text className="text-mint-700 text-xs leading-4.5">
-          Your first instalment is due on May 26, 2024. You'll receive a reminder 3 days before.
+      <View style={{ backgroundColor: 'rgba(16,185,129,0.1)', borderRadius: 12, padding: 12, width: '100%', marginBottom: 24 }}>
+        <Text style={{ color: c.success, fontSize: 12, lineHeight: 18 }}>
+          Your repayment schedule and first instalment date are available in the Loans tab.
         </Text>
       </View>
 
       {/* CTA Button */}
-      <TouchableOpacity 
-        className="w-full bg-violet-500 py-3 rounded-xl items-center mb-3"
+      <TouchableOpacity
+        style={{ width: '100%', backgroundColor: c.accent, paddingVertical: 12, borderRadius: 12, alignItems: 'center' }}
         onPress={() => router.replace(`/sacco/${slug}`)}
       >
-        <Text className="text-white text-xs font-semibold">Back to dashboard</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity className="w-full bg-surface2 py-3 rounded-xl items-center">
-        <Text className="text-ink-soft text-xs font-semibold">View repayment schedule</Text>
+        <Text style={{ color: '#fff', fontSize: 12, fontWeight: '600' }}>Back to dashboard</Text>
       </TouchableOpacity>
 
       {/* Spacer */}
-      <View className="h-7.5" />
+      <View style={{ height: 30 }} />
     </ScrollView>
   )
 }
