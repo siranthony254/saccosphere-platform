@@ -48,7 +48,7 @@ export default function GuarantorInbox() {
               </View>
               <Text style={{ color: c.text, fontSize: 16, fontWeight: '600', marginBottom: 8 }}>No pending requests</Text>
               <Text style={{ color: c.textMuted, fontSize: 13, textAlign: 'center', paddingHorizontal: 40 }}>
-                When your friends or colleagues ask you to guarantee their loans, they'll appear here.
+                When your friends or colleagues ask you to guarantee their loans, they&apos;ll appear here.
               </Text>
             </View>
           ) : (

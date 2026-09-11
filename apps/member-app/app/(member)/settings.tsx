@@ -306,7 +306,7 @@ export default function SettingsScreen() {
 
           {devicesLoadError && !loadingDevices ? (
             <View>
-              <Text style={{ color: c.danger, fontSize: 12, fontStyle: 'italic', marginBottom: 6 }}>Couldn't load trusted devices.</Text>
+              <Text style={{ color: c.danger, fontSize: 12, fontStyle: 'italic', marginBottom: 6 }}>Couldn&apos;t load trusted devices.</Text>
               <TouchableOpacity onPress={loadDevices}>
                 <Text style={{ color: c.accent, fontSize: 12, fontWeight: '600' }}>Try again</Text>
               </TouchableOpacity>

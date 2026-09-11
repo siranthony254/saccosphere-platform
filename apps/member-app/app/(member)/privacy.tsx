@@ -136,7 +136,7 @@ export default function PrivacyScreen() {
           <View style={{ padding: 14, borderBottomWidth: 0.5, borderBottomColor: c.border }}>
             <Text style={{ color: c.text, fontSize: 13, fontWeight: '600', marginBottom: 2 }}>Theme</Text>
             <Text style={{ color: c.textMuted, fontSize: 11, lineHeight: 16, marginBottom: 12 }}>
-              Pick an appearance, or follow your device's light / dark setting.
+              Pick an appearance, or follow your device&apos;s light / dark setting.
             </Text>
             <ThemePicker />
           </View>

@@ -33,7 +33,7 @@ export default function ApplySuccessScreen() {
           </View>
           <Text className="text-base font-bold mb-1" style={{ color: c.text }}>Application submitted!</Text>
           <Text className="text-xs text-center leading-5 mx-8 mb-6" style={{ color: c.textMuted }}>
-            {saccoName} has received your membership application. You'll be notified once it's reviewed.
+            {saccoName} has received your membership application. You&apos;ll be notified once it&apos;s reviewed.
           </Text>
         </View>
 

@@ -159,7 +159,7 @@ export default function LoanRepaymentRoute() {
               </View>
             ) : scheduleError ? (
               <View style={{ paddingVertical: 30, alignItems: 'center' }}>
-                <Text style={{ color: c.danger, fontSize: 13, fontWeight: '600', marginBottom: 4 }}>Couldn't load the schedule</Text>
+                <Text style={{ color: c.danger, fontSize: 13, fontWeight: '600', marginBottom: 4 }}>Couldn&apos;t load the schedule</Text>
                 <Text style={{ color: c.textMuted, fontSize: 12, textAlign: 'center', marginBottom: 12 }}>Check your connection and try again.</Text>
                 <TouchableOpacity
                   onPress={() => selectedScheduleLoan && handleOpenSchedule(selectedScheduleLoan)}

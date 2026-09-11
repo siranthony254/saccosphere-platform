@@ -139,7 +139,7 @@ export default function ApplyReviewScreen() {
         {/* Warning alert */}
         <View className="mx-4 rounded-xl p-3 mb-4" style={{ backgroundColor: 'rgba(245, 158, 11, 0.15)', borderWidth: 1, borderColor: 'rgba(245, 158, 11, 0.3)' }}>
           <Text className="text-xs leading-4.5 text-amber-500">
-            By submitting you agree to {saccoName}'s{' '}
+            By submitting you agree to {saccoName}&apos;s{' '}
             <Text className="font-semibold text-amber-400">bylaws and membership terms</Text>. Your monthly
             contribution will begin after approval.
           </Text>
