@@ -5,7 +5,6 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { router } from 'expo-router'
 import * as LocalAuthentication from 'expo-local-authentication'
 import * as SecureStore from 'expo-secure-store'
-import * as Device from 'expo-device'
 import * as ImagePicker from 'expo-image-picker'
 import { api } from '@saccosphere/api-client'
 import { useCurrentUser } from '../../store/useAuthStore'
@@ -14,6 +13,26 @@ import { Icon } from '../../components/ui/Icon'
 import { useTheme } from '../../theme/ThemeProvider'
 
 const BIOMETRIC_TOKEN_KEY = 'saccosphere_biometric_refresh_token'
+const INSTALL_ID_KEY = 'saccosphere_install_id'
+
+function generateRandomId(): string {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID()
+  }
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`
+}
+
+// A stable per-install identifier for trusted-device registration.
+// Device.osBuildId/modelName are shared by every unit of the same phone
+// model/firmware — using them as a "device ID" lets two different physical
+// phones collide and corrupt each other's trusted-device/revocation state.
+async function getOrCreateInstallId(): Promise<string> {
+  const existing = await SecureStore.getItemAsync(INSTALL_ID_KEY)
+  if (existing) return existing
+  const id = generateRandomId()
+  await SecureStore.setItemAsync(INSTALL_ID_KEY, id)
+  return id
+}
 
 
 export default function SettingsScreen() {
@@ -36,6 +55,7 @@ export default function SettingsScreen() {
 
   const [devices, setDevices] = useState<any[]>([])
   const [loadingDevices, setLoadingDevices] = useState(false)
+  const [devicesLoadError, setDevicesLoadError] = useState(false)
 
   useEffect(() => {
     checkBiometricStatus()
@@ -44,11 +64,13 @@ export default function SettingsScreen() {
 
   const loadDevices = async () => {
     setLoadingDevices(true)
+    setDevicesLoadError(false)
     try {
       const res = await api.auth.getDevices()
       setDevices(Array.isArray(res) ? res : [])
     } catch (err) {
-      console.log('Failed to load devices:', err)
+      console.warn('Failed to load trusted devices:', err)
+      setDevicesLoadError(true)
     } finally {
       setLoadingDevices(false)
     }
@@ -97,16 +119,20 @@ export default function SettingsScreen() {
     if (biometricEnabled) {
       setLoadingBiometrics(true)
       try {
-        await SecureStore.deleteItemAsync(BIOMETRIC_TOKEN_KEY)
-        const deviceId = Device.osBuildId || Device.modelName || 'unknown-device'
+        // Tell the server first — only clear the local token once it's
+        // confirmed, so a failed request can't desync local/server state
+        // (local token gone but server still thinks biometric is enabled).
+        const deviceId = await getOrCreateInstallId()
         await api.auth.registerDevice({
           device_id: deviceId,
           platform: Platform.OS === 'ios' ? 'ios' : 'android',
           biometric_enabled: false,
         })
+        await SecureStore.deleteItemAsync(BIOMETRIC_TOKEN_KEY)
         setBiometricEnabled(false)
       } catch (err) {
         console.error(err)
+        Alert.alert('Error', 'Failed to disable biometric login on the server. Please try again.')
       } finally {
         setLoadingBiometrics(false)
       }
@@ -129,7 +155,7 @@ export default function SettingsScreen() {
             keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
           })
 
-          const deviceId = Device.osBuildId || Device.modelName || 'unknown-device'
+          const deviceId = await getOrCreateInstallId()
           await api.auth.registerDevice({
             device_id: deviceId,
             platform: Platform.OS === 'ios' ? 'ios' : 'android',
@@ -155,7 +181,7 @@ export default function SettingsScreen() {
     }
     setChangingPassword(true)
     try {
-      await api.auth.changePassword({ old_password: oldPassword, new_password: newPassword, new_password2: confirmPassword } as any)
+      await api.auth.changePassword({ old_password: oldPassword, new_password: newPassword, new_password2: confirmPassword })
       Alert.alert('Success', 'Password changed successfully')
       setPasswordModalVisible(false)
       setOldPassword('')
@@ -278,7 +304,14 @@ export default function SettingsScreen() {
             {loadingDevices && <ActivityIndicator color={c.success} size="small" />}
           </View>
 
-          {devices.length === 0 && !loadingDevices ? (
+          {devicesLoadError && !loadingDevices ? (
+            <View>
+              <Text style={{ color: c.danger, fontSize: 12, fontStyle: 'italic', marginBottom: 6 }}>Couldn't load trusted devices.</Text>
+              <TouchableOpacity onPress={loadDevices}>
+                <Text style={{ color: c.accent, fontSize: 12, fontWeight: '600' }}>Try again</Text>
+              </TouchableOpacity>
+            </View>
+          ) : devices.length === 0 && !loadingDevices ? (
             <Text style={{ color: c.textMuted, fontSize: 12, fontStyle: 'italic' }}>No registered trusted devices found.</Text>
           ) : (
             devices.map((d: any) => (
@@ -305,7 +338,7 @@ export default function SettingsScreen() {
           style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.5)' }}
           behavior="padding"
         >
-          <View style={{ backgroundColor: '#0F172A', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, borderTopWidth: 1, borderColor: c.border }}>
+          <View style={{ backgroundColor: c.card, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, borderTopWidth: 1, borderColor: c.border }}>
             <View style={{ width: 36, height: 4, backgroundColor: c.border, borderRadius: 2, alignSelf: 'center', marginBottom: 20 }} />
             <Text style={{ color: c.text, fontSize: 18, fontWeight: '700', marginBottom: 16 }}>Change Password</Text>
 
@@ -360,7 +393,7 @@ export default function SettingsScreen() {
       {/* Upload KYC Modal */}
       <Modal visible={kycModalVisible} transparent animationType="slide">
         <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.5)' }}>
-          <View style={{ backgroundColor: '#0F172A', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, borderTopWidth: 1, borderColor: c.border }}>
+          <View style={{ backgroundColor: c.card, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, borderTopWidth: 1, borderColor: c.border }}>
             <View style={{ width: 36, height: 4, backgroundColor: c.border, borderRadius: 2, alignSelf: 'center', marginBottom: 20 }} />
             <Text style={{ color: c.text, fontSize: 18, fontWeight: '700', marginBottom: 8 }}>Upload KYC Document</Text>
             <Text style={{ color: c.textMuted, fontSize: 12, marginBottom: 24 }}>Select a document type to upload for verification.</Text>

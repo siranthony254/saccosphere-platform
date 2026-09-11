@@ -8,12 +8,23 @@ import type { LoginInput, RegisterInput } from '@saccosphere/schemas'
 
 const REFRESH_TOKEN_KEY = 'saccosphere.refresh_token'
 
+// Web storage note: the access token is intentionally memory-only (see
+// useAuthStore.ts) to defend against XSS token theft. The refresh token
+// lives in sessionStorage rather than localStorage — it doesn't survive a
+// full browser close/reopen and isn't shared across tabs, which narrows the
+// window for a stored-XSS payload to exfiltrate/replay it compared to
+// localStorage. This is not full at-rest encryption (the web platform has
+// no secure key-storage primitive to encrypt against without also exposing
+// the key), so a live XSS payload running during an active session can
+// still read it — the mitigation here is exposure window, not confidentiality.
+// Native builds are unaffected: SecureStore (OS keychain) is used there.
+
 export async function saveRefreshToken(token?: string | null) {
   setRefreshToken(token ?? null)
   if (!token) return clearStoredRefreshToken()
 
   if (Platform.OS === 'web') {
-    window.localStorage.setItem(REFRESH_TOKEN_KEY, token)
+    window.sessionStorage.setItem(REFRESH_TOKEN_KEY, token)
     return
   }
 
@@ -25,7 +36,7 @@ export async function saveRefreshToken(token?: string | null) {
 export async function loadRefreshToken() {
   const token =
     Platform.OS === 'web'
-      ? window.localStorage.getItem(REFRESH_TOKEN_KEY)
+      ? window.sessionStorage.getItem(REFRESH_TOKEN_KEY)
       : await SecureStore.getItemAsync(REFRESH_TOKEN_KEY)
   setRefreshToken(token)
   return token
@@ -34,7 +45,7 @@ export async function loadRefreshToken() {
 export async function clearStoredRefreshToken() {
   setRefreshToken(null)
   if (Platform.OS === 'web') {
-    window.localStorage.removeItem(REFRESH_TOKEN_KEY)
+    window.sessionStorage.removeItem(REFRESH_TOKEN_KEY)
     return
   }
   await SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY)
