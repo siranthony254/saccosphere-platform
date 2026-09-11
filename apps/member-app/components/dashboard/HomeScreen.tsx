@@ -435,9 +435,7 @@ function SingleSaccoDashboard({
   onAction: (action: QuickAction) => void
   onViewDetail?: () => void
 }) {
-  const { colors: c, isDark } = useTheme()
-  const overlayGlow = isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)'
-  const overlayGlowSoft = isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)'
+  const { colors: c } = useTheme()
   const money = useMoney()
   const { data: loans = [] } = useLoans({ sacco: membership.sacco_slug })
   const activeLoan = loans.find((l) => l.status === 'active' || l.status === 'disbursed' || l.status === 'approved')
@@ -446,66 +444,16 @@ function SingleSaccoDashboard({
   return (
     <View>
       {/* ── Balance hero card — tap to view SACCO detail ── */}
-      <TouchableOpacity
+      <BalanceHeroCard
+        label={`Total savings — ${membership.sacco_name.toUpperCase()}`}
+        value={money(totalSavings + membership.share_capital)}
         onPress={onViewDetail}
-        activeOpacity={onViewDetail ? 0.85 : 1}
-        style={{
-          backgroundColor: c.card,
-          borderRadius: 16,
-          paddingHorizontal: 20,
-          paddingVertical: 20,
-          marginBottom: 14,
-          position: 'relative',
-          overflow: 'hidden',
-        }}
-      >
-        {/* Decorative circles */}
-        <View
-          style={{
-            position: 'absolute', top: -30, right: -30,
-            width: 120, height: 120, borderRadius: 60,
-            backgroundColor: overlayGlow,
-          }}
-        />
-        <View
-          style={{
-            position: 'absolute', bottom: -40, left: 20,
-            width: 90, height: 90, borderRadius: 45,
-            backgroundColor: overlayGlowSoft,
-          }}
-        />
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-          <Text
-            style={{
-              fontSize: 10, color: c.textMuted,
-              letterSpacing: 0.6, textTransform: 'uppercase',
-            }}
-          >
-            Total savings — {membership.sacco_name.toUpperCase()}
-          </Text>
-          {onViewDetail && (
-            <View className="flex-row items-center gap-1">
-              <Text style={{ fontSize: 10, color: c.textFaint, letterSpacing: 0.3 }}>View detail</Text>
-              <Icon name="arrow-right" size={10} color={c.textFaint} />
-            </View>
-          )}
-        </View>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 14 }}>
-          <Text
-            style={{
-              fontSize: 30, fontWeight: '700', color: c.text, lineHeight: 34,
-            }}
-          >
-            {money(totalSavings + membership.share_capital)}
-          </Text>
-          <BalanceToggle />
-        </View>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-          <StatLight label="BOSA" value={money(membership.bosa_balance)} />
-          <StatLight label="FOSA" value={money(membership.fosa_balance)} />
-          <StatLight label="Loan limit" value={money(membership.loan_limit)} />
-        </View>
-      </TouchableOpacity>
+        stats={[
+          { label: 'BOSA', value: money(membership.bosa_balance) },
+          { label: 'FOSA', value: money(membership.fosa_balance) },
+          { label: 'Loan limit', value: money(membership.loan_limit) },
+        ]}
+      />
 
       {/* ── Quick actions ── */}
       <QuickActions onAction={onAction} isSingle />
@@ -620,62 +568,20 @@ function UnifiedDashboard({
   onAction: (action: QuickAction) => void
   onSelectSacco: (slug: string) => void
 }) {
-  const { colors: c, isDark } = useTheme()
-  const overlayGlow = isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)'
-  const overlayGlowSoft = isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)'
+  const { colors: c } = useTheme()
   const money = useMoney()
   return (
     <View>
       {/* ── Total portfolio hero card ── */}
-      <View
-        style={{
-          backgroundColor: c.card,
-          borderRadius: 16,
-          paddingHorizontal: 20,
-          paddingVertical: 20,
-          marginBottom: 14,
-          position: 'relative',
-          overflow: 'hidden',
-        }}
-      >
-        <View
-          style={{
-            position: 'absolute', top: -30, right: -30,
-            width: 120, height: 120, borderRadius: 60,
-            backgroundColor: overlayGlow,
-          }}
-        />
-        <View
-          style={{
-            position: 'absolute', bottom: -40, left: 20,
-            width: 90, height: 90, borderRadius: 45,
-            backgroundColor: overlayGlowSoft,
-          }}
-        />
-        <Text
-          style={{
-            fontSize: 10, color: c.textMuted,
-            letterSpacing: 0.6, textTransform: 'uppercase', marginBottom: 4,
-          }}
-        >
-          Total portfolio value
-        </Text>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 14 }}>
-          <Text
-            style={{
-              fontSize: 30, fontWeight: '700', color: c.text, lineHeight: 34,
-            }}
-          >
-            {money(dashboard.total_balance)}
-          </Text>
-          <BalanceToggle />
-        </View>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-          <StatLight label="Savings" value={money(dashboard.total_savings)} />
-          <StatLight label="Active loans" value={money(dashboard.active_loans_balance)} />
-          <StatLight label="SACCOs" value={`${memberships.length} linked`} />
-        </View>
-      </View>
+      <BalanceHeroCard
+        label="Total portfolio value"
+        value={money(dashboard.total_balance)}
+        stats={[
+          { label: 'Savings', value: money(dashboard.total_savings) },
+          { label: 'Active loans', value: money(dashboard.active_loans_balance) },
+          { label: 'SACCOs', value: `${memberships.length} linked` },
+        ]}
+      />
 
       {/* ── Quick actions ── */}
       <QuickActions onAction={onAction} isSingle={false} />
@@ -932,6 +838,90 @@ function TransactionRow({ transaction }: { transaction: Transaction }) {
         {isCredit ? '+' : '-'}{money(transaction.amount)}
       </Text>
     </View>
+  )
+}
+
+/** Shared "hero" balance card used by both the single- and multi-SACCO
+ * dashboards — same decorative glow, layout, and stat row; only the label,
+ * headline value, optional tap-to-detail affordance, and the stats
+ * themselves differ between the two callers. */
+function BalanceHeroCard({
+  label,
+  value,
+  onPress,
+  stats,
+}: {
+  label: string
+  value: string
+  onPress?: () => void
+  stats: { label: string; value: string }[]
+}) {
+  const { colors: c, isDark } = useTheme()
+  const overlayGlow = isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)'
+  const overlayGlowSoft = isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)'
+
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      disabled={!onPress}
+      activeOpacity={onPress ? 0.85 : 1}
+      style={{
+        backgroundColor: c.card,
+        borderRadius: 16,
+        paddingHorizontal: 20,
+        paddingVertical: 20,
+        marginBottom: 14,
+        position: 'relative',
+        overflow: 'hidden',
+      }}
+    >
+      {/* Decorative circles */}
+      <View
+        style={{
+          position: 'absolute', top: -30, right: -30,
+          width: 120, height: 120, borderRadius: 60,
+          backgroundColor: overlayGlow,
+        }}
+      />
+      <View
+        style={{
+          position: 'absolute', bottom: -40, left: 20,
+          width: 90, height: 90, borderRadius: 45,
+          backgroundColor: overlayGlowSoft,
+        }}
+      />
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+        <Text
+          style={{
+            fontSize: 10, color: c.textMuted,
+            letterSpacing: 0.6, textTransform: 'uppercase',
+          }}
+        >
+          {label}
+        </Text>
+        {onPress && (
+          <View className="flex-row items-center gap-1">
+            <Text style={{ fontSize: 10, color: c.textFaint, letterSpacing: 0.3 }}>View detail</Text>
+            <Icon name="arrow-right" size={10} color={c.textFaint} />
+          </View>
+        )}
+      </View>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 14 }}>
+        <Text
+          style={{
+            fontSize: 30, fontWeight: '700', color: c.text, lineHeight: 34,
+          }}
+        >
+          {value}
+        </Text>
+        <BalanceToggle />
+      </View>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+        {stats.map((s) => (
+          <StatLight key={s.label} label={s.label} value={s.value} />
+        ))}
+      </View>
+    </TouchableOpacity>
   )
 }
 

@@ -12,7 +12,6 @@ import { router } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { KeyboardAwareScreen } from '../../../components/ui/KeyboardAwareScreen'
 import { api } from '@saccosphere/api-client'
-import type { ApiError } from '@saccosphere/api-client'
 import { useRegistrationStore } from '../../../store/useRegistrationStore'
 import { useSaccos } from '../../../hooks/useSaccos'
 import { useIsAuthenticated } from '../../../store/useAuthStore'
@@ -21,20 +20,10 @@ import { useMemberships } from '../../../hooks/useMembership'
 import { useRegister, useGoogleAuth } from '../../../hooks/useAuth'
 import { Icon } from '../../../components/ui/Icon'
 import { useTheme } from '../../../theme/ThemeProvider'
+import { getApiErrorMessage } from '../../../lib/apiErrorMessage'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 const PADDING_H = Math.max(16, Math.min(24, SCREEN_WIDTH * 0.05))
-
-const MINT_LIGHT = '#E6F7F1'
-const MINT_500 = '#10B981'
-const SURFACE = '#FFFFFF'
-const SURFACE2 = '#F8FAFC'
-const INK = '#111827'
-const INK_SOFT = '#374151'
-const INK_MUTED = '#6B7280'
-const INK_FAINT = '#9CA3AF'
-const BORDER = 'rgba(0,0,0,0.08)'
-const BORDER_MID = 'rgba(0,0,0,0.13)'
 
 // Uploads whichever KYC document(s) the user actually captured in
 // register/kyc.tsx — exactly one of (id_front + id_back), passport, or
@@ -57,20 +46,6 @@ async function uploadCapturedKycDocuments(
   }
   if (uploads.length === 0) return
   await Promise.all(uploads)
-}
-
-function getApiErrorMessage(error: unknown, fallback: string) {
-  const apiError = error as Partial<ApiError>
-  const fieldMessages = apiError.fields
-    ? Object.entries(apiError.fields)
-        .flatMap(([field, messages]) => {
-          const fieldErrors = Array.isArray(messages) ? messages : [String(messages)]
-          return fieldErrors.map((message) => `${field}: ${message}`)
-        })
-        .join('\n')
-    : ''
-
-  return fieldMessages || apiError.message || fallback
 }
 
 export default function LinkSaccos() {

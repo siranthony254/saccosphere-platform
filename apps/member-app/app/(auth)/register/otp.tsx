@@ -14,8 +14,8 @@ import { KeyboardAwareScreen } from '../../../components/ui/KeyboardAwareScreen'
 import { router } from 'expo-router'
 import { useRegistrationStore } from '../../../store/useRegistrationStore'
 import { api } from '@saccosphere/api-client'
-import type { ApiError } from '@saccosphere/api-client'
 import { useTheme } from '../../../theme/ThemeProvider'
+import { getApiErrorMessage } from '../../../lib/apiErrorMessage'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 const PADDING_H = Math.max(16, Math.min(24, SCREEN_WIDTH * 0.05))
@@ -363,18 +363,4 @@ export default function RegisterOTP() {
         </View>
     </KeyboardAwareScreen>
   )
-}
-
-function getApiErrorMessage(error: unknown, fallback: string) {
-  const apiError = error as Partial<ApiError>
-  const fieldMessages = apiError.fields
-    ? Object.entries(apiError.fields)
-        .flatMap(([field, messages]) => {
-          const fieldErrors = Array.isArray(messages) ? messages : [String(messages)]
-          return fieldErrors.map((message) => `${field}: ${message}`)
-        })
-        .join('\n')
-    : ''
-
-  return fieldMessages || apiError.message || fallback
 }

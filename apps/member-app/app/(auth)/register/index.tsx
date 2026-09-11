@@ -8,8 +8,6 @@ import { z } from 'zod'
 import { useState, useEffect } from 'react'
 import { useRegistrationStore } from '../../../store/useRegistrationStore'
 
-import type { ApiError } from '@saccosphere/api-client'
-
 import {
   GoogleSignin,
   statusCodes,
@@ -38,21 +36,11 @@ const schema = z.object({
 })
 type FormData = z.infer<typeof schema>
 
-const SURFACE = '#FFFFFF'
-const SURFACE2 = '#F8FAFC'
-const INK = '#111827'
-const INK_SOFT = '#374151'
-const INK_MUTED = '#6B7280'
-const INK_FAINT = '#9CA3AF'
-const BORDER = 'rgba(0,0,0,0.08)'
-const BORDER_MID = 'rgba(0,0,0,0.13)'
-
 export default function RegisterStep1() {
   const { colors: c } = useTheme()
   const insets = useSafeAreaInsets()
   const { setStep1 } = useRegistrationStore()
 
-  const [registrationError, setRegistrationError] = useState<string | null>(null)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
@@ -134,7 +122,6 @@ export default function RegisterStep1() {
     // Do not create a backend user yet.
     // We only persist the signup data locally and proceed to OTP verification.
     setStep1(data)
-    setRegistrationError(null)
     router.push('/(auth)/register/otp')
   })
 
@@ -381,13 +368,6 @@ export default function RegisterStep1() {
       />
       {errors.password2 && <Text className="text-red-500 text-xs mb-1">{errors.password2.message}</Text>}
 
-      {/* API error display */}
-      {registrationError && (
-        <View className="border rounded-xl p-3 mb-4 mt-1" style={{ backgroundColor: 'rgba(220, 38, 38, 0.15)', borderColor: '#EF4444' }}>
-          <Text className="text-xs leading-4" style={{ color: '#FCA5A5' }}>{registrationError}</Text>
-        </View>
-      )}
-
       {/* Terms */}
       <Text className="text-xs leading-5 mb-4" style={{ color: c.textMuted }}>
         By continuing you agree to our{' '}
@@ -406,18 +386,4 @@ export default function RegisterStep1() {
 
     </KeyboardAwareScreen>
   )
-}
-
-function getRegistrationErrorMessage(error: unknown) {
-  const apiError = error as Partial<ApiError>
-  const fieldMessages = apiError.fields
-    ? Object.entries(apiError.fields)
-        .flatMap(([field, messages]) => {
-          const fieldErrors = Array.isArray(messages) ? messages : [String(messages)]
-          return fieldErrors.map((message) => `${field}: ${message}`)
-        })
-        .join('\n')
-    : ''
-
-  return fieldMessages || apiError.message || 'Unable to create account.'
 }

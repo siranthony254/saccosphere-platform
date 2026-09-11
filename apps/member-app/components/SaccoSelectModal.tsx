@@ -1,8 +1,8 @@
-import { View, Text, TouchableOpacity, Modal } from 'react-native'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { Text, TouchableOpacity } from 'react-native'
 import { useMemberships } from '../hooks/useMembership'
 import { getActiveMemberships } from '../lib/membership'
-import { Icon } from './ui/Icon'
+import { SaccoPickerSheet } from './SaccoPickerSheet'
+import { useTheme } from '../theme/ThemeProvider'
 
 interface SaccoSelectModalProps {
   visible: boolean
@@ -12,7 +12,6 @@ interface SaccoSelectModalProps {
   subtitle: string
 }
 
-
 export default function SaccoSelectModal({
   visible,
   onClose,
@@ -20,7 +19,7 @@ export default function SaccoSelectModal({
   title,
   subtitle,
 }: SaccoSelectModalProps) {
-  const insets = useSafeAreaInsets()
+  const { colors: c } = useTheme()
   const { data: memberships = [], isLoading } = useMemberships()
   const activeMemberships = getActiveMemberships(memberships)
 
@@ -30,68 +29,24 @@ export default function SaccoSelectModal({
   }
 
   return (
-    <Modal
+    <SaccoPickerSheet
       visible={visible}
-      transparent
-      animationType="slide"
-      onRequestClose={onClose}
-    >
-      <View className="flex-1 justify-end" style={{ backgroundColor: 'rgba(6,9,26,0.45)' }}>
-        <View className="bg-surface rounded-t-3xl overflow-hidden">
-          {/* Sheet Handle */}
-          <View className="w-9 h-1 bg-border rounded-full mx-auto my-3" />
-          
-          {/* Title Header */}
-          <View className="px-5 pb-4">
-            <Text className="text-ink text-sm font-semibold">{title}</Text>
-            <Text className="text-ink-faint text-xs mt-1">{subtitle}</Text>
-          </View>
-
-          {/* Sacco Picker List */}
-          <View className="px-4" style={{ paddingBottom: insets.bottom + 24 }}>
-            {isLoading ? (
-              <View className="py-8 items-center">
-                <Text className="text-ink-muted text-xs">Loading linked SACCOs...</Text>
-              </View>
-            ) : activeMemberships.length === 0 ? (
-              <View className="py-8 items-center px-4">
-                <Text className="text-ink-muted text-xs text-center mb-3">No active SACCOs available.</Text>
-              </View>
-            ) : (
-              activeMemberships.map((membership) => (
-                <TouchableOpacity
-                  key={membership.id}
-                  onPress={() => handleSelect(membership.sacco_slug)}
-                  className="flex-row items-center gap-3 py-3.5 px-4 border-b border-border last:border-b-0"
-                >
-                  <View
-                    className="w-10 h-10 rounded-lg justify-center items-center"
-                    style={{ backgroundColor: membership.sacco_color || '#6D28D9' }}
-                  >
-                    <Text className="text-white text-xs font-bold">
-                      {membership.sacco_initials || 'SA'}
-                    </Text>
-                  </View>
-
-                  <View className="flex-1">
-                    <Text className="text-ink text-xs font-medium">{membership.sacco_name}</Text>
-                    <Text className="text-ink-faint text-xs">Member No. {membership.member_number || 'Pending'}</Text>
-                  </View>
-                  <Icon name="arrow-right" size={16} color="#9CA3AF" />
-                </TouchableOpacity>
-              ))
-            )}
-
-            {/* Cancel Button */}
-            <TouchableOpacity
-              onPress={onClose}
-              className="bg-surface2 border border-border py-3 rounded-xl items-center mt-3"
-            >
-              <Text className="text-ink-soft text-xs font-semibold">Cancel</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
-    </Modal>
+      onClose={onClose}
+      title={title}
+      subtitle={subtitle}
+      memberships={activeMemberships}
+      isLoading={isLoading}
+      loadingLabel="Loading linked SACCOs..."
+      emptyLabel="No active SACCOs available."
+      onSelectSacco={handleSelect}
+      footer={
+        <TouchableOpacity
+          onPress={onClose}
+          style={{ backgroundColor: c.surfaceAlt, borderWidth: 1, borderColor: c.border, paddingVertical: 12, borderRadius: 12, alignItems: 'center', marginTop: 12 }}
+        >
+          <Text style={{ color: c.textMuted, fontSize: 12, fontWeight: '600' }}>Cancel</Text>
+        </TouchableOpacity>
+      }
+    />
   )
 }
