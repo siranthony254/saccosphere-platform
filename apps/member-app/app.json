@@ -68,6 +68,13 @@
             "backgroundColor": "#FFFFFF"
           }
         }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/adaptive-icon.png",
+          "color": "#6D28D9"
+        }
       ]
     ],
     "scheme": "saccosphere",
