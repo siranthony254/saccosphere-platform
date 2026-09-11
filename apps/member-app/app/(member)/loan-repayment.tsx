@@ -4,15 +4,9 @@ import { router } from 'expo-router'
 import { useLoans } from '../../hooks/useLoans'
 import { useMemberships } from '../../hooks/useMembership'
 import { api } from '@saccosphere/api-client'
+import type { LoanApplication, Membership } from '@saccosphere/schemas'
 import { Icon } from '../../components/ui/Icon'
 import { useTheme } from '../../theme/ThemeProvider'
-
-const SURFACE = '#FFFFFF'
-const SURFACE2 = '#F8FAFC'
-const INK = '#111827'
-const INK_MUTED = '#6B7280'
-const INK_FAINT = '#9CA3AF'
-const BORDER = 'rgba(0,0,0,0.07)'
 
 interface ScheduleItem {
   instalment_number: number
@@ -28,24 +22,27 @@ export default function LoanRepaymentRoute() {
   const { colors: c } = useTheme()
   const { data: loans = [], isLoading } = useLoans()
   const { data: memberships = [] } = useMemberships()
-  const [selectedScheduleLoan, setSelectedScheduleLoan] = useState<any | null>(null)
+  const [selectedScheduleLoan, setSelectedScheduleLoan] = useState<LoanApplication | null>(null)
   const [scheduleData, setScheduleData] = useState<ScheduleItem[]>([])
   const [loadingSchedule, setLoadingSchedule] = useState(false)
+  const [scheduleError, setScheduleError] = useState(false)
 
   const repayableLoans = useMemo(
     () => loans.filter((loan) => ['active', 'disbursed', 'approved', 'disbursement_pending'].includes(loan.status)),
     [loans]
   )
 
-  const handleOpenSchedule = async (loan: any) => {
+  const handleOpenSchedule = async (loan: LoanApplication) => {
     setSelectedScheduleLoan(loan)
     setLoadingSchedule(true)
+    setScheduleError(false)
     try {
       const schedule = await api.loans.getSchedule(loan.id)
       setScheduleData(schedule)
     } catch (err) {
       console.error('Failed to load loan schedule:', err)
       setScheduleData([])
+      setScheduleError(true)
     } finally {
       setLoadingSchedule(false)
     }
@@ -53,58 +50,60 @@ export default function LoanRepaymentRoute() {
 
   if (isLoading) {
     return (
-      <View style={{ flex: 1, backgroundColor: SURFACE, alignItems: 'center', justifyContent: 'center' }}>
+      <View style={{ flex: 1, backgroundColor: c.bg, alignItems: 'center', justifyContent: 'center' }}>
         <ActivityIndicator color={c.accent} />
-        <Text style={{ color: INK_MUTED, fontSize: 12, marginTop: 10 }}>Loading your loans...</Text>
+        <Text style={{ color: c.textMuted, fontSize: 12, marginTop: 10 }}>Loading your loans...</Text>
       </View>
     )
   }
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: SURFACE2 }} contentContainerStyle={{ padding: 16, paddingBottom: 36 }}>
-      <View style={{ backgroundColor: SURFACE, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: BORDER, marginBottom: 14 }}>
-        <Text style={{ color: INK, fontSize: 20, fontWeight: '700', marginBottom: 4 }}>Pay loan</Text>
-        <Text style={{ color: INK_MUTED, fontSize: 12, lineHeight: 18 }}>
+    <ScrollView style={{ flex: 1, backgroundColor: c.surfaceAlt }} contentContainerStyle={{ padding: 16, paddingBottom: 36 }}>
+      <View style={{ backgroundColor: c.surface, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: c.border, marginBottom: 14 }}>
+        <Text style={{ color: c.text, fontSize: 20, fontWeight: '700', marginBottom: 4 }}>Pay loan</Text>
+        <Text style={{ color: c.textMuted, fontSize: 12, lineHeight: 18 }}>
           Select a loan to initiate payment or inspect its full reducing-balance amortization repayment schedule.
         </Text>
       </View>
 
       {repayableLoans.length === 0 ? (
-        <View style={{ backgroundColor: SURFACE, borderRadius: 16, padding: 22, alignItems: 'center', borderWidth: 1, borderColor: BORDER }}>
-          <Text style={{ fontSize: 30, marginBottom: 8 }}>KES</Text>
-          <Text style={{ color: INK, fontSize: 15, fontWeight: '700', marginBottom: 5 }}>No loans to pay</Text>
-          <Text style={{ color: INK_MUTED, fontSize: 12, textAlign: 'center', lineHeight: 18 }}>
+        <View style={{ backgroundColor: c.surface, borderRadius: 16, padding: 22, alignItems: 'center', borderWidth: 1, borderColor: c.border }}>
+          <Icon name="cash" size={32} color={c.textFaint} style={{ marginBottom: 8 }} />
+          <Text style={{ color: c.text, fontSize: 15, fontWeight: '700', marginBottom: 5 }}>No loans to pay</Text>
+          <Text style={{ color: c.textMuted, fontSize: 12, textAlign: 'center', lineHeight: 18 }}>
             Active and approved loans from your SACCOs will appear here.
           </Text>
         </View>
       ) : (
         repayableLoans.map((loan) => {
-          const membership = memberships.find((item) => item.sacco_slug === loan.sacco_slug || item.sacco_name === loan.sacco_name)
-          const amountDue = loan.next_payment_amount ?? loan.monthly_instalment ?? loan.balance_remaining ?? loan.amount_requested
+          const membership: Membership | undefined = memberships.find(
+            (item) => item.sacco_slug === loan.sacco_slug || item.sacco_name === loan.sacco_name
+          )
+          const amountDue = loan.monthly_instalment || loan.balance_remaining || loan.amount_requested
           return (
             <View
               key={loan.id}
-              style={{ backgroundColor: SURFACE, borderRadius: 14, padding: 14, borderWidth: 1, borderColor: BORDER, marginBottom: 12 }}
+              style={{ backgroundColor: c.surface, borderRadius: 14, padding: 14, borderWidth: 1, borderColor: c.border, marginBottom: 12 }}
             >
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                 <View>
-                  <Text style={{ color: INK, fontSize: 14, fontWeight: '700' }}>{loan.sacco_name || membership?.sacco_name}</Text>
-                  <Text style={{ color: INK_FAINT, fontSize: 11, marginTop: 2 }}>{loan.loan_product_label}</Text>
+                  <Text style={{ color: c.text, fontSize: 14, fontWeight: '700' }}>{loan.sacco_name || membership?.sacco_name}</Text>
+                  <Text style={{ color: c.textFaint, fontSize: 11, marginTop: 2 }}>{loan.loan_product_label}</Text>
                 </View>
                 <View style={{ backgroundColor: 'rgba(16,185,129,0.1)', borderRadius: 20, paddingHorizontal: 8, paddingVertical: 3 }}>
                   <Text style={{ color: c.success, fontSize: 10, fontWeight: '700' }}>{loan.status.replace(/_/g, ' ')}</Text>
                 </View>
               </View>
 
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingTop: 8, borderTopWidth: 0.5, borderTopColor: BORDER }}>
-                <Text style={{ color: INK_MUTED, fontSize: 12 }}>Amount due</Text>
-                <Text style={{ color: INK, fontSize: 13, fontWeight: '700' }}>KES {Math.round(amountDue).toLocaleString()}</Text>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingTop: 8, borderTopWidth: 0.5, borderTopColor: c.border }}>
+                <Text style={{ color: c.textMuted, fontSize: 12 }}>Amount due</Text>
+                <Text style={{ color: c.text, fontSize: 13, fontWeight: '700' }}>KES {Math.round(amountDue).toLocaleString()}</Text>
               </View>
 
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingTop: 8 }}>
-                <Text style={{ color: INK_MUTED, fontSize: 12 }}>Outstanding Balance</Text>
-                <Text style={{ color: INK, fontSize: 12, fontWeight: '600' }}>
-                  KES {Math.round(loan.balance_remaining ?? loan.amount_requested).toLocaleString()}
+                <Text style={{ color: c.textMuted, fontSize: 12 }}>Outstanding Balance</Text>
+                <Text style={{ color: c.text, fontSize: 12, fontWeight: '600' }}>
+                  KES {Math.round(loan.balance_remaining || loan.amount_requested).toLocaleString()}
                 </Text>
               </View>
 
@@ -142,25 +141,36 @@ export default function LoanRepaymentRoute() {
       {/* Repayment Schedule Drawer Modal */}
       <Modal visible={Boolean(selectedScheduleLoan)} animationType="slide" transparent>
         <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' }}>
-          <View style={{ backgroundColor: SURFACE, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 18, maxHeight: '85%' }}>
+          <View style={{ backgroundColor: c.surface, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 18, maxHeight: '85%' }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
               <View>
-                <Text style={{ color: INK, fontSize: 17, fontWeight: '700' }}>Amortization Schedule</Text>
-                <Text style={{ color: INK_MUTED, fontSize: 12 }}>{selectedScheduleLoan?.loan_product_label || 'Loan'} • KES {(selectedScheduleLoan?.amount_requested ?? 0).toLocaleString()}</Text>
+                <Text style={{ color: c.text, fontSize: 17, fontWeight: '700' }}>Amortization Schedule</Text>
+                <Text style={{ color: c.textMuted, fontSize: 12 }}>{selectedScheduleLoan?.loan_product_label || 'Loan'} • KES {(selectedScheduleLoan?.amount_requested ?? 0).toLocaleString()}</Text>
               </View>
               <TouchableOpacity onPress={() => setSelectedScheduleLoan(null)} style={{ padding: 6 }}>
-                <Icon name="close" size={18} color={INK_MUTED} />
+                <Icon name="close" size={18} color={c.textMuted} />
               </TouchableOpacity>
             </View>
 
             {loadingSchedule ? (
               <View style={{ paddingVertical: 40, alignItems: 'center' }}>
                 <ActivityIndicator color={c.accent} size="large" />
-                <Text style={{ color: INK_MUTED, fontSize: 12, marginTop: 12 }}>Fetching schedule breakdown...</Text>
+                <Text style={{ color: c.textMuted, fontSize: 12, marginTop: 12 }}>Fetching schedule breakdown...</Text>
+              </View>
+            ) : scheduleError ? (
+              <View style={{ paddingVertical: 30, alignItems: 'center' }}>
+                <Text style={{ color: c.danger, fontSize: 13, fontWeight: '600', marginBottom: 4 }}>Couldn't load the schedule</Text>
+                <Text style={{ color: c.textMuted, fontSize: 12, textAlign: 'center', marginBottom: 12 }}>Check your connection and try again.</Text>
+                <TouchableOpacity
+                  onPress={() => selectedScheduleLoan && handleOpenSchedule(selectedScheduleLoan)}
+                  style={{ paddingHorizontal: 16, paddingVertical: 8, borderRadius: 10, borderWidth: 1, borderColor: c.accent }}
+                >
+                  <Text style={{ color: c.accent, fontSize: 12, fontWeight: '700' }}>Retry</Text>
+                </TouchableOpacity>
               </View>
             ) : scheduleData.length === 0 ? (
               <View style={{ paddingVertical: 30, alignItems: 'center' }}>
-                <Text style={{ color: INK_MUTED, fontSize: 13 }}>No schedule generated for this loan yet.</Text>
+                <Text style={{ color: c.textMuted, fontSize: 13 }}>No schedule generated for this loan yet.</Text>
               </View>
             ) : (
               <ScrollView style={{ marginTop: 4 }}>
@@ -171,16 +181,16 @@ export default function LoanRepaymentRoute() {
                     <View
                       key={item.instalment_number}
                       style={{
-                        backgroundColor: SURFACE2,
+                        backgroundColor: c.surfaceAlt,
                         borderRadius: 12,
                         padding: 12,
                         marginBottom: 10,
                         borderWidth: 1,
-                        borderColor: isPaid ? 'rgba(16,185,129,0.3)' : isOverdue ? 'rgba(239,68,68,0.3)' : BORDER,
+                        borderColor: isPaid ? 'rgba(16,185,129,0.3)' : isOverdue ? 'rgba(239,68,68,0.3)' : c.border,
                       }}
                     >
                       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                        <Text style={{ color: INK, fontSize: 13, fontWeight: '700' }}>Instalment #{item.instalment_number}</Text>
+                        <Text style={{ color: c.text, fontSize: 13, fontWeight: '700' }}>Instalment #{item.instalment_number}</Text>
                         <View
                           style={{
                             paddingHorizontal: 8,
@@ -202,19 +212,19 @@ export default function LoanRepaymentRoute() {
                       </View>
 
                       <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
-                        <Text style={{ color: INK_MUTED, fontSize: 11 }}>Due Date</Text>
-                        <Text style={{ color: INK, fontSize: 11, fontWeight: '600' }}>{item.due_date ? new Date(item.due_date).toLocaleDateString() : '—'}</Text>
+                        <Text style={{ color: c.textMuted, fontSize: 11 }}>Due Date</Text>
+                        <Text style={{ color: c.text, fontSize: 11, fontWeight: '600' }}>{item.due_date ? new Date(item.due_date).toLocaleDateString() : '—'}</Text>
                       </View>
 
                       <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
-                        <Text style={{ color: INK_MUTED, fontSize: 11 }}>Principal / Interest</Text>
-                        <Text style={{ color: INK, fontSize: 11 }}>
+                        <Text style={{ color: c.textMuted, fontSize: 11 }}>Principal / Interest</Text>
+                        <Text style={{ color: c.text, fontSize: 11 }}>
                           KES {item.principal.toLocaleString()} / KES {item.interest.toLocaleString()}
                         </Text>
                       </View>
 
-                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingTop: 6, borderTopWidth: 0.5, borderTopColor: BORDER }}>
-                        <Text style={{ color: INK, fontSize: 12, fontWeight: '700' }}>Total Amount</Text>
+                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingTop: 6, borderTopWidth: 0.5, borderTopColor: c.border }}>
+                        <Text style={{ color: c.text, fontSize: 12, fontWeight: '700' }}>Total Amount</Text>
                         <Text style={{ color: c.accent, fontSize: 12, fontWeight: '700' }}>KES {item.amount.toLocaleString()}</Text>
                       </View>
                     </View>
