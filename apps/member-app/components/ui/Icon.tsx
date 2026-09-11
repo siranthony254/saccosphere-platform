@@ -20,16 +20,19 @@ interface Props {
   name: IconName
   size?: number
   color?: string
-  className?: string
+  /** Rotation in degrees, e.g. 180 to flip a chevron/arrow icon. */
+  rotate?: number
   style?: StyleProp<TextStyle>
 }
 
-export function Icon({ name, size = 20, color = '#111827', style }: Props) {
+export function Icon({ name, size = 20, color = '#111827', rotate, style }: Props) {
+  const rotateStyle = rotate ? { transform: [{ rotate: `${rotate}deg` }] } : undefined
+  const combinedStyle = [rotateStyle, style]
   const io = (n: React.ComponentProps<typeof Ionicons>['name']) => (
-    <Ionicons name={n} size={size} color={color} style={style} />
+    <Ionicons name={n} size={size} color={color} style={combinedStyle} />
   )
   const mci = (n: React.ComponentProps<typeof MaterialCommunityIcons>['name']) => (
-    <MaterialCommunityIcons name={n} size={size} color={color} style={style} />
+    <MaterialCommunityIcons name={n} size={size} color={color} style={combinedStyle} />
   )
   switch (name) {
     case 'home': return io('home-outline')

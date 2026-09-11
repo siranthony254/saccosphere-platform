@@ -19,12 +19,6 @@ export default function GuarantorInbox() {
   const handleRespond = async (notifId: string, loanId: string, action: 'approve' | 'decline') => {
     setActingOn(notifId)
     try {
-      // Assuming related_object_id in notification is the loan_id
-      // We need the guarantor_id which for the current user is request.user.id
-      // But the endpoint expects guarantor_id. Actually backend often uses current user.
-      // Let's check api-client respondToGuarantorRequest
-
-      // For now, redirect to the existing specialized screen which handles tokens/details
       router.push({ pathname: '/(member)/guarantor-request', params: { token: loanId } })
     } catch (error) {
       Alert.alert('Error', 'Unable to process request.')
@@ -39,8 +33,8 @@ export default function GuarantorInbox() {
         contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}
         refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={c.success} />}
       >
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingTop: 52, paddingHorizontal: 16, paddingBottom: 12, borderBottomWidth: 0.5, borderBottomColor: c.border }}>
-          <TouchableOpacity onPress={() => router.back()}><Icon name="arrow-right" size={24} color={c.text} className="rotate-180" /></TouchableOpacity>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingTop: insets.top + 12, paddingHorizontal: 16, paddingBottom: 12, borderBottomWidth: 0.5, borderBottomColor: c.border }}>
+          <TouchableOpacity onPress={() => router.back()}><Icon name="arrow-right" size={24} color={c.text} rotate={180} /></TouchableOpacity>
           <Text style={{ color: c.text, fontSize: 20, fontWeight: '700' }}>Guarantor Requests</Text>
         </View>
 

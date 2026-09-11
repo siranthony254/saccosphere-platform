@@ -34,14 +34,14 @@ export default function MemberDividendsScreen() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['bottom', 'left', 'right']}>
       <ScrollView
-        contentContainerStyle={{ paddingBottom: insets.bottom + 24, paddingTop: 52 }}
+        contentContainerStyle={{ paddingBottom: insets.bottom + 24, paddingTop: insets.top + 12 }}
         refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={c.success} />}
       >
         {/* Header */}
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 14, borderBottomWidth: 0.5, borderBottomColor: c.border }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
             <TouchableOpacity onPress={() => router.back()} style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: c.surfaceAlt, alignItems: 'center', justifyContent: 'center' }}>
-              <Icon name="arrow-right" size={16} color={c.textMuted} className="rotate-180" />
+              <Icon name="arrow-right" size={16} color={c.textMuted} rotate={180} />
             </TouchableOpacity>
             <View>
               <Text style={{ color: c.text, fontSize: 19, fontWeight: '700' }}>Annual Dividends</Text>
