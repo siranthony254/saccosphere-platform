@@ -1,9 +1,10 @@
 import { useState } from 'react'
-import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, Dimensions } from 'react-native'
+import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, Alert, Dimensions } from 'react-native'
 import { router } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { api } from '@saccosphere/api-client'
 import { KeyboardAwareScreen } from '../../components/ui/KeyboardAwareScreen'
+import { getApiErrorMessage } from '../../lib/apiErrorMessage'
 import { useTheme } from '../../theme/ThemeProvider'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
@@ -24,6 +25,8 @@ export default function ForgotPassword() {
       setTimeout(() => {
         router.push({ pathname: '/(auth)/reset-password', params: { identifier: value } })
       }, 2000)
+    } catch (error) {
+      Alert.alert('Couldn\'t send reset link', getApiErrorMessage(error, 'Please check the email or phone number and try again.'))
     } finally {
       setLoading(false)
     }
