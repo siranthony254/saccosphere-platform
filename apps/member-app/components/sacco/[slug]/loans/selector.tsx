@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native'
 import { router } from 'expo-router'
 import { useLoans } from '../../../../hooks/useLoans'
@@ -6,16 +6,6 @@ import { useMemberships } from '../../../../hooks/useMembership'
 import { getActiveMemberships, getMembershipSavings } from '../../../../lib/membership'
 import { Icon } from '../../../ui/Icon'
 import { useTheme } from '../../../../theme/ThemeProvider'
-
-const SURFACE = '#FFFFFF'
-const SURFACE2 = '#F8FAFC'
-const SURFACE3 = '#F1F5F9'
-const INK = '#111827'
-const INK_SOFT = '#374151'
-const INK_MUTED = '#6B7280'
-const INK_FAINT = '#9CA3AF'
-const BORDER = 'rgba(0,0,0,0.07)'
-
 
 export default function SaccoLoanSelectorScreen() {
   const { colors: c } = useTheme()
@@ -35,19 +25,19 @@ export default function SaccoLoanSelectorScreen() {
 
   if (isLoading) {
     return (
-      <View style={{ flex: 1, backgroundColor: SURFACE, alignItems: 'center', justifyContent: 'center' }}>
+      <View style={{ flex: 1, backgroundColor: c.bg, alignItems: 'center', justifyContent: 'center' }}>
         <ActivityIndicator color={c.accent} />
-        <Text style={{ color: INK_MUTED, fontSize: 12, marginTop: 12 }}>Loading SACCOs...</Text>
+        <Text style={{ color: c.textMuted, fontSize: 12, marginTop: 12 }}>Loading SACCOs...</Text>
       </View>
     )
   }
 
   if (activeMemberships.length === 0) {
     return (
-      <View style={{ flex: 1, backgroundColor: SURFACE, alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+      <View style={{ flex: 1, backgroundColor: c.bg, alignItems: 'center', justifyContent: 'center', padding: 24 }}>
         <Icon name="bank" size={36} color="#6D28D9" style={{ marginBottom: 12 }} />
-        <Text style={{ fontSize: 15, fontWeight: '700', color: INK, marginBottom: 6 }}>No SACCOs linked</Text>
-        <Text style={{ fontSize: 12, color: INK_MUTED, textAlign: 'center', lineHeight: 20, marginBottom: 16 }}>
+        <Text style={{ fontSize: 15, fontWeight: '700', color: c.text, marginBottom: 6 }}>No SACCOs linked</Text>
+        <Text style={{ fontSize: 12, color: c.textMuted, textAlign: 'center', lineHeight: 20, marginBottom: 16 }}>
           Join a SACCO first to apply for a loan.
         </Text>
         <TouchableOpacity
@@ -67,16 +57,16 @@ export default function SaccoLoanSelectorScreen() {
   }
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: SURFACE2 }} contentContainerStyle={{ paddingBottom: 32 }}>
+    <ScrollView style={{ flex: 1, backgroundColor: c.surfaceAlt }} contentContainerStyle={{ paddingBottom: 32 }}>
       {/* Header */}
       <View
         style={{
           paddingHorizontal: 16,
           paddingTop: 16,
           paddingBottom: 12,
-          backgroundColor: SURFACE,
+          backgroundColor: c.surface,
           borderBottomWidth: 0.5,
-          borderBottomColor: BORDER,
+          borderBottomColor: c.border,
         }}
       >
         <View
@@ -92,8 +82,8 @@ export default function SaccoLoanSelectorScreen() {
         >
           <Icon name="bank" size={18} color="#6D28D9" />
         </View>
-        <Text style={{ fontSize: 17, fontWeight: '700', color: INK }}>Apply for a loan</Text>
-        <Text style={{ fontSize: 12, color: INK_MUTED, marginTop: 4 }}>
+        <Text style={{ fontSize: 17, fontWeight: '700', color: c.text }}>Apply for a loan</Text>
+        <Text style={{ fontSize: 12, color: c.textMuted, marginTop: 4 }}>
           Choose a SACCO to apply from
         </Text>
       </View>
@@ -127,10 +117,10 @@ export default function SaccoLoanSelectorScreen() {
               <Icon name="scale" size={16} color="#6D28D9" />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 12, fontWeight: '600', color: INK, marginBottom: 2 }}>
+              <Text style={{ fontSize: 12, fontWeight: '600', color: c.text, marginBottom: 2 }}>
                 Compare loan options
               </Text>
-              <Text style={{ fontSize: 11, color: INK_MUTED, lineHeight: 16 }}>
+              <Text style={{ fontSize: 11, color: c.textMuted, lineHeight: 16 }}>
                 See interest rates and terms across all your SACCOs side-by-side
               </Text>
             </View>
@@ -153,7 +143,7 @@ export default function SaccoLoanSelectorScreen() {
             fontSize: 10,
             fontWeight: '600',
             letterSpacing: 0.6,
-            color: INK_FAINT,
+            color: c.textFaint,
             marginBottom: 10,
             textTransform: 'uppercase',
           }}
@@ -177,9 +167,9 @@ export default function SaccoLoanSelectorScreen() {
               onPress={() => handleApply(membership.sacco_slug)}
               activeOpacity={0.7}
               style={{
-                backgroundColor: SURFACE,
+                backgroundColor: c.surface,
                 borderWidth: 1,
-                borderColor: BORDER,
+                borderColor: c.border,
                 borderRadius: 14,
                 padding: 14,
                 marginBottom: 10,
@@ -201,12 +191,12 @@ export default function SaccoLoanSelectorScreen() {
                 <Text style={{ color: '#fff', fontSize: 14, fontWeight: '700' }}>{initials}</Text>
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 13, fontWeight: '600', color: INK }}>{membership.sacco_name}</Text>
+                <Text style={{ fontSize: 13, fontWeight: '600', color: c.text }}>{membership.sacco_name}</Text>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 3 }}>
-                  <Text style={{ fontSize: 10, color: INK_FAINT }}>
+                  <Text style={{ fontSize: 10, color: c.textFaint }}>
                     Savings: KES {totalSavings.toLocaleString()}
                   </Text>
-                  <Text style={{ fontSize: 10, color: INK_FAINT }}>·</Text>
+                  <Text style={{ fontSize: 10, color: c.textFaint }}>·</Text>
                   <Text style={{ fontSize: 10, color: c.success, fontWeight: '500' }}>
                     Limit: KES {membership.loan_limit.toLocaleString()}
                   </Text>
@@ -228,7 +218,7 @@ export default function SaccoLoanSelectorScreen() {
                   </View>
                 )}
               </View>
-              <Text style={{ color: INK_FAINT, fontSize: 18 }}>{'>'}</Text>
+              <Text style={{ color: c.textFaint, fontSize: 18 }}>{'>'}</Text>
             </TouchableOpacity>
           )
         })}
@@ -239,7 +229,7 @@ export default function SaccoLoanSelectorScreen() {
             fontSize: 10,
             fontWeight: '600',
             letterSpacing: 0.6,
-            color: INK_FAINT,
+            color: c.textFaint,
             marginTop: 8,
             marginBottom: 10,
             textTransform: 'uppercase',
@@ -255,21 +245,21 @@ export default function SaccoLoanSelectorScreen() {
               activeOpacity={0.7}
               onPress={() => router.push({ pathname: '/(member)/loan-detail', params: { id: loan.id } } as any)}
               style={{
-                backgroundColor: SURFACE,
+                backgroundColor: c.surface,
                 borderWidth: 1,
-                borderColor: BORDER,
+                borderColor: c.border,
                 borderRadius: 12,
                 padding: 12,
                 marginBottom: 8,
               }}
             >
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                <Text style={{ fontSize: 12, fontWeight: '600', color: INK }}>{loan.sacco_name}</Text>
+                <Text style={{ fontSize: 12, fontWeight: '600', color: c.text }}>{loan.sacco_name}</Text>
                 <StatusBadge status={loan.status} />
               </View>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                <Text style={{ fontSize: 11, color: INK_MUTED }}>{loan.loan_product_label}</Text>
-                <Text style={{ fontSize: 11, fontWeight: '600', color: INK }}>
+                <Text style={{ fontSize: 11, color: c.textMuted }}>{loan.loan_product_label}</Text>
+                <Text style={{ fontSize: 11, fontWeight: '600', color: c.text }}>
                   KES {loan.amount_requested.toLocaleString()}
                 </Text>
               </View>
@@ -278,7 +268,7 @@ export default function SaccoLoanSelectorScreen() {
                   <View
                     style={{
                       height: 4,
-                      backgroundColor: SURFACE3,
+                      backgroundColor: c.surfaceAlt,
                       borderRadius: 2,
                       overflow: 'hidden',
                       marginBottom: 4,
@@ -293,7 +283,7 @@ export default function SaccoLoanSelectorScreen() {
                       }}
                     />
                   </View>
-                  <Text style={{ fontSize: 9, color: INK_FAINT }}>
+                  <Text style={{ fontSize: 9, color: c.textFaint }}>
                     {getRepaymentProgress(loan)}% repaid · Remaining: KES {(loan.balance_remaining ?? 0).toLocaleString()}
                   </Text>
                 </View>
@@ -303,16 +293,16 @@ export default function SaccoLoanSelectorScreen() {
         ) : (
           <View
             style={{
-              backgroundColor: SURFACE,
+              backgroundColor: c.surface,
               borderWidth: 1,
-              borderColor: BORDER,
+              borderColor: c.border,
               borderRadius: 12,
               padding: 14,
               alignItems: 'center',
             }}
           >
-            <Text style={{ fontSize: 11, color: INK_MUTED }}>No active loans yet</Text>
-            <Text style={{ fontSize: 10, color: INK_FAINT, marginTop: 2 }}>
+            <Text style={{ fontSize: 11, color: c.textMuted }}>No active loans yet</Text>
+            <Text style={{ fontSize: 10, color: c.textFaint, marginTop: 2 }}>
               Select a SACCO above to start your application
             </Text>
           </View>
@@ -322,6 +312,9 @@ export default function SaccoLoanSelectorScreen() {
   )
 }
 
+// Fixed pastel status colors — a deliberate, theme-independent badge palette
+// (matches the same status-color scheme used elsewhere in the loans flow),
+// not app surface/text tokens, so these stay as literal hex values.
 function StatusBadge({ status }: { status: string }) {
   const config: Record<string, { label: string; bg: string; text: string }> = {
     disbursed: { label: 'In repayment', bg: '#FEF3C7', text: '#78350F' },
@@ -334,10 +327,10 @@ function StatusBadge({ status }: { status: string }) {
     under_review: { label: 'Review', bg: '#E8F1FB', text: '#0C447C' },
     rejected: { label: 'Rejected', bg: '#FDEAEA', text: '#791F1F' },
   }
-  const c = config[status] || { label: status.replace(/_/g, ' '), bg: SURFACE3, text: INK_MUTED }
+  const badge = config[status] || { label: status.replace(/_/g, ' '), bg: '#F1F5F9', text: '#6B7280' }
   return (
-    <View style={{ backgroundColor: c.bg, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 20 }}>
-      <Text style={{ fontSize: 9, fontWeight: '600', color: c.text }}>{c.label}</Text>
+    <View style={{ backgroundColor: badge.bg, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 20 }}>
+      <Text style={{ fontSize: 9, fontWeight: '600', color: badge.text }}>{badge.label}</Text>
     </View>
   )
 }
