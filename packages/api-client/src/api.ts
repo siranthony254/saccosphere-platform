@@ -426,20 +426,39 @@ const normalizeAdminLoan = (loan: any): AdminLoan => {
 }
 
 
+// payments.Transaction.TransactionType: deposit, repayment, disbursement, withdrawal
+const TXN_TYPE_MAP: Record<string, Transaction['txn_type']> = {
+  saving_deposit: 'contribution',
+  deposit: 'contribution',
+  registration: 'registration_fee',
+  repayment: 'loan_repayment',
+  disbursement: 'loan_disbursement',
+}
+
+// payments.Transaction.Status: pending, processing, sent, initiation_failed,
+// completed, failed, amount_mismatch, reversed
+const TXN_STATUS_MAP: Record<string, Transaction['status']> = {
+  pending: 'pending',
+  processing: 'pending',
+  sent: 'pending',
+  initiation_failed: 'failed',
+  completed: 'completed',
+  failed: 'failed',
+  amount_mismatch: 'failed',
+  reversed: 'reversed',
+}
+
 const normalizeTransaction = (item: any): Transaction => {
   const rawType = String(item.txn_type ?? item.transaction_type ?? item.type ?? 'contribution').toLowerCase()
-  const txnType =
-    rawType === 'saving_deposit' || rawType === 'deposit'
-      ? 'contribution'
-      : rawType === 'registration'
-        ? 'registration_fee'
-        : rawType
+  const txnType = TXN_TYPE_MAP[rawType] ?? rawType
   const amount = Number(item.amount ?? 0)
 
   const providerName = String(item.provider_name ?? item.provider?.name ?? item.payment_method ?? '').toLowerCase()
   const paymentMethod = providerName.includes('m-pesa') || providerName.includes('mpesa')
     ? 'mpesa'
     : String(item.payment_method ?? 'internal').toLowerCase()
+
+  const rawStatus = String(item.status ?? 'completed').toLowerCase()
 
   return {
     id: item.id,
@@ -448,7 +467,7 @@ const normalizeTransaction = (item: any): Transaction => {
     txn_type: TransactionSchema.shape.txn_type.parse(txnType),
     amount,
     direction: item.direction ?? (amount < 0 ? 'debit' : 'credit'),
-    status: TransactionSchema.shape.status.parse(String(item.status ?? 'completed').toLowerCase()),
+    status: TransactionSchema.shape.status.parse(TXN_STATUS_MAP[rawStatus] ?? 'pending'),
     payment_method: TransactionSchema.shape.payment_method.parse(paymentMethod),
     payment_ref: item.payment_ref ?? item.external_reference ?? null,
     platform_fee: Number(item.platform_fee ?? item.fee_amount ?? 0),
@@ -764,8 +783,10 @@ export const api = {
     },
 
 
-    updateProfile: (data: Partial<User>) =>
-      apiCall<User>('PATCH', '/accounts/me/', data, { responseSchema: UserSchema }),
+    updateProfile: async (data: Partial<User>) => {
+      const user = await apiCall<any>('PATCH', '/accounts/me/', data)
+      return normalizeUser(user)
+    },
 
     getDashboard: async () => {
       const portfolio = await apiCall<any>('GET', '/dashboard/portfolio/')
@@ -1085,13 +1106,20 @@ export const api = {
             { key: 'id_front', label: 'National ID front', required: true },
             { key: 'id_back', label: 'National ID back', required: true },
           ],
-          additional_fields: fieldItems.map((field) => ({
-            key: field.id,
-            label: field.label,
-            type: field.field_type === 'decimal' ? 'number' : field.field_type === 'choice' ? 'select' : field.field_type ?? 'text',
-            required: Boolean(field.is_required),
-            options: field.options ?? undefined,
-          })),
+          additional_fields: fieldItems.map((field) => {
+            // Backend SaccoFieldDefinition.FieldType is uppercase (TEXT, NUMBER,
+            // DATE, SELECT, BOOLEAN, FILE) — normalize case and fall back to
+            // 'text' for anything outside the schema's allowed set.
+            const allowedTypes = ['text', 'number', 'select', 'date', 'boolean', 'file', 'phone', 'textarea']
+            const rawType = String(field.field_type ?? '').toLowerCase()
+            return {
+              key: field.id,
+              label: field.label,
+              type: allowedTypes.includes(rawType) ? rawType : 'text',
+              required: Boolean(field.is_required),
+              options: field.options ?? undefined,
+            }
+          }),
         },
         loan_products: loanTypeItems.map((loanType) => ({
           key: loanType.id,

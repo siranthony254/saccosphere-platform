@@ -236,7 +236,12 @@ export async function apiCall<T>(
 
   try {
     const response = await axiosInstance(config)
-    const data = response.data.data !== undefined ? response.data.data : response.data
+    // Some views wrap a message-only success as {success, message, data: null}
+    // (StandardResponseMixin.ok(None, message)) — treat null the same as
+    // undefined so the top-level envelope (with `message`) is returned
+    // instead of a bare `null` that fails any responseSchema.
+    const responseData = response.data.data
+    const data = responseData !== undefined && responseData !== null ? responseData : response.data
     return options?.responseSchema ? (options.responseSchema.parse(data) as T) : (data as T)
   } catch (error: unknown) {
     if (error && typeof error === 'object' && 'name' in error && error.name === 'ZodError') {
