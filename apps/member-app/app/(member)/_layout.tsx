@@ -3,25 +3,20 @@ import { Tabs } from 'expo-router'
 import { Text, View, Platform } from 'react-native'
 import { Icon, type IconName } from '../../components/ui/Icon'
 import { useTheme } from '../../theme/ThemeProvider'
-import { AppBackground } from '../../theme/AppBackground'
 
 
 export default function MemberTabLayout() {
   const { colors: c } = useTheme()
   return (
-    <AppBackground>
     <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top', 'bottom']}>
       <Tabs
         screenOptions={{
           headerShown: false,
           // Bottom-tabs gives each screen its own opaque scene container
-          // (defaults to white) that sits between this shared AppBackground
-          // and the screen's content. Home only looked right because it
-          // separately re-wraps itself in DeepSpaceBackground/AppBackground,
-          // painting over that white pane — every other tab (Discover, Menu,
-          // Services) showed it as a wall of white with barely-visible text.
-          // Make the pane itself transparent so the one AppBackground here is
-          // the only background layer, for every tab.
+          // (defaults to white) that sits between the single app-wide
+          // AppBackground (mounted once in the root layout) and this
+          // screen's content. Keep it transparent so that one shared
+          // backdrop is the only background layer, for every tab.
           sceneStyle: { backgroundColor: 'transparent' },
           tabBarActiveTintColor: c.accent,
           tabBarInactiveTintColor: c.textFaint,
@@ -95,7 +90,6 @@ export default function MemberTabLayout() {
         <Tabs.Screen name="discover/[slug]/apply" options={{ href: null }} />
       </Tabs>
     </SafeAreaView>
-    </AppBackground>
   )
 }
 

@@ -2,7 +2,6 @@ import { ReactNode } from 'react'
 import { StyleProp, ViewStyle } from 'react-native'
 import { SafeAreaView, Edge } from 'react-native-safe-area-context'
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller'
-import { AppBackground } from '../../theme/AppBackground'
 
 type Props = {
   children: ReactNode
@@ -28,6 +27,10 @@ type Props = {
  * `windowSoftInputMode=adjustResize` is ignored) and scrolls the focused
  * TextInput above the keyboard on both platforms. `KeyboardProvider` is
  * mounted once in app/_layout.tsx.
+ *
+ * The themed backdrop itself comes from the single AppBackground mounted at
+ * the app root — this stays transparent so that's the only background layer,
+ * unless an explicit `background` colour opts out of it.
  */
 export function KeyboardAwareScreen({
   children,
@@ -60,6 +63,5 @@ export function KeyboardAwareScreen({
     </SafeAreaView>
   )
 
-  // An explicit `background` prop opts out of the themed backdrop.
-  return background ? inner : <AppBackground>{inner}</AppBackground>
+  return inner
 }

@@ -1,23 +1,24 @@
 import React from 'react'
 import { View, StyleSheet } from 'react-native'
 import { useTheme } from '../theme/ThemeProvider'
-import { AppBackground } from '../theme/AppBackground'
 
 const VIOLET_GLOW = 'rgba(109, 40, 217, 0.15)'
 const MINT_GLOW = 'rgba(16, 185, 129, 0.12)'
 const GRID_COLOR = 'rgba(255, 255, 255, 0.03)'
 
 /**
- * App backdrop for member screens. Delegates to the theme's backdrop
- * (solid / gradient / image) via AppBackground, and additionally paints the
- * signature "deep space" glow + grid on the default Midnight theme.
+ * Decorative overlay for member screens — the actual theme backdrop (solid /
+ * gradient / image) is painted exactly once by the single AppBackground
+ * mounted at the app root (app/_layout.tsx), so a theme or backdrop change
+ * is visible everywhere instantly. This only adds the signature "deep space"
+ * glow + grid on top of that, and only on the default Midnight theme.
  */
 export function DeepSpaceBackground({ children }: { children: React.ReactNode }) {
   const theme = useTheme()
   const isMidnight = theme.id === 'midnight'
 
   return (
-    <AppBackground>
+    <View style={styles.root}>
       {isMidnight && (
         <>
           <View style={[styles.glow, styles.violetGlow, { pointerEvents: 'none' }]} />
@@ -34,11 +35,15 @@ export function DeepSpaceBackground({ children }: { children: React.ReactNode })
       )}
 
       <View style={styles.content}>{children}</View>
-    </AppBackground>
+    </View>
   )
 }
 
 const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+    position: 'relative',
+  },
   glow: {
     position: 'absolute',
     borderRadius: 200,

@@ -13,6 +13,7 @@ import { clearStoredRefreshToken, loadRefreshToken, saveRefreshToken } from '../
 import { useAutoRegisterDeviceToken } from '../hooks/useNotifications'
 import { AnimatedSplash } from '../components/AnimatedSplash'
 import { ThemeProvider, useTheme } from '../theme/ThemeProvider'
+import { AppBackground } from '../theme/AppBackground'
 // @ts-ignore: Allow side-effect CSS import without type declarations
 import '../global.css'
 
@@ -122,15 +123,21 @@ function ThemedStatusBar() {
   return <StatusBar style={theme.statusBar} />
 }
 
+// Single, app-wide backdrop. Every nested navigator (this Stack, the (auth)
+// Stack, the (member) Tabs, the apply/ Stack) sets its own scene/content
+// background to transparent so this is the only background layer anywhere —
+// a theme or backdrop change is instantly visible on every screen with no
+// per-screen wrapping required.
 function ThemedStack() {
-  const { colors } = useTheme()
   return (
-    <Stack
-      screenOptions={{
-        headerShown: false,
-        contentStyle: { backgroundColor: colors.bg },
-      }}
-    />
+    <AppBackground>
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          contentStyle: { backgroundColor: 'transparent' },
+        }}
+      />
+    </AppBackground>
   )
 }
 
