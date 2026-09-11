@@ -14,6 +14,15 @@ export default function MemberTabLayout() {
       <Tabs
         screenOptions={{
           headerShown: false,
+          // Bottom-tabs gives each screen its own opaque scene container
+          // (defaults to white) that sits between this shared AppBackground
+          // and the screen's content. Home only looked right because it
+          // separately re-wraps itself in DeepSpaceBackground/AppBackground,
+          // painting over that white pane — every other tab (Discover, Menu,
+          // Services) showed it as a wall of white with barely-visible text.
+          // Make the pane itself transparent so the one AppBackground here is
+          // the only background layer, for every tab.
+          sceneStyle: { backgroundColor: 'transparent' },
           tabBarActiveTintColor: c.accent,
           tabBarInactiveTintColor: c.textFaint,
           tabBarStyle: {
