@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { View, Text, ScrollView, TouchableOpacity, Alert, Modal, Clipboard } from 'react-native'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { router } from 'expo-router'
@@ -25,13 +25,17 @@ export default function MenuScreen() {
   const [switcherVisible, setSwitcherVisible] = useState(false)
   const [comparePickerVisible, setComparePickerVisible] = useState(false)
   const [referralsVisible, setReferralsVisible] = useState(false)
-  const [whatsNewVisible, setWhatsNewVisible] = useState(false)
 
   const primaryMembership = activeMemberships[0] ?? null
   const initials = user ? `${user.first_name[0] ?? ''}${user.last_name[0] ?? ''}`.toUpperCase() : 'ME'
   const activeSlug = primaryMembership?.sacco_slug
 
-  const referralCode = user ? `${user.first_name[0]}${user.last_name[0]}-${Math.floor(1000 + Math.random() * 9000)}`.toUpperCase() : 'SS-JOIN'
+  // Generated once per user (not per render) so re-renders don't invalidate a
+  // code the member may have already shared or copied.
+  const referralCode = useMemo(
+    () => (user ? `${user.first_name[0]}${user.last_name[0]}-${Math.floor(1000 + Math.random() * 9000)}`.toUpperCase() : 'SS-JOIN'),
+    [user?.id]
+  )
 
   const menuItems: Array<{ label: string, helper: string, icon: IconName, action: () => void, disabled?: boolean }> = [
     {
@@ -68,12 +72,6 @@ export default function MenuScreen() {
       },
     },
     {
-      label: "What's new",
-      helper: 'Check recent updates and announcements',
-      icon: 'bell',
-      action: () => setWhatsNewVisible(true),
-    },
-    {
       label: "Security & Settings",
       helper: 'Manage biometrics and account security',
       icon: 'settings',
@@ -91,7 +89,7 @@ export default function MenuScreen() {
       <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}>
         {/* Header */}
-        <View style={{ paddingTop: 52, paddingHorizontal: 16, paddingBottom: 12, backgroundColor: c.bg, borderBottomWidth: 0.5, borderBottomColor: c.border }}>
+        <View style={{ paddingTop: insets.top + 12, paddingHorizontal: 16, paddingBottom: 12, backgroundColor: c.bg, borderBottomWidth: 0.5, borderBottomColor: c.border }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
             <View>
               <Text style={{ color: c.text, fontSize: 20, fontWeight: '700' }}>Menu</Text>
@@ -232,57 +230,6 @@ export default function MenuScreen() {
 
             <TouchableOpacity style={{ borderWidth: 1, borderColor: c.border, paddingVertical: 10, borderRadius: 12, alignItems: 'center' }} onPress={() => setReferralsVisible(false)}>
               <Text style={{ color: c.text, fontSize: 12, fontWeight: '600' }}>Close</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-
-      {/* What's New Modal */}
-      <Modal visible={whatsNewVisible} transparent animationType="slide" onRequestClose={() => setWhatsNewVisible(false)}>
-        <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.45)' }}>
-          <View style={{ backgroundColor: c.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, maxHeight: '80%' }}>
-            <View style={{ width: 36, height: 4, backgroundColor: c.border, borderRadius: 2, alignSelf: 'center', marginBottom: 16 }} />
-            <Text style={{ color: c.text, fontSize: 18, fontWeight: '700', marginBottom: 6 }}>What's New</Text>
-            <Text style={{ color: c.textMuted, fontSize: 12, marginBottom: 16 }}>Latest updates and news from your SACCOs and the Saccosphere platform.</Text>
-
-            <ScrollView showsVerticalScrollIndicator={false} style={{ marginBottom: 20 }}>
-              {[
-                {
-                  title: 'Unaitas SACCO Lowered Loan Rates',
-                  desc: 'Unaitas has updated its BOSA development loan rates to 10.5% p.a. (down from 11.2%). This is now live for all members on the app.',
-                  date: 'Today',
-                  badge: 'Rate Cut',
-                },
-                {
-                  title: 'Mambo Vendor Integration Complete',
-                  desc: 'We completed a platform-wide data partnership with Mambo Core Banking. Smaller community SACCOs on Mambo can now be linked in under 2 minutes.',
-                  date: 'Yesterday',
-                  badge: 'Platform',
-                },
-                {
-                  title: 'Imarika SACCO Joins Saccosphere',
-                  desc: 'Members of Imarika SACCO can now browse, apply to join, and link their memberships directly. Share capital payments are fully supported.',
-                  date: '3 days ago',
-                  badge: 'New SACCO',
-                },
-              ].map((update, idx) => (
-                <View key={idx} style={{ borderBottomWidth: 0.5, borderBottomColor: c.border, paddingVertical: 14 }}>
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
-                    <View style={{ flex: 1, paddingRight: 8 }}>
-                      <Text style={{ color: c.text, fontSize: 12, fontWeight: '600' }}>{update.title}</Text>
-                    </View>
-                    <View style={{ backgroundColor: 'rgba(109, 40, 217, 0.15)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>
-                      <Text style={{ color: c.accent, fontSize: 10, fontWeight: '600' }}>{update.badge}</Text>
-                    </View>
-                  </View>
-                  <Text style={{ color: c.textMuted, fontSize: 12, lineHeight: 18, marginBottom: 4 }}>{update.desc}</Text>
-                  <Text style={{ color: c.textMuted, fontSize: 10 }}>{update.date}</Text>
-                </View>
-              ))}
-            </ScrollView>
-
-            <TouchableOpacity style={{ backgroundColor: c.accent, paddingVertical: 12, borderRadius: 12, alignItems: 'center' }} onPress={() => setWhatsNewVisible(false)}>
-              <Text style={{ color: '#fff', fontSize: 12, fontWeight: '600' }}>Got it</Text>
             </TouchableOpacity>
           </View>
         </View>
