@@ -32,8 +32,7 @@
       "permissions": [
         "android.permission.CAMERA",
         "android.permission.INTERNET",
-        "android.permission.ACCESS_NETWORK_STATE",
-        "android.permission.RECORD_AUDIO"
+        "android.permission.ACCESS_NETWORK_STATE"
       ]
     },
     "web": {
@@ -75,9 +74,6 @@
     "scheme": "saccosphere",
     "experiments": {
       "typedRoutes": true
-    },
-    "doctor": {
-      "enabled": false
     },
     "extra": {
       "router": {},
