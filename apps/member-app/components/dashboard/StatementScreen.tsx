@@ -1,8 +1,8 @@
 import { useState } from 'react'
-import { Alert, Platform, ScrollView, Text, TouchableOpacity, View } from 'react-native'
+import { ActivityIndicator, Alert, Platform, ScrollView, Text, TouchableOpacity, View } from 'react-native'
 import { useLocalSearchParams, router } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import * as FileSystem from 'expo-file-system'
+import { File, Paths } from 'expo-file-system'
 import * as Sharing from 'expo-sharing'
 import { api } from '@saccosphere/api-client'
 import { useQuery } from '@tanstack/react-query'
@@ -24,26 +24,29 @@ export default function StatementScreen() {
   const [monthDate, setMonthDate] = useState(startOfMonth(new Date()))
   const [filter, setFilter] = useState('All')
   const [isDownloading, setIsDownloading] = useState(false)
-  const { data: transactions, isLoading } = useTransactions({ sacco: slug })
-  const { data: membership } = useMembershipBySacco(slug)
-
   const month = monthDate.toLocaleDateString('en-KE', { month: 'long', year: 'numeric' })
   const statementRange = getMonthRange(monthDate)
+  const { data: transactions, isLoading } = useTransactions({ sacco: slug, from: statementRange.from, to: statementRange.to })
+  const { data: membership } = useMembershipBySacco(slug)
 
-  const filtered =
-    transactions?.filter((t) => {
-      const type = t.txn_type.toLowerCase()
-      if (filter === 'Contributions') return type === 'contribution' || type === 'deposit'
-      if (filter === 'Withdrawals') return type === 'withdrawal'
-      if (filter === 'Transfers') return type === 'transfer'
-      if (filter === 'Loans') return type === 'loan_repayment' || type === 'loan_disbursement'
-      if (filter === 'Dividends') return type === 'dividend'
-      if (filter === 'Fees') return type === 'fee' || type === 'registration_fee'
-      return true
-    }) ?? []
+  const monthTransactions = transactions ?? []
 
-  const totalCredits = filtered.filter((t) => t.direction === 'credit').reduce((sum, t) => sum + t.amount, 0)
-  const totalDebits = filtered.filter((t) => t.direction === 'debit').reduce((sum, t) => sum + t.amount, 0)
+  const filtered = monthTransactions.filter((t) => {
+    const type = t.txn_type.toLowerCase()
+    if (filter === 'Contributions') return type === 'contribution' || type === 'deposit'
+    if (filter === 'Withdrawals') return type === 'withdrawal'
+    if (filter === 'Transfers') return type === 'transfer'
+    if (filter === 'Loans') return type === 'loan_repayment' || type === 'loan_disbursement'
+    if (filter === 'Dividends') return type === 'dividend'
+    if (filter === 'Fees') return type === 'fee' || type === 'registration_fee'
+    return true
+  })
+
+  // Summary totals reflect the whole month regardless of the active category
+  // filter — the labels ("Total contributions", "Loan repayments") describe
+  // fixed categories, not "whatever's currently filtered".
+  const totalCredits = monthTransactions.filter((t) => t.direction === 'credit').reduce((sum, t) => sum + t.amount, 0)
+  const totalDebits = monthTransactions.filter((t) => t.direction === 'debit').reduce((sum, t) => sum + t.amount, 0)
 
   const handleDownload = async () => {
     if (!membership?.sacco_id) {
@@ -70,26 +73,20 @@ export default function StatementScreen() {
         URL.revokeObjectURL(url)
       } else {
         // Native mobile implementation
-        const reader = new FileReader()
-        reader.onload = async () => {
-          try {
-            const base64Data = (reader.result as string).split(',')[1]
-            const fileUri = `${(FileSystem as any).cacheDirectory}${filename}`
-            await FileSystem.writeAsStringAsync(fileUri, base64Data, { encoding: 'base64' })
+        const base64Data = await blobToBase64(blob)
+        const file = new File(Paths.cache, filename)
+        if (file.exists) file.delete()
+        file.create()
+        file.write(base64Data, { encoding: 'base64' })
 
-            if (await Sharing.isAvailableAsync()) {
-              await Sharing.shareAsync(fileUri)
-            } else {
-              Alert.alert('Success', `Statement saved: ${filename}`)
-            }
-          } catch (e) {
-            console.error('File share error:', e)
-            Alert.alert('Error', 'Failed to save or share statement.')
-          }
+        if (await Sharing.isAvailableAsync()) {
+          await Sharing.shareAsync(file.uri)
+        } else {
+          Alert.alert('Success', `Statement saved: ${filename}`)
         }
-        reader.readAsDataURL(blob)
       }
-    } catch {
+    } catch (error) {
+      console.error('Statement download failed:', error)
       Alert.alert('Download failed', 'Unable to download the statement PDF. Please try again.')
     } finally {
       setIsDownloading(false)
@@ -133,19 +130,29 @@ export default function StatementScreen() {
             onPress={handleDownload}
             disabled={isDownloading}
           >
-            <Text className="text-xs font-bold uppercase tracking-tighter" style={{ color: c.onAccent }}>
-              {isDownloading ? '...' : 'PDF'}
-            </Text>
+            {isDownloading ? (
+              <ActivityIndicator size="small" color={c.onAccent} />
+            ) : (
+              <Text className="text-xs font-bold uppercase tracking-tighter" style={{ color: c.onAccent }}>PDF</Text>
+            )}
           </TouchableOpacity>
         </View>
 
         {/* Month Selector */}
         <View className="flex-row justify-center items-center py-5 gap-6">
-          <TouchableOpacity onPress={() => setMonthDate((current) => addMonths(current, -1))}>
+          <TouchableOpacity
+            onPress={() => setMonthDate((current) => addMonths(current, -1))}
+            accessibilityLabel="Previous month"
+            accessibilityRole="button"
+          >
             <Text className="text-2xl font-light" style={{ color: c.accent }}>‹</Text>
           </TouchableOpacity>
           <Text className="text-lg font-bold min-w-[140px] text-center" style={{ color: c.text }}>{month}</Text>
-          <TouchableOpacity onPress={() => setMonthDate((current) => addMonths(current, 1))}>
+          <TouchableOpacity
+            onPress={() => setMonthDate((current) => addMonths(current, 1))}
+            accessibilityLabel="Next month"
+            accessibilityRole="button"
+          >
             <Text className="text-2xl font-light" style={{ color: c.accent }}>›</Text>
           </TouchableOpacity>
         </View>
@@ -253,6 +260,15 @@ function TxnRow({ txn }: { txn: Transaction }) {
       </Text>
     </TouchableOpacity>
   )
+}
+
+function blobToBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve((reader.result as string).split(',')[1])
+    reader.onerror = () => reject(reader.error ?? new Error('Failed to read file'))
+    reader.readAsDataURL(blob)
+  })
 }
 
 function startOfMonth(date: Date) {
