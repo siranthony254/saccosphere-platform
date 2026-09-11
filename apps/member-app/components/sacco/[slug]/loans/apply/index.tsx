@@ -10,10 +10,12 @@ import { useCurrentUser } from '../../../../../store/useAuthStore'
 import { useLoanEligibility } from '../../../../../hooks/useLoans'
 import { DeepSpaceBackground } from '../../../../DeepSpaceBackground'
 import { Icon } from '../../../../ui/Icon'
+import { useTheme } from '../../../../../theme/ThemeProvider'
 
 export default function LoanStep1() {
   const { slug } = useLocalSearchParams<{ slug: string }>()
   const insets = useSafeAreaInsets()
+  const { colors: c } = useTheme()
   const { data: config } = useSaccoConfig(slug)
   const { data: membership } = useMembershipBySacco(slug)
   const { setContext, setStep1, setLoanId, step1 } = useLoanApplicationStore()
@@ -96,7 +98,7 @@ export default function LoanStep1() {
     <DeepSpaceBackground>
       <View className="flex-1 items-center justify-center">
         <ActivityIndicator color="#6D28D9" />
-        <Text className="text-white/40 text-xs mt-3">Loading loan products...</Text>
+        <Text className="text-xs mt-3" style={{ color: c.textFaint }}>Loading loan products...</Text>
       </View>
     </DeepSpaceBackground>
   )
@@ -111,17 +113,17 @@ export default function LoanStep1() {
         >
           <View className="flex-row items-center mb-6">
             <TouchableOpacity onPress={() => router.back()} className="mr-3">
-              <Text className="text-white/60 text-lg">←</Text>
+              <Text className="text-lg" style={{ color: c.textMuted }}>←</Text>
             </TouchableOpacity>
             <View>
-              <Text className="text-white text-xl font-bold">Apply for loan</Text>
+              <Text className="text-xl font-bold" style={{ color: c.text }}>Apply for loan</Text>
             </View>
           </View>
 
           <View className="bg-red-500/10 border border-red-500/30 rounded-2xl p-6 items-center">
             <Icon name="warning" size={24} color="#f87171" style={{ marginBottom: 12 }} />
-            <Text className="text-white text-lg font-bold mb-2">Not Eligible</Text>
-            <Text className="text-white/60 text-sm text-center">{eligibility.reason ?? 'You are not eligible for a loan at this time'}</Text>
+            <Text className="text-lg font-bold mb-2" style={{ color: c.text }}>Not Eligible</Text>
+            <Text className="text-sm text-center" style={{ color: c.textMuted }}>{eligibility.reason ?? 'You are not eligible for a loan at this time'}</Text>
           </View>
         </ScrollView>
       </DeepSpaceBackground>
@@ -137,17 +139,17 @@ export default function LoanStep1() {
         >
           <View className="flex-row items-center mb-6">
             <TouchableOpacity onPress={() => router.back()} className="mr-3">
-              <Text className="text-white/60 text-lg">←</Text>
+              <Text className="text-lg" style={{ color: c.textMuted }}>←</Text>
             </TouchableOpacity>
             <View>
-              <Text className="text-white text-xl font-bold">Apply for loan</Text>
+              <Text className="text-xl font-bold" style={{ color: c.text }}>Apply for loan</Text>
             </View>
           </View>
 
           <View className="bg-yellow-500/10 border border-yellow-500/30 rounded-2xl p-6 items-center">
             <Icon name="cash" size={24} color="#facc15" style={{ marginBottom: 12 }} />
-            <Text className="text-white text-lg font-bold mb-2">No Loan Limit</Text>
-            <Text className="text-white/60 text-sm text-center">Your current loan limit is KES 0. Please build your savings to increase your limit.</Text>
+            <Text className="text-lg font-bold mb-2" style={{ color: c.text }}>No Loan Limit</Text>
+            <Text className="text-sm text-center" style={{ color: c.textMuted }}>Your current loan limit is KES 0. Please build your savings to increase your limit.</Text>
           </View>
         </ScrollView>
       </DeepSpaceBackground>
@@ -162,83 +164,97 @@ export default function LoanStep1() {
       >
         <View className="flex-row items-center mb-6">
           <TouchableOpacity onPress={() => router.back()} className="mr-3">
-            <Text className="text-white/60 text-lg">←</Text>
+            <Text className="text-lg" style={{ color: c.textMuted }}>←</Text>
           </TouchableOpacity>
           <View>
-            <Text className="text-white text-xl font-bold">Apply for loan</Text>
-            <Text className="text-white/40 text-[10px] font-bold uppercase tracking-wider">Step 1 of 2 - Loan details</Text>
+            <Text className="text-xl font-bold" style={{ color: c.text }}>Apply for loan</Text>
+            <Text className="text-[10px] font-bold uppercase tracking-wider" style={{ color: c.textFaint }}>Step 1 of 2 - Loan details</Text>
           </View>
         </View>
 
         <View className="flex-row gap-2 mb-6">
           <View className="flex-1 h-1 rounded-full bg-violet-500" />
-          <View className="flex-1 h-1 rounded-full bg-white/10" />
-          <View className="flex-1 h-1 rounded-full bg-white/10" />
+          <View className="flex-1 h-1 rounded-full" style={{ backgroundColor: c.border }} />
+          <View className="flex-1 h-1 rounded-full" style={{ backgroundColor: c.border }} />
         </View>
 
         {/* Loan product selector */}
-        <Text className="text-white/60 text-[10px] font-bold uppercase mb-3 ml-1">Loan type</Text>
+        <Text className="text-[10px] font-bold uppercase mb-3 ml-1" style={{ color: c.textMuted }}>Loan type</Text>
         <View className="gap-2 mb-6">
-          {config.loan_products.map(p => (
-            <TouchableOpacity
-              key={p.key}
-              className={`flex-row justify-between p-4 border rounded-2xl ${(selectedProduct?.key === p.key) ? 'border-violet-500 bg-violet-500/10' : 'bg-white/5 border-white/10'}`}
-              onPress={() => setProductKey(p.key)}
-            >
-              <Text className={`text-xs font-bold ${(selectedProduct?.key === p.key) ? 'text-white' : 'text-white/60'}`}>{p.label}</Text>
-              <Text className="text-white/40 text-[10px] font-bold">{p.interest_rate_pct}% p.a.</Text>
-            </TouchableOpacity>
-          ))}
+          {config.loan_products.map(p => {
+            const selected = selectedProduct?.key === p.key
+            return (
+              <TouchableOpacity
+                key={p.key}
+                className={`flex-row justify-between p-4 border rounded-2xl ${selected ? 'border-violet-500 bg-violet-500/10' : ''}`}
+                style={!selected ? { backgroundColor: c.surface, borderColor: c.border } : undefined}
+                onPress={() => setProductKey(p.key)}
+              >
+                <Text className="text-xs font-bold" style={{ color: selected ? c.text : c.textMuted }}>{p.label}</Text>
+                <Text className="text-[10px] font-bold" style={{ color: c.textFaint }}>{p.interest_rate_pct}% p.a.</Text>
+              </TouchableOpacity>
+            )
+          })}
         </View>
 
         {/* Amount */}
-        <Text className="text-white/60 text-[10px] font-bold uppercase mb-2 ml-1">Loan amount (KES)</Text>
+        <Text className="text-[10px] font-bold uppercase mb-2 ml-1" style={{ color: c.textMuted }}>Loan amount (KES)</Text>
         <TextInput
-          className="border border-white/10 rounded-2xl p-4 text-base text-white bg-white/5 mb-1.5"
+          className="border rounded-2xl p-4 text-base mb-1.5"
+          style={{ borderColor: c.border, backgroundColor: c.surface, color: c.text }}
           value={amount}
           onChangeText={setAmount}
           keyboardType="number-pad"
-          placeholderTextColor="rgba(255,255,255,0.3)"
+          placeholderTextColor={c.textFaint}
         />
-        <Text className="text-white/30 text-[10px] font-medium mb-6 ml-1">Your limit: KES {maxAmount.toLocaleString()}</Text>
+        <Text className="text-[10px] font-medium mb-6 ml-1" style={{ color: c.textFaint }}>Your limit: KES {maxAmount.toLocaleString()}</Text>
 
         {/* Period */}
-        <Text className="text-white/60 text-[10px] font-bold uppercase mb-2 ml-1">Repayment period</Text>
+        <Text className="text-[10px] font-bold uppercase mb-2 ml-1" style={{ color: c.textMuted }}>Repayment period</Text>
         <View className="flex-row flex-wrap gap-2 mb-6">
-          {[6, 12, 24, 36, 48].filter(m => m >= (selectedProduct?.min_months ?? 6) && m <= (selectedProduct?.max_months ?? 48)).map(m => (
-            <TouchableOpacity
-              key={m}
-              className={`px-5 py-2.5 rounded-xl border ${months === m.toString() ? 'bg-violet-500 border-violet-500' : 'bg-white/5 border-white/10'}`}
-              onPress={() => setMonths(m.toString())}
-            >
-              <Text className={`text-xs font-bold ${months === m.toString() ? 'text-white' : 'text-white/40'}`}>{m} mo</Text>
-            </TouchableOpacity>
-          ))}
+          {[6, 12, 24, 36, 48].filter(m => m >= (selectedProduct?.min_months ?? 6) && m <= (selectedProduct?.max_months ?? 48)).map(m => {
+            const selected = months === m.toString()
+            return (
+              <TouchableOpacity
+                key={m}
+                className={`px-5 py-2.5 rounded-xl border ${selected ? 'bg-violet-500 border-violet-500' : ''}`}
+                style={!selected ? { backgroundColor: c.surface, borderColor: c.border } : undefined}
+                onPress={() => setMonths(m.toString())}
+              >
+                <Text className="text-xs font-bold" style={{ color: selected ? '#FFFFFF' : c.textFaint }}>{m} mo</Text>
+              </TouchableOpacity>
+            )
+          })}
         </View>
 
         {/* Purpose */}
-        <Text className="text-white/60 text-[10px] font-bold uppercase mb-2 ml-1">Purpose of loan</Text>
+        <Text className="text-[10px] font-bold uppercase mb-2 ml-1" style={{ color: c.textMuted }}>Purpose of loan</Text>
         <TextInput
-          className="border border-white/10 rounded-2xl p-4 text-base text-white bg-white/5 mb-6"
+          className="border rounded-2xl p-4 text-base mb-6"
+          style={{ borderColor: c.border, backgroundColor: c.surface, color: c.text }}
           value={purpose}
           onChangeText={setPurpose}
           placeholder="e.g. Home renovation"
-          placeholderTextColor="rgba(255,255,255,0.3)"
+          placeholderTextColor={c.textFaint}
         />
 
 
 
         {/* Summary */}
-        <View className="bg-white/5 border border-white/10 rounded-2xl p-4 mb-8">
+        <View className="border rounded-2xl p-4 mb-8" style={{ backgroundColor: c.surface, borderColor: c.border }}>
           {[
             { label: 'Principal', value: `KES ${parseFloat(amount || '0').toLocaleString()}` },
             { label: `Interest (${selectedProduct?.interest_rate_pct ?? 12}% p.a.)`, value: `KES ${(instalment * n - parseFloat(amount || '0')).toLocaleString('en-KE', { maximumFractionDigits: 0 })}` },
             { label: 'Monthly instalment', value: `KES ${instalment.toLocaleString('en-KE', { maximumFractionDigits: 0 })}`, highlight: true },
             { label: 'Total repayable', value: `KES ${(instalment * n).toLocaleString('en-KE', { maximumFractionDigits: 0 })}` },
           ].map((row, i, arr) => (
-            <View key={row.label} className={`flex-row justify-between py-2.5 ${i !== arr.length - 1 ? 'border-b border-white/5' : ''}`}>
-              <Text className="text-white/60 text-xs">{row.label}</Text>
-              <Text className={`text-xs font-bold ${row.highlight ? 'text-mint-400' : 'text-white'}`}>{row.value}</Text>
+            <View
+              key={row.label}
+              className="flex-row justify-between py-2.5"
+              style={i !== arr.length - 1 ? { borderBottomWidth: 1, borderBottomColor: c.border } : undefined}
+            >
+              <Text className="text-xs" style={{ color: c.textMuted }}>{row.label}</Text>
+              <Text className={`text-xs font-bold ${row.highlight ? 'text-mint-400' : ''}`} style={!row.highlight ? { color: c.text } : undefined}>{row.value}</Text>
             </View>
           ))}
         </View>

@@ -61,8 +61,8 @@ export default function PaymentMethodSelector({
           >
             <Icon name={title.includes('Contribute') ? 'cash' : title.includes('Loan') ? 'file' : 'card'} size={24} color="#6D28D9" />
           </View>
-          <Text style={{ fontSize: 24, fontWeight: '800', color: '#fff' }}>{title}</Text>
-          <Text style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', marginTop: 6, lineHeight: 20 }}>
+          <Text style={{ fontSize: 24, fontWeight: '800', color: c.text }}>{title}</Text>
+          <Text style={{ fontSize: 13, color: c.textMuted, marginTop: 6, lineHeight: 20 }}>
             {subtitle}
           </Text>
         </View>
@@ -71,9 +71,9 @@ export default function PaymentMethodSelector({
         <View style={{ paddingHorizontal: 20 }}>
           <View
             style={{
-              backgroundColor: 'rgba(255,255,255,0.05)',
+              backgroundColor: c.surface,
               borderWidth: 1,
-              borderColor: 'rgba(255,255,255,0.1)',
+              borderColor: c.border,
               borderRadius: 20,
               padding: 16,
               marginBottom: 24,
@@ -95,7 +95,7 @@ export default function PaymentMethodSelector({
                 </Text>
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 14, fontWeight: '700', color: '#fff' }}>{saccoName}</Text>
+                <Text style={{ fontSize: 14, fontWeight: '700', color: c.text }}>{saccoName}</Text>
                 <Text style={{ fontSize: 12, color: c.success, fontWeight: '700', marginTop: 2 }}>
                   {amount ? `KES ${Number(amount).toLocaleString()}` : '—'}
                 </Text>
@@ -108,7 +108,7 @@ export default function PaymentMethodSelector({
               fontSize: 10,
               fontWeight: '800',
               letterSpacing: 1.2,
-              color: 'rgba(255,255,255,0.3)',
+              color: c.textFaint,
               marginBottom: 16,
               marginLeft: 4,
               textTransform: 'uppercase',
@@ -123,9 +123,9 @@ export default function PaymentMethodSelector({
             disabled={mpesaDisabled}
             activeOpacity={0.7}
             style={{
-              backgroundColor: 'rgba(255,255,255,0.05)',
+              backgroundColor: c.surface,
               borderWidth: 1,
-              borderColor: mpesaDisabled ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.1)',
+              borderColor: c.border,
               borderRadius: 20,
               padding: 20,
               marginBottom: 12,
@@ -148,8 +148,8 @@ export default function PaymentMethodSelector({
               <Text style={{ color: '#fff', fontSize: 24, fontWeight: '900' }}>M</Text>
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 15, fontWeight: '700', color: '#fff' }}>M-Pesa</Text>
-              <Text style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginTop: 4 }}>
+              <Text style={{ fontSize: 15, fontWeight: '700', color: c.text }}>M-Pesa</Text>
+              <Text style={{ fontSize: 12, color: c.textFaint, marginTop: 4 }}>
                 Instant STK Push
               </Text>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8 }}>
@@ -159,11 +159,11 @@ export default function PaymentMethodSelector({
                   </Text>
                 </View>
                 {!mpesaDisabled && mpesaFee > 0 && (
-                  <Text style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', fontWeight: '500' }}>+ KES {mpesaFee} fee</Text>
+                  <Text style={{ fontSize: 10, color: c.textFaint, fontWeight: '500' }}>+ KES {mpesaFee} fee</Text>
                 )}
               </View>
             </View>
-            <Text style={{ color: 'rgba(255,255,255,0.2)', fontSize: 20 }}>›</Text>
+            <Text style={{ color: c.textFaint, fontSize: 20 }}>›</Text>
           </TouchableOpacity>
 
           {/* Bank Option */}
@@ -172,9 +172,9 @@ export default function PaymentMethodSelector({
             disabled={bankDisabled}
             activeOpacity={0.7}
             style={{
-              backgroundColor: 'rgba(255,255,255,0.05)',
+              backgroundColor: c.surface,
               borderWidth: 1,
-              borderColor: bankDisabled ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.1)',
+              borderColor: c.border,
               borderRadius: 20,
               padding: 20,
               marginBottom: 20,
@@ -199,8 +199,8 @@ export default function PaymentMethodSelector({
               <Icon name="bank" size={24} color="#6D28D9" />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 15, fontWeight: '700', color: '#fff' }}>Bank Transfer</Text>
-              <Text style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginTop: 4 }}>
+              <Text style={{ fontSize: 15, fontWeight: '700', color: c.text }}>Bank Transfer</Text>
+              <Text style={{ fontSize: 12, color: c.textFaint, marginTop: 4 }}>
                 Direct bank deposit
               </Text>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8 }}>
@@ -210,13 +210,13 @@ export default function PaymentMethodSelector({
                   </Text>
                 </View>
                 {!bankDisabled && (
-                  <Text style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', fontWeight: '500' }}>
+                  <Text style={{ fontSize: 10, color: c.textFaint, fontWeight: '500' }}>
                     {bankFee > 0 ? `+ KES ${bankFee} fee` : 'Zero fee'}
                   </Text>
                 )}
               </View>
             </View>
-            <Text style={{ color: 'rgba(255,255,255,0.2)', fontSize: 20 }}>›</Text>
+            <Text style={{ color: c.textFaint, fontSize: 20 }}>›</Text>
           </TouchableOpacity>
         </View>
 
@@ -225,13 +225,13 @@ export default function PaymentMethodSelector({
           <TouchableOpacity
             onPress={onCancel}
             style={{
-              backgroundColor: 'rgba(255,255,255,0.08)',
+              backgroundColor: c.surface,
               borderRadius: 16,
               paddingVertical: 14,
               alignItems: 'center',
             }}
           >
-            <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 13, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.5 }}>Cancel Transaction</Text>
+            <Text style={{ color: c.textMuted, fontSize: 13, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.5 }}>Cancel Transaction</Text>
           </TouchableOpacity>
         </View>
 

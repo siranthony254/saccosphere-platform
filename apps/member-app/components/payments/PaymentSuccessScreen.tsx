@@ -72,13 +72,13 @@ export default function PaymentSuccessScreen({
         </View>
 
         {/* Title */}
-        <Text style={{ fontSize: 22, fontWeight: '800', color: '#fff', marginBottom: 8 }}>
+        <Text style={{ fontSize: 22, fontWeight: '800', color: c.text, marginBottom: 8 }}>
           Payment Successful
         </Text>
         <Text
           style={{
             fontSize: 14,
-            color: 'rgba(255,255,255,0.6)',
+            color: c.textMuted,
             textAlign: 'center',
             lineHeight: 22,
             marginBottom: 32,
@@ -92,13 +92,13 @@ export default function PaymentSuccessScreen({
         {/* Details card */}
         <View
           style={{
-            backgroundColor: 'rgba(255,255,255,0.05)',
+            backgroundColor: c.surface,
             borderRadius: 20,
             padding: 20,
             width: '100%',
             marginBottom: 20,
             borderWidth: 1,
-            borderColor: 'rgba(255,255,255,0.1)',
+            borderColor: c.border,
           }}
         >
           <SuccessRow label="Amount Paid" value={`KES ${amount.toLocaleString()}`} valueColor={c.success} />
@@ -148,7 +148,7 @@ export default function PaymentSuccessScreen({
             onPress={onViewReceipt}
             style={{ alignItems: 'center', paddingVertical: 10 }}
           >
-            <Text style={{ color: 'rgba(255,255,255,0.4)', fontSize: 12, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.5 }}>View Digital Receipt</Text>
+            <Text style={{ color: c.textFaint, fontSize: 12, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.5 }}>View Digital Receipt</Text>
           </TouchableOpacity>
         )}
 
@@ -168,6 +168,7 @@ function SuccessRow({
   valueColor?: string
   monospace?: boolean
 }) {
+  const { colors: c } = useTheme()
   return (
     <View
       style={{
@@ -176,13 +177,13 @@ function SuccessRow({
         alignItems: 'center',
         paddingVertical: 10,
         borderBottomWidth: 1,
-        borderBottomColor: 'rgba(255,255,255,0.05)',
+        borderBottomColor: c.border,
       }}
     >
-      <Text style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)' }}>{label}</Text>
+      <Text style={{ fontSize: 12, color: c.textMuted }}>{label}</Text>
       <Text
         style={[
-          { fontSize: 12, fontWeight: '700', color: valueColor || '#fff' },
+          { fontSize: 12, fontWeight: '700', color: valueColor || c.text },
           monospace && { fontFamily: 'monospace', fontSize: 11, letterSpacing: 0.5 },
         ]}
       >
