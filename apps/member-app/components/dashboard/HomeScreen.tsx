@@ -435,7 +435,9 @@ function SingleSaccoDashboard({
   onAction: (action: QuickAction) => void
   onViewDetail?: () => void
 }) {
-  const { colors: c } = useTheme()
+  const { colors: c, isDark } = useTheme()
+  const overlayGlow = isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)'
+  const overlayGlowSoft = isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)'
   const money = useMoney()
   const { data: loans = [] } = useLoans({ sacco: membership.sacco_slug })
   const activeLoan = loans.find((l) => l.status === 'active' || l.status === 'disbursed' || l.status === 'approved')
@@ -462,20 +464,20 @@ function SingleSaccoDashboard({
           style={{
             position: 'absolute', top: -30, right: -30,
             width: 120, height: 120, borderRadius: 60,
-            backgroundColor: 'rgba(255,255,255,0.04)',
+            backgroundColor: overlayGlow,
           }}
         />
         <View
           style={{
             position: 'absolute', bottom: -40, left: 20,
             width: 90, height: 90, borderRadius: 45,
-            backgroundColor: 'rgba(255,255,255,0.03)',
+            backgroundColor: overlayGlowSoft,
           }}
         />
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
           <Text
             style={{
-              fontSize: 10, color: 'rgba(255,255,255,0.5)',
+              fontSize: 10, color: c.textMuted,
               letterSpacing: 0.6, textTransform: 'uppercase',
             }}
           >
@@ -483,15 +485,15 @@ function SingleSaccoDashboard({
           </Text>
           {onViewDetail && (
             <View className="flex-row items-center gap-1">
-              <Text style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', letterSpacing: 0.3 }}>View detail</Text>
-              <Icon name="arrow-right" size={10} color="rgba(255,255,255,0.4)" />
+              <Text style={{ fontSize: 10, color: c.textFaint, letterSpacing: 0.3 }}>View detail</Text>
+              <Icon name="arrow-right" size={10} color={c.textFaint} />
             </View>
           )}
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 14 }}>
           <Text
             style={{
-              fontSize: 30, fontWeight: '700', color: '#fff', lineHeight: 34,
+              fontSize: 30, fontWeight: '700', color: c.text, lineHeight: 34,
             }}
           >
             {money(totalSavings + membership.share_capital)}
@@ -618,7 +620,9 @@ function UnifiedDashboard({
   onAction: (action: QuickAction) => void
   onSelectSacco: (slug: string) => void
 }) {
-  const { colors: c } = useTheme()
+  const { colors: c, isDark } = useTheme()
+  const overlayGlow = isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)'
+  const overlayGlowSoft = isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)'
   const money = useMoney()
   return (
     <View>
@@ -638,19 +642,19 @@ function UnifiedDashboard({
           style={{
             position: 'absolute', top: -30, right: -30,
             width: 120, height: 120, borderRadius: 60,
-            backgroundColor: 'rgba(255,255,255,0.04)',
+            backgroundColor: overlayGlow,
           }}
         />
         <View
           style={{
             position: 'absolute', bottom: -40, left: 20,
             width: 90, height: 90, borderRadius: 45,
-            backgroundColor: 'rgba(255,255,255,0.03)',
+            backgroundColor: overlayGlowSoft,
           }}
         />
         <Text
           style={{
-            fontSize: 10, color: 'rgba(255,255,255,0.5)',
+            fontSize: 10, color: c.textMuted,
             letterSpacing: 0.6, textTransform: 'uppercase', marginBottom: 4,
           }}
         >
@@ -659,7 +663,7 @@ function UnifiedDashboard({
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 14 }}>
           <Text
             style={{
-              fontSize: 30, fontWeight: '700', color: '#fff', lineHeight: 34,
+              fontSize: 30, fontWeight: '700', color: c.text, lineHeight: 34,
             }}
           >
             {money(dashboard.total_balance)}
@@ -932,10 +936,11 @@ function TransactionRow({ transaction }: { transaction: Transaction }) {
 }
 
 function StatLight({ label, value }: { label: string; value: string }) {
+  const { colors: c } = useTheme()
   return (
     <View>
-      <Text style={{ fontSize: 9, color: 'rgba(255,255,255,0.5)', marginBottom: 2 }}>{label}</Text>
-      <Text style={{ fontSize: 12, fontWeight: '600', color: 'rgba(255,255,255,0.9)' }}>{value}</Text>
+      <Text style={{ fontSize: 9, color: c.textMuted, marginBottom: 2 }}>{label}</Text>
+      <Text style={{ fontSize: 12, fontWeight: '600', color: c.text }}>{value}</Text>
     </View>
   )
 }
@@ -981,7 +986,7 @@ function TrackerStep({ label, active }: { label: string; active?: boolean }) {
         {active ? (
           <Icon name="check" size={12} color="#fff" />
         ) : (
-          <View className="w-1 h-1 rounded-full bg-white/30" />
+          <View className="w-1 h-1 rounded-full" style={{ backgroundColor: c.textFaint }} />
         )}
       </View>
       <Text style={{ fontSize: 12, fontWeight: '500', color: active ? c.text : c.textMuted }}>

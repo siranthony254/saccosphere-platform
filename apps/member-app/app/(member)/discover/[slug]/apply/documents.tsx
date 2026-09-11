@@ -6,10 +6,12 @@ import { useSaccoConfig } from '../../../../../hooks/useSaccoConfig'
 import type { RequiredDocument } from '@saccosphere/schemas'
 import { DeepSpaceBackground } from '../../../../../components/DeepSpaceBackground'
 import { Icon } from '../../../../../components/ui/Icon'
+import { useTheme } from '../../../../../theme/ThemeProvider'
 
 export default function ApplyDocumentsScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>()
   const insets = useSafeAreaInsets()
+  const { colors: c } = useTheme()
   const { saccoSlug } = useMembershipApplicationStore()
   const { data: config, isLoading: isLoadingConfig } = useSaccoConfig(slug ?? '')
 
@@ -21,7 +23,7 @@ export default function ApplyDocumentsScreen() {
       <DeepSpaceBackground>
         <View className="flex-1 items-center justify-center px-8">
           <ActivityIndicator color="#6D28D9" />
-          <Text className="text-white/60 text-xs mt-3">Loading document requirements...</Text>
+          <Text className="text-xs mt-3" style={{ color: c.textMuted }}>Loading document requirements...</Text>
         </View>
       </DeepSpaceBackground>
     )
@@ -39,13 +41,13 @@ export default function ApplyDocumentsScreen() {
         contentContainerStyle={{ paddingBottom: insets.bottom + 24, paddingTop: insets.top }}
       >
         {/* Header */}
-        <View className="px-4 py-2.5 border-b border-white/10 flex-row items-center mb-4">
-          <TouchableOpacity onPress={() => router.back()} className="w-7 h-7 rounded-full bg-white/10 items-center justify-center">
-            <Text className="text-white/80 text-xs">←</Text>
+        <View className="px-4 py-2.5 border-b flex-row items-center mb-4" style={{ borderColor: c.border }}>
+          <TouchableOpacity onPress={() => router.back()} className="w-7 h-7 rounded-full items-center justify-center" style={{ backgroundColor: c.surface }}>
+            <Text className="text-xs" style={{ color: c.textMuted }}>←</Text>
           </TouchableOpacity>
           <View className="ml-2.5">
-            <Text className="text-white text-sm font-semibold">Apply — {saccoName}</Text>
-            <Text className="text-white/60 text-xs">Step 2 of 3 — Documents</Text>
+            <Text className="text-sm font-semibold" style={{ color: c.text }}>Apply — {saccoName}</Text>
+            <Text className="text-xs" style={{ color: c.textMuted }}>Step 2 of 3 — Documents</Text>
           </View>
         </View>
 
@@ -53,18 +55,18 @@ export default function ApplyDocumentsScreen() {
         <View className="flex-row gap-1 mx-4 mb-1.5">
           <View className="flex-1 h-0.75 rounded bg-violet-500" />
           <View className="flex-1 h-0.75 rounded bg-violet-500" />
-          <View className="flex-1 h-0.75 rounded bg-white/20" />
+          <View className="flex-1 h-0.75 rounded" style={{ backgroundColor: c.border }} />
         </View>
-        <Text className="text-white/40 text-xs mx-4 mb-4">Step 2 of 3 — Required documents</Text>
+        <Text className="text-xs mx-4 mb-4" style={{ color: c.textFaint }}>Step 2 of 3 — Required documents</Text>
 
-        <Text className="text-white/80 text-xs font-medium mx-4 mb-2.5">
+        <Text className="text-xs font-medium mx-4 mb-2.5" style={{ color: c.textMuted }}>
           {saccoName} requires the following:
         </Text>
 
         {/* KYC Verified Documents */}
         {kycVerifiedDocs.length > 0 && (
           <>
-            <Text className="text-white/40 text-xs mb-2 mx-4">Auto-imported from your KYC</Text>
+            <Text className="text-xs mb-2 mx-4" style={{ color: c.textFaint }}>Auto-imported from your KYC</Text>
             {kycVerifiedDocs.map((doc: RequiredDocument) => (
               <View key={doc.key} className="flex-row gap-2.5 mx-4 mb-3">
                 <View className="w-6 h-6 rounded-full justify-center items-center bg-mint-500">
@@ -74,7 +76,7 @@ export default function ApplyDocumentsScreen() {
                   <Text className="text-mint-400 text-xs font-semibold">
                     {doc.label}
                   </Text>
-                  <Text className="text-white/60 text-xs">Auto-imported from your KYC · Verified</Text>
+                  <Text className="text-xs" style={{ color: c.textMuted }}>Auto-imported from your KYC · Verified</Text>
                 </View>
               </View>
             ))}
@@ -84,18 +86,18 @@ export default function ApplyDocumentsScreen() {
         {/* Documents to Upload */}
         {docsToUpload.length > 0 && (
           <>
-            <Text className="text-white/40 text-xs mb-2 mx-4 mt-4">Upload the following</Text>
+            <Text className="text-xs mb-2 mx-4 mt-4" style={{ color: c.textFaint }}>Upload the following</Text>
             {docsToUpload.map((doc: RequiredDocument) => (
-              <TouchableOpacity key={doc.key} className="mx-4 bg-white/5 border border-white/10 rounded-xl p-3 mb-2.5 flex-row gap-2.5 items-start">
+              <TouchableOpacity key={doc.key} className="mx-4 border rounded-xl p-3 mb-2.5 flex-row gap-2.5 items-start" style={{ backgroundColor: c.surface, borderColor: c.border }}>
                 <Icon name="file" size={16} color="#6B7280" />
                 <View className="flex-1">
-                  <Text className="text-white text-xs font-semibold mb-0.5">{doc.label}</Text>
-                  <Text className="text-white/60 text-xs">
+                  <Text className="text-xs font-semibold mb-0.5" style={{ color: c.text }}>{doc.label}</Text>
+                  <Text className="text-xs" style={{ color: c.textMuted }}>
                     Required by {saccoName}
                     {doc.accepted_formats && ` · ${doc.accepted_formats.join(', ')}`}
                   </Text>
                   {doc.hint && (
-                    <Text className="text-white/40 text-xs mt-0.5">{doc.hint}</Text>
+                    <Text className="text-xs mt-0.5" style={{ color: c.textFaint }}>{doc.hint}</Text>
                   )}
                 </View>
               </TouchableOpacity>
@@ -105,11 +107,11 @@ export default function ApplyDocumentsScreen() {
 
         {/* Registration fee notice */}
         <View className="mx-4 mb-4 mt-2">
-          <Text className="text-white/80 text-xs font-medium mb-1">
+          <Text className="text-xs font-medium mb-1" style={{ color: c.textMuted }}>
             Registration fee (KES {registrationFee.toLocaleString()})
           </Text>
-          <View className="rounded-xl p-3 border border-white/10 bg-white/5">
-            <Text className="text-white/60 text-xs leading-4.5">
+          <View className="rounded-xl p-3 border" style={{ borderColor: c.border, backgroundColor: c.surface }}>
+            <Text className="text-xs leading-4.5" style={{ color: c.textMuted }}>
               No payment is needed to submit. {saccoName} will send M-Pesa payment instructions
               once your application is approved.
             </Text>
@@ -118,16 +120,14 @@ export default function ApplyDocumentsScreen() {
 
         {/* Continue button */}
         <TouchableOpacity
-          className={`mx-4 py-3 rounded-xl items-center ${
-            !isReady ? 'bg-white/10' : 'bg-violet-500'
-          }`}
+          className={`mx-4 py-3 rounded-xl items-center ${!isReady ? '' : 'bg-violet-500'}`}
+          style={!isReady ? { backgroundColor: c.surface } : undefined}
           onPress={() => router.push(`/(member)/discover/${slug}/apply/review`)}
           disabled={!isReady}
         >
           <Text
-            className={`text-xs font-semibold ${
-              !isReady ? 'text-white/40' : 'text-white'
-            }`}
+            className="text-xs font-semibold"
+            style={{ color: !isReady ? c.textFaint : '#FFFFFF' }}
           >
             Continue →
           </Text>

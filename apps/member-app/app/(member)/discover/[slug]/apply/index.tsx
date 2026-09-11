@@ -8,10 +8,12 @@ import { useSaccoConfig } from '../../../../../hooks/useSaccoConfig'
 import { useProfile } from '../../../../../hooks/useProfile'
 import type { AdditionalField } from '@saccosphere/schemas'
 import { DeepSpaceBackground } from '../../../../../components/DeepSpaceBackground'
+import { useTheme } from '../../../../../theme/ThemeProvider'
 
 export default function ApplyStep1Screen() {
   const { slug } = useLocalSearchParams<{ slug: string }>()
   const insets = useSafeAreaInsets()
+  const { colors: c } = useTheme()
 
   const { setSacco, setFormData, setMonthlyContribution, formData, monthlyContribution } =
     useMembershipApplicationStore()
@@ -60,7 +62,7 @@ export default function ApplyStep1Screen() {
       <DeepSpaceBackground>
         <View className="flex-1 items-center justify-center px-8">
           <ActivityIndicator color="#6D28D9" />
-          <Text className="text-white/60 text-xs mt-3">Loading form fields...</Text>
+          <Text className="text-xs mt-3" style={{ color: c.textMuted }}>Loading form fields...</Text>
         </View>
       </DeepSpaceBackground>
     )
@@ -110,39 +112,40 @@ export default function ApplyStep1Screen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Header */}
-        <View className="px-4 py-2.5 border-b border-white/10 flex-row items-center mb-4">
-          <TouchableOpacity onPress={() => router.back()} className="w-7 h-7 rounded-full bg-white/10 items-center justify-center">
-            <Text className="text-white/80 text-xs">←</Text>
+        <View className="px-4 py-2.5 border-b flex-row items-center mb-4" style={{ borderColor: c.border }}>
+          <TouchableOpacity onPress={() => router.back()} className="w-7 h-7 rounded-full items-center justify-center" style={{ backgroundColor: c.surface }}>
+            <Text className="text-xs" style={{ color: c.textMuted }}>←</Text>
           </TouchableOpacity>
           <View className="ml-2.5">
-            <Text className="text-white text-sm font-semibold">Apply — {saccoName}</Text>
-            <Text className="text-white/60 text-xs">Membership application</Text>
+            <Text className="text-sm font-semibold" style={{ color: c.text }}>Apply — {saccoName}</Text>
+            <Text className="text-xs" style={{ color: c.textMuted }}>Membership application</Text>
           </View>
         </View>
 
         {/* Progress bar - step 1 of 3 */}
         <View className="flex-row gap-1 mx-4 mb-1.5">
           <View className="flex-1 h-0.75 rounded bg-violet-500" />
-          <View className="flex-1 h-0.75 rounded bg-white/20" />
-          <View className="flex-1 h-0.75 rounded bg-white/20" />
+          <View className="flex-1 h-0.75 rounded" style={{ backgroundColor: c.border }} />
+          <View className="flex-1 h-0.75 rounded" style={{ backgroundColor: c.border }} />
         </View>
-        <Text className="text-white/40 text-xs mx-4 mb-4">Step 1 of 3 — Application details</Text>
+        <Text className="text-xs mx-4 mb-4" style={{ color: c.textFaint }}>Step 1 of 3 — Application details</Text>
 
         {/* User info from KYC - read only */}
-        <View className="mx-4 mb-4 rounded-xl p-3" style={{ backgroundColor: 'rgba(255,255,255,0.05)', borderLeftWidth: 3, borderLeftColor: '#6D28D9' }}>
-          <Text className="text-xs leading-4.5 text-white/90">
+        <View className="mx-4 mb-4 rounded-xl p-3" style={{ backgroundColor: c.surface, borderLeftWidth: 3, borderLeftColor: '#6D28D9' }}>
+          <Text className="text-xs leading-4.5" style={{ color: c.text }}>
             Applying as: {userProfile?.first_name} {userProfile?.last_name}
           </Text>
-          <Text className="text-white/60 text-xs mt-1">
+          <Text className="text-xs mt-1" style={{ color: c.textMuted }}>
             ID: {userProfile?.national_id || 'Not verified'} · Phone: {userProfile?.phone_number || 'Not verified'}
           </Text>
         </View>
 
         {/* Employment fields (standard backend fields) */}
         <View className="mx-4 mb-3">
-          <Text className="text-white/80 text-xs font-medium mb-1">Employer / Business</Text>
+          <Text className="text-xs font-medium mb-1" style={{ color: c.textMuted }}>Employer / Business</Text>
           <TextInput
-            className="bg-white/10 rounded-xl p-2.5 text-xs text-white border border-white/10"
+            className="rounded-xl p-2.5 text-xs border"
+            style={{ backgroundColor: c.surface, color: c.text, borderColor: c.border }}
             value={employer}
             onChangeText={setEmployer}
             placeholder="e.g. Safaricom Ltd"
@@ -151,22 +154,20 @@ export default function ApplyStep1Screen() {
         </View>
 
         <View className="mx-4 mb-3">
-          <Text className="text-white/80 text-xs font-medium mb-1">Employment type</Text>
+          <Text className="text-xs font-medium mb-1" style={{ color: c.textMuted }}>Employment type</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row gap-2">
             {employmentOptions.map((option) => (
               <TouchableOpacity
                 key={option}
                 className={`px-3 py-2 rounded-lg border ${
-                  employmentType === option
-                    ? 'bg-violet-500 border-violet-500'
-                    : 'bg-white/5 border-white/10'
+                  employmentType === option ? 'bg-violet-500 border-violet-500' : ''
                 }`}
+                style={employmentType === option ? undefined : { backgroundColor: c.surface, borderColor: c.border }}
                 onPress={() => setEmploymentType(option)}
               >
                 <Text
-                  className={`text-xs ${
-                    employmentType === option ? 'text-white' : 'text-white/60'
-                  }`}
+                  className="text-xs"
+                  style={{ color: employmentType === option ? '#FFFFFF' : c.textMuted }}
                 >
                   {option}
                 </Text>
@@ -176,9 +177,10 @@ export default function ApplyStep1Screen() {
         </View>
 
         <View className="mx-4 mb-4">
-          <Text className="text-white/80 text-xs font-medium mb-1">Gross monthly income (KES)</Text>
+          <Text className="text-xs font-medium mb-1" style={{ color: c.textMuted }}>Gross monthly income (KES)</Text>
           <TextInput
-            className="bg-white/10 border border-white/10 rounded-xl p-2.5 text-xs text-white"
+            className="border rounded-xl p-2.5 text-xs"
+            style={{ backgroundColor: c.surface, borderColor: c.border, color: c.text }}
             value={monthlyIncome}
             onChangeText={setMonthlyIncome}
             placeholder="85,000"
@@ -190,7 +192,7 @@ export default function ApplyStep1Screen() {
         {/* Dynamic custom fields from sacco config */}
         {config?.membership.additional_fields.map((field: AdditionalField) => (
           <View key={field.key} className="mx-4 mb-3">
-            <Text className="text-white/80 text-xs font-medium mb-1">
+            <Text className="text-xs font-medium mb-1" style={{ color: c.textMuted }}>
               {field.label}
               {field.required && <Text className="text-red-400"> *</Text>}
             </Text>
@@ -201,16 +203,14 @@ export default function ApplyStep1Screen() {
                   <TouchableOpacity
                     key={option}
                     className={`px-3 py-2 rounded-lg border ${
-                      customFieldValues[field.key] === option
-                        ? 'bg-violet-500 border-violet-500'
-                        : 'bg-white/5 border-white/10'
+                      customFieldValues[field.key] === option ? 'bg-violet-500 border-violet-500' : ''
                     }`}
+                    style={customFieldValues[field.key] === option ? undefined : { backgroundColor: c.surface, borderColor: c.border }}
                     onPress={() => handleCustomFieldChange(field.key, option)}
                   >
                     <Text
-                      className={`text-xs ${
-                        customFieldValues[field.key] === option ? 'text-white' : 'text-white/60'
-                      }`}
+                      className="text-xs"
+                      style={{ color: customFieldValues[field.key] === option ? '#FFFFFF' : c.textMuted }}
                     >
                       {option}
                     </Text>
@@ -219,7 +219,8 @@ export default function ApplyStep1Screen() {
               </ScrollView>
             ) : field.type === 'textarea' ? (
               <TextInput
-                className="bg-white/10 border border-white/10 rounded-xl p-2.5 text-xs text-white min-h-[80px]"
+                className="border rounded-xl p-2.5 text-xs min-h-[80px]"
+                style={{ backgroundColor: c.surface, borderColor: c.border, color: c.text }}
                 value={customFieldValues[field.key] ?? ''}
                 onChangeText={(value) => handleCustomFieldChange(field.key, value)}
                 placeholder={field.placeholder ?? ''}
@@ -230,7 +231,8 @@ export default function ApplyStep1Screen() {
               />
             ) : (
               <TextInput
-                className="bg-white/10 border border-white/10 rounded-xl p-2.5 text-xs text-white"
+                className="border rounded-xl p-2.5 text-xs"
+                style={{ backgroundColor: c.surface, borderColor: c.border, color: c.text }}
                 value={customFieldValues[field.key] ?? ''}
                 onChangeText={(value) => handleCustomFieldChange(field.key, value)}
                 placeholder={field.placeholder ?? ''}
@@ -241,16 +243,17 @@ export default function ApplyStep1Screen() {
               />
             )}
 
-            {field.hint && <Text className="text-white/40 text-xs mt-1">{field.hint}</Text>}
+            {field.hint && <Text className="text-xs mt-1" style={{ color: c.textFaint }}>{field.hint}</Text>}
           </View>
         ))}
 
         <View className="mx-4 mb-4">
-          <Text className="text-white/80 text-xs font-medium mb-1">
+          <Text className="text-xs font-medium mb-1" style={{ color: c.textMuted }}>
             Monthly contribution (min KES {minContribution.toLocaleString()})
           </Text>
           <TextInput
-            className="bg-white/10 border border-white/10 rounded-xl p-2.5 text-xs text-white"
+            className="border rounded-xl p-2.5 text-xs"
+            style={{ backgroundColor: c.surface, borderColor: c.border, color: c.text }}
             value={contribution}
             onChangeText={setContribution}
             placeholder="3,000"
@@ -265,13 +268,12 @@ export default function ApplyStep1Screen() {
 
         {/* Continue button */}
         <TouchableOpacity
-          className={`mx-4 py-3 rounded-xl items-center ${
-            !canContinue ? 'bg-white/10' : 'bg-violet-500'
-          }`}
+          className={`mx-4 py-3 rounded-xl items-center ${!canContinue ? '' : 'bg-violet-500'}`}
+          style={!canContinue ? { backgroundColor: c.surface } : undefined}
           onPress={handleContinue}
           disabled={!canContinue}
         >
-          <Text className={`text-xs font-semibold ${!canContinue ? 'text-white/40' : 'text-white'}`}>
+          <Text className="text-xs font-semibold" style={{ color: !canContinue ? c.textFaint : '#FFFFFF' }}>
             Continue →
           </Text>
         </TouchableOpacity>

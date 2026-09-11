@@ -126,7 +126,7 @@ export default function PayScreen() {
       <DeepSpaceBackground>
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
           <ActivityIndicator color={c.accent} />
-          <Text style={{ color: 'rgba(255,255,255,0.4)', fontSize: 12, marginTop: 10 }}>Loading payment details...</Text>
+          <Text style={{ color: c.textFaint, fontSize: 12, marginTop: 10 }}>Loading payment details...</Text>
         </View>
       </DeepSpaceBackground>
     )
@@ -183,11 +183,11 @@ export default function PayScreen() {
     return (
       <DeepSpaceBackground>
         <View style={{ flex: 1, padding: 20, paddingTop: insets.top }}>
-          <Text style={{ color: '#fff', fontSize: 22, fontWeight: '700', marginBottom: 6 }}>Bank transfer</Text>
-          <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 13, lineHeight: 20, marginBottom: 24 }}>
+          <Text style={{ color: c.text, fontSize: 22, fontWeight: '700', marginBottom: 6 }}>Bank transfer</Text>
+          <Text style={{ color: c.textMuted, fontSize: 13, lineHeight: 20, marginBottom: 24 }}>
             Use your SACCO bank instructions to complete this payment. The app will reflect the payment after the SACCO posts it.
           </Text>
-          <View style={{ backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', padding: 16, marginBottom: 24 }}>
+          <View style={{ backgroundColor: c.surface, borderRadius: 20, borderWidth: 1, borderColor: c.border, padding: 16, marginBottom: 24 }}>
             <BankRow label="SACCO" value={saccoName} />
             <BankRow label="Payment type" value={isRepayment ? 'Loan repayment' : 'Contribution'} />
             <BankRow label="Amount" value={`KES ${numericAmount.toLocaleString()}`} />
@@ -215,25 +215,25 @@ export default function PayScreen() {
       >
         <View className="flex-row items-center mb-6">
           <TouchableOpacity onPress={() => router.back()} className="mr-3">
-            <Text className="text-white/60 text-lg">←</Text>
+            <Text className="text-lg" style={{ color: c.textMuted }}>←</Text>
           </TouchableOpacity>
           <View>
-            <Text className="text-white text-xl font-bold">{title}</Text>
-            <Text className="text-white/40 text-[10px] font-bold uppercase tracking-wider">{subtitle}</Text>
+            <Text className="text-xl font-bold" style={{ color: c.text }}>{title}</Text>
+            <Text className="text-[10px] font-bold uppercase tracking-wider" style={{ color: c.textFaint }}>{subtitle}</Text>
           </View>
         </View>
 
-        <Text className="text-white/60 text-[10px] font-bold uppercase mb-3 ml-1">Enter Amount (KES)</Text>
+        <Text className="text-[10px] font-bold uppercase mb-3 ml-1" style={{ color: c.textMuted }}>Enter Amount (KES)</Text>
         <TextInput
-          style={{ color: '#fff', fontSize: 42, fontWeight: '800', borderBottomWidth: 2, borderBottomColor: c.accent, paddingBottom: 12, marginBottom: 32 }}
+          style={{ color: c.text, fontSize: 42, fontWeight: '800', borderBottomWidth: 2, borderBottomColor: c.accent, paddingBottom: 12, marginBottom: 32 }}
           value={amount}
           onChangeText={setAmount}
           placeholder={defaultAmount ? String(Math.round(defaultAmount)) : '0'}
-          placeholderTextColor="rgba(255,255,255,0.2)"
+          placeholderTextColor={c.textFaint}
           keyboardType="number-pad"
         />
 
-        <View style={{ backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 20, padding: 16, marginBottom: 32, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
+        <View style={{ backgroundColor: c.surface, borderRadius: 20, padding: 16, marginBottom: 32, borderWidth: 1, borderColor: c.border }}>
           <BankRow label="SACCO" value={saccoName} />
           <BankRow label="Purpose" value={isRepayment ? 'Loan Repayment' : 'Saving Contribution'} />
           <BankRow label="Accepted Methods" value={acceptedMethods.map(m => m === 'mpesa' ? 'M-Pesa' : m === 'bank_transfer' ? 'Bank' : m).join(', ')} />
@@ -259,10 +259,11 @@ export default function PayScreen() {
 }
 
 function BankRow({ label, value }: { label: string; value: string }) {
+  const { colors: c } = useTheme()
   return (
-    <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.05)' }}>
-      <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12 }}>{label}</Text>
-      <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700', flexShrink: 1, textAlign: 'right' }}>{value}</Text>
+    <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: c.border }}>
+      <Text style={{ color: c.textMuted, fontSize: 12 }}>{label}</Text>
+      <Text style={{ color: c.text, fontSize: 12, fontWeight: '700', flexShrink: 1, textAlign: 'right' }}>{value}</Text>
     </View>
   )
 }

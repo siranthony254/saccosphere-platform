@@ -5,10 +5,12 @@ import { useSacco } from '../../../../../hooks/useSaccos'
 import { useSaccoConfig } from '../../../../../hooks/useSaccoConfig'
 import { DeepSpaceBackground } from '../../../../../components/DeepSpaceBackground'
 import { Icon } from '../../../../../components/ui/Icon'
+import { useTheme } from '../../../../../theme/ThemeProvider'
 
 export default function ApplySuccessScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>()
   const insets = useSafeAreaInsets()
+  const { colors: c } = useTheme()
   const { data: sacco } = useSacco(slug)
   const { data: config } = useSaccoConfig(slug ?? '')
 
@@ -29,22 +31,22 @@ export default function ApplySuccessScreen() {
               <Icon name="check" size={18} color="#ffffff" />
             </View>
           </View>
-          <Text className="text-white text-base font-bold mb-1">Application submitted!</Text>
-          <Text className="text-white/60 text-xs text-center leading-5 mx-8 mb-6">
+          <Text className="text-base font-bold mb-1" style={{ color: c.text }}>Application submitted!</Text>
+          <Text className="text-xs text-center leading-5 mx-8 mb-6" style={{ color: c.textMuted }}>
             {saccoName} has received your membership application. You'll be notified once it's reviewed.
           </Text>
         </View>
 
         {/* Reference box */}
-        <View className="mx-4 bg-white/10 rounded-xl p-3 mb-4">
-          <Text className="text-white/80 text-xs font-bold text-center tracking-widest">
+        <View className="rounded-xl p-3 mb-4 mx-4" style={{ backgroundColor: c.surface }}>
+          <Text className="text-xs font-bold text-center tracking-widest" style={{ color: c.text }}>
             {appRef}
           </Text>
         </View>
 
         {/* Receipt card */}
-        <View className="mx-4 bg-white/5 border border-white/10 rounded-xl p-3.5 mb-4">
-          {[  
+        <View className="mx-4 border rounded-xl p-3.5 mb-4" style={{ backgroundColor: c.surface, borderColor: c.border }}>
+          {[
             { label: 'SACCO', value: saccoName },
             { label: 'Status', value: 'Under review' },
             { label: 'Expected decision', value: '5–7 business days' },
@@ -52,10 +54,11 @@ export default function ApplySuccessScreen() {
           ].map((row) => (
             <View
               key={row.label}
-              className="flex-row justify-between py-2 border-b border-white/5 last:border-b-0"
+              className="flex-row justify-between py-2 border-b last:border-b-0"
+              style={{ borderColor: c.border }}
             >
-              <Text className="text-white/60 text-xs">{row.label}</Text>
-              <Text className="text-white text-xs font-semibold">{row.value}</Text>
+              <Text className="text-xs" style={{ color: c.textMuted }}>{row.label}</Text>
+              <Text className="text-xs font-semibold" style={{ color: c.text }}>{row.value}</Text>
             </View>
           ))}
         </View>
@@ -67,38 +70,38 @@ export default function ApplySuccessScreen() {
               <Icon name="check" size={12} color="#ffffff" />
             </View>
             <View className="flex-1">
-              <Text className="text-white text-xs font-medium">Application submitted</Text>
-              <Text className="text-white/40 text-xs">Just now</Text>
+              <Text className="text-xs font-medium" style={{ color: c.text }}>Application submitted</Text>
+              <Text className="text-xs" style={{ color: c.textFaint }}>Just now</Text>
             </View>
           </View>
 
           <View className="flex-row items-start gap-2.5 mb-4">
-            <View className="w-5.5 h-5.5 rounded-full border border-white/20 items-center justify-center bg-white/5">
-              <Text className="text-white/40 text-xs font-bold">2</Text>
+            <View className="w-5.5 h-5.5 rounded-full border items-center justify-center" style={{ borderColor: c.border, backgroundColor: c.surface }}>
+              <Text className="text-xs font-bold" style={{ color: c.textFaint }}>2</Text>
             </View>
             <View className="flex-1">
-              <Text className="text-white text-xs font-medium">SACCO admin review</Text>
-              <Text className="text-white/40 text-xs">3–5 business days</Text>
+              <Text className="text-xs font-medium" style={{ color: c.text }}>SACCO admin review</Text>
+              <Text className="text-xs" style={{ color: c.textFaint }}>3–5 business days</Text>
             </View>
           </View>
 
           <View className="flex-row items-start gap-2.5 mb-4">
-            <View className="w-5.5 h-5.5 rounded-full border border-white/20 items-center justify-center bg-white/5">
-              <Text className="text-white/40 text-xs font-bold">3</Text>
+            <View className="w-5.5 h-5.5 rounded-full border items-center justify-center" style={{ borderColor: c.border, backgroundColor: c.surface }}>
+              <Text className="text-xs font-bold" style={{ color: c.textFaint }}>3</Text>
             </View>
             <View className="flex-1">
-              <Text className="text-white text-xs font-medium">Approval & activation</Text>
-              <Text className="text-white/40 text-xs">Pending</Text>
+              <Text className="text-xs font-medium" style={{ color: c.text }}>Approval & activation</Text>
+              <Text className="text-xs" style={{ color: c.textFaint }}>Pending</Text>
             </View>
           </View>
 
           <View className="flex-row items-start gap-2.5">
-            <View className="w-5.5 h-5.5 rounded-full border border-white/20 items-center justify-center bg-white/5">
-              <Text className="text-white/40 text-xs font-bold">4</Text>
+            <View className="w-5.5 h-5.5 rounded-full border items-center justify-center" style={{ borderColor: c.border, backgroundColor: c.surface }}>
+              <Text className="text-xs font-bold" style={{ color: c.textFaint }}>4</Text>
             </View>
             <View className="flex-1">
-              <Text className="text-white text-xs font-medium">Dashboard goes live</Text>
-              <Text className="text-white/40 text-xs">Full access unlocked</Text>
+              <Text className="text-xs font-medium" style={{ color: c.text }}>Dashboard goes live</Text>
+              <Text className="text-xs" style={{ color: c.textFaint }}>Full access unlocked</Text>
             </View>
           </View>
         </View>
@@ -112,10 +115,11 @@ export default function ApplySuccessScreen() {
         </TouchableOpacity>
 
         <TouchableOpacity
-          className="mx-4 py-3 rounded-xl items-center bg-white/10"
+          className="mx-4 py-3 rounded-xl items-center"
+          style={{ backgroundColor: c.surface }}
           onPress={() => router.replace('/(member)/discover')}
         >
-          <Text className="text-white/80 text-xs font-semibold">Apply to another SACCO</Text>
+          <Text className="text-xs font-semibold" style={{ color: c.text }}>Apply to another SACCO</Text>
         </TouchableOpacity>
       </ScrollView>
     </DeepSpaceBackground>
