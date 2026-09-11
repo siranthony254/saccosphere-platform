@@ -82,7 +82,11 @@ export default function LinkSaccos() {
     setSelected((prev) => (prev.includes(slug) ? [] : [slug]))
   }
 
-  const selectedSaccoSlug = selectedSlugFromStore ?? selected[0] ?? null
+  // `selected` is the single source of truth once the screen has mounted —
+  // it's seeded from selectedSlugFromStore above, but must not keep falling
+  // back to that store value afterward, or untoggling a preselected SACCO in
+  // the list below would have no effect on what actually gets submitted.
+  const selectedSaccoSlug = selected[0] ?? null
 
   const routeAfterRegister = async () => {
     const slug = selectedSaccoSlug
@@ -239,21 +243,19 @@ export default function LinkSaccos() {
 
       {/* Search */}
       <View
-        className="border rounded-xl p-3 text-sm mb-3"
+        className="flex-row items-center border rounded-xl px-3 mb-3"
         style={{ borderColor: c.border, backgroundColor: c.surface }}
       >
-        <Text className="text-xs" style={{ color: c.textMuted }}>
-          Search {saccos.length} SACCOs...
-        </Text>
+        <Icon name="search" size={16} color={c.textMuted} />
+        <TextInput
+          className="flex-1 text-sm ml-2 py-3"
+          style={{ color: c.text }}
+          value={search}
+          onChangeText={setSearch}
+          placeholder={`Search ${saccos.length} SACCOs...`}
+          placeholderTextColor={c.textMuted}
+        />
       </View>
-      <TextInput
-        className="absolute opacity-0 left-0 right-0"
-        style={{ height: 0 }}
-        value={search}
-        onChangeText={setSearch}
-        placeholder="Search SACCOs..."
-        placeholderTextColor={c.textMuted}
-      />
 
       {/* SACCO list */}
       {saccosLoading ? (
