@@ -168,8 +168,7 @@ export function AnimatedSplash({ onFinish }: Props) {
 
   return (
     <Animated.View
-      style={[styles.root, { opacity: rootOpacity }]}
-      pointerEvents="none"
+      style={[styles.root, { opacity: rootOpacity, pointerEvents: 'none' }]}
     >
       {/* Stage 1 — white + logo */}
       <Animated.View

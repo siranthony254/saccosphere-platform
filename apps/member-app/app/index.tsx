@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   Alert,
   StyleSheet,
+  Platform,
 } from 'react-native'
 import { StatusBar } from 'expo-status-bar'
 import { LinearGradient } from 'expo-linear-gradient'
@@ -321,11 +322,16 @@ export default function LandingScreen() {
             paddingHorizontal: 28,
             paddingBottom: 28 + insets.bottom,
             marginHorizontal: 0,
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 10 },
-            shadowOpacity: 0.08,
-            shadowRadius: 24,
             elevation: 8,
+            ...Platform.select({
+              web: { boxShadow: '0px 10px 24px rgba(0,0,0,0.08)' },
+              default: {
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 10 },
+                shadowOpacity: 0.08,
+                shadowRadius: 24,
+              },
+            }),
           }}
         >
           <View

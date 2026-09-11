@@ -20,9 +20,9 @@ export function DeepSpaceBackground({ children }: { children: React.ReactNode })
     <AppBackground>
       {isMidnight && (
         <>
-          <View style={[styles.glow, styles.violetGlow]} pointerEvents="none" />
-          <View style={[styles.glow, styles.mintGlow]} pointerEvents="none" />
-          <View style={styles.gridContainer} pointerEvents="none">
+          <View style={[styles.glow, styles.violetGlow, { pointerEvents: 'none' }]} />
+          <View style={[styles.glow, styles.mintGlow, { pointerEvents: 'none' }]} />
+          <View style={[styles.gridContainer, { pointerEvents: 'none' }]}>
             {[...Array(20)].map((_, i) => (
               <View
                 key={`grid-${i}`}

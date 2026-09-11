@@ -1,6 +1,6 @@
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Tabs } from 'expo-router'
-import { Text, View } from 'react-native'
+import { Text, View, Platform } from 'react-native'
 import { Icon, type IconName } from '../../components/ui/Icon'
 import { useTheme } from '../../theme/ThemeProvider'
 import { AppBackground } from '../../theme/AppBackground'
@@ -24,10 +24,15 @@ export default function MemberTabLayout() {
             height: 65,
             backgroundColor: c.bg,
             elevation: 8,
-            shadowColor: '#000',
-            shadowOpacity: 0.08,
-            shadowRadius: 12,
-            shadowOffset: { width: 0, height: -3 },
+            ...Platform.select({
+              web: { boxShadow: '0px -3px 12px rgba(0,0,0,0.08)' },
+              default: {
+                shadowColor: '#000',
+                shadowOpacity: 0.08,
+                shadowRadius: 12,
+                shadowOffset: { width: 0, height: -3 },
+              },
+            }),
           },
           tabBarLabelStyle: { fontSize: 10, fontWeight: '700', marginTop: 1 },
           tabBarItemStyle: { paddingVertical: 2, gap: 2 },
