@@ -1,4 +1,4 @@
-import { useQuery, useMutation } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { QueryKeys, STALE_TIMES } from '@saccosphere/config'
 import { api } from '@saccosphere/api-client'
 import { useIsAuthenticated } from '../store/useAuthStore'
@@ -37,12 +37,6 @@ export function useMembershipBySacco(saccoSlug: string) {
     gcTime: 300_000,
     refetchInterval: 60_000, // Refetch every minute
     enabled: isAuthenticated && !!saccoSlug, // Only fetch when authenticated and has slug
-  })
-}
-
-export function useLeaveMembership() {
-  return useMutation({
-    mutationFn: (id: string) => api.member.leaveMembership(id),
   })
 }
 

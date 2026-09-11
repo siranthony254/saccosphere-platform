@@ -134,40 +134,8 @@ export function useLogout() {
   })
 }
 
-export function useSendOTP() {
-  return useMutation({
-    mutationFn: ({ phone, purpose }: { phone: string; purpose?: 'PHONE_VERIFY' | 'PASSWORD_RESET' | 'LOGIN' }) =>
-      api.auth.sendOTP(phone, { purpose }),
-  })
-}
-
-export function useVerifyOTP() {
-  return useMutation({
-    mutationFn: ({ phone, code, purpose }: { phone: string; code: string; purpose?: 'PHONE_VERIFY' | 'PASSWORD_RESET' | 'LOGIN' }) =>
-      api.auth.verifyOTP(phone, code, { purpose }),
-  })
-}
-
-export function useRequestPasswordReset() {
-  return useMutation({
-    mutationFn: (identifier: string) => api.auth.requestPasswordReset(identifier),
-  })
-}
-
-export function useConfirmPasswordReset() {
-  return useMutation({
-    mutationFn: (data: {
-      phone_number: string
-      code: string
-      new_password: string
-      new_password2: string
-    }) => api.auth.confirmPasswordReset(data),
-  })
-}
-
-export function useChangePassword() {
-  return useMutation({
-    mutationFn: (data: { old_password: string; new_password: string; new_password2: string }) =>
-      api.auth.changePassword(data),
-  })
-}
+// Note: OTP send/verify and password-reset/change screens call
+// api.auth.sendOTP/verifyOTP/requestPasswordReset/confirmPasswordReset/
+// changePassword directly rather than through react-query mutations here —
+// this file previously had unused wrapper hooks for all five that were
+// removed as dead code (zero call sites).

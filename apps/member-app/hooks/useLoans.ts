@@ -34,14 +34,6 @@ export function useLoanComparison(amount: number, months: number) {
   })
 }
 
-export function useSearchGuarantors(loanId: string, query: string) {
-  return useQuery({
-    queryKey: QueryKeys.guarantorSearch(loanId, query),
-    queryFn: () => api.loans.searchGuarantors(loanId, query),
-    enabled: query.length > 0,
-  })
-}
-
 export function useLoanEligibility(saccoId: string) {
   const isAuthenticated = useIsAuthenticated()
   return useQuery({
@@ -50,16 +42,5 @@ export function useLoanEligibility(saccoId: string) {
     staleTime: 30_000, // 30 seconds - real-time eligibility
     gcTime: 300_000,
     enabled: isAuthenticated && !!saccoId, // Only fetch when authenticated and has sacco ID
-  })
-}
-
-export function useLoanSchedule(loanId: string) {
-  const isAuthenticated = useIsAuthenticated()
-  return useQuery({
-    queryKey: ['loan-schedule', loanId],
-    queryFn: () => api.loans.getSchedule(loanId),
-    staleTime: 300_000, // Schedule doesn't change frequently
-    gcTime: 600_000,
-    enabled: isAuthenticated && !!loanId, // Only fetch when authenticated and has loan ID
   })
 }
