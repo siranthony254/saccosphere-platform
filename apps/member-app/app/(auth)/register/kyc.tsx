@@ -69,48 +69,58 @@ export default function RegisterKYC() {
   }
 
   const handleUpload = async (side: IdSide) => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      allowsEditing: false,
-      quality: 0.8,
-    })
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: false,
+        quality: 0.8,
+      })
 
-    if (result.canceled) return
+      if (result.canceled) return
 
-    const asset = result.assets[0]
-    const mimeType = asset.mimeType ?? 'image/jpeg'
-    const fileName = buildKycFileName(asset.fileName, side, mimeType)
+      const asset = result.assets[0]
+      const mimeType = asset.mimeType ?? 'image/jpeg'
+      const fileName = buildKycFileName(asset.fileName, side, mimeType)
 
-    if (!isAcceptedImage(fileName, mimeType)) {
-      Alert.alert('Unsupported file', 'Upload a JPG, JPEG, or PNG image.')
-      return
+      if (!isAcceptedImage(fileName, mimeType)) {
+        Alert.alert('Unsupported file', 'Upload a JPG, JPEG, or PNG image.')
+        return
+      }
+
+      const document = {
+        uri: asset.uri,
+        name: fileName,
+        type: mimeType,
+      }
+
+      if (side === 'id_front') setIdFront(document)
+      else if (side === 'id_back') setIdBack(document)
+      else if (side === 'passport') setPassport(document)
+      else if (side === 'huduma') setHuduma(document)
+    } catch (error) {
+      console.error('Image picker failed:', error)
+      Alert.alert('Error', 'Could not open the photo picker. Please try again.')
     }
-
-    const document = {
-      uri: asset.uri,
-      name: fileName,
-      type: mimeType,
-    }
-
-    if (side === 'id_front') setIdFront(document)
-    else if (side === 'id_back') setIdBack(document)
-    else if (side === 'passport') setPassport(document)
-    else if (side === 'huduma') setHuduma(document)
   }
 
   const handleContinue = async () => {
     if (!step1) return
-    
-    setIDInfo(idNumber, dob, docType)
 
-    setKYCDocuments({
-      id_front: idFront,
-      id_back: idBack,
-      passport: passport,
-      huduma: huduma,
-    })
-    
-    router.push('/(auth)/register/link-saccos')
+    setLoading(true)
+    try {
+      setIDInfo(idNumber, dob, docType)
+
+      setKYCDocuments({
+        id_front: idFront,
+        id_back: idBack,
+        passport: passport,
+        huduma: huduma,
+      })
+
+      router.push('/(auth)/register/link-saccos')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
