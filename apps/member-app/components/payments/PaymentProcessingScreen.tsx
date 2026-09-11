@@ -2,11 +2,7 @@ import { useEffect, useState } from 'react'
 import { View, Text, ActivityIndicator, TouchableOpacity } from 'react-native'
 import { usePaymentStatus } from '../../hooks/usePayment'
 import { useTheme } from '../../theme/ThemeProvider'
-
-const SURFACE = '#FFFFFF'
-const SURFACE2 = '#F8FAFC'
-const INK = '#111827'
-const INK_MUTED = '#6B7280'
+import type { ThemeColors } from '../../theme/tokens'
 
 interface PaymentProcessingScreenProps {
   checkoutRequestId: string | null
@@ -77,7 +73,7 @@ export default function PaymentProcessingScreen({
   const isConfirming = !hasStartedPolling
 
   return (
-    <View style={{ flex: 1, backgroundColor: SURFACE, justifyContent: 'center', alignItems: 'center', padding: 24 }}>
+    <View style={{ flex: 1, backgroundColor: c.bg, justifyContent: 'center', alignItems: 'center', padding: 24 }}>
       {/* M-Pesa icon */}
       <View
         style={{
@@ -94,26 +90,26 @@ export default function PaymentProcessingScreen({
       </View>
 
       {/* Title */}
-      <Text style={{ fontSize: 18, fontWeight: '700', color: INK, marginBottom: 8 }}>
+      <Text style={{ fontSize: 18, fontWeight: '700', color: c.text, marginBottom: 8 }}>
         {isConfirming ? 'Confirm M-Pesa payment' : 'Processing payment'}
       </Text>
-      <Text style={{ fontSize: 13, color: INK_MUTED, textAlign: 'center', marginBottom: 24 }}>
+      <Text style={{ fontSize: 13, color: c.textMuted, textAlign: 'center', marginBottom: 24 }}>
         {isConfirming
           ? 'Review the payment details below and confirm to send the STK push to your phone.'
           : 'Waiting for M-Pesa confirmation on your phone...'}
       </Text>
 
       {/* Payment details */}
-      <View style={{ backgroundColor: SURFACE2, borderRadius: 14, padding: 16, width: '100%', marginBottom: 20 }}>
-        <DetailRow label="SACCO" value={saccoName} />
-        <DetailRow label="Type" value={purposeLabel} />
-        <DetailRow label="Amount" value={`KES ${amount.toLocaleString()}`} />
-        <DetailRow label="Platform fee (2%)" value={`KES ${platformFee}`} />
-        <DetailRow label="From" value={phoneNumber} />
+      <View style={{ backgroundColor: c.surfaceAlt, borderRadius: 14, padding: 16, width: '100%', marginBottom: 20 }}>
+        <DetailRow label="SACCO" value={saccoName} c={c} />
+        <DetailRow label="Type" value={purposeLabel} c={c} />
+        <DetailRow label="Amount" value={`KES ${amount.toLocaleString()}`} c={c} />
+        <DetailRow label="Platform fee (2%)" value={`KES ${platformFee}`} c={c} />
+        <DetailRow label="From" value={phoneNumber} c={c} />
         <View
           style={{
             borderTopWidth: 0.5,
-            borderTopColor: 'rgba(0,0,0,0.07)',
+            borderTopColor: c.border,
             marginTop: 8,
             paddingTop: 12,
             flexDirection: 'row',
@@ -121,7 +117,7 @@ export default function PaymentProcessingScreen({
             alignItems: 'center',
           }}
         >
-          <Text style={{ fontSize: 12, fontWeight: '600', color: INK }}>Total</Text>
+          <Text style={{ fontSize: 12, fontWeight: '600', color: c.text }}>Total</Text>
           <Text style={{ fontSize: 14, fontWeight: '700', color: c.success }}>
             KES {totalAmount.toLocaleString()}
           </Text>
@@ -140,7 +136,7 @@ export default function PaymentProcessingScreen({
           marginBottom: 20,
         }}
       >
-        <Text style={{ fontSize: 11, color: '#4C1D95', lineHeight: 16 }}>
+        <Text style={{ fontSize: 11, color: c.text, lineHeight: 16 }}>
           {isConfirming
             ? 'A push prompt will appear on your phone after confirmation. Enter your M-Pesa PIN to complete.'
             : 'Check your phone for the M-Pesa prompt. Enter your PIN to complete the payment.'}
@@ -170,7 +166,7 @@ export default function PaymentProcessingScreen({
             onPress={onCancel}
             style={{ alignItems: 'center', paddingVertical: 8 }}
           >
-            <Text style={{ color: INK_MUTED, fontSize: 11 }}>Cancel</Text>
+            <Text style={{ color: c.textMuted, fontSize: 11 }}>Cancel</Text>
           </TouchableOpacity>
         </>
       ) : (
@@ -179,7 +175,7 @@ export default function PaymentProcessingScreen({
           <View style={{ marginBottom: 16 }}>
             <ActivityIndicator size="large" color={c.accent} />
           </View>
-          <Text style={{ fontSize: 12, color: INK_MUTED }}>
+          <Text style={{ fontSize: 12, color: c.textMuted }}>
             Polling payment status... ({pollCount}/30)
           </Text>
         </>
@@ -188,11 +184,11 @@ export default function PaymentProcessingScreen({
   )
 }
 
-function DetailRow({ label, value }: { label: string; value: string }) {
+function DetailRow({ label, value, c }: { label: string; value: string; c: ThemeColors }) {
   return (
     <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6 }}>
-      <Text style={{ fontSize: 11, color: INK_MUTED }}>{label}</Text>
-      <Text style={{ fontSize: 11, fontWeight: '500', color: INK }}>{value}</Text>
+      <Text style={{ fontSize: 11, color: c.textMuted }}>{label}</Text>
+      <Text style={{ fontSize: 11, fontWeight: '500', color: c.text }}>{value}</Text>
     </View>
   )
 }
