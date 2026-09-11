@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { QueryKeys, STALE_TIMES } from '@saccosphere/config'
 import { api } from '@saccosphere/api-client'
 import type { User } from '@saccosphere/schemas'
@@ -15,10 +15,11 @@ export function useProfile() {
 }
 
 export function useUpdateProfile() {
+  const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (user: Partial<User>) => api.member.updateProfile(user),
-    onSuccess: () => {
-      return api.member.getProfile()
+    onSuccess: async () => {
+      queryClient.setQueryData(QueryKeys.profile(), await api.member.getProfile())
     },
   })
 }
