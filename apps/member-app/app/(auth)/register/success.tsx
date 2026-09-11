@@ -1,104 +1,100 @@
-
-import { View, Text, TouchableOpacity, ScrollView, Dimensions } from 'react-native'
+import { View, Text, TouchableOpacity, ScrollView, Dimensions, ActivityIndicator } from 'react-native'
 import { router } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRegistrationStore } from '../../../store/useRegistrationStore'
+import { useMemberships } from '../../../hooks/useMembership'
 import { Icon } from '../../../components/ui/Icon'
+import { useTheme } from '../../../theme/ThemeProvider'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 const PADDING_H = Math.max(16, Math.min(24, SCREEN_WIDTH * 0.05))
 
-const SACCO_COLORS: Record<string, string> = {
-  'stima-sacco': '#0070ba',
-  'teachers-sacco': '#7c3aed',
-  'unaitas-sacco': '#16a085',
-  'kenya-police-sacco': '#c0392b',
-  'imarika-sacco': '#2980b9',
-}
-
-const SACCO_INITIALS: Record<string, string> = {
-  'stima-sacco': 'ST',
-  'teachers-sacco': 'TS',
-  'unaitas-sacco': 'UN',
-  'kenya-police-sacco': 'KP',
-  'imarika-sacco': 'IK',
-}
-
-const SACCO_NAMES: Record<string, string> = {
-  'stima-sacco': 'Stima SACCO',
-  'teachers-sacco': 'Teachers SACCO',
-  'unaitas-sacco': 'Unaitas SACCO',
-  'kenya-police-sacco': 'Kenya Police SACCO',
-  'imarika-sacco': 'Imarika SACCO',
+function initialsFor(name: string): string {
+  const words = name.trim().split(/\s+/).filter(Boolean)
+  if (words.length === 0) return '?'
+  if (words.length === 1) return words[0].slice(0, 2).toUpperCase()
+  return (words[0][0] + words[1][0]).toUpperCase()
 }
 
 export default function RegistrationSuccessScreen() {
   const { linkedSaccoSlugs } = useRegistrationStore()
   const insets = useSafeAreaInsets()
+  const { colors: c } = useTheme()
+  const { data: memberships, isLoading } = useMemberships()
 
   const handleDashboard = () => {
     router.replace('/(member)')
   }
 
+  const linkedMemberships = (memberships ?? []).filter((m) => linkedSaccoSlugs?.includes(m.sacco_slug))
   const saccoCount = linkedSaccoSlugs?.length ?? 0
 
   return (
-    <ScrollView contentContainerStyle={{ paddingHorizontal: PADDING_H, paddingBottom: insets.bottom + 20 }} className="bg-surface py-8 items-center">
+    <ScrollView
+      contentContainerStyle={{ paddingHorizontal: PADDING_H, paddingTop: insets.top + 32, paddingBottom: insets.bottom + 20, alignItems: 'center' }}
+      style={{ backgroundColor: c.bg }}
+    >
       {/* Success Ring */}
-      <View className="w-18 h-18 rounded-full bg-mint-50 justify-center items-center mb-5">
-        <View className="w-9 h-9 rounded-full bg-mint-500 justify-center items-center">
+      <View style={{ width: 72, height: 72, borderRadius: 36, backgroundColor: 'rgba(16,185,129,0.12)', justifyContent: 'center', alignItems: 'center', marginBottom: 20 }}>
+        <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: '#10b981', justifyContent: 'center', alignItems: 'center' }}>
           <Icon name="check" size={18} color="#ffffff" />
         </View>
       </View>
 
       {/* Description */}
-      <Text className="text-ink-muted text-xs text-center leading-5 mb-6">
+      <Text style={{ color: c.textMuted, fontSize: 12, textAlign: 'center', lineHeight: 20, marginBottom: 24 }}>
         Your Saccosphere account is live. {saccoCount} SACCO{saccoCount !== 1 ? 's' : ''} linked. You can now manage everything in one place.
       </Text>
 
       {/* Linked SACCOs Summary */}
       {saccoCount > 0 && (
-        <View className="w-full bg-surface2 rounded-xl p-4 mb-5">
-          <Text className="text-ink text-xs font-semibold mb-3">Linked SACCOs</Text>
+        <View style={{ width: '100%', backgroundColor: c.surfaceAlt, borderRadius: 12, padding: 16, marginBottom: 20 }}>
+          <Text style={{ color: c.text, fontSize: 12, fontWeight: '600', marginBottom: 12 }}>Linked SACCOs</Text>
 
-          {linkedSaccoSlugs?.map((slug: string) => (
-            <View key={slug} className="flex-row items-center py-2.5 border-b border-border">
-              <View
-                className="w-9 h-9 rounded-lg justify-center items-center mr-3"
-                style={{ backgroundColor: SACCO_COLORS[slug] || '#10B981' }}
-              >
-                <Text className="text-white text-xs font-bold">
-                  {SACCO_INITIALS[slug] || '?'}
-                </Text>
-              </View>
-              <Text className="flex-1 text-ink text-xs font-medium">{SACCO_NAMES[slug] || 'SACCO'}</Text>
-              <Icon name="check" size={16} color="#10b981" />
-            </View>
-          ))}
+          {isLoading ? (
+            <ActivityIndicator color={c.accent} style={{ marginVertical: 8 }} />
+          ) : (
+            linkedSaccoSlugs?.map((slug: string) => {
+              const membership = linkedMemberships.find((m) => m.sacco_slug === slug)
+              return (
+                <View key={slug} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: c.border }}>
+                  <View
+                    style={{ width: 36, height: 36, borderRadius: 8, justifyContent: 'center', alignItems: 'center', marginRight: 12, backgroundColor: membership?.sacco_color || c.accent }}
+                  >
+                    <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700' }}>
+                      {membership ? initialsFor(membership.sacco_name) : '?'}
+                    </Text>
+                  </View>
+                  <Text style={{ flex: 1, color: c.text, fontSize: 12, fontWeight: '500' }}>{membership?.sacco_name || 'SACCO'}</Text>
+                  <Icon name="check" size={16} color="#10b981" />
+                </View>
+              )
+            })
+          )}
 
-          <TouchableOpacity className="mt-2">
-            <Text className="text-violet-500 text-xs font-semibold text-center">Add more SACCOs later →</Text>
+          <TouchableOpacity style={{ marginTop: 8 }} onPress={() => router.replace('/(member)/discover')}>
+            <Text style={{ color: c.accent, fontSize: 12, fontWeight: '600', textAlign: 'center' }}>Add more SACCOs later →</Text>
           </TouchableOpacity>
         </View>
       )}
 
       {/* Empty State */}
       {saccoCount === 0 && (
-        <View className="w-full bg-mint-50 rounded-xl p-4 mb-5 items-center">
-          <Text className="text-ink text-xs font-semibold mb-1.5">No SACCOs linked yet</Text>
-          <Text className="text-ink-muted text-xs leading-4.5 text-center">
-            You can add SACCOs anytime from your dashboard, or search our directory of 237 verified SACCOs.
+        <View style={{ width: '100%', backgroundColor: 'rgba(16,185,129,0.1)', borderRadius: 12, padding: 16, marginBottom: 20, alignItems: 'center' }}>
+          <Text style={{ color: c.text, fontSize: 12, fontWeight: '600', marginBottom: 6 }}>No SACCOs linked yet</Text>
+          <Text style={{ color: c.textMuted, fontSize: 12, lineHeight: 18, textAlign: 'center' }}>
+            You can add SACCOs anytime from your dashboard, or search our SACCO directory.
           </Text>
         </View>
       )}
 
       {/* CTA Button */}
-      <TouchableOpacity className="w-full bg-violet-500 py-3 rounded-xl items-center" onPress={handleDashboard}>
-        <Text className="text-white text-xs font-semibold">Go to dashboard →</Text>
+      <TouchableOpacity style={{ width: '100%', backgroundColor: c.accent, paddingVertical: 12, borderRadius: 12, alignItems: 'center' }} onPress={handleDashboard}>
+        <Text style={{ color: '#fff', fontSize: 12, fontWeight: '600' }}>Go to dashboard →</Text>
       </TouchableOpacity>
 
       {/* Spacer */}
-      <View className="h-7.5" />
+      <View style={{ height: 30 }} />
     </ScrollView>
   )
 }
