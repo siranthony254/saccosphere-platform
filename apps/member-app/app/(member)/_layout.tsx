@@ -93,9 +93,6 @@ export default function MemberTabLayout() {
   )
 }
 
-//{quick actions on the home tab}
-
-
 function TabIcon({ icon, color, focused }: { icon: IconName; color: string; focused: boolean }) {
   const { colors: c } = useTheme()
   return (
@@ -103,7 +100,7 @@ function TabIcon({ icon, color, focused }: { icon: IconName; color: string; focu
       width: 28,
       height: 30,
       borderRadius: 8,
-      backgroundColor: focused ? '#EDE9FE' : 'transparent',
+      backgroundColor: focused ? c.accentSoft : 'transparent',
       alignItems: 'center',
       justifyContent: 'center',
       position: 'relative',
