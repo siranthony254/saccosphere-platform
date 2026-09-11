@@ -1,85 +1,17 @@
 import React from 'react'
-import { View, StyleSheet } from 'react-native'
-import { useTheme } from '../theme/ThemeProvider'
-
-const VIOLET_GLOW = 'rgba(109, 40, 217, 0.15)'
-const MINT_GLOW = 'rgba(16, 185, 129, 0.12)'
-const GRID_COLOR = 'rgba(255, 255, 255, 0.03)'
+import { StyleSheet, View } from 'react-native'
 
 /**
- * Decorative overlay for member screens — the actual theme backdrop (solid /
- * gradient / image) is painted exactly once by the single AppBackground
- * mounted at the app root (app/_layout.tsx), so a theme or backdrop change
- * is visible everywhere instantly. This only adds the signature "deep space"
- * glow + grid on top of that, and only on the default Midnight theme.
+ * @deprecated kept only so existing call sites keep compiling — the "deep
+ * space" glow/grid it used to paint now lives in the single AppBackground
+ * mounted at the app root (theme/AppBackground.tsx), so every screen gets it
+ * automatically with no wrapping needed. This is now a plain pass-through;
+ * new screens don't need to reach for it.
  */
 export function DeepSpaceBackground({ children }: { children: React.ReactNode }) {
-  const theme = useTheme()
-  const isMidnight = theme.id === 'midnight'
-
-  return (
-    <View style={styles.root}>
-      {isMidnight && (
-        <>
-          <View style={[styles.glow, styles.violetGlow, { pointerEvents: 'none' }]} />
-          <View style={[styles.glow, styles.mintGlow, { pointerEvents: 'none' }]} />
-          <View style={[styles.gridContainer, { pointerEvents: 'none' }]}>
-            {[...Array(20)].map((_, i) => (
-              <View
-                key={`grid-${i}`}
-                style={[styles.gridLine, { top: i * 60, transform: [{ rotate: '-12deg' }] }]}
-              />
-            ))}
-          </View>
-        </>
-      )}
-
-      <View style={styles.content}>{children}</View>
-    </View>
-  )
+  return <View style={styles.content}>{children}</View>
 }
 
 const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    position: 'relative',
-  },
-  glow: {
-    position: 'absolute',
-    borderRadius: 200,
-    filter: 'blur(80px)',
-  },
-  violetGlow: {
-    width: 350,
-    height: 350,
-    backgroundColor: VIOLET_GLOW,
-    top: -100,
-    left: -100,
-  },
-  mintGlow: {
-    width: 300,
-    height: 300,
-    backgroundColor: MINT_GLOW,
-    top: -80,
-    right: -80,
-  },
-  gridContainer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    overflow: 'hidden',
-  },
-  gridLine: {
-    position: 'absolute',
-    left: -100,
-    right: -100,
-    height: 1,
-    backgroundColor: GRID_COLOR,
-  },
-  content: {
-    flex: 1,
-    zIndex: 1,
-  },
+  content: { flex: 1 },
 })

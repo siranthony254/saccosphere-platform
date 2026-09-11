@@ -9,11 +9,9 @@ import {
   TextInput,
   ActivityIndicator,
   Alert,
-  StyleSheet,
   Platform,
 } from 'react-native'
 import { StatusBar } from 'expo-status-bar'
-import { LinearGradient } from 'expo-linear-gradient'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { router } from 'expo-router'
 import { usePublicStats } from '../hooks/usePublicStats'
@@ -21,6 +19,7 @@ import { useMemberships } from '../hooks/useMembership'
 import { api } from '@saccosphere/api-client'
 import { Icon } from '../components/ui/Icon'
 import { useTheme } from '../theme/ThemeProvider'
+import { AppBackground } from '../theme/AppBackground'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 const PADDING_H = Math.max(16, Math.min(24, SCREEN_WIDTH * 0.05))
@@ -62,71 +61,7 @@ export default function LandingScreen() {
   return (
     <>
       <StatusBar style="light" translucent />
-      <View style={{ flex: 1, backgroundColor: c.bg }}>
-        <View
-          style={StyleSheet.absoluteFillObject}
-        />
-        <LinearGradient
-          colors={['rgba(109, 40, 217, 0.36)', 'transparent']}
-          style={{
-            position: 'absolute',
-            width: 260,
-            height: 260,
-            borderRadius: 130,
-            top: -80,
-            left: -80,
-          }}
-        />
-        <LinearGradient
-          colors={['rgba(16, 185, 129, 0.22)', 'transparent']}
-          style={{
-            position: 'absolute',
-            width: 220,
-            height: 220,
-            borderRadius: 110,
-            top: -60,
-            right: -80,
-          }}
-        />
-        <View
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            opacity: 0.18,
-            transform: [{ rotate: '15deg' }],
-          }}
-        >
-          {Array.from({ length: 9 }).map((_, index) => (
-            <View
-              key={`grid-h-${index}`}
-              style={{
-                position: 'absolute',
-                top: index * 42,
-                left: 0,
-                right: 0,
-                height: 1,
-                backgroundColor: 'rgba(255,255,255,0.08)',
-              }}
-            />
-          ))}
-          {Array.from({ length: 9 }).map((_, index) => (
-            <View
-              key={`grid-v-${index}`}
-              style={{
-                position: 'absolute',
-                left: index * 42,
-                top: 0,
-                bottom: 0,
-                width: 1,
-                backgroundColor: 'rgba(255,255,255,0.08)',
-              }}
-            />
-          ))}
-        </View>
-
+      <AppBackground>
         {/* ── Top navigation bar ── */}
         <View
           className="flex-row items-center"
@@ -301,7 +236,6 @@ export default function LandingScreen() {
             <View className="h-28" />
           </View>
         </ScrollView>
-      </View>
 
       <View
         style={{
@@ -345,6 +279,7 @@ export default function LandingScreen() {
           </View>
         </View>
       </View>
+      </AppBackground>
 
       {/* ── Link Existing Membership Modal ── */}
       <LinkExistingMembershipModal
