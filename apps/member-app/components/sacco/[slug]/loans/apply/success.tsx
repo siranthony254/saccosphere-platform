@@ -3,10 +3,12 @@ import { useLocalSearchParams, router } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { DeepSpaceBackground } from '../../../../DeepSpaceBackground'
 import { Icon } from '../../../../ui/Icon'
+import { useTheme } from '../../../../../theme/ThemeProvider'
 
 export default function LoanSubmittedSuccess() {
   const { slug, ref } = useLocalSearchParams<{ slug: string; ref?: string }>()
   const insets = useSafeAreaInsets()
+  const { colors: c } = useTheme()
   const loanRef = ref || 'Pending'
 
   return (
@@ -28,20 +30,20 @@ export default function LoanSubmittedSuccess() {
         </View>
 
         {/* Title */}
-        <Text className="text-white text-xl font-bold mb-3">Application Submitted</Text>
-        <Text className="text-white/60 text-xs text-center leading-5 mb-8 px-6">
+        <Text className="text-xl font-bold mb-3" style={{ color: c.text }}>Application Submitted</Text>
+        <Text className="text-xs text-center leading-5 mb-8 px-6" style={{ color: c.textMuted }}>
           Your loan application has been received by the SACCO. Your guarantors have been notified for approval.
         </Text>
 
         {/* Reference Box */}
-        <View className="bg-white/5 border border-white/10 rounded-2xl px-6 py-2 mb-8">
+        <View className="border rounded-2xl px-6 py-2 mb-8" style={{ backgroundColor: c.surface, borderColor: c.border }}>
           <Text className="text-violet-400 text-xs font-bold text-center tracking-widest uppercase">
             REF: {loanRef}
           </Text>
         </View>
 
         {/* Details Card */}
-        <View className="bg-white/5 border border-white/10 rounded-2xl p-5 w-full mb-8">
+        <View className="border rounded-2xl p-5 w-full mb-8" style={{ backgroundColor: c.surface, borderColor: c.border }}>
           {[
             { label: 'Status', value: 'Under Review', color: '#fbbf24' },
             { label: 'Expected decision', value: '3–5 business days' },
@@ -49,10 +51,11 @@ export default function LoanSubmittedSuccess() {
           ].map((row, i, arr) => (
             <View
               key={row.label}
-              className={`flex-row justify-between py-3 ${i !== arr.length - 1 ? 'border-b border-white/5' : ''}`}
+              className="flex-row justify-between py-3"
+              style={i !== arr.length - 1 ? { borderBottomWidth: 1, borderBottomColor: c.border } : undefined}
             >
-              <Text className="text-white/60 text-xs">{row.label}</Text>
-              <Text className="text-white text-xs font-bold" style={{ color: row.color || '#fff' }}>{row.value}</Text>
+              <Text className="text-xs" style={{ color: c.textMuted }}>{row.label}</Text>
+              <Text className="text-xs font-bold" style={{ color: row.color || c.text }}>{row.value}</Text>
             </View>
           ))}
         </View>
@@ -66,10 +69,11 @@ export default function LoanSubmittedSuccess() {
         </TouchableOpacity>
 
         <TouchableOpacity
-          className="w-full bg-white/5 border border-white/10 py-4 rounded-2xl items-center"
+          className="w-full border py-4 rounded-2xl items-center"
+          style={{ backgroundColor: c.surface, borderColor: c.border }}
           onPress={() => router.push(`/(member)/profile`)}
         >
-          <Text className="text-white/60 text-sm font-bold uppercase tracking-wider">Track Applications</Text>
+          <Text className="text-sm font-bold uppercase tracking-wider" style={{ color: c.textMuted }}>Track Applications</Text>
         </TouchableOpacity>
 
         <View className="h-10" />

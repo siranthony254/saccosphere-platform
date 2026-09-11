@@ -6,10 +6,12 @@ import { useSaccoConfig } from '../../../../../hooks/useSaccoConfig'
 import { useQuery } from '@tanstack/react-query'
 import { api } from '@saccosphere/api-client'
 import { DeepSpaceBackground } from '../../../../DeepSpaceBackground'
+import { useTheme } from '../../../../../theme/ThemeProvider'
 
 export default function LoanReview() {
   const { slug } = useLocalSearchParams<{ slug: string }>()
   const insets = useSafeAreaInsets()
+  const { colors: c } = useTheme()
   const { step1, loanId } = useLoanApplicationStore()
   const { data: config } = useSaccoConfig(slug)
 
@@ -45,11 +47,11 @@ export default function LoanReview() {
       >
         <View className="flex-row items-center mb-6">
           <TouchableOpacity onPress={() => router.back()} className="mr-3">
-            <Text className="text-white/60 text-lg">←</Text>
+            <Text className="text-lg" style={{ color: c.textMuted }}>←</Text>
           </TouchableOpacity>
           <View>
-            <Text className="text-white text-xl font-bold">Final Review</Text>
-            <Text className="text-white/40 text-[10px] font-bold uppercase tracking-wider">Step 3 of 3 - Verify details</Text>
+            <Text className="text-xl font-bold" style={{ color: c.text }}>Final Review</Text>
+            <Text className="text-[10px] font-bold uppercase tracking-wider" style={{ color: c.textFaint }}>Step 3 of 3 - Verify details</Text>
           </View>
         </View>
 
@@ -59,8 +61,8 @@ export default function LoanReview() {
           <View className="flex-1 h-1 rounded-full bg-violet-500" />
         </View>
 
-        <View className="bg-white/5 border border-white/10 rounded-2xl p-5 mb-4">
-          <Text className="text-white text-sm font-bold mb-3">Loan Summary</Text>
+        <View className="border rounded-2xl p-5 mb-4" style={{ backgroundColor: c.surface, borderColor: c.border }}>
+          <Text className="text-sm font-bold mb-3" style={{ color: c.text }}>Loan Summary</Text>
           {[
             { label: 'Loan type', value: selectedProduct?.label ?? step1.loan_product_key },
             { label: 'Amount', value: `KES ${step1.amount_requested.toLocaleString()}` },
@@ -71,27 +73,31 @@ export default function LoanReview() {
             { label: 'Processing fee', value: processingFee > 0 ? `KES ${processingFeeAmount.toLocaleString('en-KE', { maximumFractionDigits: 0 })}` : 'Waived' },
             { label: 'Disbursement to', value: step1.disbursement_method === 'mpesa' ? 'M-Pesa' : step1.disbursement_method },
           ].map((row, i, arr) => (
-            <View key={row.label} className={`flex-row justify-between items-center py-2.5 ${i !== arr.length - 1 ? 'border-b border-white/5' : ''}`}>
-              <Text className="text-white/60 text-xs">{row.label}</Text>
-              <Text className={`text-xs font-bold ${row.highlight ? 'text-mint-400' : 'text-white'}`}>{row.value}</Text>
+            <View
+              key={row.label}
+              className="flex-row justify-between items-center py-2.5"
+              style={i !== arr.length - 1 ? { borderBottomWidth: 1, borderBottomColor: c.border } : undefined}
+            >
+              <Text className="text-xs" style={{ color: c.textMuted }}>{row.label}</Text>
+              <Text className={`text-xs font-bold ${row.highlight ? 'text-mint-400' : ''}`} style={!row.highlight ? { color: c.text } : undefined}>{row.value}</Text>
             </View>
           ))}
         </View>
 
-        <View className="bg-white/5 border border-white/10 rounded-2xl p-5 mb-6">
-          <Text className="text-white text-sm font-bold mb-3">Guarantors</Text>
+        <View className="border rounded-2xl p-5 mb-6" style={{ backgroundColor: c.surface, borderColor: c.border }}>
+          <Text className="text-sm font-bold mb-3" style={{ color: c.text }}>Guarantors</Text>
           {isExternalLoading ? (
             <ActivityIndicator color="#8B5CF6" />
           ) : (
             externalGuarantors && externalGuarantors.length > 0 ? (
               externalGuarantors.map((g: any, index: number) => (
-                <View key={index} className="flex-row justify-between items-center py-2.5 border-b border-white/5 last:border-b-0">
-                  <Text className="text-white/60 text-xs">{g.full_name || g.guarantor_name}</Text>
+                <View key={index} className="flex-row justify-between items-center py-2.5 border-b last:border-b-0" style={{ borderColor: c.border }}>
+                  <Text className="text-xs" style={{ color: c.textMuted }}>{g.full_name || g.guarantor_name}</Text>
                   <Text className="text-[10px] font-bold uppercase text-violet-400">External</Text>
                 </View>
               ))
             ) : (
-              <Text className="text-white/40 text-xs leading-5">
+              <Text className="text-xs leading-5" style={{ color: c.textFaint }}>
                 Guarantor requests will be sent upon confirmation. They must approve before the loan is disbursed.
               </Text>
             )
@@ -109,7 +115,7 @@ export default function LoanReview() {
         </TouchableOpacity>
 
         <TouchableOpacity className="mt-6 items-center" onPress={() => router.back()}>
-          <Text className="text-white/40 text-[10px] font-bold uppercase tracking-widest">Back to Guarantors</Text>
+          <Text className="text-[10px] font-bold uppercase tracking-widest" style={{ color: c.textFaint }}>Back to Guarantors</Text>
         </TouchableOpacity>
       </ScrollView>
     </DeepSpaceBackground>

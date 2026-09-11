@@ -6,10 +6,12 @@ import { api } from '@saccosphere/api-client'
 import { useLoanApplicationStore } from '../../../../../store/useLoanApplicationStore'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { DeepSpaceBackground } from '../../../../DeepSpaceBackground'
+import { useTheme } from '../../../../../theme/ThemeProvider'
 
 export default function LoanGuarantors() {
   const { slug } = useLocalSearchParams<{ slug: string }>()
   const insets = useSafeAreaInsets()
+  const { colors: c } = useTheme()
   const { loanId } = useLoanApplicationStore()
   const [search, setSearch] = useState('')
   const [requestedIds, setRequestedIds] = useState<string[]>([])
@@ -44,31 +46,32 @@ export default function LoanGuarantors() {
       >
         <View className="flex-row items-center mb-6">
           <TouchableOpacity onPress={() => router.back()} className="mr-3">
-            <Text className="text-white/60 text-lg">←</Text>
+            <Text className="text-lg" style={{ color: c.textMuted }}>←</Text>
           </TouchableOpacity>
           <View>
-            <Text className="text-white text-xl font-bold">Guarantors</Text>
-            <Text className="text-white/40 text-[10px] font-bold uppercase tracking-wider">Step 2 of 3 - Secure your loan</Text>
+            <Text className="text-xl font-bold" style={{ color: c.text }}>Guarantors</Text>
+            <Text className="text-[10px] font-bold uppercase tracking-wider" style={{ color: c.textFaint }}>Step 2 of 3 - Secure your loan</Text>
           </View>
         </View>
 
         <View className="flex-row gap-2 mb-6">
           <View className="flex-1 h-1 rounded-full bg-violet-500" />
           <View className="flex-1 h-1 rounded-full bg-violet-500" />
-          <View className="flex-1 h-1 rounded-full bg-white/10" />
+          <View className="flex-1 h-1 rounded-full" style={{ backgroundColor: c.border }} />
         </View>
 
-        <View className="bg-white/5 border border-white/10 rounded-2xl p-5 mb-6">
-          <Text className="text-white text-sm font-bold mb-2">Search Members</Text>
-          <Text className="text-white/60 text-xs leading-5 mb-4">
+        <View className="border rounded-2xl p-5 mb-6" style={{ backgroundColor: c.surface, borderColor: c.border }}>
+          <Text className="text-sm font-bold mb-2" style={{ color: c.text }}>Search Members</Text>
+          <Text className="text-xs leading-5 mb-4" style={{ color: c.textMuted }}>
             Search for other members in this SACCO to guarantee your loan.
           </Text>
 
           <View className="mb-2">
             <TextInput
-              className="bg-white/5 border border-white/10 rounded-xl p-3.5 text-white text-xs"
+              className="border rounded-xl p-3.5 text-xs"
+              style={{ backgroundColor: c.surfaceAlt, borderColor: c.border, color: c.text }}
               placeholder="Phone number (07...) or member number"
-              placeholderTextColor="rgba(255,255,255,0.3)"
+              placeholderTextColor={c.textFaint}
               value={search}
               onChangeText={setSearch}
             />
@@ -78,10 +81,10 @@ export default function LoanGuarantors() {
           {searchResults && searchResults.length > 0 && (
             <View className="mt-4 gap-2">
               {searchResults.map((g) => (
-                <View key={g.id} className="flex-row justify-between items-center p-3 border border-white/10 rounded-xl bg-white/5">
+                <View key={g.id} className="flex-row justify-between items-center p-3 border rounded-xl" style={{ backgroundColor: c.surfaceAlt, borderColor: c.border }}>
                   <View>
-                    <Text className="text-white text-xs font-bold">{g.user?.first_name} {g.user?.last_name}</Text>
-                    <Text className="text-white/40 text-[10px] mt-0.5">{g.user?.phone_number}</Text>
+                    <Text className="text-xs font-bold" style={{ color: c.text }}>{g.user?.first_name} {g.user?.last_name}</Text>
+                    <Text className="text-[10px] mt-0.5" style={{ color: c.textFaint }}>{g.user?.phone_number}</Text>
                   </View>
                   <TouchableOpacity
                     className={`px-3 py-1.5 rounded-lg ${requestedIds.includes(g.id) ? 'bg-mint-500/20 border border-mint-500/30' : 'bg-violet-500/20 border border-violet-500/30'}`}
@@ -98,13 +101,13 @@ export default function LoanGuarantors() {
           )}
 
           {searchResults && searchResults.length === 0 && search.length >= 3 && !isFetching && (
-            <Text className="text-white/40 text-xs mt-4 text-center">No member found with that phone or member number.</Text>
+            <Text className="text-xs mt-4 text-center" style={{ color: c.textFaint }}>No member found with that phone or member number.</Text>
           )}
         </View>
 
-        <View className="bg-white/5 border border-white/10 rounded-2xl p-5 mb-8">
-          <Text className="text-white text-sm font-bold mb-2">External Guarantors</Text>
-          <Text className="text-white/60 text-xs leading-5 mb-4">
+        <View className="border rounded-2xl p-5 mb-8" style={{ backgroundColor: c.surface, borderColor: c.border }}>
+          <Text className="text-sm font-bold mb-2" style={{ color: c.text }}>External Guarantors</Text>
+          <Text className="text-xs leading-5 mb-4" style={{ color: c.textMuted }}>
             Need a guarantor who isn't a member? You can invite them here.
           </Text>
           <TouchableOpacity

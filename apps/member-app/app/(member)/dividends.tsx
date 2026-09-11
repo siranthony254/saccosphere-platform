@@ -102,7 +102,7 @@ export default function MemberDividendsScreen() {
             </View>
           ) : dividendPayouts.length === 0 ? (
             <View style={{ backgroundColor: c.surface, borderWidth: 1, borderColor: c.border, borderRadius: 14, padding: 24, alignItems: 'center' }}>
-              <View className="mb-3 w-12 h-12 rounded-full bg-white/5 items-center justify-center">
+              <View className="mb-3 w-12 h-12 rounded-full items-center justify-center" style={{ backgroundColor: c.surfaceAlt }}>
                 <Icon name="dividend" size={24} color={c.textMuted} />
               </View>
               <Text style={{ color: c.text, fontSize: 14, fontWeight: '700', marginBottom: 4 }}>No dividends yet</Text>

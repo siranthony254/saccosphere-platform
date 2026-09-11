@@ -77,7 +77,7 @@ export default function DiscoverScreen() {
 
       {/* Search */}
       <View style={{ paddingHorizontal: 14, paddingVertical: 14 }}>
-        <View className="flex-row items-center border border-white/10 rounded-xl px-3 bg-white/5">
+        <View className="flex-row items-center border rounded-xl px-3" style={{ borderColor: c.border, backgroundColor: c.surface }}>
           <Icon name="discover" size={16} color={c.textMuted} />
           <TextInput
             style={{ flex: 1, padding: 10, fontSize: 14, color: c.text }}

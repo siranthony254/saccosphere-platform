@@ -4,10 +4,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useSacco } from '../../../hooks/useSaccos'
 import { useSaccoConfig } from '../../../hooks/useSaccoConfig'
 import { DeepSpaceBackground } from '../../../components/DeepSpaceBackground'
+import { useTheme } from '../../../theme/ThemeProvider'
 
 export default function SaccoProfileScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>()
   const insets = useSafeAreaInsets()
+  const { colors: c } = useTheme()
   
   // Use real-time data with 30 second stale time for member count
   const { data: sacco, isLoading, isError, refetch } = useSacco(slug, { staleTime: 30_000 })
@@ -18,7 +20,7 @@ export default function SaccoProfileScreen() {
       <DeepSpaceBackground>
         <View className="flex-1 items-center justify-center px-8">
           <ActivityIndicator color="#6D28D9" />
-          <Text className="text-white/60 text-xs mt-3">Loading SACCO details...</Text>
+          <Text className="text-xs mt-3" style={{ color: c.textMuted }}>Loading SACCO details...</Text>
         </View>
       </DeepSpaceBackground>
     )
@@ -28,8 +30,8 @@ export default function SaccoProfileScreen() {
     return (
       <DeepSpaceBackground>
         <View className="flex-1 items-center justify-center px-8">
-          <Text className="text-white/60 text-xs mb-3">Failed to load SACCO details.</Text>
-          <Text className="text-white/40 text-xs mb-2">Slug: {slug}</Text>
+          <Text className="text-xs mb-3" style={{ color: c.textMuted }}>Failed to load SACCO details.</Text>
+          <Text className="text-xs mb-2" style={{ color: c.textFaint }}>Slug: {slug}</Text>
           <TouchableOpacity onPress={() => refetch()}>
             <Text className="text-violet-500 text-xs font-semibold">Try again</Text>
           </TouchableOpacity>
@@ -45,13 +47,13 @@ export default function SaccoProfileScreen() {
         className="flex-1"
       >
         {/* Top bar */}
-        <View className="px-4 py-2.5 border-b border-white/10 flex-row items-center">
-          <TouchableOpacity onPress={() => router.back()} className="w-7 h-7 rounded-full bg-white/10 items-center justify-center">
-            <Text className="text-white/80 text-xs">←</Text>
+        <View className="px-4 py-2.5 border-b flex-row items-center" style={{ borderColor: c.border }}>
+          <TouchableOpacity onPress={() => router.back()} className="w-7 h-7 rounded-full items-center justify-center" style={{ backgroundColor: c.surface }}>
+            <Text className="text-xs" style={{ color: c.textMuted }}>←</Text>
           </TouchableOpacity>
           <View className="ml-2.5">
-            <Text className="text-white text-sm font-semibold">{sacco.name}</Text>
-            <Text className="text-white/60 text-xs">
+            <Text className="text-sm font-semibold" style={{ color: c.text }}>{sacco.name}</Text>
+            <Text className="text-xs" style={{ color: c.textMuted }}>
               {sacco.sector} · {sacco.membership_type === 'open' ? 'Open membership' : 'Restricted'}
             </Text>
           </View>
@@ -83,16 +85,16 @@ export default function SaccoProfileScreen() {
             { label: 'Loan limit', value: sacco.loan_multiplier ? `${sacco.loan_multiplier}×` : '—' },
           ].map((stat) => (
 
-            <View key={stat.label} className="flex-1 bg-white/5 rounded-xl py-3 items-center border border-white/5">
-              <Text className="text-white text-sm font-bold">{stat.value}</Text>
-              <Text className="text-white/60 text-xs mt-0.5">{stat.label}</Text>
+            <View key={stat.label} className="flex-1 rounded-xl py-3 items-center border" style={{ backgroundColor: c.surface, borderColor: c.border }}>
+              <Text className="text-sm font-bold" style={{ color: c.text }}>{stat.value}</Text>
+              <Text className="text-xs mt-0.5" style={{ color: c.textMuted }}>{stat.label}</Text>
             </View>
           ))}
         </View>
 
         {/* Membership requirements - from config and sacco detail */}
-        <View className="mx-4 mt-4 bg-white/5 border border-white/10 rounded-xl p-3.5">
-          <Text className="text-white/90 text-xs font-semibold mb-2">Membership requirements</Text>
+        <View className="mx-4 mt-4 border rounded-xl p-3.5" style={{ backgroundColor: c.surface, borderColor: c.border }}>
+          <Text className="text-xs font-semibold mb-2" style={{ color: c.text }}>Membership requirements</Text>
           {[
             { label: 'Min. age', value: sacco.min_age ? `${sacco.min_age} years` : '18 years' },
             { label: 'Monthly contribution', value: sacco.min_monthly_contribution ? `KES ${sacco.min_monthly_contribution.toLocaleString()} min` : 'Not specified' },
@@ -102,10 +104,11 @@ export default function SaccoProfileScreen() {
           ].map((req) => (
             <View
               key={req.label}
-              className="flex-row justify-between py-1.5 border-b border-white/5 last:border-b-0"
+              className="flex-row justify-between py-1.5 border-b last:border-b-0"
+              style={{ borderColor: c.border }}
             >
-              <Text className="text-white/60 text-xs">{req.label}</Text>
-              <Text className="text-white/90 text-xs font-semibold">{req.value}</Text>
+              <Text className="text-xs" style={{ color: c.textMuted }}>{req.label}</Text>
+              <Text className="text-xs font-semibold" style={{ color: c.text }}>{req.value}</Text>
             </View>
           ))}
         </View>
@@ -115,8 +118,9 @@ export default function SaccoProfileScreen() {
         <View className="mx-4 mt-5">
           <TouchableOpacity
             className={`w-full py-3 rounded-xl items-center ${
-              sacco.membership_type === 'open' ? 'bg-violet-500' : 'bg-white/10'
+              sacco.membership_type === 'open' ? 'bg-violet-500' : ''
             }`}
+            style={sacco.membership_type !== 'open' ? { backgroundColor: c.surface } : undefined}
             onPress={() => {
               if (sacco.membership_type === 'open') {
                 router.push({
@@ -128,14 +132,13 @@ export default function SaccoProfileScreen() {
             disabled={sacco.membership_type !== 'open'}
           >
             <Text
-              className={`text-xs font-semibold ${
-                sacco.membership_type === 'open' ? 'text-white' : 'text-white/40'
-              }`}
+              className="text-xs font-semibold"
+              style={{ color: sacco.membership_type === 'open' ? '#FFFFFF' : c.textFaint }}
             >
               {sacco.membership_type === 'open' ? 'Apply to join →' : 'Restricted membership'}
             </Text>
           </TouchableOpacity>
-          <Text className="text-white/40 text-[10px] text-center mt-2">
+          <Text className="text-[10px] text-center mt-2" style={{ color: c.textFaint }}>
             Applications are reviewed within 5–7 business days
           </Text>
         </View>
