@@ -32,3 +32,11 @@ export function useMoney(): (value?: number | null) => string {
   const hidden = useBalanceHidden()
   return (value) => (hidden ? maskedMoney() : formatMoney(value))
 }
+
+/** Percentage of a loan repaid so far, clamped to [0, 100]. Guards against
+ * amountRequested being 0/undefined, which would otherwise divide by zero. */
+export function getLoanProgress(amountRequested?: number, balanceRemaining?: number): number {
+  if (!amountRequested || amountRequested <= 0) return 0
+  const repaid = amountRequested - Number(balanceRemaining ?? 0)
+  return Math.max(0, Math.min(100, Math.round((repaid / amountRequested) * 100)))
+}

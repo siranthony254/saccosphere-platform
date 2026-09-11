@@ -21,7 +21,7 @@ import {
 import { Badge } from '../ui/Badge'
 import { Icon, type IconName } from '../ui/Icon'
 import { BalanceToggle } from '../ui/BalanceToggle'
-import { useMoney } from '../../lib/money'
+import { useMoney, getLoanProgress } from '../../lib/money'
 import { useTheme } from '../../theme/ThemeProvider'
 
 type QuickAction = 'contribute' | 'loan' | 'statement' | 'repay'
@@ -1002,8 +1002,3 @@ function formatMembershipStatus(status?: string) {
   return status.replace(/_/g, ' ')
 }
 
-function getLoanProgress(amountRequested?: number, balanceRemaining?: number) {
-  if (!amountRequested || amountRequested <= 0) return 0
-  const repaid = amountRequested - Number(balanceRemaining ?? 0)
-  return Math.max(0, Math.min(100, Math.round((repaid / amountRequested) * 100)))
-}

@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useMembershipBySacco } from '../../hooks/useMembership'
 import { useLoans } from '../../hooks/useLoans'
 import { DeepSpaceBackground } from '../DeepSpaceBackground'
-import { useMoney } from '../../lib/money'
+import { useMoney, getLoanProgress } from '../../lib/money'
 import { BalanceToggle } from '../ui/BalanceToggle'
 import { useTheme } from '../../theme/ThemeProvider'
 
@@ -54,7 +54,7 @@ export default function SaccoDetailScreen() {
         </View>
 
         {/* Balance hero */}
-        <View className="p-5 items-center mb-0 mt-4 mx-4 rounded-2xl" style={{ backgroundColor: membership.sacco_color + '25' }}>
+        <View className="p-5 items-center mb-0 mt-4 mx-4 rounded-2xl" style={{ backgroundColor: (membership.sacco_color || c.accent) + '25' }}>
           <Text className="text-xs tracking-wider mb-1" style={{ color: c.textMuted }}>Total savings balance</Text>
           <View className="flex-row items-center gap-2.5 mb-1">
             <Text className="text-3xl font-bold" style={{ color: c.text }}>{money(totalSavings)}</Text>
@@ -124,12 +124,12 @@ export default function SaccoDetailScreen() {
             <View className="h-1.5 rounded-full overflow-hidden mt-2" style={{ backgroundColor: c.surfaceAlt }}>
               <View className="h-full" style={{
                 backgroundColor: c.success,
-                width: `${Math.round(((activeLoan.amount_requested - (activeLoan.balance_remaining ?? 0)) / activeLoan.amount_requested) * 100)}%`
+                width: `${getLoanProgress(activeLoan.amount_requested, activeLoan.balance_remaining)}%`
               }} />
             </View>
             <View className="flex-row justify-between mt-2">
               <Text className="text-[10px]" style={{ color: c.textFaint }}>
-                {Math.round(((activeLoan.amount_requested - (activeLoan.balance_remaining ?? 0)) / activeLoan.amount_requested) * 100)}% repaid
+                {getLoanProgress(activeLoan.amount_requested, activeLoan.balance_remaining)}% repaid
               </Text>
               <Text className="text-[10px]" style={{ color: c.textFaint }}>Next: {activeLoan.next_payment_date || 'TBD'}</Text>
             </View>
