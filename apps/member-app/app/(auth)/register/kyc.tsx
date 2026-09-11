@@ -62,13 +62,16 @@ export default function RegisterKYC() {
   const [dob, setDob] = useState(initialDob || '')
   const [loading, setLoading] = useState(false)
 
-  const canContinue = (() => {
-    if (idNumber.length < 7 || dob.length !== 10) return false
-    if (docType === 'id_card') return !!idFront && !!idBack
-    if (docType === 'passport') return !!passport
-    if (docType === 'huduma_card') return !!huduma
-    return false
+  const missingReasons = (() => {
+    const reasons: string[] = []
+    if (idNumber.length < 7) reasons.push(docType === 'passport' ? 'passport number' : 'ID number')
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dob)) reasons.push('date of birth (YYYY-MM-DD)')
+    if (docType === 'id_card' && (!idFront || !idBack)) reasons.push('both sides of your ID')
+    if (docType === 'passport' && !passport) reasons.push('passport bio-page photo')
+    if (docType === 'huduma_card' && !huduma) reasons.push('Huduma card photo')
+    return reasons
   })()
+  const canContinue = missingReasons.length === 0
 
   if (!step1 || !otpVerified) {
     if (!step1) router.replace('/(auth)/register')
@@ -276,6 +279,11 @@ export default function RegisterKYC() {
           <Text className="text-white text-xs font-semibold">Continue →</Text>
         )}
       </TouchableOpacity>
+      {!canContinue && missingReasons.length > 0 && (
+        <Text className="text-xs text-center mt-2" style={{ color: c.textMuted }}>
+          Still needed: {missingReasons.join(', ')}
+        </Text>
+      )}
     </KeyboardAwareScreen>
   )
 }
