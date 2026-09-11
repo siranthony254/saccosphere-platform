@@ -12,6 +12,7 @@ import { router } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { KeyboardAwareScreen } from '../../../components/ui/KeyboardAwareScreen'
 import { api } from '@saccosphere/api-client'
+import type { ApiError } from '@saccosphere/api-client'
 import { useRegistrationStore } from '../../../store/useRegistrationStore'
 import { useSaccos } from '../../../hooks/useSaccos'
 import { useIsAuthenticated } from '../../../store/useAuthStore'
@@ -34,6 +35,20 @@ const INK_MUTED = '#6B7280'
 const INK_FAINT = '#9CA3AF'
 const BORDER = 'rgba(0,0,0,0.08)'
 const BORDER_MID = 'rgba(0,0,0,0.13)'
+
+function getApiErrorMessage(error: unknown, fallback: string) {
+  const apiError = error as Partial<ApiError>
+  const fieldMessages = apiError.fields
+    ? Object.entries(apiError.fields)
+        .flatMap(([field, messages]) => {
+          const fieldErrors = Array.isArray(messages) ? messages : [String(messages)]
+          return fieldErrors.map((message) => `${field}: ${message}`)
+        })
+        .join('\n')
+    : ''
+
+  return fieldMessages || apiError.message || fallback
+}
 
 export default function LinkSaccos() {
   const { colors: c } = useTheme()
@@ -167,8 +182,8 @@ export default function LinkSaccos() {
         await routeAfterRegister()
         resetRegistrationStore()
       }
-    } catch (err: any) {
-      Alert.alert('Setup failed', err.message || 'Unable to complete account setup.')
+    } catch (err) {
+      Alert.alert('Setup failed', getApiErrorMessage(err, 'Unable to complete account setup.'))
     }
   }
 
@@ -204,8 +219,8 @@ export default function LinkSaccos() {
       setLinkedSaccos([])
       resetRegistrationStore()
       router.replace('/(member)')
-    } catch (err: any) {
-      Alert.alert('Setup failed', err.message || 'Unable to complete account setup.')
+    } catch (err) {
+      Alert.alert('Setup failed', getApiErrorMessage(err, 'Unable to complete account setup.'))
     }
   }
 

@@ -210,6 +210,20 @@ export interface ApiCallOptions {
   responseSchema?: ZodType
 }
 
+const GENERIC_BACKEND_MESSAGES = new Set(['Validation error', 'Request failed', 'Internal server error'])
+
+// custom_exception_handler's `errors` field is either a DRF field-error dict
+// ({field: [msg, ...]}) or {detail: msg} for non-field errors — flatten
+// either into one human-readable string.
+const flattenFieldErrors = (errors: unknown): string | null => {
+  if (!errors || typeof errors !== 'object') return null
+  const parts = Object.entries(errors as Record<string, unknown>).flatMap(([field, messages]) => {
+    const list = Array.isArray(messages) ? messages : [messages]
+    return list.map((m) => (field === 'detail' || field === 'non_field_errors' ? String(m) : `${field}: ${m}`))
+  })
+  return parts.length > 0 ? parts.join(' ') : null
+}
+
 export async function apiCall<T>(
   method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE',
   url: string,
@@ -255,13 +269,21 @@ export async function apiCall<T>(
 
     if (axios.isAxiosError(error) && error.response) {
       const responseData = error.response.data
+      const fields = responseData?.errors ?? undefined
+      const fieldMessage = flattenFieldErrors(fields)
+      const backendMessage = responseData?.message ?? responseData?.detail
+      // custom_exception_handler always sends a generic placeholder
+      // ('Validation error', 'Request failed', ...) alongside the real,
+      // field-specific reason in `errors` — prefer the specific one so
+      // callers that just show `.message` (most of them) aren't stuck with
+      // "Validation error" for every 400.
       const apiError: ApiError = responseData?.error ?? {
         code: responseData?.error_code ?? ErrorCode.NETWORK_ERROR,
         message:
-          responseData?.message ??
-          responseData?.detail ??
-          'An unexpected error occurred. Please try again.',
-        fields: responseData?.errors ?? undefined,
+          (fieldMessage && (!backendMessage || GENERIC_BACKEND_MESSAGES.has(backendMessage))
+            ? fieldMessage
+            : backendMessage) ?? 'An unexpected error occurred. Please try again.',
+        fields,
         details: typeof responseData === 'object' ? responseData : undefined,
       }
       apiError.status = error.response.status
