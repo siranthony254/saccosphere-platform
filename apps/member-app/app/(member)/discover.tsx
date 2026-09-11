@@ -45,14 +45,14 @@ export default function DiscoverScreen() {
     <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top', 'bottom', 'left', 'right']}>
       <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 20 }} keyboardShouldPersistTaps="handled">
       {/* Header */}
-      <View style={{ paddingTop: 12, paddingHorizontal: 16, paddingBottom: 12, backgroundColor: c.bg, borderBottomWidth: 0.5, borderBottomColor: c.border }}>
+      <View style={{ paddingTop: 12, paddingHorizontal: 16, paddingBottom: 12, borderBottomWidth: 0.5, borderBottomColor: c.border }}>
         <Text style={{ color: c.text, fontSize: 20, fontWeight: '700' }}>Find a SACCO</Text>
         <Text style={{ color: c.textMuted, fontSize: 12, marginTop: 2 }}>{saccos?.length} SACCOs · All SASRA regulated</Text>
       </View>
 
       {/* Member SACCOs section */}
       {activeMemberships.length > 0 && (
-        <View style={{ paddingHorizontal: 14, paddingVertical: 12, backgroundColor: c.bg, borderBottomWidth: 0.5, borderBottomColor: c.border }}>
+        <View style={{ paddingHorizontal: 14, paddingVertical: 12, borderBottomWidth: 0.5, borderBottomColor: c.border }}>
           <Text style={{ color: c.text, fontSize: 12, fontWeight: '600', marginBottom: 10 }}>Your SACCOs</Text>
           {activeMemberships.map(membership => (
             <TouchableOpacity
@@ -76,7 +76,7 @@ export default function DiscoverScreen() {
       )}
 
       {/* Search */}
-      <View style={{ paddingHorizontal: 14, paddingVertical: 14, backgroundColor: c.bg }}>
+      <View style={{ paddingHorizontal: 14, paddingVertical: 14 }}>
         <View className="flex-row items-center border border-white/10 rounded-xl px-3 bg-white/5">
           <Icon name="discover" size={16} color={c.textMuted} />
           <TextInput
@@ -90,7 +90,7 @@ export default function DiscoverScreen() {
       </View>
 
       {/* Sector pills */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ backgroundColor: c.bg, marginBottom: 0 }} contentContainerStyle={{ paddingHorizontal: 14, paddingBottom: 12, gap: 8 }}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 14, paddingBottom: 12, gap: 8 }}>
         {sectors.map(s => (
           <TouchableOpacity key={s} style={{ paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20, borderWidth: 1, backgroundColor: sector === s ? c.accent : c.surface, borderColor: sector === s ? c.accent : c.border }} onPress={() => setSector(s)}>
             <Text style={{ fontSize: 12, fontWeight: '500', color: sector === s ? '#fff' : c.textMuted }}>{s}</Text>
