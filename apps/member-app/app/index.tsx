@@ -37,17 +37,6 @@ const TRUST_STRIP_OVERFLOW = 18
 
 // ─── Brand palette ────────────────────────────────────────────────────
 const TOP_BAR_SURFACE = 'rgba(8, 12, 28, 0.96)'
-const MINT_LIGHT = '#E6F7F1'
-const MINT_50 = '#F0FAF6'
-const SURFACE = '#FFFFFF'
-const SURFACE2 = '#F8FAFC'
-const SURFACE3 = '#F1F5F9'
-const INK = '#111827'
-const INK_SOFT = '#374151'
-const INK_MUTED = '#6B7280'
-const INK_FAINT = '#9CA3AF'
-const BORDER = 'rgba(0,0,0,0.07)'
-const BORDER_MID = 'rgba(0,0,0,0.13)'
 
 export default function LandingScreen() {
   const { colors: c } = useTheme()

@@ -10,17 +10,6 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window')
 
 const PADDING_H = Math.max(16, Math.min(24, SCREEN_WIDTH * 0.05))
 
-const MINT_LIGHT = '#E6F7F1'
-const MINT_700 = '#084D32'
-const SURFACE = '#FFFFFF'
-const SURFACE2 = '#F8FAFC'
-const SURFACE3 = '#F1F5F9'
-const INK = '#111827'
-const INK_SOFT = '#374151'
-const INK_MUTED = '#6B7280'
-const INK_FAINT = '#9CA3AF'
-const BORDER = 'rgba(0,0,0,0.08)'
-const BORDER_MID = 'rgba(0,0,0,0.13)'
 
 import { Icon } from '../../../components/ui/Icon'
 import { useTheme } from '../../../theme/ThemeProvider'

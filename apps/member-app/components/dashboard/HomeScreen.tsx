@@ -26,17 +26,6 @@ import { useTheme } from '../../theme/ThemeProvider'
 
 type QuickAction = 'contribute' | 'loan' | 'statement' | 'repay'
 
-// ─── Brand palette constants ──────────────────────────────────────────────
-const SURFACE = '#FFFFFF'
-const SURFACE2 = '#F8FAFC'
-const SURFACE3 = '#F1F5F9'
-const INK = '#111827'
-const INK_SOFT = '#374151'
-const INK_MUTED = '#6B7280'
-const INK_FAINT = '#9CA3AF'
-const BORDER = 'rgba(0,0,0,0.07)'
-const BORDER_MID = 'rgba(0,0,0,0.13)'
-
 export default function HomeScreen() {
   const { colors: c } = useTheme()
   const insets = useSafeAreaInsets()

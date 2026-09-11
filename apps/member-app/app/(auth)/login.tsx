@@ -31,25 +31,14 @@ import { useTheme } from '../../theme/ThemeProvider'
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 const PADDING_H = Math.max(16, Math.min(24, SCREEN_WIDTH * 0.05))
 
+// Strength rules (uppercase/lowercase/digit) belong on registration and
+// change-password, not on every login attempt — an existing user's
+// password predating those rules must still be able to sign in.
 const loginSchema = z.object({
   email: z.string().email('Enter a valid email address'),
-  password: z.string()
-    .min(8, 'Password must be at least 8 characters')
-    .regex(/[A-Z]/, 'Password must include an uppercase letter')
-    .regex(/[a-z]/, 'Password must include a lowercase letter')
-    .regex(/[0-9]/, 'Password must include a digit'),
+  password: z.string().min(1, 'Enter your password'),
 })
 type LoginForm = z.infer<typeof loginSchema>
-
-const SURFACE = '#FFFFFF'
-const SURFACE2 = '#F8FAFC'
-const SURFACE3 = '#F1F5F9'
-const INK = '#111827'
-const INK_SOFT = '#374151'
-const INK_MUTED = '#6B7280'
-const INK_FAINT = '#9CA3AF'
-const BORDER = 'rgba(0,0,0,0.08)'
-const BORDER_MID = 'rgba(0,0,0,0.13)'
 
 export default function LoginScreen() {
   const { colors: c } = useTheme()
@@ -210,16 +199,6 @@ export default function LoginScreen() {
         )}
         <Text className="text-xs font-medium" style={{ color: c.text }}>
           {isGooglePending ? 'Signing in...' : 'Continue with Google'}
-        </Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        className="w-full flex-row items-center justify-center gap-2 py-2.5 rounded-xl mb-3"
-        style={{ borderWidth: 1, borderColor: c.border, backgroundColor: c.surface }}
-      >
-        <View className="w-4 h-4 rounded-full" style={{ backgroundColor: '#00a550' }} />
-        <Text className="text-xs font-medium" style={{ color: c.text }}>
-          Continue with M-Pesa number
         </Text>
       </TouchableOpacity>
 
