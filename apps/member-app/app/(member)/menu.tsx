@@ -38,7 +38,7 @@ export default function MenuScreen() {
       label: 'Guarantor requests',
       helper: 'Review and approve loan guarantees',
       icon: 'guarantor',
-      action: () => router.push('/(member)/guarantor-request'),
+      action: () => router.push('/(member)/guarantor-inbox'),
     },
     {
       label: 'Referrals',

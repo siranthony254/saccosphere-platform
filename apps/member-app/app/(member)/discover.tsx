@@ -111,7 +111,7 @@ export default function DiscoverScreen() {
           <TouchableOpacity
             key={sacco.id}
             style={{ backgroundColor: c.surface, borderRadius: 12, padding: 14, marginBottom: 12, borderWidth: 1, borderColor: c.border }}
-            onPress={() => router.push({ pathname: '/(member)/discover/[slug]', params: { slug: sacco.id } })}
+            onPress={() => router.push({ pathname: '/(member)/discover/[slug]', params: { slug: sacco.slug } })}
           >
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 }}>
               <View style={{ width: 42, height: 42, borderRadius: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: sacco.color }}>
