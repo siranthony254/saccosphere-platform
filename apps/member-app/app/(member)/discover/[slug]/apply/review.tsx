@@ -35,10 +35,11 @@ export default function ApplyReviewScreen() {
   const contributionString = `KES ${monthlyContribution.toLocaleString()}`
   const registrationFee = config?.membership.registration_fee_kes ?? 1000
   const shareCapital = config?.membership.min_share_capital_kes ?? 5000
+  const minContribution = config?.membership.min_monthly_contribution_kes ?? 1000
   const canSubmit = Boolean(
     saccoSlug &&
     (userProfile?.first_name || userProfile?.last_name) &&
-    monthlyContribution >= 1000
+    monthlyContribution >= minContribution
   )
 
   const handleSubmit = async () => {
@@ -96,7 +97,7 @@ export default function ApplyReviewScreen() {
             { label: 'Applicant', value: applicantName },
             { label: 'Employment', value: employment },
             { label: 'Monthly contribution', value: contributionString },
-            { label: 'Registration fee', value: `KES ${registrationFee.toLocaleString()} · Paid via M-Pesa` },
+            { label: 'Registration fee', value: `KES ${registrationFee.toLocaleString()} · Due after approval` },
             { label: 'Share capital to pay', value: `KES ${shareCapital.toLocaleString()}` },
           ].map((row) => (
             <View

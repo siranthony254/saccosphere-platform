@@ -103,24 +103,16 @@ export default function ApplyDocumentsScreen() {
           </>
         )}
 
-        {/* Payment of registration fee */}
+        {/* Registration fee notice */}
         <View className="mx-4 mb-4 mt-2">
           <Text className="text-white/80 text-xs font-medium mb-1">
-            Payment of registration fee (KES {registrationFee.toLocaleString()})
+            Registration fee (KES {registrationFee.toLocaleString()})
           </Text>
-          <View className="flex-row gap-2 mt-2">
-            <TouchableOpacity className="flex-1 p-2.5 rounded-xl items-center border border-mint-500 bg-mint-500/10">
-              <Text className="text-xs font-semibold text-mint-400">
-                Pay via M-Pesa
-              </Text>
-              <Text className="text-white/60 text-xs">Instant · +KES 25 fee</Text>
-            </TouchableOpacity>
-            {config?.payments.accepted_methods.includes('bank_transfer') && (
-              <TouchableOpacity className="flex-1 p-2.5 border border-white/20 rounded-xl items-center bg-white/5">
-                <Text className="text-white/80 text-xs font-semibold">Bank transfer</Text>
-                <Text className="text-white/40 text-xs">3–5 days</Text>
-              </TouchableOpacity>
-            )}
+          <View className="rounded-xl p-3 border border-white/10 bg-white/5">
+            <Text className="text-white/60 text-xs leading-4.5">
+              No payment is needed to submit. {saccoName} will send M-Pesa payment instructions
+              once your application is approved.
+            </Text>
           </View>
         </View>
 

@@ -48,7 +48,7 @@ export default function ApplySuccessScreen() {
             { label: 'SACCO', value: saccoName },
             { label: 'Status', value: 'Under review' },
             { label: 'Expected decision', value: '5–7 business days' },
-            { label: 'Registration fee', value: `KES ${registrationFee.toLocaleString()} paid` },
+            { label: 'Registration fee', value: `KES ${registrationFee.toLocaleString()} · Due after approval` },
           ].map((row) => (
             <View
               key={row.label}
