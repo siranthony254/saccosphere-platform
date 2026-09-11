@@ -122,7 +122,9 @@ export default function LoanCompareScreen() {
           ))
         )}
 
-        <Text className="text-[10px] text-center mt-4" style={{ color: c.textFaint }}>Rates as of April 2024. Subject to SACCO board approval.</Text>
+        <Text className="text-[10px] text-center mt-4" style={{ color: c.textFaint }}>
+          Rates as of {new Date().toLocaleDateString('en-KE', { month: 'long', year: 'numeric' })}. Subject to SACCO board approval.
+        </Text>
       </KeyboardAwareScrollView>
     </DeepSpaceBackground>
   )

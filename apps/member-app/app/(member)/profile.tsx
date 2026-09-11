@@ -5,7 +5,7 @@
 import { View, Text, ScrollView, TouchableOpacity, Alert } from 'react-native'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { router } from 'expo-router'
-import * as FileSystem from 'expo-file-system'
+import { File, Paths } from 'expo-file-system'
 import * as Sharing from 'expo-sharing'
 import { useCurrentUser } from '../../store/useAuthStore'
 import { useLogout } from '../../hooks/useAuth'
@@ -27,6 +27,15 @@ const getKycLabel = (status?: string, iprsVerified?: boolean) => {
   return 'KYC Not Started'
 }
 
+function blobToBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve((reader.result as string).split(',')[1])
+    reader.onerror = () => reject(reader.error ?? new Error('Failed to read file'))
+    reader.readAsDataURL(blob)
+  })
+}
+
 const getKycVariant = (status?: string): any => {
   if (status === 'verified') return 'success'
   if (status === 'rejected' || status === 'iprs_rejected' || status === 'iprs_mismatch') return 'error'
@@ -45,33 +54,28 @@ export default function ProfileScreen() {
   const initials = user ? `${user.first_name[0]}${user.last_name[0]}` : 'JK'
 
   const handleDownloadStatements = async () => {
+    const startOfYear = `${new Date().getFullYear()}-01-01`
     try {
-      // Download statements for all active SACCOs
+      // Download statements for all active SACCOs, one at a time so the
+      // share sheet for one file isn't overlapped by the next download.
       for (const membership of activeMemberships) {
         const { blob, filename } = await api.member.downloadStatementPdf({
           sacco_id: membership.sacco_id,
-          from_date: '2024-01-01', // Default to current year
+          from_date: startOfYear,
           to_date: new Date().toISOString().split('T')[0],
         })
-        
-        const reader = new FileReader()
-        reader.onload = async () => {
-          try {
-            const base64Data = (reader.result as string).split(',')[1]
-            const fileUri = `${(FileSystem as any).cacheDirectory}${filename}`
-            await FileSystem.writeAsStringAsync(fileUri, base64Data, { encoding: 'base64' })
-            
-            if (await Sharing.isAvailableAsync()) {
-              await Sharing.shareAsync(fileUri)
-            } else {
-              Alert.alert('Success', `Statement downloaded: ${filename}`)
-            }
-          } catch (e) {
-            console.error('File write error:', e)
-            Alert.alert('Error', 'Failed to save statement.')
-          }
+
+        const base64Data = await blobToBase64(blob)
+        const file = new File(Paths.cache, filename)
+        if (file.exists) file.delete()
+        file.create()
+        file.write(base64Data, { encoding: 'base64' })
+
+        if (await Sharing.isAvailableAsync()) {
+          await Sharing.shareAsync(file.uri)
+        } else {
+          Alert.alert('Success', `Statement downloaded: ${filename}`)
         }
-        reader.readAsDataURL(blob)
       }
     } catch (error) {
       console.error('Failed to download statements:', error)
@@ -80,7 +84,6 @@ export default function ProfileScreen() {
   }
 
   const settings: Array<{ icon: IconName, label: string, value?: string, action: () => void }> = [
-    { icon: 'phone', label: 'M-Pesa number', value: user?.phone_number || user?.phone || 'Not set', action: () => {} },
     { icon: 'security', label: 'Change password', action: () => router.push('/(auth)/forgot-password') },
     { icon: 'file', label: 'Download all statements', action: handleDownloadStatements },
   ]
@@ -89,7 +92,7 @@ export default function ProfileScreen() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}>
-      <View style={{ paddingTop: 52, paddingHorizontal: 16, paddingBottom: 12, backgroundColor: c.bg, borderBottomWidth: 0.5, borderBottomColor: c.border }}>
+      <View style={{ paddingTop: insets.top + 12, paddingHorizontal: 16, paddingBottom: 12, backgroundColor: c.bg, borderBottomWidth: 0.5, borderBottomColor: c.border }}>
         <Text style={{ color: c.text, fontSize: 20, fontWeight: '700' }}>Profile</Text>
       </View>
 
@@ -138,14 +141,8 @@ export default function ProfileScreen() {
               <Icon name={s.icon} size={18} color={c.text} />
             </View>
             <Text style={{ flex: 1, color: c.text, fontSize: 12, fontWeight: '500' }}>{s.label}</Text>
-            {('toggle' in s && (s as any).toggle) ? (
-              <View style={{ width: 38, height: 22, borderRadius: 11, backgroundColor: c.accent }} />
-            ) : (
-              <>
-                {s.value && <Text style={{ color: c.textMuted, fontSize: 12, marginRight: 4 }}>{s.value}</Text>}
-                <Icon name="arrow-right" size={16} color={c.textMuted} />
-              </>
-            )}
+            {s.value && <Text style={{ color: c.textMuted, fontSize: 12, marginRight: 4 }}>{s.value}</Text>}
+            <Icon name="arrow-right" size={16} color={c.textMuted} />
           </TouchableOpacity>
         ))}
       </View>
