@@ -36,6 +36,29 @@ const INK_FAINT = '#9CA3AF'
 const BORDER = 'rgba(0,0,0,0.08)'
 const BORDER_MID = 'rgba(0,0,0,0.13)'
 
+// Uploads whichever KYC document(s) the user actually captured in
+// register/kyc.tsx — exactly one of (id_front + id_back), passport, or
+// huduma is populated, depending on the document type they chose.
+async function uploadCapturedKycDocuments(
+  kycDocuments: ReturnType<typeof useRegistrationStore.getState>['kycDocuments']
+) {
+  const uploads: Promise<unknown>[] = []
+  if (kycDocuments.id_front) {
+    uploads.push(api.kyc.uploadDocument({ document_type: 'id_front', file: kycDocuments.id_front }))
+  }
+  if (kycDocuments.id_back) {
+    uploads.push(api.kyc.uploadDocument({ document_type: 'id_back', file: kycDocuments.id_back }))
+  }
+  if (kycDocuments.passport) {
+    uploads.push(api.kyc.uploadDocument({ document_type: 'passport', file: kycDocuments.passport }))
+  }
+  if (kycDocuments.huduma) {
+    uploads.push(api.kyc.uploadDocument({ document_type: 'huduma', file: kycDocuments.huduma }))
+  }
+  if (uploads.length === 0) return
+  await Promise.all(uploads)
+}
+
 function getApiErrorMessage(error: unknown, fallback: string) {
   const apiError = error as Partial<ApiError>
   const fieldMessages = apiError.fields
@@ -137,31 +160,12 @@ export default function LinkSaccos() {
       }
 
       // 3. UPLOAD KYC DOCUMENTS
-      if ((kycDocuments as any).front && (kycDocuments as any).back) {
-        try {
-          await Promise.all([
-            api.kyc.uploadDocument({
-              document_type: 'id_front',
-              file: {
-                uri: (kycDocuments as any).front.uri,
-                name: (kycDocuments as any).front.name,
-                type: (kycDocuments as any).front.type,
-              }
-            }),
-            api.kyc.uploadDocument({
-              document_type: 'id_back',
-              file: {
-                uri: (kycDocuments as any).back.uri,
-                name: (kycDocuments as any).back.name,
-                type: (kycDocuments as any).back.type,
-              }
-            }),
-          ])
-        } catch (kycErr) {
-          console.warn('KYC upload failed after registration', kycErr)
-          // We don't block completion if KYC upload fails,
-          // user can re-upload in settings.
-        }
+      try {
+        await uploadCapturedKycDocuments(kycDocuments)
+      } catch (kycErr) {
+        console.warn('KYC upload failed after registration', kycErr)
+        // We don't block completion if KYC upload fails,
+        // user can re-upload in settings.
       }
 
       // 3. PROCEED TO LINK SACCO OR DASHBOARD
@@ -203,16 +207,9 @@ export default function LinkSaccos() {
       }
 
       // Upload KYC even if skipping SACCO link
-      if ((kycDocuments as any).front && (kycDocuments as any).back) {
-        api.kyc.uploadDocument({
-          document_type: 'id_front',
-          file: { uri: (kycDocuments as any).front.uri, name: (kycDocuments as any).front.name, type: (kycDocuments as any).front.type }
-        }).catch(console.warn)
-        api.kyc.uploadDocument({
-          document_type: 'id_back',
-          file: { uri: (kycDocuments as any).back.uri, name: (kycDocuments as any).back.name, type: (kycDocuments as any).back.type }
-        }).catch(console.warn)
-      }
+      uploadCapturedKycDocuments(kycDocuments).catch((kycErr) =>
+        console.warn('KYC upload failed after registration', kycErr)
+      )
 
       setSelected([])
       setSelectedSaccoSlug(null)

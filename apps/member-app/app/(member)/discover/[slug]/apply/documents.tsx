@@ -1,6 +1,9 @@
-import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native'
+import { useState } from 'react'
+import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Alert } from 'react-native'
 import { useLocalSearchParams, router } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import * as ImagePicker from 'expo-image-picker'
+import { api } from '@saccosphere/api-client'
 import { useMembershipApplicationStore } from '../../../../../store/useMembershipApplicationStore'
 import { useSaccoConfig } from '../../../../../hooks/useSaccoConfig'
 import type { RequiredDocument } from '@saccosphere/schemas'
@@ -8,15 +11,43 @@ import { DeepSpaceBackground } from '../../../../../components/DeepSpaceBackgrou
 import { Icon } from '../../../../../components/ui/Icon'
 import { useTheme } from '../../../../../theme/ThemeProvider'
 
+const ACCEPTED_IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png'] as const
+const ACCEPTED_IMAGE_MIME_TYPES = ['image/jpeg', 'image/jpg', 'image/png'] as const
+const KYC_DOCUMENT_KEYS = ['id_front', 'id_back', 'passport', 'huduma'] as const
+type KycDocumentKey = (typeof KYC_DOCUMENT_KEYS)[number]
+
+function isKycDocumentKey(key: string): key is KycDocumentKey {
+  return (KYC_DOCUMENT_KEYS as readonly string[]).includes(key)
+}
+
+function hasAcceptedExtension(fileName: string) {
+  const extension = fileName.split('.').pop()?.toLowerCase()
+  return Boolean(extension && (ACCEPTED_IMAGE_EXTENSIONS as readonly string[]).includes(extension))
+}
+
+function isAcceptedImage(fileName: string, mimeType: string) {
+  return (
+    (ACCEPTED_IMAGE_MIME_TYPES as readonly string[]).includes(mimeType.toLowerCase()) &&
+    hasAcceptedExtension(fileName)
+  )
+}
+
+function buildDocFileName(fileName: string | null | undefined, key: string, mimeType: string) {
+  const fallbackExtension = mimeType === 'image/png' ? 'png' : 'jpg'
+  const fallbackName = `${key}.${fallbackExtension}`
+  const name = fileName?.trim() || fallbackName
+  return hasAcceptedExtension(name) ? name : `${name}.${fallbackExtension}`
+}
+
 export default function ApplyDocumentsScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>()
   const insets = useSafeAreaInsets()
   const { colors: c } = useTheme()
-  const { saccoSlug } = useMembershipApplicationStore()
+  const { saccoSlug, uploadedDocumentIds, addDocument } = useMembershipApplicationStore()
   const { data: config, isLoading: isLoadingConfig } = useSaccoConfig(slug ?? '')
+  const [uploadingKey, setUploadingKey] = useState<string | null>(null)
 
   const saccoName = slug?.toUpperCase() ?? 'SACCO'
-  const isReady = Boolean(saccoSlug && config)
 
   if (isLoadingConfig) {
     return (
@@ -33,6 +64,47 @@ export default function ApplyDocumentsScreen() {
   const kycVerifiedDocs = requiredDocs.filter(doc => doc.already_verified_from_kyc)
   const docsToUpload = requiredDocs.filter(doc => !doc.already_verified_from_kyc)
   const registrationFee = config?.membership.registration_fee_kes ?? 1000
+
+  const allRequiredUploaded = docsToUpload
+    .filter(doc => doc.required)
+    .every(doc => uploadedDocumentIds.includes(doc.key))
+  const isReady = Boolean(saccoSlug && config && allRequiredUploaded)
+
+  const handleUpload = async (doc: RequiredDocument) => {
+    if (!isKycDocumentKey(doc.key)) {
+      Alert.alert('Not supported yet', `${doc.label} can't be uploaded from this screen yet — contact ${saccoName} directly.`)
+      return
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: false,
+      quality: 0.8,
+    })
+    if (result.canceled) return
+
+    const asset = result.assets[0]
+    const mimeType = asset.mimeType ?? 'image/jpeg'
+    const fileName = buildDocFileName(asset.fileName, doc.key, mimeType)
+
+    if (!isAcceptedImage(fileName, mimeType)) {
+      Alert.alert('Unsupported file', 'Upload a JPG, JPEG, or PNG image.')
+      return
+    }
+
+    setUploadingKey(doc.key)
+    try {
+      await api.kyc.uploadDocument({
+        document_type: doc.key,
+        file: { uri: asset.uri, name: fileName, type: mimeType },
+      })
+      addDocument(doc.key)
+    } catch (err: any) {
+      Alert.alert('Upload failed', err?.message ?? 'Unable to upload this document. Please try again.')
+    } finally {
+      setUploadingKey(null)
+    }
+  }
 
   return (
     <DeepSpaceBackground>
@@ -87,21 +159,41 @@ export default function ApplyDocumentsScreen() {
         {docsToUpload.length > 0 && (
           <>
             <Text className="text-xs mb-2 mx-4 mt-4" style={{ color: c.textFaint }}>Upload the following</Text>
-            {docsToUpload.map((doc: RequiredDocument) => (
-              <TouchableOpacity key={doc.key} className="mx-4 border rounded-xl p-3 mb-2.5 flex-row gap-2.5 items-start" style={{ backgroundColor: c.surface, borderColor: c.border }}>
-                <Icon name="file" size={16} color="#6B7280" />
-                <View className="flex-1">
-                  <Text className="text-xs font-semibold mb-0.5" style={{ color: c.text }}>{doc.label}</Text>
-                  <Text className="text-xs" style={{ color: c.textMuted }}>
-                    Required by {saccoName}
-                    {doc.accepted_formats && ` · ${doc.accepted_formats.join(', ')}`}
-                  </Text>
-                  {doc.hint && (
-                    <Text className="text-xs mt-0.5" style={{ color: c.textFaint }}>{doc.hint}</Text>
+            {docsToUpload.map((doc: RequiredDocument) => {
+              const isUploaded = uploadedDocumentIds.includes(doc.key)
+              const isUploading = uploadingKey === doc.key
+              return (
+                <TouchableOpacity
+                  key={doc.key}
+                  className="mx-4 border rounded-xl p-3 mb-2.5 flex-row gap-2.5 items-start"
+                  style={{
+                    backgroundColor: c.surface,
+                    borderColor: isUploaded ? c.success : c.border,
+                  }}
+                  onPress={() => handleUpload(doc)}
+                  disabled={isUploading}
+                >
+                  {isUploading ? (
+                    <ActivityIndicator size="small" color={c.accent} />
+                  ) : (
+                    <Icon name={isUploaded ? 'check' : 'file'} size={16} color={isUploaded ? c.success : '#6B7280'} />
                   )}
-                </View>
-              </TouchableOpacity>
-            ))}
+                  <View className="flex-1">
+                    <Text className="text-xs font-semibold mb-0.5" style={{ color: c.text }}>{doc.label}</Text>
+                    <Text className="text-xs" style={{ color: isUploaded ? c.success : c.textMuted }}>
+                      {isUploading
+                        ? 'Uploading…'
+                        : isUploaded
+                          ? 'Uploaded — tap to replace'
+                          : `Required by ${saccoName}${doc.accepted_formats ? ` · ${doc.accepted_formats.join(', ')}` : ''}`}
+                    </Text>
+                    {doc.hint && !isUploaded && (
+                      <Text className="text-xs mt-0.5" style={{ color: c.textFaint }}>{doc.hint}</Text>
+                    )}
+                  </View>
+                </TouchableOpacity>
+              )
+            })}
           </>
         )}
 
@@ -132,6 +224,11 @@ export default function ApplyDocumentsScreen() {
             Continue →
           </Text>
         </TouchableOpacity>
+        {!isReady && docsToUpload.some(doc => doc.required) && (
+          <Text className="text-xs text-center mt-2" style={{ color: c.textFaint }}>
+            Upload all required documents to continue
+          </Text>
+        )}
       </ScrollView>
     </DeepSpaceBackground>
   )

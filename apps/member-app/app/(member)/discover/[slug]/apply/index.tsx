@@ -15,8 +15,15 @@ export default function ApplyStep1Screen() {
   const insets = useSafeAreaInsets()
   const { colors: c } = useTheme()
 
-  const { setSacco, setFormData, setMonthlyContribution, formData, monthlyContribution } =
-    useMembershipApplicationStore()
+  const {
+    saccoSlug: storedSaccoSlug,
+    setSacco,
+    setFormData,
+    setMonthlyContribution,
+    formData,
+    monthlyContribution,
+    reset: resetApplicationStore,
+  } = useMembershipApplicationStore()
 
   const { data: config, isLoading: isLoadingConfig } = useSaccoConfig(slug ?? '')
   const { data: userProfile } = useProfile()
@@ -41,8 +48,19 @@ export default function ApplyStep1Screen() {
   )
 
   useEffect(() => {
-    if (slug) setSacco(slug)
-  }, [slug, setSacco])
+    if (!slug) return
+    // Starting a fresh application for a different SACCO than whatever was
+    // last in progress — clear stale form data / uploaded-document state
+    // rather than carrying it into this application by mistake.
+    if (storedSaccoSlug && storedSaccoSlug !== slug) {
+      resetApplicationStore()
+    }
+    setSacco(slug)
+    // Only re-run when the slug itself changes — reading storedSaccoSlug at
+    // effect-run time (not as a dependency) avoids re-triggering right after
+    // setSacco/reset update it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slug, setSacco, resetApplicationStore])
 
   const handleCustomFieldChange = (fieldKey: string, value: string) => {
     setCustomFieldValues((prev) => ({ ...prev, [fieldKey]: value }))

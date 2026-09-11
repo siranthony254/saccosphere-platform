@@ -13,7 +13,7 @@ export default function ApplyReviewScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>()
   const insets = useSafeAreaInsets()
   const { colors: c } = useTheme()
-  const { formData, monthlyContribution, saccoSlug, reset } = useMembershipApplicationStore()
+  const { formData, monthlyContribution, saccoSlug, uploadedDocumentIds, reset } = useMembershipApplicationStore()
   const { data: config, isLoading: isLoadingConfig } = useSaccoConfig(slug ?? '')
   const { data: userProfile } = useProfile()
   const { mutateAsync: submitApplication } = useSubmitMembershipApplication()
@@ -116,20 +116,24 @@ export default function ApplyReviewScreen() {
         {/* Documents */}
         <View className="mx-4 border rounded-xl p-3.5 mb-2.5" style={{ backgroundColor: c.surface, borderColor: c.border }}>
           <Text className="text-xs font-semibold mb-2" style={{ color: c.text }}>Documents</Text>
-          {config?.membership.required_documents.map((doc) => (
-            <View
-              key={doc.key}
-              className="flex-row justify-between py-2 border-b last:border-b-0"
-              style={{ borderColor: c.border }}
-            >
-              <Text className="text-xs" style={{ color: c.textMuted }}>{doc.label}</Text>
-              <View className={`px-2 py-0.5 rounded-md ${doc.already_verified_from_kyc ? 'bg-mint-500/20' : 'bg-blue-500/20'}`}>
-                <Text className={`text-xs font-semibold ${doc.already_verified_from_kyc ? 'text-mint-400' : 'text-blue-400'}`}>
-                  {doc.already_verified_from_kyc ? 'Verified' : 'Uploaded'}
-                </Text>
+          {config?.membership.required_documents.map((doc) => {
+            const isVerifiedFromKyc = Boolean(doc.already_verified_from_kyc)
+            const isUploaded = isVerifiedFromKyc || uploadedDocumentIds.includes(doc.key)
+            return (
+              <View
+                key={doc.key}
+                className="flex-row justify-between py-2 border-b last:border-b-0"
+                style={{ borderColor: c.border }}
+              >
+                <Text className="text-xs" style={{ color: c.textMuted }}>{doc.label}</Text>
+                <View className={`px-2 py-0.5 rounded-md ${isVerifiedFromKyc ? 'bg-mint-500/20' : isUploaded ? 'bg-blue-500/20' : 'bg-amber-500/20'}`}>
+                  <Text className={`text-xs font-semibold ${isVerifiedFromKyc ? 'text-mint-400' : isUploaded ? 'text-blue-400' : 'text-amber-500'}`}>
+                    {isVerifiedFromKyc ? 'Verified' : isUploaded ? 'Uploaded' : 'Missing'}
+                  </Text>
+                </View>
               </View>
-            </View>
-          ))}
+            )
+          })}
         </View>
 
         {/* Warning alert */}
