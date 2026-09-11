@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { ThemePicker } from '@saccosphere/ui'
 import { useSaccoSettings } from '../../hooks/useSaccoSettings'
 import { useAuthStore } from '../../store/useAuthStore'
 import {
@@ -223,6 +224,18 @@ function SavingsTypesCard() {
           )}
         </div>
       </div>
+    </div>
+  )
+}
+
+function ThemeSettingsCard() {
+  return (
+    <div className="bg-white border border-[#e5ede9] rounded-[10px] p-5 mt-5">
+      <div className="font-semibold text-sm text-ink mb-1">Background theme</div>
+      <p className="text-xs text-ink-muted mb-4">
+        Applies instantly across the whole portal — every screen shares this one setting.
+      </p>
+      <ThemePicker />
     </div>
   )
 }
@@ -508,6 +521,8 @@ export function Settings() {
       </div>
 
       <SavingsTypesCard />
+
+      <ThemeSettingsCard />
 
       <MemberFieldsCard />
 

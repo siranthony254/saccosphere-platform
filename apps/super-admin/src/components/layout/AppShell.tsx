@@ -1,5 +1,5 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
-import { Icon, type IconName } from '@saccosphere/ui'
+import { Icon, type IconName, AdminBackground } from '@saccosphere/ui'
 import { useAuthStore } from '../../store/useAuthStore'
 import { useLogout } from '../../hooks/useAuth'
 
@@ -87,9 +87,9 @@ export function AppShell() {
       </aside>
 
       {/* Main */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <AdminBackground>
         <main className="flex-1 overflow-y-auto"><Outlet /></main>
-      </div>
+      </AdminBackground>
     </div>
   )
 }

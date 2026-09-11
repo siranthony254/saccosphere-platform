@@ -1,3 +1,4 @@
+import { ThemePicker } from '@saccosphere/ui'
 import { useAuthStore } from '../../store/useAuthStore'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { Card } from '../../components/ui/Card'
@@ -53,6 +54,13 @@ export function PlatformSettings() {
           </div>
         </Card>
       </div>
+
+      <Card title="Background theme" className="mt-5">
+        <p className="text-xs text-ink-muted mb-4">
+          Applies instantly across the whole console — every screen shares this one setting.
+        </p>
+        <ThemePicker />
+      </Card>
     </div>
   )
 }
