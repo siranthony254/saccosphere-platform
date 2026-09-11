@@ -591,18 +591,23 @@ export const api = {
       )
     },
 
+    // OTPVerifyView returns {message} when the OTP has no user attached yet
+    // (fresh registration), but the full UserProfileSerializer object (no
+    // `message` field) when it does (re-verifying an existing user's phone) —
+    // so it can't be forced through OTPResponseSchema. (Same shape mismatch
+    // already hit and fixed below for kyc.submitId.)
     verifyOTP: async (phone: string, code: string, options?: { purpose?: 'PHONE_VERIFY' | 'PASSWORD_RESET' | 'LOGIN' }) => {
       const normalizedPhone = normalizeKenyanPhoneNumber(phone)
-      return apiCall<{ message: string }>(
+      const r = await apiCall<any>(
         'POST',
         '/accounts/otp/verify/',
         {
           phone_number: z.string().min(10).parse(normalizedPhone),
           code: z.string().length(6).parse(code),
           purpose: z.enum(['PHONE_VERIFY', 'PASSWORD_RESET', 'LOGIN']).parse(options?.purpose ?? 'PHONE_VERIFY'),
-        },
-        { responseSchema: OTPResponseSchema }
+        }
       )
+      return { message: typeof r?.message === 'string' ? r.message : 'Phone number verified.' }
     },
 
     resendOTP: (phone: string, options?: { purpose?: 'PHONE_VERIFY' | 'PASSWORD_RESET' | 'LOGIN'; channel?: 'PHONE' | 'EMAIL' }) => {
