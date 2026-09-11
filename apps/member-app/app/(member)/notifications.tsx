@@ -1,8 +1,9 @@
+import { useMemo, useState } from 'react'
 import { View, Text, ScrollView, TouchableOpacity, RefreshControl } from 'react-native'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { router } from 'expo-router'
-import { useNotifications } from '../../hooks/useNotifications'
-import type { Notification } from '@saccosphere/schemas'
+import { useMarkAllNotificationsRead, useNotifications } from '../../hooks/useNotifications'
+import type { Notification, NotificationCategory } from '@saccosphere/schemas'
 import { Icon, type IconName } from '../../components/ui/Icon'
 import { Badge } from '../../components/ui/Badge'
 import { useTheme } from '../../theme/ThemeProvider'
@@ -28,13 +29,29 @@ const CATEGORY_COLORS: Record<string, string> = {
   default: 'transparent',
 }
 
+const FILTERS: Array<{ label: string; categories: NotificationCategory[] | null }> = [
+  { label: 'All', categories: null },
+  { label: 'Loans', categories: ['LOAN'] },
+  { label: 'Payments', categories: ['PAYMENT', 'DIVIDEND'] },
+  { label: 'Alerts', categories: ['ALERT', 'LIQUIDITY_WARNING', 'NPL_WARNING'] },
+]
+
 export default function NotificationsScreen() {
   const { colors: c } = useTheme()
   const insets = useSafeAreaInsets()
   const { data: notifications, isLoading, refetch, isRefetching } = useNotifications()
+  const markAllRead = useMarkAllNotificationsRead()
+  const [activeFilter, setActiveFilter] = useState(FILTERS[0].label)
 
-  const unread = notifications?.filter(n => !n.is_read) ?? []
-  const read = notifications?.filter(n => n.is_read) ?? []
+  const filtered = useMemo(() => {
+    const categories = FILTERS.find((f) => f.label === activeFilter)?.categories
+    if (!categories || !notifications) return notifications ?? []
+    return notifications.filter((n) => categories.includes(n.category))
+  }, [notifications, activeFilter])
+
+  const unread = filtered.filter(n => !n.is_read)
+  const read = filtered.filter(n => n.is_read)
+  const hasUnread = (notifications ?? []).some((n) => !n.is_read)
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['bottom', 'left', 'right']}>
@@ -42,18 +59,30 @@ export default function NotificationsScreen() {
         contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}
         refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={c.success} />}
       >
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 52, paddingHorizontal: 16, paddingBottom: 12, backgroundColor: c.bg, borderBottomWidth: 0.5, borderBottomColor: c.border }}>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: insets.top + 12, paddingHorizontal: 16, paddingBottom: 12, backgroundColor: c.bg, borderBottomWidth: 0.5, borderBottomColor: c.border }}>
         <Text style={{ color: c.text, fontSize: 20, fontWeight: '700' }}>Notifications</Text>
-        <TouchableOpacity><Text style={{ color: c.accent, fontSize: 12, fontWeight: '600' }}>Mark all read</Text></TouchableOpacity>
+        <TouchableOpacity
+          disabled={!hasUnread || markAllRead.isPending}
+          onPress={() => markAllRead.mutate()}
+        >
+          <Text style={{ color: c.accent, fontSize: 12, fontWeight: '600', opacity: !hasUnread || markAllRead.isPending ? 0.4 : 1 }}>Mark all read</Text>
+        </TouchableOpacity>
       </View>
 
       {/* Filter pills */}
       <View style={{ flexDirection: 'row', gap: 8, paddingHorizontal: 14, paddingVertical: 14, backgroundColor: c.bg }}>
-        {['All', 'Loans', 'Payments', 'Alerts'].map(p => (
-          <TouchableOpacity key={p} style={{ paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20, borderWidth: 1, backgroundColor: p === 'All' ? c.accent : c.surface, borderColor: p === 'All' ? c.accent : c.border }}>
-            <Text style={{ fontSize: 12, fontWeight: '500', color: p === 'All' ? '#fff' : c.textMuted }}>{p}</Text>
-          </TouchableOpacity>
-        ))}
+        {FILTERS.map(({ label }) => {
+          const active = label === activeFilter
+          return (
+            <TouchableOpacity
+              key={label}
+              onPress={() => setActiveFilter(label)}
+              style={{ paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20, borderWidth: 1, backgroundColor: active ? c.accent : c.surface, borderColor: active ? c.accent : c.border }}
+            >
+              <Text style={{ fontSize: 12, fontWeight: '500', color: active ? '#fff' : c.textMuted }}>{label}</Text>
+            </TouchableOpacity>
+          )
+        })}
       </View>
 
       {isLoading ? (
@@ -73,6 +102,9 @@ export default function NotificationsScreen() {
               <Text style={{ color: c.textMuted, fontSize: 12, fontWeight: '600', letterSpacing: 1, marginBottom: 8, marginTop: 16 }}>Earlier</Text>
               {read.map(n => <NotifItem key={n.id} notification={n} />)}
             </>
+          )}
+          {unread.length === 0 && read.length === 0 && (
+            <Text style={{ color: c.textMuted, fontSize: 12, textAlign: 'center', marginTop: 24 }}>No notifications in this category.</Text>
           )}
         </View>
       )}
