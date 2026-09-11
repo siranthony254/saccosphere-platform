@@ -11,7 +11,7 @@ import { Icon, IconName } from '../../components/ui/Icon'
 import { useTheme } from '../../theme/ThemeProvider'
 
 
-type ServiceAction = 'contribute' | 'withdraw' | 'loan' | 'statement'
+type ServiceAction = 'contribute' | 'withdraw' | 'loan' | 'statement' | 'dividends'
 
 const servicesList: Array<{
   action: ServiceAction
@@ -49,7 +49,7 @@ const servicesList: Array<{
     color: 'rgba(245, 158, 11, 0.15)',
   },
   {
-    action: 'dividends' as any,
+    action: 'dividends',
     label: 'Annual Dividends',
     desc: 'View declared board dividends, gross earnings & net payouts.',
     icon: 'dividend',
@@ -192,8 +192,8 @@ function navigateToServiceAction(action: ServiceAction, slug: string) {
     return
   }
 
-  if (action === ('dividends' as any)) {
-    router.push('/dividends' as any)
+  if (action === 'dividends') {
+    router.push('/(member)/dividends')
     return
   }
 
