@@ -121,7 +121,7 @@ export default function WithdrawScreen() {
             onChangeText={setAmount}
             keyboardType="number-pad"
             placeholder="0"
-            placeholderTextColor="rgba(255,255,255,0.2)"
+            placeholderTextColor={c.textFaint}
             style={{ color: c.text, fontSize: 34, fontWeight: '800', borderBottomWidth: 2, borderBottomColor: c.accent, paddingBottom: 10, marginBottom: 8 }}
           />
           <Text style={{ color: c.textMuted, fontSize: 11, marginBottom: 20 }}>Available: KES {available.toLocaleString()}</Text>
@@ -132,7 +132,7 @@ export default function WithdrawScreen() {
             onChangeText={setPhone}
             keyboardType="phone-pad"
             placeholder="+2547..."
-            placeholderTextColor="rgba(255,255,255,0.2)"
+            placeholderTextColor={c.textFaint}
             style={{ color: c.text, fontSize: 15, borderWidth: 1, borderColor: c.border, borderRadius: 10, padding: 12, backgroundColor: c.surface, marginBottom: 20 }}
           />
 
