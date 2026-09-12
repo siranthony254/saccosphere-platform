@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { View, Text, TouchableOpacity, ScrollView } from 'react-native'
 import { useLocalSearchParams, router } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -6,6 +7,7 @@ import { useSaccoConfig } from '../../../../../hooks/useSaccoConfig'
 import { DeepSpaceBackground } from '../../../../../components/DeepSpaceBackground'
 import { Icon } from '../../../../../components/ui/Icon'
 import { useTheme } from '../../../../../theme/ThemeProvider'
+import { hapticSuccess } from '../../../../../lib/haptics'
 
 export default function ApplySuccessScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>()
@@ -13,6 +15,10 @@ export default function ApplySuccessScreen() {
   const { colors: c } = useTheme()
   const { data: sacco } = useSacco(slug)
   const { data: config } = useSaccoConfig(slug ?? '')
+
+  useEffect(() => {
+    hapticSuccess()
+  }, [])
 
   const saccoName = sacco?.name ?? slug?.toUpperCase() ?? 'SACCO'
   const appRef = `${saccoName}-APP-${String(Date.now()).slice(-5)}`

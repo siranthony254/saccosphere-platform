@@ -1,15 +1,21 @@
+import { useEffect } from 'react'
 import { View, Text, TouchableOpacity, ScrollView } from 'react-native'
 import { useLocalSearchParams, router } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { DeepSpaceBackground } from '../../../../DeepSpaceBackground'
 import { Icon } from '../../../../ui/Icon'
 import { useTheme } from '../../../../../theme/ThemeProvider'
+import { hapticSuccess } from '../../../../../lib/haptics'
 
 export default function LoanSubmittedSuccess() {
   const { slug, ref } = useLocalSearchParams<{ slug: string; ref?: string }>()
   const insets = useSafeAreaInsets()
   const { colors: c } = useTheme()
   const loanRef = ref || 'Pending'
+
+  useEffect(() => {
+    hapticSuccess()
+  }, [])
 
   return (
     <DeepSpaceBackground>

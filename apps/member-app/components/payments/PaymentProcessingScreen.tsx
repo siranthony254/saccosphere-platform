@@ -3,6 +3,7 @@ import { View, Text, ActivityIndicator, TouchableOpacity } from 'react-native'
 import { usePaymentStatus } from '../../hooks/usePayment'
 import { useTheme } from '../../theme/ThemeProvider'
 import type { ThemeColors } from '../../theme/tokens'
+import { hapticError } from '../../lib/haptics'
 
 interface PaymentProcessingScreenProps {
   checkoutRequestId: string | null
@@ -43,6 +44,7 @@ export default function PaymentProcessingScreen({
         onComplete(true, checkoutRequestId ?? '')
       } else if (status.is_final) {
         const errorMsg = mapMpesaErrorCode(status.result_code ?? undefined, status.result_description)
+        hapticError()
         onComplete(false, undefined, errorMsg)
       }
     }
@@ -56,6 +58,7 @@ export default function PaymentProcessingScreen({
       setPollCount((prev) => {
         if (prev >= 30) {
           clearInterval(interval)
+          hapticError()
           onComplete(false, undefined, 'M-Pesa request timed out. Please check your phone connection and try again.')
           return prev
         }

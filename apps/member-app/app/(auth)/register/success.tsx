@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { View, Text, TouchableOpacity, ScrollView, Dimensions, ActivityIndicator } from 'react-native'
 import { router } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -5,6 +6,7 @@ import { useRegistrationStore } from '../../../store/useRegistrationStore'
 import { useMemberships } from '../../../hooks/useMembership'
 import { Icon } from '../../../components/ui/Icon'
 import { useTheme } from '../../../theme/ThemeProvider'
+import { hapticSuccess } from '../../../lib/haptics'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 const PADDING_H = Math.max(16, Math.min(24, SCREEN_WIDTH * 0.05))
@@ -21,6 +23,10 @@ export default function RegistrationSuccessScreen() {
   const insets = useSafeAreaInsets()
   const { colors: c } = useTheme()
   const { data: memberships, isLoading } = useMemberships()
+
+  useEffect(() => {
+    hapticSuccess()
+  }, [])
 
   const handleDashboard = () => {
     router.replace('/(member)')

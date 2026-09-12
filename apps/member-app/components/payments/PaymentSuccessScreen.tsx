@@ -1,8 +1,10 @@
+import { useEffect } from 'react'
 import { View, Text, TouchableOpacity, ScrollView } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { DeepSpaceBackground } from '../DeepSpaceBackground'
 import { Icon } from '../ui/Icon'
 import { useTheme } from '../../theme/ThemeProvider'
+import { hapticSuccess } from '../../lib/haptics'
 
 
 interface PaymentSuccessScreenProps {
@@ -30,6 +32,10 @@ export default function PaymentSuccessScreen({
   const insets = useSafeAreaInsets()
   const purposeLabel = purpose === 'LOAN_REPAYMENT' ? 'Loan repayment' : 'Contribution'
   const isContribution = purpose === 'SAVING_DEPOSIT'
+
+  useEffect(() => {
+    hapticSuccess()
+  }, [])
 
   return (
     <DeepSpaceBackground>

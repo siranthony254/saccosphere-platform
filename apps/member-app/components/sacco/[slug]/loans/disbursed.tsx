@@ -1,8 +1,10 @@
+import { useEffect } from 'react'
 import { View, Text, TouchableOpacity, ScrollView, Dimensions } from 'react-native'
 import { useLocalSearchParams, router } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Icon } from '../../../ui/Icon'
 import { useTheme } from '../../../../theme/ThemeProvider'
+import { hapticSuccess } from '../../../../lib/haptics'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 const PADDING_H = Math.max(16, Math.min(24, SCREEN_WIDTH * 0.05))
@@ -27,6 +29,10 @@ export default function LoanDisbursed() {
   }>()
   const insets = useSafeAreaInsets()
   const { colors: c } = useTheme()
+
+  useEffect(() => {
+    hapticSuccess()
+  }, [])
 
   return (
     <ScrollView

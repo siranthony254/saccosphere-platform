@@ -2,6 +2,7 @@ import { Pressable, StyleProp, ViewStyle } from 'react-native'
 import { Icon } from './Icon'
 import { usePreferencesStore } from '../../store/usePreferencesStore'
 import { useTheme } from '../../theme/ThemeProvider'
+import { hapticSelect } from '../../lib/haptics'
 
 type Props = {
   size?: number
@@ -27,7 +28,10 @@ export function BalanceToggle({ size = 18, color, style }: Props) {
 
   return (
     <Pressable
-      onPress={toggle}
+      onPress={() => {
+        hapticSelect()
+        toggle()
+      }}
       hitSlop={12}
       accessibilityRole="button"
       accessibilityLabel={hidden ? 'Show balances' : 'Hide balances'}
