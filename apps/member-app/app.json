@@ -32,7 +32,8 @@
       "permissions": [
         "android.permission.CAMERA",
         "android.permission.INTERNET",
-        "android.permission.ACCESS_NETWORK_STATE"
+        "android.permission.ACCESS_NETWORK_STATE",
+        "android.permission.RECORD_AUDIO"
       ]
     },
     "web": {
@@ -79,7 +80,11 @@
       "policy": "appVersion"
     },
     "extra": {
-      "router": {}
-    }
+      "router": {},
+      "eas": {
+        "projectId": "857d27d0-1f49-464d-978b-0c3f3a7ecdd0"
+      }
+    },
+    "owner": "professora"
   }
 }
