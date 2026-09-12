@@ -24,6 +24,7 @@ import { Icon, type IconName } from '../ui/Icon'
 import { BalanceToggle } from '../ui/BalanceToggle'
 import { CardBackdrop } from '../ui/CardBackdrop'
 import { Skeleton } from '../ui/Skeleton'
+import { hapticSelect } from '../../lib/haptics'
 import { useMoney, getLoanProgress } from '../../lib/money'
 import { useTheme } from '../../theme/ThemeProvider'
 
@@ -691,7 +692,15 @@ function QuickActionButton({
   }
 
   return (
-    <TouchableOpacity style={{ alignItems: 'center', flex: 1 }} onPress={onPress}>
+    <TouchableOpacity
+      style={{ alignItems: 'center', flex: 1 }}
+      onPress={() => {
+        hapticSelect()
+        onPress()
+      }}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+    >
       <View
         style={{
           width: 48, height: 48, borderRadius: 14,
