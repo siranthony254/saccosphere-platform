@@ -78,14 +78,8 @@
     "runtimeVersion": {
       "policy": "appVersion"
     },
-    "updates": {
-      "url": "https://u.expo.dev/1286ddb7-ee1b-4f64-8186-3c839ae2926e"
-    },
     "extra": {
-      "router": {},
-      "eas": {
-        "projectId": "1286ddb7-ee1b-4f64-8186-3c839ae2926e"
-      }
+      "router": {}
     },
     "owner": "siranthony254"
   }
