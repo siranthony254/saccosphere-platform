@@ -1,21 +1,13 @@
-import { useEffect, useRef, useState } from 'react'
-import { Animated, Pressable, StyleSheet, Text, TextInput, View } from 'react-native'
-import { LinearGradient } from 'expo-linear-gradient'
-import { Icon, type IconName } from '../ui/Icon'
+import { StyleSheet, TextInput, View } from 'react-native'
+import { HeroCarousel, type HeroSlide } from '../ui/HeroCarousel'
+import { Icon } from '../ui/Icon'
 import { useTheme } from '../../theme/ThemeProvider'
-
-interface Slide {
-  colors: string[]
-  icon: IconName
-  title: string
-  subtitle: string
-}
 
 // Bundled promotional slides — no photo assets shipped (same reasoning as the
 // card-backdrop feature: no scraping, no generation tool, no upload
 // pipeline), so these lean on the same gradient treatment already used
 // across the app's own themes and card backdrops.
-const SLIDES: Slide[] = [
+const SLIDES: HeroSlide[] = [
   {
     colors: ['#4C1D95', '#6D28D9', '#8B5CF6'],
     icon: 'bank',
@@ -48,9 +40,6 @@ const SLIDES: Slide[] = [
   },
 ]
 
-const SLIDE_DURATION_MS = 4500
-const FADE_DURATION_MS = 500
-
 type Props = {
   search: string
   onSearchChange: (value: string) => void
@@ -61,121 +50,24 @@ type Props = {
 
 export function DiscoverHero({ search, onSearchChange, placeholder = 'Search SACCOs, sectors, counties...', insetTop = 0 }: Props) {
   const { colors: c } = useTheme()
-  const [index, setIndex] = useState(0)
-  const opacity = useRef(new Animated.Value(1)).current
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      Animated.timing(opacity, { toValue: 0, duration: FADE_DURATION_MS, useNativeDriver: true }).start(() => {
-        setIndex((prev) => (prev + 1) % SLIDES.length)
-        Animated.timing(opacity, { toValue: 1, duration: FADE_DURATION_MS, useNativeDriver: true }).start()
-      })
-    }, SLIDE_DURATION_MS)
-    return () => clearInterval(timer)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  const slide = SLIDES[index]
 
   return (
-    <View style={[styles.container, { height: 220 + insetTop }]}>
-      <Animated.View style={[StyleSheet.absoluteFill, { opacity }]}>
-        <LinearGradient
-          colors={slide.colors as [string, string, ...string[]]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={StyleSheet.absoluteFill}
+    <HeroCarousel slides={SLIDES} insetTop={insetTop}>
+      <View style={[styles.searchBar, { backgroundColor: c.surface }]}>
+        <Icon name="search" size={16} color={c.textMuted} />
+        <TextInput
+          style={[styles.searchInput, { color: c.text }]}
+          placeholder={placeholder}
+          placeholderTextColor={c.textMuted}
+          value={search}
+          onChangeText={onSearchChange}
         />
-      </Animated.View>
-      <LinearGradient
-        colors={['rgba(0,0,0,0.05)', 'rgba(0,0,0,0.4)']}
-        style={StyleSheet.absoluteFill}
-        pointerEvents="none"
-      />
-
-      <View style={styles.content}>
-        <Animated.View style={{ opacity }}>
-          <View style={styles.iconBadge}>
-            <Icon name={slide.icon} size={20} color="#fff" />
-          </View>
-          <Text style={styles.title}>{slide.title}</Text>
-          <Text style={styles.subtitle}>{slide.subtitle}</Text>
-        </Animated.View>
-
-        {/* Dot pagination */}
-        <View style={styles.dots}>
-          {SLIDES.map((_, i) => (
-            <Pressable key={i} onPress={() => setIndex(i)} hitSlop={8}>
-              <View style={[styles.dot, i === index && styles.dotActive]} />
-            </Pressable>
-          ))}
-        </View>
-
-        {/* Search bar */}
-        <View style={[styles.searchBar, { backgroundColor: c.surface }]}>
-          <Icon name="search" size={16} color={c.textMuted} />
-          <TextInput
-            style={[styles.searchInput, { color: c.text }]}
-            placeholder={placeholder}
-            placeholderTextColor={c.textMuted}
-            value={search}
-            onChangeText={onSearchChange}
-          />
-        </View>
       </View>
-    </View>
+    </HeroCarousel>
   )
 }
 
 const styles = StyleSheet.create({
-  container: {
-    height: 220,
-    overflow: 'hidden',
-    position: 'relative',
-  },
-  content: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    paddingHorizontal: 16,
-    paddingBottom: 16,
-  },
-  iconBadge: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: 'rgba(255,255,255,0.18)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 10,
-  },
-  title: {
-    color: '#fff',
-    fontSize: 20,
-    fontWeight: '700',
-    marginBottom: 4,
-  },
-  subtitle: {
-    color: 'rgba(255,255,255,0.8)',
-    fontSize: 12,
-    lineHeight: 17,
-    marginBottom: 14,
-    maxWidth: '90%',
-  },
-  dots: {
-    flexDirection: 'row',
-    gap: 6,
-    marginBottom: 14,
-  },
-  dot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: 'rgba(255,255,255,0.35)',
-  },
-  dotActive: {
-    backgroundColor: '#fff',
-    width: 16,
-  },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
