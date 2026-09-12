@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View, Modal } from 'react-native'
+import { ActivityIndicator, RefreshControl, ScrollView, Text, TouchableOpacity, View, Modal } from 'react-native'
 import { router } from 'expo-router'
 import { useLoans } from '../../hooks/useLoans'
 import { useMemberships } from '../../hooks/useMembership'
@@ -24,7 +24,7 @@ interface ScheduleItem {
 export default function LoanRepaymentRoute() {
   const { colors: c } = useTheme()
   const money = useMoney()
-  const { data: loans = [], isLoading } = useLoans()
+  const { data: loans = [], isLoading, isRefetching, refetch } = useLoans()
   const { data: memberships = [] } = useMemberships()
   const [selectedScheduleLoan, setSelectedScheduleLoan] = useState<LoanApplication | null>(null)
   const [scheduleData, setScheduleData] = useState<ScheduleItem[]>([])
@@ -62,7 +62,11 @@ export default function LoanRepaymentRoute() {
   }
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: c.surfaceAlt }} contentContainerStyle={{ padding: 16, paddingBottom: 36 }}>
+    <ScrollView
+      style={{ flex: 1, backgroundColor: c.surfaceAlt }}
+      contentContainerStyle={{ padding: 16, paddingBottom: 36 }}
+      refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={c.accent} />}
+    >
       <View style={{ backgroundColor: c.surface, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: c.border, marginBottom: 14 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
           <Text style={{ color: c.text, fontSize: 20, fontWeight: '700' }}>Pay loan</Text>

@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native'
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native'
 import { router } from 'expo-router'
 import { useLoans } from '../../../../hooks/useLoans'
 import { useMemberships } from '../../../../hooks/useMembership'
@@ -13,7 +13,7 @@ import { useTheme } from '../../../../theme/ThemeProvider'
 export default function SaccoLoanSelectorScreen() {
   const { colors: c } = useTheme()
   const money = useMoney()
-  const { data: memberships = [], isLoading } = useMemberships()
+  const { data: memberships = [], isLoading, isRefetching, refetch } = useMemberships()
   const { data: loans = [] } = useLoans()
 
   const activeMemberships = useMemo(() => getActiveMemberships(memberships), [memberships])
@@ -57,7 +57,11 @@ export default function SaccoLoanSelectorScreen() {
   }
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: c.surfaceAlt }} contentContainerStyle={{ paddingBottom: 32 }}>
+    <ScrollView
+      style={{ flex: 1, backgroundColor: c.surfaceAlt }}
+      contentContainerStyle={{ paddingBottom: 32 }}
+      refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={c.accent} />}
+    >
       {/* Header */}
       <View
         style={{

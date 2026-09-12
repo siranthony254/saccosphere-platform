@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ActivityIndicator, Alert, Platform, ScrollView, Text, TouchableOpacity, View } from 'react-native'
+import { ActivityIndicator, Alert, Platform, RefreshControl, ScrollView, Text, TouchableOpacity, View } from 'react-native'
 import { useLocalSearchParams, router } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { File, Paths } from 'expo-file-system'
@@ -27,7 +27,7 @@ export default function StatementScreen() {
   const [isDownloading, setIsDownloading] = useState(false)
   const month = monthDate.toLocaleDateString('en-KE', { month: 'long', year: 'numeric' })
   const statementRange = getMonthRange(monthDate)
-  const { data: transactions, isLoading } = useTransactions({ sacco: slug, from: statementRange.from, to: statementRange.to })
+  const { data: transactions, isLoading, isRefetching, refetch } = useTransactions({ sacco: slug, from: statementRange.from, to: statementRange.to })
   const { data: membership } = useMembershipBySacco(slug)
 
   const monthTransactions = transactions ?? []
@@ -113,6 +113,7 @@ export default function StatementScreen() {
       <ScrollView
         className="flex-1"
         contentContainerStyle={{ paddingBottom: insets.bottom + 20, paddingTop: insets.top }}
+        refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={c.success} />}
       >
         {/* Header */}
         <View className="flex-row justify-between items-center px-4 py-3" style={{ borderBottomWidth: 1, borderBottomColor: c.border }}>

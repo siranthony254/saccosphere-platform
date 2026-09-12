@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useMemo } from 'react'
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native'
+import { View, Text, ScrollView, TouchableOpacity, RefreshControl } from 'react-native'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { router } from 'expo-router'
 import { useSaccos } from '../../hooks/useSaccos'
@@ -31,7 +31,7 @@ export default function DiscoverScreen() {
     return () => clearTimeout(timer)
   }, [search])
 
-  const { data: saccos, isLoading, isError, refetch } = useSaccos({
+  const { data: saccos, isLoading, isError, isRefetching, refetch } = useSaccos({
     search: debouncedSearch || undefined,
     sector: sector === 'All' ? undefined : sector,
   })
@@ -48,7 +48,11 @@ export default function DiscoverScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['bottom', 'left', 'right']}>
-      <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 20 }} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}
+        keyboardShouldPersistTaps="handled"
+        refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={c.accent} />}
+      >
       <DiscoverHero search={search} onSearchChange={setSearch} insetTop={insets.top} />
       <CategoryTabs activeId={activeCategory} onSelect={setActiveCategory} />
 
