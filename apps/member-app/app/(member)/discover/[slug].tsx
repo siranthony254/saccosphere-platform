@@ -48,7 +48,7 @@ export default function SaccoProfileScreen() {
       >
         {/* Top bar */}
         <View className="px-4 py-2.5 border-b flex-row items-center" style={{ borderColor: c.border }}>
-          <TouchableOpacity onPress={() => router.back()} className="w-7 h-7 rounded-full items-center justify-center" style={{ backgroundColor: c.surface }}>
+          <TouchableOpacity onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Go back" className="w-7 h-7 rounded-full items-center justify-center" style={{ backgroundColor: c.surface }}>
             <Text className="text-xs" style={{ color: c.textMuted }}>←</Text>
           </TouchableOpacity>
           <View className="ml-2.5">

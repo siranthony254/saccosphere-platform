@@ -35,7 +35,7 @@ export default function GuarantorInbox() {
         refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={c.success} />}
       >
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingTop: insets.top + 12, paddingHorizontal: 16, paddingBottom: 12, borderBottomWidth: 0.5, borderBottomColor: c.border }}>
-          <TouchableOpacity onPress={() => router.back()}><Icon name="arrow-right" size={24} color={c.text} rotate={180} /></TouchableOpacity>
+          <TouchableOpacity onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Go back"><Icon name="arrow-right" size={24} color={c.text} rotate={180} /></TouchableOpacity>
           <Text style={{ color: c.text, fontSize: 20, fontWeight: '700' }}>Guarantor Requests</Text>
         </View>
 

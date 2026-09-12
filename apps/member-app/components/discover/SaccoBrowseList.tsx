@@ -38,7 +38,7 @@ export function SaccoBrowseList({ title, subtitle, onSelectSacco }: SaccoBrowseL
       style={{ backgroundColor: c.bg }}
     >
       <View style={{ paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: c.border, flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
-        <TouchableOpacity onPress={() => router.back()}>
+        <TouchableOpacity onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Go back">
           <Text style={{ color: c.textMuted, fontSize: 18 }}>Back</Text>
         </TouchableOpacity>
         <View style={{ marginLeft: 12 }}>

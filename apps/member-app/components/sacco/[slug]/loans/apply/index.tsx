@@ -112,7 +112,7 @@ export default function LoanStep1() {
           contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 40, paddingTop: insets.top }}
         >
           <View className="flex-row items-center mb-6">
-            <TouchableOpacity onPress={() => router.back()} className="mr-3">
+            <TouchableOpacity onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Go back" className="mr-3">
               <Text className="text-lg" style={{ color: c.textMuted }}>←</Text>
             </TouchableOpacity>
             <View>
@@ -138,7 +138,7 @@ export default function LoanStep1() {
           contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 40, paddingTop: insets.top }}
         >
           <View className="flex-row items-center mb-6">
-            <TouchableOpacity onPress={() => router.back()} className="mr-3">
+            <TouchableOpacity onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Go back" className="mr-3">
               <Text className="text-lg" style={{ color: c.textMuted }}>←</Text>
             </TouchableOpacity>
             <View>
@@ -163,7 +163,7 @@ export default function LoanStep1() {
         contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 40, paddingTop: insets.top }}
       >
         <View className="flex-row items-center mb-6">
-          <TouchableOpacity onPress={() => router.back()} className="mr-3">
+          <TouchableOpacity onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Go back" className="mr-3">
             <Text className="text-lg" style={{ color: c.textMuted }}>←</Text>
           </TouchableOpacity>
           <View>

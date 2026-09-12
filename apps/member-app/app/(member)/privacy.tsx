@@ -120,7 +120,7 @@ export default function PrivacyScreen() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['bottom', 'left', 'right']}>
       <View style={{ paddingTop: insets.top + 12, paddingHorizontal: 16, paddingBottom: 12, borderBottomWidth: 0.5, borderBottomColor: c.border }}>
-        <TouchableOpacity onPress={() => router.back()} style={{ marginBottom: 12 }}>
+        <TouchableOpacity onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Go back" style={{ marginBottom: 12 }}>
           <Text style={{ color: c.accent, fontSize: 12, fontWeight: '600' }}>← Back</Text>
         </TouchableOpacity>
         <Text style={{ color: c.text, fontSize: 20, fontWeight: '700' }}>Privacy & Data</Text>

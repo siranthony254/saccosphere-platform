@@ -180,7 +180,7 @@ export default function ExternalGuarantorsScreen() {
       <TouchableOpacity
         className="border rounded-xl p-3.5 items-center"
         style={{ backgroundColor: c.surfaceAlt, borderColor: c.border }}
-        onPress={() => router.back()}
+        onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Go back"
       >
         <Text className="text-xs font-semibold" style={{ color: c.text }}>Back to Internal Guarantors</Text>
       </TouchableOpacity>

@@ -214,7 +214,7 @@ export default function PayScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View className="flex-row items-center mb-6">
-          <TouchableOpacity onPress={() => router.back()} className="mr-3">
+          <TouchableOpacity onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Go back" className="mr-3">
             <Text className="text-lg" style={{ color: c.textMuted }}>←</Text>
           </TouchableOpacity>
           <View>

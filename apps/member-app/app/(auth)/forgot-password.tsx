@@ -64,7 +64,7 @@ export default function ForgotPassword() {
         </View>
       )}
 
-      <TouchableOpacity onPress={() => router.back()} style={{ alignItems: 'center' }}>
+      <TouchableOpacity onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Go back" style={{ alignItems: 'center' }}>
         <Text style={{ color: c.accent, fontSize: 12, fontWeight: '600' }}>← Back to login</Text>
       </TouchableOpacity>
     </KeyboardAwareScreen>

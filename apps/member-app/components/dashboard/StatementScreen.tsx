@@ -117,7 +117,7 @@ export default function StatementScreen() {
         {/* Header */}
         <View className="flex-row justify-between items-center px-4 py-3" style={{ borderBottomWidth: 1, borderBottomColor: c.border }}>
           <View className="flex-row items-center gap-3">
-            <TouchableOpacity onPress={() => router.back()} className="w-8 h-8 rounded-full items-center justify-center" style={{ backgroundColor: c.surfaceAlt }}>
+            <TouchableOpacity onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Go back" className="w-8 h-8 rounded-full items-center justify-center" style={{ backgroundColor: c.surfaceAlt }}>
               <Text className="text-xs" style={{ color: c.textMuted }}>←</Text>
             </TouchableOpacity>
             <View>

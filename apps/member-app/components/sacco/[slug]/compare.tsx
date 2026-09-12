@@ -27,7 +27,7 @@ export default function LoanCompareScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View className="flex-row items-center mb-1">
-          <TouchableOpacity onPress={() => router.back()} className="mr-3">
+          <TouchableOpacity onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Go back" className="mr-3">
             <Text className="text-lg" style={{ color: c.textMuted }}>←</Text>
           </TouchableOpacity>
           <Text className="text-xl font-bold" style={{ color: c.text }}>Compare loan options</Text>

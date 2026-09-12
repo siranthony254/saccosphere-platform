@@ -51,7 +51,7 @@ export default function LoanReview() {
         contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 40, paddingTop: insets.top }}
       >
         <View className="flex-row items-center mb-6">
-          <TouchableOpacity onPress={() => router.back()} className="mr-3">
+          <TouchableOpacity onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Go back" className="mr-3">
             <Text className="text-lg" style={{ color: c.textMuted }}>←</Text>
           </TouchableOpacity>
           <View>
@@ -119,7 +119,7 @@ export default function LoanReview() {
           <Text className="text-white text-sm font-bold uppercase tracking-wider">Confirm & Submit application</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity className="mt-6 items-center" onPress={() => router.back()}>
+        <TouchableOpacity className="mt-6 items-center" onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Go back">
           <Text className="text-[10px] font-bold uppercase tracking-widest" style={{ color: c.textFaint }}>Back to Guarantors</Text>
         </TouchableOpacity>
       </ScrollView>

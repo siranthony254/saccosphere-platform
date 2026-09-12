@@ -357,7 +357,7 @@ export default function RegisterOTP() {
 
         <View className="flex-row justify-center">
           <Text className="text-xs" style={{ color: c.textMuted }}>Wrong details? </Text>
-          <TouchableOpacity onPress={() => router.back()}>
+          <TouchableOpacity onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Go back">
             <Text className="text-xs font-semibold" style={{ color: c.accent }}>Change</Text>
           </TouchableOpacity>
         </View>

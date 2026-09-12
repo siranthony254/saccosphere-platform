@@ -48,7 +48,7 @@ export default function SaccoDetailScreen() {
       >
         {/* Header */}
         <View className="px-4 py-2.5 flex-row items-center" style={{ borderBottomWidth: 1, borderBottomColor: c.border }}>
-          <TouchableOpacity onPress={() => router.back()} className="w-7 h-7 rounded-full items-center justify-center" style={{ backgroundColor: c.surfaceAlt }}>
+          <TouchableOpacity onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Go back" className="w-7 h-7 rounded-full items-center justify-center" style={{ backgroundColor: c.surfaceAlt }}>
             <Text className="text-xs" style={{ color: c.textMuted }}>←</Text>
           </TouchableOpacity>
           <View className="ml-2.5">
