@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Alert } from 'react-native'
 import { useLocalSearchParams, router } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { useQuery } from '@tanstack/react-query'
 import * as ImagePicker from 'expo-image-picker'
 import { api } from '@saccosphere/api-client'
 import { useMembershipApplicationStore } from '../../../../../store/useMembershipApplicationStore'
@@ -45,25 +46,41 @@ export default function ApplyDocumentsScreen() {
   const { colors: c } = useTheme()
   const { saccoSlug, uploadedDocumentIds, addDocument } = useMembershipApplicationStore()
   const { data: config, isLoading: isLoadingConfig } = useSaccoConfig(slug ?? '')
+  const { data: kycStatus, isLoading: isLoadingKyc } = useQuery({
+    queryKey: ['kycStatus'],
+    queryFn: () => api.kyc.getStatus(),
+  })
   const [uploadingKey, setUploadingKey] = useState<string | null>(null)
 
   const saccoName = slug?.toUpperCase() ?? 'SACCO'
 
-  if (isLoadingConfig) {
-    return (
-      <DeepSpaceBackground>
-        <View className="flex-1 items-center justify-center px-8">
-          <ActivityIndicator color="#6D28D9" />
-          <Text className="text-xs mt-3" style={{ color: c.textMuted }}>Loading document requirements...</Text>
-        </View>
-      </DeepSpaceBackground>
-    )
-  }
+  // Any full identity document already on file from registration covers all
+  // of id_front/id_back/passport/huduma here — they're interchangeable proof
+  // of identity, and the KYCUploadView endpoint this screen would otherwise
+  // call to "upload" a document is currently broken server-side (every
+  // request 500s). Skip re-uploading whatever the member already has.
+  const hasIdentityOnFile = Boolean(
+    kycStatus && ((kycStatus.has_id_front && kycStatus.has_id_back) || kycStatus.has_passport)
+  )
 
   const requiredDocs = config?.membership.required_documents ?? []
-  const kycVerifiedDocs = requiredDocs.filter(doc => doc.already_verified_from_kyc)
-  const docsToUpload = requiredDocs.filter(doc => !doc.already_verified_from_kyc)
+  const kycVerifiedDocs = requiredDocs.filter(
+    (doc) => doc.already_verified_from_kyc || (isKycDocumentKey(doc.key) && hasIdentityOnFile)
+  )
+  const docsToUpload = requiredDocs.filter(
+    (doc) => !doc.already_verified_from_kyc && !(isKycDocumentKey(doc.key) && hasIdentityOnFile)
+  )
   const registrationFee = config?.membership.registration_fee_kes ?? 1000
+
+  // Mark KYC-covered documents as satisfied in the application store so the
+  // "Continue" gate below sees them as done, without ever calling the
+  // broken per-document upload endpoint.
+  useEffect(() => {
+    kycVerifiedDocs.forEach((doc) => {
+      if (!uploadedDocumentIds.includes(doc.key)) addDocument(doc.key)
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasIdentityOnFile, requiredDocs.length])
 
   const allRequiredUploaded = docsToUpload
     .filter(doc => doc.required)
@@ -106,6 +123,17 @@ export default function ApplyDocumentsScreen() {
     }
   }
 
+  if (isLoadingConfig || isLoadingKyc) {
+    return (
+      <DeepSpaceBackground>
+        <View className="flex-1 items-center justify-center px-8">
+          <ActivityIndicator color="#6D28D9" />
+          <Text className="text-xs mt-3" style={{ color: c.textMuted }}>Loading document requirements...</Text>
+        </View>
+      </DeepSpaceBackground>
+    )
+  }
+
   return (
     <DeepSpaceBackground>
       <ScrollView
@@ -138,20 +166,26 @@ export default function ApplyDocumentsScreen() {
         {/* KYC Verified Documents */}
         {kycVerifiedDocs.length > 0 && (
           <>
-            <Text className="text-xs mb-2 mx-4" style={{ color: c.textFaint }}>Auto-imported from your KYC</Text>
+            <Text className="text-xs mb-2 mx-4" style={{ color: c.textFaint }}>Already on file from your account verification</Text>
             {kycVerifiedDocs.map((doc: RequiredDocument) => (
               <View key={doc.key} className="flex-row gap-2.5 mx-4 mb-3">
                 <View className="w-6 h-6 rounded-full justify-center items-center bg-mint-500">
                   <Icon name="check" size={12} color="#ffffff" />
                 </View>
-                <View>
+                <View style={{ flex: 1 }}>
                   <Text className="text-mint-400 text-xs font-semibold">
                     {doc.label}
                   </Text>
-                  <Text className="text-xs" style={{ color: c.textMuted }}>Auto-imported from your KYC · Verified</Text>
+                  <Text className="text-xs" style={{ color: c.textMuted }}>Verified during account setup — no need to re-upload</Text>
                 </View>
               </View>
             ))}
+            <View className="mx-4 mb-4 rounded-xl p-3 border" style={{ borderColor: c.border, backgroundColor: c.surfaceAlt }}>
+              <Text className="text-xs leading-4.5" style={{ color: c.textFaint }}>
+                {saccoName} will confirm your identity verification status directly rather than receiving these images
+                as part of this application.
+              </Text>
+            </View>
           </>
         )}
 

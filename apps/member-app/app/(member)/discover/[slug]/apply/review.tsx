@@ -2,12 +2,16 @@ import { useState } from 'react'
 import { View, Text, TouchableOpacity, ScrollView, Alert, ActivityIndicator } from 'react-native'
 import { useLocalSearchParams, router } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { useQuery } from '@tanstack/react-query'
+import { api } from '@saccosphere/api-client'
 import { useMembershipApplicationStore } from '../../../../../store/useMembershipApplicationStore'
 import { useSubmitMembershipApplication } from '../../../../../hooks/useMembershipApplication'
 import { useSaccoConfig } from '../../../../../hooks/useSaccoConfig'
 import { useProfile } from '../../../../../hooks/useProfile'
 import { DeepSpaceBackground } from '../../../../../components/DeepSpaceBackground'
 import { useTheme } from '../../../../../theme/ThemeProvider'
+
+const KYC_DOCUMENT_KEYS = ['id_front', 'id_back', 'passport', 'huduma']
 
 export default function ApplyReviewScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>()
@@ -16,8 +20,16 @@ export default function ApplyReviewScreen() {
   const { formData, monthlyContribution, saccoSlug, uploadedDocumentIds, reset } = useMembershipApplicationStore()
   const { data: config, isLoading: isLoadingConfig } = useSaccoConfig(slug ?? '')
   const { data: userProfile } = useProfile()
+  const { data: kycStatus } = useQuery({
+    queryKey: ['kycStatus'],
+    queryFn: () => api.kyc.getStatus(),
+  })
   const { mutateAsync: submitApplication } = useSubmitMembershipApplication()
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const hasIdentityOnFile = Boolean(
+    kycStatus && ((kycStatus.has_id_front && kycStatus.has_id_back) || kycStatus.has_passport)
+  )
 
   if (isLoadingConfig) {
     return (
@@ -117,7 +129,9 @@ export default function ApplyReviewScreen() {
         <View className="mx-4 border rounded-xl p-3.5 mb-2.5" style={{ backgroundColor: c.surface, borderColor: c.border }}>
           <Text className="text-xs font-semibold mb-2" style={{ color: c.text }}>Documents</Text>
           {config?.membership.required_documents.map((doc) => {
-            const isVerifiedFromKyc = Boolean(doc.already_verified_from_kyc)
+            const isVerifiedFromKyc = Boolean(
+              doc.already_verified_from_kyc || (KYC_DOCUMENT_KEYS.includes(doc.key) && hasIdentityOnFile)
+            )
             const isUploaded = isVerifiedFromKyc || uploadedDocumentIds.includes(doc.key)
             return (
               <View
@@ -134,6 +148,14 @@ export default function ApplyReviewScreen() {
               </View>
             )
           })}
+          {config?.membership.required_documents.some(
+            (doc) => doc.already_verified_from_kyc || (KYC_DOCUMENT_KEYS.includes(doc.key) && hasIdentityOnFile)
+          ) && (
+            <Text className="text-xs mt-2" style={{ color: c.textFaint }}>
+              &ldquo;Verified&rdquo; documents are confirmed directly with {saccoName} from your account
+              verification, rather than attached to this application.
+            </Text>
+          )}
         </View>
 
         {/* Warning alert */}
