@@ -9,6 +9,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useTransactions } from '../../hooks/useTransactions'
 import { useMembershipBySacco } from '../../hooks/useMembership'
 import { Icon, type IconName } from '../ui/Icon'
+import { Skeleton } from '../ui/Skeleton'
 import type { Transaction } from '@saccosphere/schemas'
 import { DeepSpaceBackground } from '../DeepSpaceBackground'
 import { useMoney, useBalanceHidden, MONEY_MASK } from '../../lib/money'
@@ -209,7 +210,7 @@ export default function StatementScreen() {
         {/* Transactions List */}
         <View className="px-4">
           {isLoading ? (
-            [1, 2, 3].map((item) => <View key={item} className="h-16 rounded-2xl mb-2" style={{ backgroundColor: c.surface }} />)
+            [1, 2, 3].map((item) => <Skeleton key={item} height={64} borderRadius={16} style={{ marginBottom: 8 }} />)
           ) : filtered.length === 0 ? (
             <View className="py-20 items-center">
               <Text className="text-xs font-medium" style={{ color: c.textFaint }}>No transactions for this period.</Text>

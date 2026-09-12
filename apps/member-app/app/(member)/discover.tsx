@@ -10,6 +10,7 @@ import { Icon } from '../../components/ui/Icon'
 import { Badge } from '../../components/ui/Badge'
 import { DiscoverHero } from '../../components/discover/DiscoverHero'
 import { CategoryTabs } from '../../components/discover/CategoryTabs'
+import { Skeleton } from '../../components/ui/Skeleton'
 import { useTheme } from '../../theme/ThemeProvider'
 
 
@@ -94,7 +95,7 @@ export default function DiscoverScreen() {
       {/* Results */}
       <View style={{ paddingHorizontal: 14 }}>
         {isLoading ? (
-          [1,2,3].map(i => <View key={i} style={{ height: 160, backgroundColor: c.surface, borderRadius: 12, marginBottom: 12 }} />)
+          [1,2,3].map(i => <Skeleton key={i} height={160} borderRadius={12} style={{ marginBottom: 12 }} />)
         ) : isError ? (
           <View style={{ alignItems: 'center', paddingHorizontal: 32, paddingVertical: 32 }}>
             <Text style={{ color: c.textMuted, fontSize: 12, marginBottom: 12 }}>Failed to load SACCOs.</Text>

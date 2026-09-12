@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { ActivityIndicator, RefreshControl, ScrollView, Text, TouchableOpacity, View } from 'react-native'
+import { RefreshControl, ScrollView, Text, TouchableOpacity, View } from 'react-native'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { router } from 'expo-router'
 import type { Dashboard, Membership, Transaction } from '@saccosphere/schemas'
@@ -23,6 +23,7 @@ import { Badge } from '../ui/Badge'
 import { Icon, type IconName } from '../ui/Icon'
 import { BalanceToggle } from '../ui/BalanceToggle'
 import { CardBackdrop } from '../ui/CardBackdrop'
+import { Skeleton } from '../ui/Skeleton'
 import { useMoney, getLoanProgress } from '../../lib/money'
 import { useTheme } from '../../theme/ThemeProvider'
 
@@ -101,9 +102,20 @@ export default function HomeScreen() {
   if (isLoading) {
     return (
       <DeepSpaceBackground>
-        <SafeAreaView style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }} edges={['bottom', 'left', 'right']}>
-          <ActivityIndicator color={c.success} size="small" />
-          <Text style={{ color: c.textMuted, fontSize: 12, marginTop: 12 }}>Loading your dashboard...</Text>
+        <SafeAreaView style={{ flex: 1 }} edges={['bottom', 'left', 'right']}>
+          <View style={{ padding: 16, gap: 14 }}>
+            <Skeleton width={140} height={14} />
+            <Skeleton height={150} borderRadius={16} />
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              <Skeleton height={64} borderRadius={14} style={{ flex: 1 }} />
+              <Skeleton height={64} borderRadius={14} style={{ flex: 1 }} />
+              <Skeleton height={64} borderRadius={14} style={{ flex: 1 }} />
+              <Skeleton height={64} borderRadius={14} style={{ flex: 1 }} />
+            </View>
+            <Skeleton width={100} height={12} />
+            <Skeleton height={90} borderRadius={14} />
+            <Skeleton height={90} borderRadius={14} />
+          </View>
         </SafeAreaView>
       </DeepSpaceBackground>
     )
