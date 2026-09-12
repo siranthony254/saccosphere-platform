@@ -4,6 +4,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Dimensions } from 'react-native'
 import { useSacco } from '../../hooks/useSaccos'
 import { useTheme } from '../../theme/ThemeProvider'
+import { CardBackdrop } from '../ui/CardBackdrop'
+import { usePreferencesStore } from '../../store/usePreferencesStore'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 const PADDING_H = Math.max(16, Math.min(24, SCREEN_WIDTH * 0.05))
@@ -13,6 +15,8 @@ export default function SaccoProfileScreen() {
   const insets = useSafeAreaInsets()
   const { colors: c } = useTheme()
   const { data: sacco, isLoading, error } = useSacco(slug)
+  const saccoProfileBackdrop = usePreferencesStore((s) => s.cardBackdrops.saccoProfile)
+  const hasSaccoProfileBackdrop = Boolean(saccoProfileBackdrop)
 
   if (isLoading) {
     return (
@@ -70,21 +74,27 @@ export default function SaccoProfileScreen() {
       </View>
 
       {/* SACCO Profile Card — sacco.color is the SACCO's own brand colour,
-          always vivid enough for white text/badges regardless of app theme. */}
-      <View
-        style={{ borderRadius: 12, padding: 18, marginBottom: 12, alignItems: 'center', backgroundColor: sacco.color || '#16a085' }}
+          always vivid enough for white text/badges regardless of app theme.
+          A nature backdrop (if the member picked one) replaces it entirely. */}
+      <CardBackdrop
+        slot="saccoProfile"
+        style={{ borderRadius: 12, marginBottom: 12 }}
       >
-        <View style={{ width: 52, height: 52, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginBottom: 10, backgroundColor: 'rgba(255,255,255,0.15)' }}>
-          <Text style={{ color: '#fff', fontSize: 18, fontWeight: '700' }}>{sacco.initials || sacco.name.slice(0, 2).toUpperCase()}</Text>
+        <View
+          style={{ padding: 18, alignItems: 'center', backgroundColor: hasSaccoProfileBackdrop ? 'transparent' : sacco.color || '#16a085' }}
+        >
+          <View style={{ width: 52, height: 52, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginBottom: 10, backgroundColor: 'rgba(255,255,255,0.15)' }}>
+            <Text style={{ color: '#fff', fontSize: 18, fontWeight: '700' }}>{sacco.initials || sacco.name.slice(0, 2).toUpperCase()}</Text>
+          </View>
+          <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600', marginBottom: 2 }}>{sacco.name}</Text>
+          <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 12, marginBottom: 10 }}>
+            Est. {sacco.established_year || 'N/A'} · {sacco.sasra_reg_no || 'No SASRA reg'}
+          </Text>
+          <View style={{ backgroundColor: 'rgba(255,255,255,0.2)', paddingHorizontal: 10, paddingVertical: 2, borderRadius: 999 }}>
+            <Text style={{ color: '#fff', fontSize: 12, fontWeight: '600' }}>SASRA Regulated</Text>
+          </View>
         </View>
-        <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600', marginBottom: 2 }}>{sacco.name}</Text>
-        <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 12, marginBottom: 10 }}>
-          Est. {sacco.established_year || 'N/A'} · {sacco.sasra_reg_no || 'No SASRA reg'}
-        </Text>
-        <View style={{ backgroundColor: 'rgba(255,255,255,0.2)', paddingHorizontal: 10, paddingVertical: 2, borderRadius: 999 }}>
-          <Text style={{ color: '#fff', fontSize: 12, fontWeight: '600' }}>SASRA Regulated</Text>
-        </View>
-      </View>
+      </CardBackdrop>
 
       {/* Stats row */}
       <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
