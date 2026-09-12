@@ -18,6 +18,7 @@ import { create } from 'zustand'
 import { persist, createJSONStorage, type StateStorage } from 'zustand/middleware'
 import * as SecureStore from 'expo-secure-store'
 import type { ThemeId } from '../theme/tokens'
+import type { CardBackdropId, CardBackdropSlot } from '../theme/cardBackdrops'
 
 const webStorage: StateStorage = {
   getItem: (name) => {
@@ -51,16 +52,27 @@ const nativeStorage: StateStorage = {
 
 const preferencesStorage = Platform.OS === 'web' ? webStorage : nativeStorage
 
+type CardBackdrops = Record<CardBackdropSlot, CardBackdropId | null>
+
+const DEFAULT_CARD_BACKDROPS: CardBackdrops = {
+  profile: null,
+  balances: null,
+  saccoProfile: null,
+}
+
 interface PreferencesState {
   /** Mask the member's own balances and amounts across the app. */
   balanceHidden: boolean
   /** Selected theme id, or 'system' to follow the OS light/dark setting. */
   themeId: ThemeId
+  /** Per-card nature-scene backdrop choice, keyed by card slot. */
+  cardBackdrops: CardBackdrops
   /** True once the persisted preferences have been loaded. */
   _hydrated: boolean
   toggleBalanceHidden: () => void
   setBalanceHidden: (hidden: boolean) => void
   setThemeId: (id: ThemeId) => void
+  setCardBackdrop: (slot: CardBackdropSlot, id: CardBackdropId | null) => void
 }
 
 export const usePreferencesStore = create<PreferencesState>()(
@@ -68,10 +80,13 @@ export const usePreferencesStore = create<PreferencesState>()(
     (set, get) => ({
       balanceHidden: false,
       themeId: 'midnight',
+      cardBackdrops: DEFAULT_CARD_BACKDROPS,
       _hydrated: false,
       toggleBalanceHidden: () => set({ balanceHidden: !get().balanceHidden }),
       setBalanceHidden: (hidden) => set({ balanceHidden: hidden }),
       setThemeId: (id) => set({ themeId: id }),
+      setCardBackdrop: (slot, id) =>
+        set({ cardBackdrops: { ...get().cardBackdrops, [slot]: id } }),
     }),
     {
       name: 'saccosphere_preferences',
@@ -79,6 +94,7 @@ export const usePreferencesStore = create<PreferencesState>()(
       partialize: (state) => ({
         balanceHidden: state.balanceHidden,
         themeId: state.themeId,
+        cardBackdrops: state.cardBackdrops,
       }),
       onRehydrateStorage: () => () => {
         usePreferencesStore.setState({ _hydrated: true })
