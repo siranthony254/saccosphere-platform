@@ -1,20 +1,22 @@
 
 import { useState, useEffect, useMemo } from 'react'
-import { View, Text, ScrollView, TouchableOpacity, TextInput, ActivityIndicator } from 'react-native'
+import { View, Text, ScrollView, TouchableOpacity } from 'react-native'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { router } from 'expo-router'
 import { useSaccos } from '../../hooks/useSaccos'
 import { useMemberships } from '../../hooks/useMembership'
 import { getActiveMemberships } from '../../lib/membership'
-import { api } from '@saccosphere/api-client'
 import { Icon } from '../../components/ui/Icon'
 import { Badge } from '../../components/ui/Badge'
+import { DiscoverHero } from '../../components/discover/DiscoverHero'
+import { CategoryTabs } from '../../components/discover/CategoryTabs'
 import { useTheme } from '../../theme/ThemeProvider'
 
 
 export default function DiscoverScreen() {
   const { colors: c } = useTheme()
   const insets = useSafeAreaInsets()
+  const [activeCategory, setActiveCategory] = useState('saccos')
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [sector, setSector] = useState('All')
@@ -42,10 +44,15 @@ export default function DiscoverScreen() {
   }, [saccos])
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top', 'bottom', 'left', 'right']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 20 }} keyboardShouldPersistTaps="handled">
+      <DiscoverHero search={search} onSearchChange={setSearch} insetTop={insets.top} />
+      <CategoryTabs activeId={activeCategory} onSelect={setActiveCategory} />
+
+      {activeCategory === 'saccos' && (
+      <>
       {/* Header */}
-      <View style={{ paddingTop: 12, paddingHorizontal: 16, paddingBottom: 12, borderBottomWidth: 0.5, borderBottomColor: c.border }}>
+      <View style={{ paddingHorizontal: 16, paddingBottom: 12, borderBottomWidth: 0.5, borderBottomColor: c.border }}>
         <Text style={{ color: c.text, fontSize: 20, fontWeight: '700' }}>Find a SACCO</Text>
         <Text style={{ color: c.textMuted, fontSize: 12, marginTop: 2 }}>{saccos?.length} SACCOs · All SASRA regulated</Text>
       </View>
@@ -74,20 +81,6 @@ export default function DiscoverScreen() {
           ))}
         </View>
       )}
-
-      {/* Search */}
-      <View style={{ paddingHorizontal: 14, paddingVertical: 14 }}>
-        <View className="flex-row items-center border rounded-xl px-3" style={{ borderColor: c.border, backgroundColor: c.surface }}>
-          <Icon name="discover" size={16} color={c.textMuted} />
-          <TextInput
-            style={{ flex: 1, padding: 10, fontSize: 14, color: c.text }}
-            placeholder="Search by name, sector, county..."
-            value={search}
-            onChangeText={setSearch}
-            placeholderTextColor={c.textMuted}
-          />
-        </View>
-      </View>
 
       {/* Sector pills */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 14, paddingBottom: 12, gap: 8 }}>
@@ -153,6 +146,8 @@ export default function DiscoverScreen() {
           </TouchableOpacity>
         ))}
       </View>
+      </>
+      )}
     </ScrollView>
     </SafeAreaView>
   )
