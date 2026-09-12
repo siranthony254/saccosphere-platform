@@ -1,74 +1,42 @@
-import { ReactNode, useState } from 'react'
-import { Pressable, StyleSheet, View } from 'react-native'
+import { ReactNode } from 'react'
+import { ImageBackground, StyleSheet, View } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { usePreferencesStore } from '../../store/usePreferencesStore'
 import { CARD_BACKDROPS, type CardBackdropSlot } from '../../theme/cardBackdrops'
-import { Icon } from './Icon'
-import { CardBackdropPicker } from './CardBackdropPicker'
-import { Coachmark } from './Coachmark'
 
 type Props = {
   slot: CardBackdropSlot
   children: ReactNode
   /** Extra style for the outer card container (radius, padding, etc). */
   style?: object
-  /** Hide the small customize button (e.g. while a card is disabled). */
-  hideCustomizeButton?: boolean
 }
 
 /**
- * Wraps a card with its chosen nature-scene backdrop (or nothing, letting
- * the card's own background show through) and a small corner button that
- * opens the picker for this card slot. Drop this around the *contents* of
- * a card — it renders the backdrop behind them and the picker button in
- * the top-right corner.
+ * Wraps a card's contents with its chosen nature-photo backdrop (or
+ * nothing, letting the card's own background show through). The photo
+ * itself is picked from the centralized "Card backgrounds" section on the
+ * Privacy screen, not from a control on the card — this component only
+ * renders the result.
  */
-export function CardBackdrop({ slot, children, style, hideCustomizeButton }: Props) {
+export function CardBackdrop({ slot, children, style }: Props) {
   const backdropId = usePreferencesStore((s) => s.cardBackdrops[slot])
-  const [pickerOpen, setPickerOpen] = useState(false)
   const preset = backdropId ? CARD_BACKDROPS[backdropId] : null
 
+  if (!preset) {
+    return <View style={[styles.container, style]}>{children}</View>
+  }
+
   return (
-    <View style={[styles.container, style]}>
-      {preset && (
-        <>
-          <LinearGradient
-            colors={preset.colors as [string, string, ...string[]]}
-            locations={preset.locations as [number, number, ...number[]] | undefined}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={StyleSheet.absoluteFill}
-          />
-          <LinearGradient
-            colors={preset.scrimColors as [string, string, ...string[]]}
-            start={{ x: 0.5, y: 0 }}
-            end={{ x: 0.5, y: 1 }}
-            style={StyleSheet.absoluteFill}
-            pointerEvents="none"
-          />
-        </>
-      )}
-
-      {!hideCustomizeButton && (
-        <Pressable
-          onPress={() => setPickerOpen(true)}
-          hitSlop={10}
-          accessibilityRole="button"
-          accessibilityLabel="Customize card background"
-          style={[styles.customizeButton, { backgroundColor: preset ? 'rgba(0,0,0,0.3)' : 'rgba(120,120,140,0.16)' }]}
-        >
-          <Icon name="camera" size={13} color={preset ? '#fff' : 'rgba(120,120,140,0.9)'} />
-        </Pressable>
-      )}
-
-      {!hideCustomizeButton && (
-        <Coachmark id="cardBackdrop" text="Tap here to add a background to this card" style={{ top: 42, right: 6 }} />
-      )}
-
+    <ImageBackground source={preset.source} style={[styles.container, style]} imageStyle={styles.image}>
+      <LinearGradient
+        colors={preset.scrimColors as [string, string, ...string[]]}
+        start={{ x: 0.5, y: 0 }}
+        end={{ x: 0.5, y: 1 }}
+        style={StyleSheet.absoluteFill}
+        pointerEvents="none"
+      />
       {children}
-
-      <CardBackdropPicker slot={slot} visible={pickerOpen} onClose={() => setPickerOpen(false)} />
-    </View>
+    </ImageBackground>
   )
 }
 
@@ -77,15 +45,7 @@ const styles = StyleSheet.create({
     position: 'relative',
     overflow: 'hidden',
   },
-  customizeButton: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
-    zIndex: 2,
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    alignItems: 'center',
-    justifyContent: 'center',
+  image: {
+    resizeMode: 'cover',
   },
 })

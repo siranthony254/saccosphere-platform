@@ -10,6 +10,8 @@ import { Icon } from '../../components/ui/Icon'
 import { usePreferencesStore } from '../../store/usePreferencesStore'
 import { useTheme } from '../../theme/ThemeProvider'
 import { ThemePicker } from '../../components/ui/ThemePicker'
+import { CardBackgroundSettings } from '../../components/ui/CardBackgroundSettings'
+import { Coachmark } from '../../components/ui/Coachmark'
 
 
 const CONSENT_COPY: Record<string, string> = {
@@ -139,6 +141,16 @@ export default function PrivacyScreen() {
               Pick an appearance, or follow your device&apos;s light / dark setting.
             </Text>
             <ThemePicker />
+          </View>
+
+          {/* Card backgrounds */}
+          <View style={{ padding: 14, borderBottomWidth: 0.5, borderBottomColor: c.border, position: 'relative' }}>
+            <Text style={{ color: c.text, fontSize: 13, fontWeight: '600', marginBottom: 2 }}>Card backgrounds</Text>
+            <Text style={{ color: c.textMuted, fontSize: 11, lineHeight: 16, marginBottom: 12 }}>
+              Set a nature photo behind your Profile Details, Balances, and SACCO Profile cards.
+            </Text>
+            <CardBackgroundSettings />
+            <Coachmark id="cardBackdrop" text="New: set a photo background for your cards here" style={{ top: 2, right: 0 }} />
           </View>
 
           {/* Hide balances */}

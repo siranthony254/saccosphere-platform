@@ -2,87 +2,91 @@
  * Card backdrops.
  *
  * Unlike the full-app image themes scaffolded in assets/themes/ (never
- * completed — no photos were ever dropped in), these are small, bundled
- * gradient "nature scene" treatments the member can apply to individual
- * cards (Profile Details, Balances, SACCO Profile) without changing the
- * app's overall theme or background. Kept as gradients rather than photo
- * assets — no binaries to ship, no upload/storage needed, and it matches
- * the gradient treatment already used by the Aurora/Ember app themes.
- *
- * All of these are deliberately mid-to-dark so the fixed white text/icons
- * drawn over them (see CardBackdrop) stay legible regardless of the
- * member's overall app theme.
+ * completed), these are bundled nature photos a member can apply to
+ * individual cards (Profile Details, Balances, SACCO Profile) without
+ * changing the app's overall theme or background.
  */
 
+import type { ImageSourcePropType } from 'react-native'
+
 export type CardBackdropId =
-  | 'sunrise-ridge'
-  | 'ocean-depths'
-  | 'forest-canopy'
-  | 'golden-savannah'
-  | 'misty-mountains'
-  | 'lavender-dusk'
+  | 'savanna-sunset'
+  | 'tropical-beach'
+  | 'zebra-herd'
+  | 'palm-sunset'
+  | 'mountain-waterfall'
+  | 'waterfall-lagoon'
+  | 'deer-forest'
+  | 'mountain-meadow'
 
 export interface CardBackdropPreset {
   id: CardBackdropId
   label: string
-  colors: string[]
-  locations?: number[]
-  /** Scrim painted over the gradient so white text stays readable. */
+  source: ImageSourcePropType
+  /** Scrim painted over the photo so white text stays readable. */
   scrimColors: string[]
 }
 
 export const CARD_BACKDROPS: Record<CardBackdropId, CardBackdropPreset> = {
-  'sunrise-ridge': {
-    id: 'sunrise-ridge',
-    label: 'Sunrise Ridge',
-    colors: ['#FF9A5A', '#E8598A', '#5B3A9E'],
-    locations: [0, 0.55, 1],
-    scrimColors: ['rgba(0,0,0,0.05)', 'rgba(0,0,0,0.35)'],
+  'savanna-sunset': {
+    id: 'savanna-sunset',
+    label: 'Savanna Sunset',
+    source: require('../assets/themes/savanna-sunset.jpg'),
+    scrimColors: ['rgba(0,0,0,0.1)', 'rgba(0,0,0,0.45)'],
   },
-  'ocean-depths': {
-    id: 'ocean-depths',
-    label: 'Ocean Depths',
-    colors: ['#0B3D5C', '#0E6C8C', '#0A2540'],
-    locations: [0, 0.5, 1],
-    scrimColors: ['rgba(0,0,0,0.05)', 'rgba(0,0,0,0.3)'],
+  'tropical-beach': {
+    id: 'tropical-beach',
+    label: 'Tropical Beach',
+    source: require('../assets/themes/tropical-beach.jpg'),
+    scrimColors: ['rgba(0,0,0,0.1)', 'rgba(0,0,0,0.45)'],
   },
-  'forest-canopy': {
-    id: 'forest-canopy',
-    label: 'Forest Canopy',
-    colors: ['#0F3D2E', '#1D6B4A', '#0A2A1F'],
-    locations: [0, 0.5, 1],
-    scrimColors: ['rgba(0,0,0,0.05)', 'rgba(0,0,0,0.32)'],
+  'zebra-herd': {
+    id: 'zebra-herd',
+    label: 'Zebra Herd',
+    source: require('../assets/themes/zebra-herd.jpg'),
+    scrimColors: ['rgba(0,0,0,0.1)', 'rgba(0,0,0,0.4)'],
   },
-  'golden-savannah': {
-    id: 'golden-savannah',
-    label: 'Golden Savannah',
-    colors: ['#D9A441', '#B9722E', '#4A2E14'],
-    locations: [0, 0.5, 1],
-    scrimColors: ['rgba(0,0,0,0.05)', 'rgba(0,0,0,0.35)'],
+  'palm-sunset': {
+    id: 'palm-sunset',
+    label: 'Palm Sunset',
+    source: require('../assets/themes/palm-sunset.jpg'),
+    scrimColors: ['rgba(0,0,0,0.05)', 'rgba(0,0,0,0.4)'],
   },
-  'misty-mountains': {
-    id: 'misty-mountains',
-    label: 'Misty Mountains',
-    colors: ['#5C7A93', '#3E5670', '#1E2A3A'],
-    locations: [0, 0.55, 1],
-    scrimColors: ['rgba(0,0,0,0.05)', 'rgba(0,0,0,0.3)'],
+  'mountain-waterfall': {
+    id: 'mountain-waterfall',
+    label: 'Mountain Waterfall',
+    source: require('../assets/themes/mountain-waterfall.jpg'),
+    scrimColors: ['rgba(0,0,0,0.1)', 'rgba(0,0,0,0.4)'],
   },
-  'lavender-dusk': {
-    id: 'lavender-dusk',
-    label: 'Lavender Dusk',
-    colors: ['#8B6FC9', '#5B4B93', '#2E2350'],
-    locations: [0, 0.5, 1],
-    scrimColors: ['rgba(0,0,0,0.05)', 'rgba(0,0,0,0.35)'],
+  'waterfall-lagoon': {
+    id: 'waterfall-lagoon',
+    label: 'Waterfall Lagoon',
+    source: require('../assets/themes/waterfall-lagoon.jpg'),
+    scrimColors: ['rgba(0,0,0,0.1)', 'rgba(0,0,0,0.4)'],
+  },
+  'deer-forest': {
+    id: 'deer-forest',
+    label: 'Deer Forest',
+    source: require('../assets/themes/deer-forest.jpg'),
+    scrimColors: ['rgba(0,0,0,0.1)', 'rgba(0,0,0,0.45)'],
+  },
+  'mountain-meadow': {
+    id: 'mountain-meadow',
+    label: 'Mountain Meadow',
+    source: require('../assets/themes/mountain-meadow.jpg'),
+    scrimColors: ['rgba(0,0,0,0.05)', 'rgba(0,0,0,0.4)'],
   },
 }
 
 export const CARD_BACKDROP_ORDER: CardBackdropId[] = [
-  'sunrise-ridge',
-  'ocean-depths',
-  'forest-canopy',
-  'golden-savannah',
-  'misty-mountains',
-  'lavender-dusk',
+  'savanna-sunset',
+  'tropical-beach',
+  'zebra-herd',
+  'palm-sunset',
+  'mountain-waterfall',
+  'waterfall-lagoon',
+  'deer-forest',
+  'mountain-meadow',
 ]
 
 /** Which named card a backdrop preference applies to. */
