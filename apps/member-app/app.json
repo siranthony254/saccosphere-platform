@@ -32,8 +32,7 @@
       "permissions": [
         "android.permission.CAMERA",
         "android.permission.INTERNET",
-        "android.permission.ACCESS_NETWORK_STATE",
-        "android.permission.RECORD_AUDIO"
+        "android.permission.ACCESS_NETWORK_STATE"
       ]
     },
     "web": {
@@ -78,6 +77,9 @@
     },
     "runtimeVersion": {
       "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/857d27d0-1f49-464d-978b-0c3f3a7ecdd0"
     },
     "extra": {
       "router": {},
