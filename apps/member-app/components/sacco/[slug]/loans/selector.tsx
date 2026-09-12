@@ -267,7 +267,7 @@ export default function SaccoLoanSelectorScreen() {
               <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                 <Text style={{ fontSize: 11, color: c.textMuted }}>{loan.loan_product_label}</Text>
                 <Text style={{ fontSize: 11, fontWeight: '600', color: c.text }}>
-                  KES {loan.amount_requested.toLocaleString()}
+                  {money(loan.amount_requested)}
                 </Text>
               </View>
               {(loan.status === 'active' || loan.status === 'disbursed') && (
@@ -290,8 +290,8 @@ export default function SaccoLoanSelectorScreen() {
                       }}
                     />
                   </View>
-                  <Text style={{ fontSize: 9, color: c.textFaint }}>
-                    {getRepaymentProgress(loan)}% repaid · Remaining: KES {(loan.balance_remaining ?? 0).toLocaleString()}
+                  <Text style={{ fontSize: 10, color: c.textFaint }}>
+                    {getRepaymentProgress(loan)}% repaid · Remaining: {money(loan.balance_remaining ?? 0)}
                   </Text>
                 </View>
               )}

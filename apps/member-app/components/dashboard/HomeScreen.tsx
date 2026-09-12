@@ -711,7 +711,7 @@ function QuickActionButton({
       >
         <Icon name={icon} size={20} color={iconColor[tone]} />
       </View>
-      <Text style={{ fontSize: 9, fontWeight: '500', color: c.textMuted, textAlign: 'center', lineHeight: 13 }}>
+      <Text style={{ fontSize: 10, fontWeight: '500', color: c.textMuted, textAlign: 'center', lineHeight: 13 }}>
         {label}
       </Text>
     </TouchableOpacity>
@@ -759,7 +759,7 @@ function SaccoRow({ membership, onPress }: { membership: Membership; onPress: ()
 
       <View style={{ alignItems: 'flex-end' }}>
         <Text style={{ fontSize: 13, fontWeight: '600', color: c.text }}>{money(totalSavings)}</Text>
-        <Text style={{ fontSize: 9, color: c.textMuted }}>Savings</Text>
+        <Text style={{ fontSize: 10, color: c.textMuted }}>Savings</Text>
       </View>
       <Icon name="arrow-right" size={14} color={c.textMuted} />
     </TouchableOpacity>
@@ -951,8 +951,8 @@ function StatLight({ label, value, color, mutedColor }: { label: string; value: 
   const { colors: c } = useTheme()
   return (
     <View>
-      <Text style={{ fontSize: 9, color: mutedColor ?? c.textMuted, marginBottom: 2 }}>{label}</Text>
-      <Text style={{ fontSize: 12, fontWeight: '600', color: color ?? c.text }}>{value}</Text>
+      <Text style={{ fontSize: 10, color: mutedColor ?? c.textMuted, marginBottom: 2 }}>{label}</Text>
+      <Text style={{ fontSize: 13, fontWeight: '600', color: color ?? c.text }}>{value}</Text>
     </View>
   )
 }
