@@ -14,6 +14,9 @@ import { getActiveMemberships } from '../../lib/membership'
 import { api } from '@saccosphere/api-client'
 import { Icon, IconName } from '../../components/ui/Icon'
 import { Badge } from '../../components/ui/Badge'
+import { BalanceToggle } from '../../components/ui/BalanceToggle'
+import { CardBackdrop } from '../../components/ui/CardBackdrop'
+import { usePreferencesStore } from '../../store/usePreferencesStore'
 import { useTheme } from '../../theme/ThemeProvider'
 
 
@@ -52,6 +55,12 @@ export default function ProfileScreen() {
   const activeMemberships = getActiveMemberships(memberships)
 
   const initials = user ? `${user.first_name[0]}${user.last_name[0]}` : 'JK'
+  const profileBackdrop = usePreferencesStore((s) => s.cardBackdrops.profile)
+  const balanceHidden = usePreferencesStore((s) => s.balanceHidden)
+  const hasProfileBackdrop = Boolean(profileBackdrop)
+  const profileTextColor = hasProfileBackdrop ? '#fff' : c.text
+  const profileTextMutedColor = hasProfileBackdrop ? 'rgba(255,255,255,0.75)' : c.textMuted
+  const idSnippet = user?.id ? user.id.slice(0, 8).toUpperCase() : ''
 
   const handleDownloadStatements = async () => {
     const startOfYear = `${new Date().getFullYear()}-01-01`
@@ -96,21 +105,36 @@ export default function ProfileScreen() {
         <Text style={{ color: c.text, fontSize: 20, fontWeight: '700' }}>Profile</Text>
       </View>
 
-      {/* Avatar + info */}
-      <View style={{ alignItems: 'center', paddingVertical: 24, backgroundColor: c.bg, borderBottomWidth: 0.5, borderBottomColor: c.border }}>
+      {/* Profile Details card */}
+      <CardBackdrop
+        slot="profile"
+        style={{
+          alignItems: 'center',
+          paddingVertical: 24,
+          marginHorizontal: 14,
+          marginTop: 14,
+          borderRadius: 16,
+          backgroundColor: c.surface,
+          borderWidth: hasProfileBackdrop ? 0 : 1,
+          borderColor: c.border,
+        }}
+      >
         <View style={{ width: 72, height: 72, borderRadius: 16, backgroundColor: c.accent, alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}>
           <Text style={{ color: '#fff', fontSize: 24, fontWeight: '700' }}>{initials}</Text>
         </View>
-        <Text style={{ color: c.text, fontSize: 16, fontWeight: '600', marginBottom: 2 }}>{user?.first_name} {user?.last_name}</Text>
-        <Text style={{ color: c.textMuted, fontSize: 12, marginBottom: 10 }}>
-          {user?.id ? `ID: ${user.id.slice(0, 8).toUpperCase()}` : ''} · Joined {user?.created_at ? new Date(user.created_at).toLocaleDateString(undefined, { month: 'short', year: 'numeric' }) : 'recently'}
-        </Text>
+        <Text style={{ color: profileTextColor, fontSize: 16, fontWeight: '600', marginBottom: 2 }}>{user?.first_name} {user?.last_name}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 10 }}>
+          <Text style={{ color: profileTextMutedColor, fontSize: 12 }}>
+            {idSnippet ? `ID: ${balanceHidden ? '••••••••' : idSnippet}` : ''} · Joined {user?.created_at ? new Date(user.created_at).toLocaleDateString(undefined, { month: 'short', year: 'numeric' }) : 'recently'}
+          </Text>
+          {idSnippet ? <BalanceToggle size={14} color={profileTextMutedColor} /> : null}
+        </View>
         <Badge
           label={getKycLabel(user?.kyc_status, user?.iprs_verified)}
           variant={getKycVariant(user?.kyc_status)}
           size="md"
         />
-      </View>
+      </CardBackdrop>
 
       {/* SACCO memberships summary */}
       <View style={{ backgroundColor: c.surface, marginHorizontal: 14, marginVertical: 14, borderRadius: 12, padding: 16, borderWidth: 1, borderColor: c.border }}>
