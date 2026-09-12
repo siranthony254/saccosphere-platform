@@ -9,6 +9,7 @@ import { useMemberships } from '../../hooks/useMembership'
 import { usePublicStats } from '../../hooks/usePublicStats'
 import { useCurrentUser } from '../../store/useAuthStore'
 import { useSaccoViewStore } from '../../store/useSaccoViewStore'
+import { usePreferencesStore } from '../../store/usePreferencesStore'
 import SaccoSelectModal from '../SaccoSelectModal'
 import { DeepSpaceBackground } from '../DeepSpaceBackground'
 import {
@@ -21,6 +22,7 @@ import {
 import { Badge } from '../ui/Badge'
 import { Icon, type IconName } from '../ui/Icon'
 import { BalanceToggle } from '../ui/BalanceToggle'
+import { CardBackdrop } from '../ui/CardBackdrop'
 import { useMoney, getLoanProgress } from '../../lib/money'
 import { useTheme } from '../../theme/ThemeProvider'
 
@@ -848,78 +850,88 @@ function BalanceHeroCard({
   const { colors: c, isDark } = useTheme()
   const overlayGlow = isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)'
   const overlayGlowSoft = isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)'
+  const balancesBackdrop = usePreferencesStore((s) => s.cardBackdrops.balances)
+  const hasBackdrop = Boolean(balancesBackdrop)
+  const labelColor = hasBackdrop ? 'rgba(255,255,255,0.75)' : c.textMuted
+  const faintColor = hasBackdrop ? 'rgba(255,255,255,0.6)' : c.textFaint
+  const valueColor = hasBackdrop ? '#fff' : c.text
 
   return (
     <TouchableOpacity
       onPress={onPress}
       disabled={!onPress}
       activeOpacity={onPress ? 0.85 : 1}
-      style={{
-        backgroundColor: c.card,
-        borderRadius: 16,
-        paddingHorizontal: 20,
-        paddingVertical: 20,
-        marginBottom: 14,
-        position: 'relative',
-        overflow: 'hidden',
-      }}
+      style={{ marginBottom: 14, borderRadius: 16, overflow: 'hidden' }}
     >
-      {/* Decorative circles */}
-      <View
+      <CardBackdrop
+        slot="balances"
         style={{
-          position: 'absolute', top: -30, right: -30,
-          width: 120, height: 120, borderRadius: 60,
-          backgroundColor: overlayGlow,
+          backgroundColor: c.card,
+          paddingHorizontal: 20,
+          paddingVertical: 20,
         }}
-      />
-      <View
-        style={{
-          position: 'absolute', bottom: -40, left: 20,
-          width: 90, height: 90, borderRadius: 45,
-          backgroundColor: overlayGlowSoft,
-        }}
-      />
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-        <Text
-          style={{
-            fontSize: 10, color: c.textMuted,
-            letterSpacing: 0.6, textTransform: 'uppercase',
-          }}
-        >
-          {label}
-        </Text>
-        {onPress && (
-          <View className="flex-row items-center gap-1">
-            <Text style={{ fontSize: 10, color: c.textFaint, letterSpacing: 0.3 }}>View detail</Text>
-            <Icon name="arrow-right" size={10} color={c.textFaint} />
-          </View>
+      >
+        {/* Decorative circles */}
+        {!hasBackdrop && (
+          <>
+            <View
+              style={{
+                position: 'absolute', top: -30, right: -30,
+                width: 120, height: 120, borderRadius: 60,
+                backgroundColor: overlayGlow,
+              }}
+            />
+            <View
+              style={{
+                position: 'absolute', bottom: -40, left: 20,
+                width: 90, height: 90, borderRadius: 45,
+                backgroundColor: overlayGlowSoft,
+              }}
+            />
+          </>
         )}
-      </View>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 14 }}>
-        <Text
-          style={{
-            fontSize: 30, fontWeight: '700', color: c.text, lineHeight: 34,
-          }}
-        >
-          {value}
-        </Text>
-        <BalanceToggle />
-      </View>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-        {stats.map((s) => (
-          <StatLight key={s.label} label={s.label} value={s.value} />
-        ))}
-      </View>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+          <Text
+            style={{
+              fontSize: 10, color: labelColor,
+              letterSpacing: 0.6, textTransform: 'uppercase',
+            }}
+          >
+            {label}
+          </Text>
+          {onPress && (
+            <View className="flex-row items-center gap-1" style={{ marginRight: hasBackdrop ? 28 : 0 }}>
+              <Text style={{ fontSize: 10, color: faintColor, letterSpacing: 0.3 }}>View detail</Text>
+              <Icon name="arrow-right" size={10} color={faintColor} />
+            </View>
+          )}
+        </View>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 14 }}>
+          <Text
+            style={{
+              fontSize: 30, fontWeight: '700', color: valueColor, lineHeight: 34,
+            }}
+          >
+            {value}
+          </Text>
+          <BalanceToggle color={hasBackdrop ? 'rgba(255,255,255,0.75)' : undefined} />
+        </View>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+          {stats.map((s) => (
+            <StatLight key={s.label} label={s.label} value={s.value} color={hasBackdrop ? '#fff' : undefined} mutedColor={hasBackdrop ? 'rgba(255,255,255,0.75)' : undefined} />
+          ))}
+        </View>
+      </CardBackdrop>
     </TouchableOpacity>
   )
 }
 
-function StatLight({ label, value }: { label: string; value: string }) {
+function StatLight({ label, value, color, mutedColor }: { label: string; value: string; color?: string; mutedColor?: string }) {
   const { colors: c } = useTheme()
   return (
     <View>
-      <Text style={{ fontSize: 9, color: c.textMuted, marginBottom: 2 }}>{label}</Text>
-      <Text style={{ fontSize: 12, fontWeight: '600', color: c.text }}>{value}</Text>
+      <Text style={{ fontSize: 9, color: mutedColor ?? c.textMuted, marginBottom: 2 }}>{label}</Text>
+      <Text style={{ fontSize: 12, fontWeight: '600', color: color ?? c.text }}>{value}</Text>
     </View>
   )
 }

@@ -6,6 +6,8 @@ import { useLoans } from '../../hooks/useLoans'
 import { DeepSpaceBackground } from '../DeepSpaceBackground'
 import { useMoney, getLoanProgress } from '../../lib/money'
 import { BalanceToggle } from '../ui/BalanceToggle'
+import { CardBackdrop } from '../ui/CardBackdrop'
+import { usePreferencesStore } from '../../store/usePreferencesStore'
 import { useTheme } from '../../theme/ThemeProvider'
 
 export default function SaccoDetailScreen() {
@@ -13,6 +15,8 @@ export default function SaccoDetailScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>()
   const money = useMoney()
   const insets = useSafeAreaInsets()
+  const balancesBackdrop = usePreferencesStore((s) => s.cardBackdrops.balances)
+  const hasBalancesBackdrop = Boolean(balancesBackdrop)
   const { data: membership, isLoading, refetch, isRefetching } = useMembershipBySacco(slug)
   const { data: loans } = useLoans({ sacco: slug })
 
@@ -54,16 +58,21 @@ export default function SaccoDetailScreen() {
         </View>
 
         {/* Balance hero */}
-        <View className="p-5 items-center mb-0 mt-4 mx-4 rounded-2xl" style={{ backgroundColor: (membership.sacco_color || c.accent) + '25' }}>
-          <Text className="text-xs tracking-wider mb-1" style={{ color: c.textMuted }}>Total savings balance</Text>
-          <View className="flex-row items-center gap-2.5 mb-1">
-            <Text className="text-3xl font-bold" style={{ color: c.text }}>{money(totalSavings)}</Text>
-            <BalanceToggle />
+        <CardBackdrop
+          slot="balances"
+          style={{ borderRadius: 16, marginHorizontal: 16, marginTop: 16 }}
+        >
+          <View className="p-5 items-center" style={{ backgroundColor: hasBalancesBackdrop ? 'transparent' : (membership.sacco_color || c.accent) + '25' }}>
+            <Text className="text-xs tracking-wider mb-1" style={{ color: hasBalancesBackdrop ? 'rgba(255,255,255,0.75)' : c.textMuted }}>Total savings balance</Text>
+            <View className="flex-row items-center gap-2.5 mb-1">
+              <Text className="text-3xl font-bold" style={{ color: hasBalancesBackdrop ? '#fff' : c.text }}>{money(totalSavings)}</Text>
+              <BalanceToggle color={hasBalancesBackdrop ? 'rgba(255,255,255,0.75)' : undefined} />
+            </View>
+            <View className="px-2.5 py-0.5 rounded-full mt-1" style={{ backgroundColor: hasBalancesBackdrop ? 'rgba(255,255,255,0.2)' : c.surfaceAlt }}>
+              <Text className="text-[10px] font-medium" style={{ color: hasBalancesBackdrop ? '#fff' : c.textMuted }}>Active Member</Text>
+            </View>
           </View>
-          <View className="px-2.5 py-0.5 rounded-full mt-1" style={{ backgroundColor: c.surfaceAlt }}>
-            <Text className="text-[10px] font-medium" style={{ color: c.textMuted }}>Active Member</Text>
-          </View>
-        </View>
+        </CardBackdrop>
 
         {/* Action buttons */}
         <View className="flex-row gap-2.5 px-4 py-4">
