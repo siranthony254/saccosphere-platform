@@ -1,12 +1,14 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { View, Text, ScrollView, TouchableOpacity, RefreshControl } from 'react-native'
+import { Swipeable } from 'react-native-gesture-handler'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { router } from 'expo-router'
-import { useMarkAllNotificationsRead, useNotifications } from '../../hooks/useNotifications'
+import { useMarkAllNotificationsRead, useMarkNotificationRead, useNotifications } from '../../hooks/useNotifications'
 import type { Notification, NotificationCategory } from '@saccosphere/schemas'
 import { Icon, type IconName } from '../../components/ui/Icon'
 import { Badge } from '../../components/ui/Badge'
 import { useTheme } from '../../theme/ThemeProvider'
+import { hapticSelect } from '../../lib/haptics'
 
 const CATEGORY_ICONS: Record<string, IconName> = {
   LOAN: 'loan',
@@ -118,15 +120,18 @@ function NotifItem({ notification: n }: { notification: Notification }) {
   const iconBg = CATEGORY_COLORS[n.category] ?? c.surface
   const icon = CATEGORY_ICONS[n.category] ?? 'info'
   const timeAgo = getTimeAgo(n.created_at)
+  const markRead = useMarkNotificationRead()
+  const swipeableRef = useRef<Swipeable>(null)
 
   const handlePress = () => {
+    if (!n.is_read) markRead.mutate(n.id)
     if (n.category === 'GUARANTOR') {
       router.push('/(member)/guarantor-inbox')
       return
     }
   }
 
-  return (
+  const content = (
     <TouchableOpacity
       onPress={handlePress}
       style={{ flexDirection: 'row', gap: 12, padding: 12, borderRadius: 12, marginBottom: 8, alignItems: 'flex-start', backgroundColor: !n.is_read ? 'rgba(16, 185, 129, 0.15)' : c.surface, borderWidth: 1, borderColor: !n.is_read ? c.success : c.border }}
@@ -141,6 +146,40 @@ function NotifItem({ notification: n }: { notification: Notification }) {
       </View>
       {!n.is_read && <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#EF4444', marginTop: 4, flexShrink: 0 }} />}
     </TouchableOpacity>
+  )
+
+  if (n.is_read) return content
+
+  return (
+    <Swipeable
+      ref={swipeableRef}
+      renderRightActions={() => (
+        <TouchableOpacity
+          onPress={() => {
+            hapticSelect()
+            markRead.mutate(n.id)
+            swipeableRef.current?.close()
+          }}
+          accessibilityRole="button"
+          accessibilityLabel="Mark as read"
+          style={{
+            backgroundColor: c.success,
+            justifyContent: 'center',
+            alignItems: 'center',
+            width: 84,
+            borderRadius: 12,
+            marginBottom: 8,
+            marginLeft: 8,
+          }}
+        >
+          <Icon name="check" size={18} color="#fff" />
+          <Text style={{ color: '#fff', fontSize: 10, fontWeight: '600', marginTop: 4 }}>Mark read</Text>
+        </TouchableOpacity>
+      )}
+      overshootRight={false}
+    >
+      {content}
+    </Swipeable>
   )
 }
 

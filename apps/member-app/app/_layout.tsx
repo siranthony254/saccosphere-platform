@@ -5,6 +5,7 @@ import { router, usePathname } from 'expo-router'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { StatusBar } from 'expo-status-bar'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
+import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { KeyboardProvider } from 'react-native-keyboard-controller'
 import * as SplashScreen from 'expo-splash-screen'
 import { api, setAccessToken, clearTokens, onTokenRotated } from '@saccosphere/api-client'
@@ -103,18 +104,20 @@ export default function RootLayout() {
   }, [pathname])
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <SafeAreaProvider>
-          <KeyboardProvider>
-            <ThemedStatusBar />
-            <AutoDeviceRegistrar />
-            <ThemedStack />
-            {!splashDone && <AnimatedSplash onFinish={() => setSplashDone(true)} />}
-          </KeyboardProvider>
-        </SafeAreaProvider>
-      </ThemeProvider>
-    </QueryClientProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider>
+          <SafeAreaProvider>
+            <KeyboardProvider>
+              <ThemedStatusBar />
+              <AutoDeviceRegistrar />
+              <ThemedStack />
+              {!splashDone && <AnimatedSplash onFinish={() => setSplashDone(true)} />}
+            </KeyboardProvider>
+          </SafeAreaProvider>
+        </ThemeProvider>
+      </QueryClientProvider>
+    </GestureHandlerRootView>
   )
 }
 
