@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native'
 import { useLocalSearchParams, router } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -6,6 +7,7 @@ import { useSacco } from '../../hooks/useSaccos'
 import { useTheme } from '../../theme/ThemeProvider'
 import { CardBackdrop } from '../ui/CardBackdrop'
 import { usePreferencesStore } from '../../store/usePreferencesStore'
+import { useRecentlyViewedStore } from '../../store/useRecentlyViewedStore'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 const PADDING_H = Math.max(16, Math.min(24, SCREEN_WIDTH * 0.05))
@@ -17,6 +19,13 @@ export default function SaccoProfileScreen() {
   const { data: sacco, isLoading, error } = useSacco(slug)
   const saccoProfileBackdrop = usePreferencesStore((s) => s.cardBackdrops.saccoProfile)
   const hasSaccoProfileBackdrop = Boolean(saccoProfileBackdrop)
+  const addRecentlyViewed = useRecentlyViewedStore((s) => s.addRecentlyViewed)
+
+  useEffect(() => {
+    if (!sacco) return
+    addRecentlyViewed({ slug: sacco.slug, name: sacco.name, color: sacco.color, initials: sacco.initials })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sacco?.slug])
 
   if (isLoading) {
     return (

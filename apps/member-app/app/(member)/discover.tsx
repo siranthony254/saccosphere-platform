@@ -6,6 +6,7 @@ import { router } from 'expo-router'
 import { useSaccos } from '../../hooks/useSaccos'
 import { useMemberships } from '../../hooks/useMembership'
 import { getActiveMemberships } from '../../lib/membership'
+import { useRecentlyViewedStore } from '../../store/useRecentlyViewedStore'
 import { Icon } from '../../components/ui/Icon'
 import { Badge } from '../../components/ui/Badge'
 import { DiscoverHero } from '../../components/discover/DiscoverHero'
@@ -39,6 +40,7 @@ export default function DiscoverScreen() {
   const activeMemberships = getActiveMemberships(memberships ?? [])
   const memberSaccoSlugs = new Set(activeMemberships.map(m => m.sacco_slug))
   const visibleSaccos = saccos?.filter(sacco => !memberSaccoSlugs.has(sacco.slug)) ?? []
+  const recentlyViewed = useRecentlyViewedStore((s) => s.items).filter((item) => !memberSaccoSlugs.has(item.slug))
 
   // Extract unique sectors from loaded SACCOs
   const sectors = useMemo(() => {
@@ -58,6 +60,29 @@ export default function DiscoverScreen() {
 
       {activeCategory === 'saccos' && (
       <>
+      {/* Recently viewed */}
+      {!search && recentlyViewed.length > 0 && (
+        <View style={{ paddingVertical: 12, borderBottomWidth: 0.5, borderBottomColor: c.border }}>
+          <Text style={{ color: c.textMuted, fontSize: 12, fontWeight: '600', marginBottom: 10, paddingHorizontal: 16 }}>Recently viewed</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, gap: 10 }}>
+            {recentlyViewed.map((item) => (
+              <TouchableOpacity
+                key={item.slug}
+                style={{ alignItems: 'center', width: 68 }}
+                onPress={() => router.push({ pathname: '/(member)/discover/[slug]', params: { slug: item.slug } })}
+              >
+                <View style={{ width: 48, height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: item.color || c.accent, marginBottom: 6 }}>
+                  <Text style={{ color: '#fff', fontSize: 13, fontWeight: '700' }}>{item.initials}</Text>
+                </View>
+                <Text numberOfLines={1} style={{ fontSize: 10, fontWeight: '600', color: c.textMuted, textAlign: 'center' }}>
+                  {item.name}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+      )}
+
       {/* Header */}
       <View style={{ paddingHorizontal: 16, paddingBottom: 12, borderBottomWidth: 0.5, borderBottomColor: c.border }}>
         <Text style={{ color: c.text, fontSize: 20, fontWeight: '700' }}>Find a SACCO</Text>
