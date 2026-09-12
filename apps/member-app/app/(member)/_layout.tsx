@@ -103,19 +103,8 @@ function TabIcon({ icon, color, focused }: { icon: IconName; color: string; focu
       backgroundColor: focused ? c.accentSoft : 'transparent',
       alignItems: 'center',
       justifyContent: 'center',
-      position: 'relative',
     }}>
       <Icon name={icon} size={18} color={color} />
-      {focused && (
-        <View style={{
-          position: 'absolute',
-          bottom: -4,
-          width: 6,
-          height: 6,
-          borderRadius: 3,
-          backgroundColor: c.accent,
-        }} />
-      )}
     </View>
   )
 }
