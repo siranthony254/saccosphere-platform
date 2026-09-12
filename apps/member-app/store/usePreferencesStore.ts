@@ -60,6 +60,14 @@ const DEFAULT_CARD_BACKDROPS: CardBackdrops = {
   saccoProfile: null,
 }
 
+/** One-time coach marks — each shown at most once, ever, across the app. */
+export type CoachmarkId = 'cardBackdrop' | 'balanceHide'
+
+const DEFAULT_SEEN_COACHMARKS: Record<CoachmarkId, boolean> = {
+  cardBackdrop: false,
+  balanceHide: false,
+}
+
 interface PreferencesState {
   /** Mask the member's own balances and amounts across the app. */
   balanceHidden: boolean
@@ -67,12 +75,15 @@ interface PreferencesState {
   themeId: ThemeId
   /** Per-card nature-scene backdrop choice, keyed by card slot. */
   cardBackdrops: CardBackdrops
+  /** Which one-time coach marks the member has already dismissed/seen. */
+  seenCoachmarks: Record<CoachmarkId, boolean>
   /** True once the persisted preferences have been loaded. */
   _hydrated: boolean
   toggleBalanceHidden: () => void
   setBalanceHidden: (hidden: boolean) => void
   setThemeId: (id: ThemeId) => void
   setCardBackdrop: (slot: CardBackdropSlot, id: CardBackdropId | null) => void
+  markCoachmarkSeen: (id: CoachmarkId) => void
 }
 
 export const usePreferencesStore = create<PreferencesState>()(
@@ -81,12 +92,15 @@ export const usePreferencesStore = create<PreferencesState>()(
       balanceHidden: false,
       themeId: 'midnight',
       cardBackdrops: DEFAULT_CARD_BACKDROPS,
+      seenCoachmarks: DEFAULT_SEEN_COACHMARKS,
       _hydrated: false,
       toggleBalanceHidden: () => set({ balanceHidden: !get().balanceHidden }),
       setBalanceHidden: (hidden) => set({ balanceHidden: hidden }),
       setThemeId: (id) => set({ themeId: id }),
       setCardBackdrop: (slot, id) =>
         set({ cardBackdrops: { ...get().cardBackdrops, [slot]: id } }),
+      markCoachmarkSeen: (id) =>
+        set({ seenCoachmarks: { ...get().seenCoachmarks, [id]: true } }),
     }),
     {
       name: 'saccosphere_preferences',
@@ -95,6 +109,7 @@ export const usePreferencesStore = create<PreferencesState>()(
         balanceHidden: state.balanceHidden,
         themeId: state.themeId,
         cardBackdrops: state.cardBackdrops,
+        seenCoachmarks: state.seenCoachmarks,
       }),
       onRehydrateStorage: () => () => {
         usePreferencesStore.setState({ _hydrated: true })

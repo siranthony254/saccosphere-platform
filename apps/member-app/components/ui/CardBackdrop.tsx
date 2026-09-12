@@ -5,6 +5,7 @@ import { usePreferencesStore } from '../../store/usePreferencesStore'
 import { CARD_BACKDROPS, type CardBackdropSlot } from '../../theme/cardBackdrops'
 import { Icon } from './Icon'
 import { CardBackdropPicker } from './CardBackdropPicker'
+import { Coachmark } from './Coachmark'
 
 type Props = {
   slot: CardBackdropSlot
@@ -58,6 +59,10 @@ export function CardBackdrop({ slot, children, style, hideCustomizeButton }: Pro
         >
           <Icon name="camera" size={13} color={preset ? '#fff' : 'rgba(120,120,140,0.9)'} />
         </Pressable>
+      )}
+
+      {!hideCustomizeButton && (
+        <Coachmark id="cardBackdrop" text="Tap here to add a background to this card" style={{ top: 42, right: 6 }} />
       )}
 
       {children}

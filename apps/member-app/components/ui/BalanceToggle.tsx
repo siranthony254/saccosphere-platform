@@ -1,5 +1,6 @@
 import { Pressable, StyleProp, ViewStyle } from 'react-native'
 import { Icon } from './Icon'
+import { Coachmark } from './Coachmark'
 import { usePreferencesStore } from '../../store/usePreferencesStore'
 import { useTheme } from '../../theme/ThemeProvider'
 import { hapticSelect } from '../../lib/haptics'
@@ -8,6 +9,8 @@ type Props = {
   size?: number
   color?: string
   style?: StyleProp<ViewStyle>
+  /** Set false for repeated instances on the same screen to avoid duplicate bubbles. */
+  showTip?: boolean
 }
 
 /**
@@ -20,7 +23,7 @@ type Props = {
  * sits on a guaranteed-dark surface (e.g. a colored hero card) regardless
  * of theme.
  */
-export function BalanceToggle({ size = 18, color, style }: Props) {
+export function BalanceToggle({ size = 18, color, style, showTip = true }: Props) {
   const hidden = usePreferencesStore((s) => s.balanceHidden)
   const toggle = usePreferencesStore((s) => s.toggleBalanceHidden)
   const { colors: c } = useTheme()
@@ -38,6 +41,9 @@ export function BalanceToggle({ size = 18, color, style }: Props) {
       style={style}
     >
       <Icon name={hidden ? 'eye-off' : 'eye'} size={size} color={resolvedColor} />
+      {showTip && (
+        <Coachmark id="balanceHide" text="Tap to hide or show your balances" style={{ top: size + 8, right: -20 }} />
+      )}
     </Pressable>
   )
 }
