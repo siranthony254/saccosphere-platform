@@ -120,7 +120,11 @@ export default function RootLayout() {
 
 function ThemedStatusBar() {
   const theme = useTheme()
-  return <StatusBar style={theme.statusBar} />
+  // translucent + a transparent Android background makes sure the status
+  // bar always shows the app's own current backdrop through it, instead of
+  // occasionally keeping a stale/default system bar color that can make a
+  // light theme's dark-style icons (Daybreak, Paper) blend into it.
+  return <StatusBar style={theme.statusBar} translucent backgroundColor="transparent" />
 }
 
 // Single, app-wide backdrop. Every nested navigator (this Stack, the (auth)
