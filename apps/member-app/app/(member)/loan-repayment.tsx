@@ -6,6 +6,8 @@ import { useMemberships } from '../../hooks/useMembership'
 import { api } from '@saccosphere/api-client'
 import type { LoanApplication, Membership } from '@saccosphere/schemas'
 import { Icon } from '../../components/ui/Icon'
+import { BalanceToggle } from '../../components/ui/BalanceToggle'
+import { useMoney } from '../../lib/money'
 import { useTheme } from '../../theme/ThemeProvider'
 
 interface ScheduleItem {
@@ -20,6 +22,7 @@ interface ScheduleItem {
 
 export default function LoanRepaymentRoute() {
   const { colors: c } = useTheme()
+  const money = useMoney()
   const { data: loans = [], isLoading } = useLoans()
   const { data: memberships = [] } = useMemberships()
   const [selectedScheduleLoan, setSelectedScheduleLoan] = useState<LoanApplication | null>(null)
@@ -60,7 +63,10 @@ export default function LoanRepaymentRoute() {
   return (
     <ScrollView style={{ flex: 1, backgroundColor: c.surfaceAlt }} contentContainerStyle={{ padding: 16, paddingBottom: 36 }}>
       <View style={{ backgroundColor: c.surface, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: c.border, marginBottom: 14 }}>
-        <Text style={{ color: c.text, fontSize: 20, fontWeight: '700', marginBottom: 4 }}>Pay loan</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+          <Text style={{ color: c.text, fontSize: 20, fontWeight: '700' }}>Pay loan</Text>
+          <BalanceToggle />
+        </View>
         <Text style={{ color: c.textMuted, fontSize: 12, lineHeight: 18 }}>
           Select a loan to initiate payment or inspect its full reducing-balance amortization repayment schedule.
         </Text>
@@ -97,13 +103,13 @@ export default function LoanRepaymentRoute() {
 
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingTop: 8, borderTopWidth: 0.5, borderTopColor: c.border }}>
                 <Text style={{ color: c.textMuted, fontSize: 12 }}>Amount due</Text>
-                <Text style={{ color: c.text, fontSize: 13, fontWeight: '700' }}>KES {Math.round(amountDue).toLocaleString()}</Text>
+                <Text style={{ color: c.text, fontSize: 13, fontWeight: '700' }}>{money(Math.round(amountDue))}</Text>
               </View>
 
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingTop: 8 }}>
                 <Text style={{ color: c.textMuted, fontSize: 12 }}>Outstanding Balance</Text>
                 <Text style={{ color: c.text, fontSize: 12, fontWeight: '600' }}>
-                  KES {Math.round(loan.balance_remaining || loan.amount_requested).toLocaleString()}
+                  {money(Math.round(loan.balance_remaining || loan.amount_requested))}
                 </Text>
               </View>
 

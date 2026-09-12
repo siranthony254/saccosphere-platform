@@ -5,10 +5,13 @@ import { useLoans } from '../../../../hooks/useLoans'
 import { useMemberships } from '../../../../hooks/useMembership'
 import { getActiveMemberships, getMembershipSavings } from '../../../../lib/membership'
 import { Icon } from '../../../ui/Icon'
+import { BalanceToggle } from '../../../ui/BalanceToggle'
+import { useMoney } from '../../../../lib/money'
 import { useTheme } from '../../../../theme/ThemeProvider'
 
 export default function SaccoLoanSelectorScreen() {
   const { colors: c } = useTheme()
+  const money = useMoney()
   const { data: memberships = [], isLoading } = useMemberships()
   const { data: loans = [] } = useLoans()
 
@@ -82,7 +85,10 @@ export default function SaccoLoanSelectorScreen() {
         >
           <Icon name="bank" size={18} color="#6D28D9" />
         </View>
-        <Text style={{ fontSize: 17, fontWeight: '700', color: c.text }}>Apply for a loan</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Text style={{ fontSize: 17, fontWeight: '700', color: c.text }}>Apply for a loan</Text>
+          <BalanceToggle />
+        </View>
         <Text style={{ fontSize: 12, color: c.textMuted, marginTop: 4 }}>
           Choose a SACCO to apply from
         </Text>
@@ -194,11 +200,11 @@ export default function SaccoLoanSelectorScreen() {
                 <Text style={{ fontSize: 13, fontWeight: '600', color: c.text }}>{membership.sacco_name}</Text>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 3 }}>
                   <Text style={{ fontSize: 10, color: c.textFaint }}>
-                    Savings: KES {totalSavings.toLocaleString()}
+                    Savings: {money(totalSavings)}
                   </Text>
                   <Text style={{ fontSize: 10, color: c.textFaint }}>·</Text>
                   <Text style={{ fontSize: 10, color: c.success, fontWeight: '500' }}>
-                    Limit: KES {membership.loan_limit.toLocaleString()}
+                    Limit: {money(membership.loan_limit)}
                   </Text>
                 </View>
                 {activeLoanCount > 0 && (
