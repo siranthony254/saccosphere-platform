@@ -1,0 +1,53 @@
+name: EAS Update (member-app preview)
+
+# Publishes a JS/asset-only OTA update to the "preview" EAS Update channel
+# on every push to main that touches the member app or a shared package it
+# depends on. This does NOT touch the production channel — promoting to
+# production is a separate, manual step (see the note in the README/eas.json).
+#
+# Only ships JS/asset changes. Anything that adds or upgrades a native
+# module still needs a real `eas build` + reinstall; this workflow can't
+# and won't try to cover that.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/member-app/**'
+      - 'packages/**'
+      - 'pnpm-lock.yaml'
+      - '.github/workflows/eas-update-preview.yml'
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.2
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Publish EAS Update to preview channel
+        working-directory: apps/member-app
+        env:
+          # Passed via env instead of interpolated directly into the run
+          # script — the commit message is attacker-influenceable and
+          # directly substituting it into a shell command is a known
+          # GitHub Actions script-injection vector.
+          UPDATE_MESSAGE: ${{ github.event.head_commit.message }}
+        run: eas update --channel preview --non-interactive --message "$UPDATE_MESSAGE"
