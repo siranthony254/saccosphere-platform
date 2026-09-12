@@ -8,6 +8,7 @@ import { getActiveMemberships, getPendingMemberships } from '../../lib/membershi
 
 import { api } from '@saccosphere/api-client'
 import { Icon, IconName } from '../../components/ui/Icon'
+import { ServicesHero } from '../../components/services/ServicesHero'
 import { useTheme } from '../../theme/ThemeProvider'
 
 
@@ -84,12 +85,14 @@ export default function ServicesScreen() {
 
   return (
     <>
-      <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top', 'bottom', 'left', 'right']}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['bottom', 'left', 'right']}>
         <ScrollView
           style={{ backgroundColor: c.bg }}
           contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}
           refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={c.success} />}
         >
+        <ServicesHero onSelectService={handleServiceSelect} insetTop={insets.top} />
+
         <View style={{ paddingHorizontal: 16, paddingVertical: 12, backgroundColor: c.bg, borderBottomWidth: 0.5, borderBottomColor: c.border }}>
           <Text style={{ color: c.text, fontSize: 20, fontWeight: '700' }}>Services</Text>
           <Text style={{ color: c.textMuted, fontSize: 12, marginTop: 2 }}>Pick a service, then choose the SACCO it belongs to.</Text>
