@@ -6,6 +6,7 @@ import { useMemberships } from '../../../../hooks/useMembership'
 import { getActiveMemberships, getMembershipSavings } from '../../../../lib/membership'
 import { Icon } from '../../../ui/Icon'
 import { BalanceToggle } from '../../../ui/BalanceToggle'
+import { EmptyState } from '../../../ui/EmptyState'
 import { useMoney } from '../../../../lib/money'
 import { useTheme } from '../../../../theme/ThemeProvider'
 
@@ -37,24 +38,20 @@ export default function SaccoLoanSelectorScreen() {
 
   if (activeMemberships.length === 0) {
     return (
-      <View style={{ flex: 1, backgroundColor: c.bg, alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-        <Icon name="bank" size={36} color="#6D28D9" style={{ marginBottom: 12 }} />
-        <Text style={{ fontSize: 15, fontWeight: '700', color: c.text, marginBottom: 6 }}>No SACCOs linked</Text>
-        <Text style={{ fontSize: 12, color: c.textMuted, textAlign: 'center', lineHeight: 20, marginBottom: 16 }}>
-          Join a SACCO first to apply for a loan.
-        </Text>
-        <TouchableOpacity
-          onPress={() => router.push('/(member)/discover')}
-          style={{
-            backgroundColor: c.accent,
-            borderRadius: 12,
-            paddingVertical: 12,
-            paddingHorizontal: 24,
-            alignItems: 'center',
-          }}
-        >
-          <Text style={{ color: '#fff', fontSize: 12, fontWeight: '600' }}>Browse SACCOs</Text>
-        </TouchableOpacity>
+      <View style={{ flex: 1, backgroundColor: c.bg, justifyContent: 'center', padding: 24 }}>
+        <EmptyState icon="bank" title="No SACCOs linked" description="Join a SACCO first to apply for a loan.">
+          <TouchableOpacity
+            onPress={() => router.push('/(member)/discover')}
+            style={{
+              backgroundColor: c.accent,
+              borderRadius: 12,
+              paddingVertical: 12,
+              alignItems: 'center',
+            }}
+          >
+            <Text style={{ color: '#fff', fontSize: 12, fontWeight: '600' }}>Browse SACCOs</Text>
+          </TouchableOpacity>
+        </EmptyState>
       </View>
     )
   }

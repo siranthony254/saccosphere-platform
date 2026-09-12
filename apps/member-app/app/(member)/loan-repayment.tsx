@@ -7,6 +7,7 @@ import { api } from '@saccosphere/api-client'
 import type { LoanApplication, Membership } from '@saccosphere/schemas'
 import { Icon } from '../../components/ui/Icon'
 import { BalanceToggle } from '../../components/ui/BalanceToggle'
+import { EmptyState } from '../../components/ui/EmptyState'
 import { useMoney } from '../../lib/money'
 import { useTheme } from '../../theme/ThemeProvider'
 
@@ -73,12 +74,12 @@ export default function LoanRepaymentRoute() {
       </View>
 
       {repayableLoans.length === 0 ? (
-        <View style={{ backgroundColor: c.surface, borderRadius: 16, padding: 22, alignItems: 'center', borderWidth: 1, borderColor: c.border }}>
-          <Icon name="cash" size={32} color={c.textFaint} style={{ marginBottom: 8 }} />
-          <Text style={{ color: c.text, fontSize: 15, fontWeight: '700', marginBottom: 5 }}>No loans to pay</Text>
-          <Text style={{ color: c.textMuted, fontSize: 12, textAlign: 'center', lineHeight: 18 }}>
-            Active and approved loans from your SACCOs will appear here.
-          </Text>
+        <View style={{ backgroundColor: c.surface, borderRadius: 16, borderWidth: 1, borderColor: c.border }}>
+          <EmptyState
+            icon="cash"
+            title="No loans to pay"
+            description="Active and approved loans from your SACCOs will appear here."
+          />
         </View>
       ) : (
         repayableLoans.map((loan) => {

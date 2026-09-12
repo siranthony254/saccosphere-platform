@@ -5,6 +5,7 @@ import { api } from '@saccosphere/api-client'
 import { router } from 'expo-router'
 import { useState } from 'react'
 import { Icon } from '../../components/ui/Icon'
+import { EmptyState } from '../../components/ui/EmptyState'
 import { useTheme } from '../../theme/ThemeProvider'
 
 
@@ -42,15 +43,11 @@ export default function GuarantorInbox() {
           {isLoading ? (
             <ActivityIndicator color={c.accent} style={{ marginTop: 40 }} />
           ) : requests.length === 0 ? (
-            <View style={{ alignItems: 'center', marginTop: 80 }}>
-              <View className="mb-4 w-20 h-20 rounded-full bg-violet-500/10 items-center justify-center border border-violet-500/20">
-                <Icon name="guarantor" size={40} color={c.accent} />
-              </View>
-              <Text style={{ color: c.text, fontSize: 16, fontWeight: '600', marginBottom: 8 }}>No pending requests</Text>
-              <Text style={{ color: c.textMuted, fontSize: 13, textAlign: 'center', paddingHorizontal: 40 }}>
-                When your friends or colleagues ask you to guarantee their loans, they&apos;ll appear here.
-              </Text>
-            </View>
+            <EmptyState
+              icon="guarantor"
+              title="No pending requests"
+              description="When your friends or colleagues ask you to guarantee their loans, they'll appear here."
+            />
           ) : (
             requests.map((n: any) => (
               <View key={n.id} style={{ backgroundColor: c.surface, borderRadius: 16, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: c.border }}>

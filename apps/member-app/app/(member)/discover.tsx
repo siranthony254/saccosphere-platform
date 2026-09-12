@@ -11,6 +11,7 @@ import { Badge } from '../../components/ui/Badge'
 import { DiscoverHero } from '../../components/discover/DiscoverHero'
 import { CategoryTabs } from '../../components/discover/CategoryTabs'
 import { Skeleton } from '../../components/ui/Skeleton'
+import { EmptyState } from '../../components/ui/EmptyState'
 import { useTheme } from '../../theme/ThemeProvider'
 
 
@@ -37,6 +38,7 @@ export default function DiscoverScreen() {
   const { data: memberships } = useMemberships()
   const activeMemberships = getActiveMemberships(memberships ?? [])
   const memberSaccoSlugs = new Set(activeMemberships.map(m => m.sacco_slug))
+  const visibleSaccos = saccos?.filter(sacco => !memberSaccoSlugs.has(sacco.slug)) ?? []
 
   // Extract unique sectors from loaded SACCOs
   const sectors = useMemo(() => {
@@ -97,11 +99,22 @@ export default function DiscoverScreen() {
         {isLoading ? (
           [1,2,3].map(i => <Skeleton key={i} height={160} borderRadius={12} style={{ marginBottom: 12 }} />)
         ) : isError ? (
-          <View style={{ alignItems: 'center', paddingHorizontal: 32, paddingVertical: 32 }}>
-            <Text style={{ color: c.textMuted, fontSize: 12, marginBottom: 12 }}>Failed to load SACCOs.</Text>
-            <TouchableOpacity onPress={() => refetch()}><Text style={{ color: c.accent, fontSize: 12, fontWeight: '600' }}>Try again</Text></TouchableOpacity>
-          </View>
-        ) : saccos?.filter(sacco => !memberSaccoSlugs.has(sacco.slug)).map(sacco => (
+          <EmptyState
+            icon="error"
+            title="Failed to load SACCOs"
+            description="Check your connection and try again."
+          >
+            <TouchableOpacity onPress={() => refetch()} style={{ alignItems: 'center', paddingVertical: 8 }}>
+              <Text style={{ color: c.accent, fontSize: 12, fontWeight: '600' }}>Try again</Text>
+            </TouchableOpacity>
+          </EmptyState>
+        ) : visibleSaccos.length === 0 ? (
+          <EmptyState
+            icon="search"
+            title="No SACCOs found"
+            description={search ? `Nothing matches "${search}". Try a different name, sector, or county.` : 'Try a different sector filter.'}
+          />
+        ) : visibleSaccos.map(sacco => (
           <TouchableOpacity
             key={sacco.id}
             style={{ backgroundColor: c.surface, borderRadius: 12, padding: 14, marginBottom: 12, borderWidth: 1, borderColor: c.border }}
