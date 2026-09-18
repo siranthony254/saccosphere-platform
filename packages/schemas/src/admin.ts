@@ -74,6 +74,13 @@ export type ContributionsDashboard = z.infer<typeof ContributionsDashboardSchema
 export const AdminMemberSchema = z.object({
   id: z.string().uuid(),
   user_id: z.string().uuid().nullable().optional(), // backend user UUID — used for roles lookup
+  // The SaccoApplication id for this member's most recent application —
+  // Membership has no FK to SaccoApplication, so the backend resolves this
+  // via a (user, sacco) subquery annotation. Needed to call
+  // GET/PATCH /management/applications/{id}/review/. Null if the annotation
+  // found no matching application (shouldn't happen in practice, but the
+  // backend allows it defensively).
+  application_id: z.string().uuid().nullable().optional(),
   saccosphere_id: z.string(), // SS-2024-00891
   member_number: z.string(),
   first_name: z.string(),

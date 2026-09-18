@@ -326,6 +326,7 @@ const normalizeAdminMember = (member: any): AdminMember => {
   return AdminMemberSchema.parse({
     id: String(member.id ?? user.id ?? ''),
     user_id: member.user?.id ? String(member.user.id) : member.user_id ? String(member.user_id) : user.id ? String(user.id) : null,
+    application_id: member.application_id ? String(member.application_id) : null,
     saccosphere_id: member.member_number ? `SS-${member.member_number}` : String(member.id ?? ''),
     member_number: String(member.member_number ?? user.member_number ?? ''),
     first_name: String(first_name || user.first_name || ''),
@@ -1925,7 +1926,10 @@ export const api = {
           const normalizedStatus = statusMap[rawStatus] || 'applied'
           return {
             id: member.id,
-            application_id: item.application_id ?? item.id ?? member.id, 
+            // Backend now annotates this via a (user, sacco) subquery — see
+            // AdminMemberListView.get_queryset(). Genuinely null (not a
+            // fallback guess) when no matching SaccoApplication exists.
+            application_id: item.application_id ? String(item.application_id) : null,
             user_id: member.user_id,
             full_name: `${member.first_name} ${member.last_name}`.trim(),
             email: member.email,
@@ -1944,11 +1948,67 @@ export const api = {
       }
     },
 
-    // NOTE: /management/applications/{id}/review/ is keyed on the
-    // SaccoApplication id, which no list endpoint exposes — the only id the
-    // admin console can obtain here is the Membership id, which 404s. Until a
-    // SaccoApplication list (or a membership-status endpoint) exists, there is
-    // no working approve/reject call to wrap.
+    // GET/PATCH /management/applications/{id}/review/ — keyed on the
+    // SaccoApplication id from getApplications()'s application_id field.
+    getApplicationReview: async (applicationId: string) => {
+      const r = await apiCall<any>('GET', `/management/applications/${uuid(applicationId)}/review/`)
+      return {
+        id: String(r.id),
+        user_id: String(r.user_id),
+        sacco_id: String(r.sacco_id),
+        application_type: String(r.application_type ?? ''),
+        employment_status: (r.employment_status ?? null) as string | null,
+        employer_name: (r.employer_name ?? null) as string | null,
+        monthly_income: r.monthly_income !== null && r.monthly_income !== undefined ? Number(r.monthly_income) : null,
+        registration_fee_paid: Boolean(r.registration_fee_paid),
+        status: String(r.status ?? ''),
+        review_notes: (r.review_notes ?? '') as string,
+        submitted_at: (r.submitted_at ?? null) as string | null,
+        reviewed_at: (r.reviewed_at ?? null) as string | null,
+        // MembershipDocumentDetailSerializer rows — id-uploaded identity/
+        // extra documents attached to this specific application.
+        membership_documents: Array.isArray(r.membership_documents)
+          ? r.membership_documents.map((d: any) => ({
+              id: String(d.id),
+              document_type: String(d.document_type ?? ''),
+              file_url: (d.file_url ?? null) as string | null,
+              file_name: (d.file_name ?? null) as string | null,
+              is_verified: Boolean(d.is_verified),
+              uploaded_at: (d.uploaded_at ?? null) as string | null,
+            }))
+          : [],
+        // MemberFieldDataSerializer rows — this SACCO's own custom-field
+        // answers for this applicant, resolved via the Membership row for
+        // (user, sacco) since custom fields are answered against Membership,
+        // not SaccoApplication.
+        custom_field_answers: Array.isArray(r.custom_field_answers)
+          ? r.custom_field_answers.map((a: any) => ({
+              label: String(a.field?.label ?? ''),
+              field_type: String(a.field?.field_type ?? ''),
+              value: (a.value ?? null) as string | null,
+            }))
+          : [],
+        // Raw KYCStatusSerializer output, or null if this user never
+        // started KYC at all.
+        kyc: r.kyc
+          ? {
+              status: String(r.kyc.status ?? ''),
+              status_display: String(r.kyc.status_display ?? ''),
+              iprs_verified: Boolean(r.kyc.iprs_verified),
+              id_front: (r.kyc.id_front ?? null) as string | null,
+              id_back: (r.kyc.id_back ?? null) as string | null,
+              passport: (r.kyc.passport ?? null) as string | null,
+              rejection_reason: (r.kyc.rejection_reason ?? '') as string,
+            }
+          : null,
+      }
+    },
+
+    reviewApplication: (applicationId: string, data: { status: 'APPROVED' | 'REJECTED'; review_notes?: string }) =>
+      apiCall<any>('PATCH', `/management/applications/${uuid(applicationId)}/review/`, {
+        status: data.status,
+        review_notes: data.review_notes ?? '',
+      }),
 
     // Custom member-profile fields.
     // SaccoFieldDefinitionAdminListCreateView / ...DetailView (IsSaccoAdmin).
