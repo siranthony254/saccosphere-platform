@@ -42,6 +42,8 @@ export default function PrivacyScreen() {
 
   const balanceHidden = usePreferencesStore((s) => s.balanceHidden)
   const setBalanceHidden = usePreferencesStore((s) => s.setBalanceHidden)
+  const personalDetailsHidden = usePreferencesStore((s) => s.personalDetailsHidden)
+  const setPersonalDetailsHidden = usePreferencesStore((s) => s.setPersonalDetailsHidden)
 
   const toggle = (row: any) => {
     const next = !isGranted(row)
@@ -154,7 +156,7 @@ export default function PrivacyScreen() {
           </View>
 
           {/* Hide balances */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', padding: 14 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', padding: 14, borderBottomWidth: 0.5, borderBottomColor: c.border }}>
             <View style={{ flex: 1, paddingRight: 12 }}>
               <Text style={{ color: c.text, fontSize: 13, fontWeight: '600' }}>Hide balances</Text>
               <Text style={{ color: c.textMuted, fontSize: 11, lineHeight: 16, marginTop: 2 }}>
@@ -168,6 +170,24 @@ export default function PrivacyScreen() {
               style={{ width: 48, height: 28, borderRadius: 14, backgroundColor: balanceHidden ? c.success : c.surfaceAlt, borderWidth: 1, borderColor: balanceHidden ? c.success : c.border, padding: 2, justifyContent: 'center' }}
             >
               <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: '#fff', alignSelf: balanceHidden ? 'flex-end' : 'flex-start' }} />
+            </TouchableOpacity>
+          </View>
+
+          {/* Hide personal details */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', padding: 14 }}>
+            <View style={{ flex: 1, paddingRight: 12 }}>
+              <Text style={{ color: c.text, fontSize: 13, fontWeight: '600' }}>Hide personal details</Text>
+              <Text style={{ color: c.textMuted, fontSize: 11, lineHeight: 16, marginTop: 2 }}>
+                Mask your name, ID number and phone number across the app — useful if someone else can see your screen.
+              </Text>
+            </View>
+            <TouchableOpacity
+              onPress={() => setPersonalDetailsHidden(!personalDetailsHidden)}
+              accessibilityRole="switch"
+              accessibilityState={{ checked: personalDetailsHidden }}
+              style={{ width: 48, height: 28, borderRadius: 14, backgroundColor: personalDetailsHidden ? c.success : c.surfaceAlt, borderWidth: 1, borderColor: personalDetailsHidden ? c.success : c.border, padding: 2, justifyContent: 'center' }}
+            >
+              <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: '#fff', alignSelf: personalDetailsHidden ? 'flex-end' : 'flex-start' }} />
             </TouchableOpacity>
           </View>
         </View>

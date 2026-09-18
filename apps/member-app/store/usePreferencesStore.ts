@@ -71,6 +71,10 @@ const DEFAULT_SEEN_COACHMARKS: Record<CoachmarkId, boolean> = {
 interface PreferencesState {
   /** Mask the member's own balances and amounts across the app. */
   balanceHidden: boolean
+  /** Mask personal details (name, national ID, phone) across the app —
+   * a separate concern from balanceHidden, e.g. for someone who wants their
+   * identity hidden from a shoulder-surfer but doesn't mind showing amounts. */
+  personalDetailsHidden: boolean
   /** Selected theme id, or 'system' to follow the OS light/dark setting. */
   themeId: ThemeId
   /** Per-card nature-scene backdrop choice, keyed by card slot. */
@@ -81,6 +85,8 @@ interface PreferencesState {
   _hydrated: boolean
   toggleBalanceHidden: () => void
   setBalanceHidden: (hidden: boolean) => void
+  togglePersonalDetailsHidden: () => void
+  setPersonalDetailsHidden: (hidden: boolean) => void
   setThemeId: (id: ThemeId) => void
   setCardBackdrop: (slot: CardBackdropSlot, id: CardBackdropId | null) => void
   markCoachmarkSeen: (id: CoachmarkId) => void
@@ -90,12 +96,15 @@ export const usePreferencesStore = create<PreferencesState>()(
   persist(
     (set, get) => ({
       balanceHidden: false,
+      personalDetailsHidden: false,
       themeId: 'midnight',
       cardBackdrops: DEFAULT_CARD_BACKDROPS,
       seenCoachmarks: DEFAULT_SEEN_COACHMARKS,
       _hydrated: false,
       toggleBalanceHidden: () => set({ balanceHidden: !get().balanceHidden }),
       setBalanceHidden: (hidden) => set({ balanceHidden: hidden }),
+      togglePersonalDetailsHidden: () => set({ personalDetailsHidden: !get().personalDetailsHidden }),
+      setPersonalDetailsHidden: (hidden) => set({ personalDetailsHidden: hidden }),
       setThemeId: (id) => set({ themeId: id }),
       setCardBackdrop: (slot, id) =>
         set({ cardBackdrops: { ...get().cardBackdrops, [slot]: id } }),
@@ -107,6 +116,7 @@ export const usePreferencesStore = create<PreferencesState>()(
       storage: createJSONStorage(() => preferencesStorage),
       partialize: (state) => ({
         balanceHidden: state.balanceHidden,
+        personalDetailsHidden: state.personalDetailsHidden,
         themeId: state.themeId,
         cardBackdrops: state.cardBackdrops,
         seenCoachmarks: state.seenCoachmarks,

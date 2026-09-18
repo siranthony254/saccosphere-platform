@@ -9,6 +9,8 @@ import { useProfile } from '../../../../../hooks/useProfile'
 import type { AdditionalField } from '@saccosphere/schemas'
 import { DeepSpaceBackground } from '../../../../../components/DeepSpaceBackground'
 import { useTheme } from '../../../../../theme/ThemeProvider'
+import { usePreferencesStore } from '../../../../../store/usePreferencesStore'
+import { PersonalDetailsToggle } from '../../../../../components/ui/PersonalDetailsToggle'
 
 export default function ApplyStep1Screen() {
   const { slug } = useLocalSearchParams<{ slug: string }>()
@@ -27,6 +29,7 @@ export default function ApplyStep1Screen() {
 
   const { data: config, isLoading: isLoadingConfig } = useSaccoConfig(slug ?? '')
   const { data: userProfile } = useProfile()
+  const personalDetailsHidden = usePreferencesStore((s) => s.personalDetailsHidden)
 
   // Standard employment fields (from backend SaccoApplication model)
   const [employer, setEmployer] = useState<string>(
@@ -149,13 +152,18 @@ export default function ApplyStep1Screen() {
         <Text className="text-xs mx-4 mb-4" style={{ color: c.textFaint }}>Step 1 of 3 — Application details</Text>
 
         {/* User info from KYC - read only */}
-        <View className="mx-4 mb-4 rounded-xl p-3" style={{ backgroundColor: c.surface, borderLeftWidth: 3, borderLeftColor: '#6D28D9' }}>
-          <Text className="text-xs leading-4.5" style={{ color: c.text }}>
-            Applying as: {userProfile?.first_name} {userProfile?.last_name}
-          </Text>
-          <Text className="text-xs mt-1" style={{ color: c.textMuted }}>
-            ID: {userProfile?.national_id || 'Not verified'} · Phone: {userProfile?.phone_number || 'Not verified'}
-          </Text>
+        <View className="mx-4 mb-4 rounded-xl p-3 flex-row items-start justify-between" style={{ backgroundColor: c.surface, borderLeftWidth: 3, borderLeftColor: '#6D28D9' }}>
+          <View style={{ flex: 1 }}>
+            <Text className="text-xs leading-4.5" style={{ color: c.text }}>
+              Applying as: {personalDetailsHidden ? '••••• •••••' : `${userProfile?.first_name} ${userProfile?.last_name}`}
+            </Text>
+            <Text className="text-xs mt-1" style={{ color: c.textMuted }}>
+              {personalDetailsHidden
+                ? 'ID: •••••••• · Phone: ••••••••••'
+                : `ID: ${userProfile?.national_id || 'Not verified'} · Phone: ${userProfile?.phone_number || 'Not verified'}`}
+            </Text>
+          </View>
+          <PersonalDetailsToggle size={14} color={c.textMuted} style={{ marginLeft: 8 }} />
         </View>
 
         {/* Employment fields (standard backend fields) */}

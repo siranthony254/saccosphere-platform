@@ -14,7 +14,7 @@ import { getActiveMemberships } from '../../lib/membership'
 import { api } from '@saccosphere/api-client'
 import { Icon, IconName } from '../../components/ui/Icon'
 import { Badge } from '../../components/ui/Badge'
-import { BalanceToggle } from '../../components/ui/BalanceToggle'
+import { PersonalDetailsToggle } from '../../components/ui/PersonalDetailsToggle'
 import { CardBackdrop } from '../../components/ui/CardBackdrop'
 import { usePreferencesStore } from '../../store/usePreferencesStore'
 import { useTheme } from '../../theme/ThemeProvider'
@@ -56,11 +56,14 @@ export default function ProfileScreen() {
 
   const initials = user ? `${user.first_name[0]}${user.last_name[0]}` : 'JK'
   const profileBackdrop = usePreferencesStore((s) => s.cardBackdrops.profile)
-  const balanceHidden = usePreferencesStore((s) => s.balanceHidden)
+  const personalDetailsHidden = usePreferencesStore((s) => s.personalDetailsHidden)
+  const displayInitials = personalDetailsHidden ? '••' : initials
   const hasProfileBackdrop = Boolean(profileBackdrop)
   const profileTextColor = hasProfileBackdrop ? '#fff' : c.text
   const profileTextMutedColor = hasProfileBackdrop ? 'rgba(255,255,255,0.75)' : c.textMuted
-  const idSnippet = user?.id ? user.id.slice(0, 8).toUpperCase() : ''
+  const displayName = personalDetailsHidden
+    ? '••••• •••••'
+    : `${user?.first_name ?? ''} ${user?.last_name ?? ''}`.trim()
 
   const handleDownloadStatements = async () => {
     const startOfYear = `${new Date().getFullYear()}-01-01`
@@ -120,15 +123,15 @@ export default function ProfileScreen() {
         }}
       >
         <View style={{ width: 72, height: 72, borderRadius: 16, backgroundColor: c.accent, alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}>
-          <Text style={{ color: '#fff', fontSize: 24, fontWeight: '700' }}>{initials}</Text>
+          <Text style={{ color: '#fff', fontSize: 24, fontWeight: '700' }}>{displayInitials}</Text>
         </View>
-        <Text style={{ color: profileTextColor, fontSize: 16, fontWeight: '600', marginBottom: 2 }}>{user?.first_name} {user?.last_name}</Text>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 10 }}>
-          <Text style={{ color: profileTextMutedColor, fontSize: 12 }}>
-            {idSnippet ? `ID: ${balanceHidden ? '••••••••' : idSnippet}` : ''} · Joined {user?.created_at ? new Date(user.created_at).toLocaleDateString(undefined, { month: 'short', year: 'numeric' }) : 'recently'}
-          </Text>
-          {idSnippet ? <BalanceToggle size={14} color={profileTextMutedColor} /> : null}
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+          <Text style={{ color: profileTextColor, fontSize: 16, fontWeight: '600' }}>{displayName}</Text>
+          <PersonalDetailsToggle size={14} color={profileTextMutedColor} />
         </View>
+        <Text style={{ color: profileTextMutedColor, fontSize: 12, marginBottom: 10 }}>
+          Joined {user?.created_at ? new Date(user.created_at).toLocaleDateString(undefined, { month: 'short', year: 'numeric' }) : 'recently'}
+        </Text>
         <Badge
           label={getKycLabel(user?.kyc_status, user?.iprs_verified)}
           variant={getKycVariant(user?.kyc_status)}

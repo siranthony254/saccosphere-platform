@@ -38,6 +38,7 @@ export default function HomeScreen() {
   const { data: publicStats } = usePublicStats()
   const { setActiveSacco } = useSaccoViewStore()
   const user = useCurrentUser()
+  const personalDetailsHidden = usePreferencesStore((s) => s.personalDetailsHidden)
   const [pickerVisible, setPickerVisible] = useState(false)
   const [currentAction, setCurrentAction] = useState<QuickAction | null>(null)
 
@@ -141,8 +142,8 @@ export default function HomeScreen() {
     )
   }
 
-  const name = getDisplayName(user?.first_name, user?.last_name)
-  const initials = getInitials(user?.first_name, user?.last_name)
+  const name = personalDetailsHidden ? '•••••' : getDisplayName(user?.first_name, user?.last_name)
+  const initials = personalDetailsHidden ? '••' : getInitials(user?.first_name, user?.last_name)
   const isMorning = new Date().getHours() < 12
   const greeting = isMorning ? 'Good morning' : 'Good afternoon'
 
