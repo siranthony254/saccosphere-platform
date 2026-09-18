@@ -117,7 +117,7 @@ export default function ApplyStep1Screen() {
       customFields: customFieldValues,
     })
     setMonthlyContribution(contributionNumber)
-    router.push(`/(member)/discover/${slug}/apply/documents`)
+    router.push(`/(member)/discover/${slug}/apply/review`)
   }
 
   return (

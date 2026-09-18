@@ -4,6 +4,7 @@ import { useLocalSearchParams, router } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useSacco } from '../../../../../hooks/useSaccos'
 import { useSaccoConfig } from '../../../../../hooks/useSaccoConfig'
+import { useMembershipApplicationStore } from '../../../../../store/useMembershipApplicationStore'
 import { DeepSpaceBackground } from '../../../../../components/DeepSpaceBackground'
 import { Icon } from '../../../../../components/ui/Icon'
 import { useTheme } from '../../../../../theme/ThemeProvider'
@@ -15,9 +16,16 @@ export default function ApplySuccessScreen() {
   const { colors: c } = useTheme()
   const { data: sacco } = useSacco(slug)
   const { data: config } = useSaccoConfig(slug ?? '')
+  const resetApplicationStore = useMembershipApplicationStore((s) => s.reset)
 
   useEffect(() => {
     hapticSuccess()
+    // The application is fully submitted at this point — clear the wizard's
+    // in-progress state immediately so it can't leak into a future
+    // application to a different SACCO (this screen renders entirely from
+    // useSacco/useSaccoConfig, not the application store, so this is safe).
+    resetApplicationStore()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const saccoName = sacco?.name ?? slug?.toUpperCase() ?? 'SACCO'

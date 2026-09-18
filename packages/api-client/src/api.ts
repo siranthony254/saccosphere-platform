@@ -1188,6 +1188,7 @@ export const api = {
       })
       return {
         id: membership.id,
+        application_id: membership.application_id ?? null,
         sacco_slug: sacco.slug,
         sacco_name: sacco.name,
         status: 'submitted',
@@ -1203,6 +1204,10 @@ export const api = {
     list: async () =>
       (await api.member.getMemberships()).map((membership) => ({
         id: membership.id,
+        // Membership records have no SaccoApplication reference — only a
+        // just-submitted application (returned from submit() above) knows
+        // its application_id.
+        application_id: null,
         sacco_slug: membership.sacco_slug,
         sacco_name: membership.sacco_name,
         status:

@@ -12,8 +12,8 @@ export default function ApplyLayout() {
       }}
     >
       <Stack.Screen name="index" />
-      <Stack.Screen name="documents" />
       <Stack.Screen name="review" />
+      <Stack.Screen name="documents" />
       <Stack.Screen name="success" />
     </Stack>
   )

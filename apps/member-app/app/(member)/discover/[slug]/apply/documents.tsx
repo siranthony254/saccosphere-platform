@@ -40,11 +40,21 @@ function buildDocFileName(fileName: string | null | undefined, key: string, mime
   return hasAcceptedExtension(name) ? name : `${name}.${fallbackExtension}`
 }
 
+// Real MembershipDocument.DocumentType values the backend actually stores
+// against this specific application (POST /members/applications/{id}/documents/)
+// — separate from the KYC identity documents above, which live on the
+// member's account rather than this application.
+const ADDITIONAL_DOCUMENT_TYPES: Array<{ key: string; label: string; hint: string }> = [
+  { key: 'LATEST_PAYSLIP', label: 'Latest Payslip', hint: 'Your most recent salary payslip' },
+  { key: 'BANK_STATEMENT_3M', label: 'Bank Statement (3 months)', hint: 'Last 3 months of bank statements' },
+  { key: 'MPESA_STATEMENT_3M', label: 'M-Pesa Statement (3 months)', hint: 'Last 3 months of M-Pesa statements' },
+]
+
 export default function ApplyDocumentsScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>()
   const insets = useSafeAreaInsets()
   const { colors: c } = useTheme()
-  const { saccoSlug, uploadedDocumentIds, addDocument } = useMembershipApplicationStore()
+  const { saccoSlug, applicationId, uploadedDocumentIds, addDocument } = useMembershipApplicationStore()
   const { data: config, isLoading: isLoadingConfig } = useSaccoConfig(slug ?? '')
   const { data: kycStatus, isLoading: isLoadingKyc } = useQuery({
     queryKey: ['kycStatus'],
@@ -54,11 +64,19 @@ export default function ApplyDocumentsScreen() {
 
   const saccoName = slug?.toUpperCase() ?? 'SACCO'
 
+  // This step only makes sense once the application actually exists — it's
+  // created at the review step (submitting there is what creates the
+  // SaccoApplication this screen attaches documents to). Land here with no
+  // applicationId (e.g. a stale deep link) and there's nothing to attach to.
+  useEffect(() => {
+    if (!applicationId) {
+      router.replace(`/(member)/discover/${slug}/apply/review`)
+    }
+  }, [applicationId, slug])
+
   // Any full identity document already on file from registration covers all
   // of id_front/id_back/passport/huduma here — they're interchangeable proof
-  // of identity, and the KYCUploadView endpoint this screen would otherwise
-  // call to "upload" a document is currently broken server-side (every
-  // request 500s). Skip re-uploading whatever the member already has.
+  // of identity already verified during registration.
   const hasIdentityOnFile = Boolean(
     kycStatus && ((kycStatus.has_id_front && kycStatus.has_id_back) || kycStatus.has_passport)
   )
@@ -73,8 +91,8 @@ export default function ApplyDocumentsScreen() {
   const registrationFee = config?.membership.registration_fee_kes ?? 1000
 
   // Mark KYC-covered documents as satisfied in the application store so the
-  // "Continue" gate below sees them as done, without ever calling the
-  // broken per-document upload endpoint.
+  // "Continue" gate below sees them as done, without re-uploading identical
+  // photos already on file.
   useEffect(() => {
     kycVerifiedDocs.forEach((doc) => {
       if (!uploadedDocumentIds.includes(doc.key)) addDocument(doc.key)
@@ -87,34 +105,40 @@ export default function ApplyDocumentsScreen() {
     .every(doc => uploadedDocumentIds.includes(doc.key))
   const isReady = Boolean(saccoSlug && config && allRequiredUploaded)
 
-  const handleUpload = async (doc: RequiredDocument) => {
-    if (!isKycDocumentKey(doc.key)) {
-      Alert.alert('Not supported yet', `${doc.label} can't be uploaded from this screen yet — contact ${saccoName} directly.`)
-      return
-    }
-
+  const pickAndValidateImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
       allowsEditing: false,
       quality: 0.8,
     })
-    if (result.canceled) return
+    if (result.canceled) return null
 
     const asset = result.assets[0]
     const mimeType = asset.mimeType ?? 'image/jpeg'
-    const fileName = buildDocFileName(asset.fileName, doc.key, mimeType)
+    const fileName = buildDocFileName(asset.fileName, 'document', mimeType)
 
     if (!isAcceptedImage(fileName, mimeType)) {
       Alert.alert('Unsupported file', 'Upload a JPG, JPEG, or PNG image.')
+      return null
+    }
+
+    return { uri: asset.uri, name: fileName, type: mimeType }
+  }
+
+  // Identity documents not already covered by KYC — falls back to the
+  // per-user KYC upload endpoint, same as during registration.
+  const handleUploadIdentityDoc = async (doc: RequiredDocument) => {
+    if (!isKycDocumentKey(doc.key)) {
+      Alert.alert('Not supported yet', `${doc.label} can't be uploaded from this screen yet — contact ${saccoName} directly.`)
       return
     }
 
+    const file = await pickAndValidateImage()
+    if (!file) return
+
     setUploadingKey(doc.key)
     try {
-      await api.kyc.uploadDocument({
-        document_type: doc.key,
-        file: { uri: asset.uri, name: fileName, type: mimeType },
-      })
+      await api.kyc.uploadDocument({ document_type: doc.key, file })
       addDocument(doc.key)
     } catch (err: any) {
       Alert.alert('Upload failed', err?.message ?? 'Unable to upload this document. Please try again.')
@@ -123,7 +147,31 @@ export default function ApplyDocumentsScreen() {
     }
   }
 
-  if (isLoadingConfig || isLoadingKyc) {
+  // Extra, application-specific documents — attached to the real
+  // SaccoApplication record via the per-application documents endpoint, so
+  // they actually show up for the SACCO admin reviewing this application.
+  const handleUploadAdditionalDoc = async (documentType: string, label: string) => {
+    if (!applicationId) return
+
+    const file = await pickAndValidateImage()
+    if (!file) return
+
+    setUploadingKey(documentType)
+    try {
+      await api.applications.uploadDocument(applicationId, documentType, file)
+      addDocument(documentType)
+    } catch (err: any) {
+      Alert.alert('Upload failed', err?.message ?? `Unable to upload your ${label.toLowerCase()}. Please try again.`)
+    } finally {
+      setUploadingKey(null)
+    }
+  }
+
+  const handleFinish = () => {
+    router.replace(`/(member)/discover/${slug}/apply/success`)
+  }
+
+  if (isLoadingConfig || isLoadingKyc || !applicationId) {
     return (
       <DeepSpaceBackground>
         <View className="flex-1 items-center justify-center px-8">
@@ -147,20 +195,27 @@ export default function ApplyDocumentsScreen() {
           </TouchableOpacity>
           <View className="ml-2.5">
             <Text className="text-sm font-semibold" style={{ color: c.text }}>Apply — {saccoName}</Text>
-            <Text className="text-xs" style={{ color: c.textMuted }}>Step 2 of 3 — Documents</Text>
+            <Text className="text-xs" style={{ color: c.textMuted }}>Step 3 of 3 — Documents</Text>
           </View>
         </View>
 
-        {/* Progress bar - step 2 of 3 */}
+        {/* Progress bar - step 3 of 3 */}
         <View className="flex-row gap-1 mx-4 mb-1.5">
           <View className="flex-1 h-0.75 rounded bg-violet-500" />
           <View className="flex-1 h-0.75 rounded bg-violet-500" />
-          <View className="flex-1 h-0.75 rounded" style={{ backgroundColor: c.border }} />
+          <View className="flex-1 h-0.75 rounded bg-violet-500" />
         </View>
-        <Text className="text-xs mx-4 mb-4" style={{ color: c.textFaint }}>Step 2 of 3 — Required documents</Text>
+        <Text className="text-xs mx-4 mb-4" style={{ color: c.textFaint }}>Step 3 of 3 — Documents</Text>
+
+        <View className="mx-4 mb-4 rounded-xl p-3 border" style={{ borderColor: c.success, backgroundColor: c.surfaceAlt }}>
+          <Text className="text-xs font-semibold" style={{ color: c.success }}>Application submitted</Text>
+          <Text className="text-xs mt-1" style={{ color: c.textMuted }}>
+            {saccoName} will review it. Confirm your identity below, and attach anything extra they ask for.
+          </Text>
+        </View>
 
         <Text className="text-xs font-medium mx-4 mb-2.5" style={{ color: c.textMuted }}>
-          {saccoName} requires the following:
+          Identity verification
         </Text>
 
         {/* KYC Verified Documents */}
@@ -204,7 +259,7 @@ export default function ApplyDocumentsScreen() {
                     backgroundColor: c.surface,
                     borderColor: isUploaded ? c.success : c.border,
                   }}
-                  onPress={() => handleUpload(doc)}
+                  onPress={() => handleUploadIdentityDoc(doc)}
                   disabled={isUploading}
                 >
                   {isUploading ? (
@@ -231,6 +286,45 @@ export default function ApplyDocumentsScreen() {
           </>
         )}
 
+        {/* Additional documents — optional, attached to the real application */}
+        <Text className="text-xs font-medium mx-4 mb-1 mt-2" style={{ color: c.textMuted }}>
+          Additional documents (optional)
+        </Text>
+        <Text className="text-xs mx-4 mb-2.5" style={{ color: c.textFaint }}>
+          Attach anything {saccoName} may ask for beyond basic ID — these go directly onto your application.
+        </Text>
+        {ADDITIONAL_DOCUMENT_TYPES.map((doc) => {
+          const isUploaded = uploadedDocumentIds.includes(doc.key)
+          const isUploading = uploadingKey === doc.key
+          return (
+            <TouchableOpacity
+              key={doc.key}
+              className="mx-4 border rounded-xl p-3 mb-2.5 flex-row gap-2.5 items-start"
+              style={{
+                backgroundColor: c.surface,
+                borderColor: isUploaded ? c.success : c.border,
+              }}
+              onPress={() => handleUploadAdditionalDoc(doc.key, doc.label)}
+              disabled={isUploading}
+            >
+              {isUploading ? (
+                <ActivityIndicator size="small" color={c.accent} />
+              ) : (
+                <Icon name={isUploaded ? 'check' : 'file'} size={16} color={isUploaded ? c.success : '#6B7280'} />
+              )}
+              <View className="flex-1">
+                <Text className="text-xs font-semibold mb-0.5" style={{ color: c.text }}>{doc.label}</Text>
+                <Text className="text-xs" style={{ color: isUploaded ? c.success : c.textMuted }}>
+                  {isUploading ? 'Uploading…' : isUploaded ? 'Uploaded — tap to replace' : 'Optional · JPG, JPEG, or PNG'}
+                </Text>
+                {!isUploaded && (
+                  <Text className="text-xs mt-0.5" style={{ color: c.textFaint }}>{doc.hint}</Text>
+                )}
+              </View>
+            </TouchableOpacity>
+          )
+        })}
+
         {/* Registration fee notice */}
         <View className="mx-4 mb-4 mt-2">
           <Text className="text-xs font-medium mb-1" style={{ color: c.textMuted }}>
@@ -244,18 +338,18 @@ export default function ApplyDocumentsScreen() {
           </View>
         </View>
 
-        {/* Continue button */}
+        {/* Finish button */}
         <TouchableOpacity
           className={`mx-4 py-3 rounded-xl items-center ${!isReady ? '' : 'bg-violet-500'}`}
           style={!isReady ? { backgroundColor: c.surface } : undefined}
-          onPress={() => router.push(`/(member)/discover/${slug}/apply/review`)}
+          onPress={handleFinish}
           disabled={!isReady}
         >
           <Text
             className="text-xs font-semibold"
             style={{ color: !isReady ? c.textFaint : '#FFFFFF' }}
           >
-            Continue →
+            Finish →
           </Text>
         </TouchableOpacity>
         {!isReady && docsToUpload.some(doc => doc.required) && (

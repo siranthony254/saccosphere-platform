@@ -2,34 +2,28 @@ import { useState } from 'react'
 import { View, Text, TouchableOpacity, ScrollView, Alert, ActivityIndicator } from 'react-native'
 import { useLocalSearchParams, router } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { useQuery } from '@tanstack/react-query'
-import { api } from '@saccosphere/api-client'
 import { useMembershipApplicationStore } from '../../../../../store/useMembershipApplicationStore'
 import { useSubmitMembershipApplication } from '../../../../../hooks/useMembershipApplication'
 import { useSaccoConfig } from '../../../../../hooks/useSaccoConfig'
 import { useProfile } from '../../../../../hooks/useProfile'
 import { DeepSpaceBackground } from '../../../../../components/DeepSpaceBackground'
 import { useTheme } from '../../../../../theme/ThemeProvider'
-
-const KYC_DOCUMENT_KEYS = ['id_front', 'id_back', 'passport', 'huduma']
+import { hapticSuccess } from '../../../../../lib/haptics'
 
 export default function ApplyReviewScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>()
   const insets = useSafeAreaInsets()
   const { colors: c } = useTheme()
-  const { formData, monthlyContribution, saccoSlug, uploadedDocumentIds, reset } = useMembershipApplicationStore()
+  const { formData, monthlyContribution, saccoSlug, applicationId, setSubmissionResult } = useMembershipApplicationStore()
   const { data: config, isLoading: isLoadingConfig } = useSaccoConfig(slug ?? '')
   const { data: userProfile } = useProfile()
-  const { data: kycStatus } = useQuery({
-    queryKey: ['kycStatus'],
-    queryFn: () => api.kyc.getStatus(),
-  })
   const { mutateAsync: submitApplication } = useSubmitMembershipApplication()
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const hasIdentityOnFile = Boolean(
-    kycStatus && ((kycStatus.has_id_front && kycStatus.has_id_back) || kycStatus.has_passport)
-  )
+  // Already submitted (e.g. member came back to this screen after
+  // continuing to the documents step) — submitting again would just hit
+  // the backend's "You have already applied to this SACCO" guard.
+  const alreadySubmitted = Boolean(applicationId)
 
   if (isLoadingConfig) {
     return (
@@ -56,17 +50,24 @@ export default function ApplyReviewScreen() {
     monthlyContribution >= minContribution
   )
 
+  const goToDocuments = () => router.replace(`/(member)/discover/${slug}/apply/documents`)
+
   const handleSubmit = async () => {
+    if (alreadySubmitted) {
+      goToDocuments()
+      return
+    }
     if (!canSubmit || !saccoSlug) return
     setIsSubmitting(true)
 
     try {
-      await submitApplication({
+      const result = await submitApplication({
         sacco_slug: saccoSlug,
         form_data: formData,
       })
-      reset()
-      router.replace(`/(member)/discover/${slug}/apply/success`)
+      setSubmissionResult({ membershipId: result.id, applicationId: result.application_id })
+      hapticSuccess()
+      goToDocuments()
     } catch (error: unknown) {
       Alert.alert(
         'Submission failed',
@@ -91,17 +92,17 @@ export default function ApplyReviewScreen() {
           </TouchableOpacity>
           <View className="ml-2.5">
             <Text className="text-sm font-semibold" style={{ color: c.text }}>Apply — {saccoName}</Text>
-            <Text className="text-xs" style={{ color: c.textMuted }}>Step 3 of 3 — Review</Text>
+            <Text className="text-xs" style={{ color: c.textMuted }}>Step 2 of 3 — Review</Text>
           </View>
         </View>
 
-        {/* Progress bar - step 3 of 3 */}
+        {/* Progress bar - step 2 of 3 */}
         <View className="flex-row gap-1 mx-4 mb-1.5">
           <View className="flex-1 h-0.75 rounded bg-violet-500" />
           <View className="flex-1 h-0.75 rounded bg-violet-500" />
-          <View className="flex-1 h-0.75 rounded bg-violet-500" />
+          <View className="flex-1 h-0.75 rounded" style={{ backgroundColor: c.border }} />
         </View>
-        <Text className="text-xs mx-4 mb-4" style={{ color: c.textFaint }}>Step 3 of 3 — Review & confirm</Text>
+        <Text className="text-xs mx-4 mb-4" style={{ color: c.textFaint }}>Step 2 of 3 — Review & confirm</Text>
 
         {/* Application summary */}
         <View className="mx-4 border rounded-xl p-3.5 mb-2.5" style={{ backgroundColor: c.surface, borderColor: c.border }}>
@@ -125,37 +126,13 @@ export default function ApplyReviewScreen() {
           ))}
         </View>
 
-        {/* Documents */}
+        {/* What happens next */}
         <View className="mx-4 border rounded-xl p-3.5 mb-2.5" style={{ backgroundColor: c.surface, borderColor: c.border }}>
-          <Text className="text-xs font-semibold mb-2" style={{ color: c.text }}>Documents</Text>
-          {config?.membership.required_documents.map((doc) => {
-            const isVerifiedFromKyc = Boolean(
-              doc.already_verified_from_kyc || (KYC_DOCUMENT_KEYS.includes(doc.key) && hasIdentityOnFile)
-            )
-            const isUploaded = isVerifiedFromKyc || uploadedDocumentIds.includes(doc.key)
-            return (
-              <View
-                key={doc.key}
-                className="flex-row justify-between py-2 border-b last:border-b-0"
-                style={{ borderColor: c.border }}
-              >
-                <Text className="text-xs" style={{ color: c.textMuted }}>{doc.label}</Text>
-                <View className={`px-2 py-0.5 rounded-md ${isVerifiedFromKyc ? 'bg-mint-500/20' : isUploaded ? 'bg-blue-500/20' : 'bg-amber-500/20'}`}>
-                  <Text className={`text-xs font-semibold ${isVerifiedFromKyc ? 'text-mint-400' : isUploaded ? 'text-blue-400' : 'text-amber-500'}`}>
-                    {isVerifiedFromKyc ? 'Verified' : isUploaded ? 'Uploaded' : 'Missing'}
-                  </Text>
-                </View>
-              </View>
-            )
-          })}
-          {config?.membership.required_documents.some(
-            (doc) => doc.already_verified_from_kyc || (KYC_DOCUMENT_KEYS.includes(doc.key) && hasIdentityOnFile)
-          ) && (
-            <Text className="text-xs mt-2" style={{ color: c.textFaint }}>
-              &ldquo;Verified&rdquo; documents are confirmed directly with {saccoName} from your account
-              verification, rather than attached to this application.
-            </Text>
-          )}
+          <Text className="text-xs font-semibold mb-1.5" style={{ color: c.text }}>Next: documents</Text>
+          <Text className="text-xs leading-4.5" style={{ color: c.textMuted }}>
+            After you submit, you&apos;ll confirm your identity documents and can attach any extra ones{' '}
+            {saccoName} asks for (like a payslip or bank statement).
+          </Text>
         </View>
 
         {/* Warning alert */}
@@ -169,19 +146,19 @@ export default function ApplyReviewScreen() {
 
         {/* Submit button */}
         <TouchableOpacity
-          className={`mx-4 py-3 rounded-xl items-center ${!canSubmit ? '' : 'bg-violet-500'}`}
-          style={!canSubmit ? { backgroundColor: c.surface } : undefined}
+          className={`mx-4 py-3 rounded-xl items-center ${!canSubmit && !alreadySubmitted ? '' : 'bg-violet-500'}`}
+          style={!canSubmit && !alreadySubmitted ? { backgroundColor: c.surface } : undefined}
           onPress={handleSubmit}
-          disabled={!canSubmit || isSubmitting}
+          disabled={(!canSubmit && !alreadySubmitted) || isSubmitting}
         >
           {isSubmitting ? (
             <ActivityIndicator color="#fff" />
           ) : (
             <Text
               className="text-xs font-semibold"
-              style={{ color: !canSubmit ? c.textFaint : '#FFFFFF' }}
+              style={{ color: !canSubmit && !alreadySubmitted ? c.textFaint : '#FFFFFF' }}
             >
-              Submit application
+              {alreadySubmitted ? 'Continue to documents →' : 'Submit application'}
             </Text>
           )}
         </TouchableOpacity>

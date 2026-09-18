@@ -50,6 +50,11 @@ export type Membership = z.infer<typeof MembershipSchema>
 // Application for joining a new SACCO
 export const MembershipApplicationSchema = z.object({
   id: z.string().uuid(),
+  // The SaccoApplication record's id — a separate model from Membership on
+  // the backend, with no FK between them. Needed to attach documents via
+  // POST /members/applications/{application_id}/documents/. Nullable for
+  // safety against any response that predates the backend returning it.
+  application_id: z.string().uuid().nullable(),
   sacco_slug: z.string(),
   sacco_name: z.string(),
   status: z.enum(['submitted', 'under_review', 'approved', 'rejected']),
