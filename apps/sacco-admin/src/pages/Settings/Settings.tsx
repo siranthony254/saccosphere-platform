@@ -14,7 +14,11 @@ import {
   useDeleteSavingsType,
 } from '../../hooks/useSavingsTypes'
 
-const FIELD_TYPES = ['TEXT', 'NUMBER', 'DATE', 'SELECT', 'BOOLEAN', 'FILE'] as const
+// FILE is intentionally excluded: the backend rejects creating a FILE-type
+// field outright (there's no upload path for a custom-field answer to ever
+// carry a file) - offering it here would just produce a confusing 400 on
+// save. Use a document upload requirement for file-based needs instead.
+const FIELD_TYPES = ['TEXT', 'NUMBER', 'DATE', 'SELECT', 'BOOLEAN'] as const
 
 const EMPTY_ST = {
   name: '',
