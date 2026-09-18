@@ -3,12 +3,14 @@ import { Tabs } from 'expo-router'
 import { Text, View, Platform } from 'react-native'
 import { Icon, type IconName } from '../../components/ui/Icon'
 import { useTheme } from '../../theme/ThemeProvider'
+import { AppLockGuard } from '../../components/AppLockGuard'
 
 
 export default function MemberTabLayout() {
   const { colors: c } = useTheme()
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top', 'bottom']}>
+      <AppLockGuard />
       <Tabs
         screenOptions={{
           headerShown: false,

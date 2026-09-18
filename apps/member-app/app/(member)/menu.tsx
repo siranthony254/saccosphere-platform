@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
-import { View, Text, ScrollView, TouchableOpacity, Alert, Modal, Clipboard } from 'react-native'
+import { View, Text, ScrollView, TouchableOpacity, Alert, Modal } from 'react-native'
+import * as Clipboard from 'expo-clipboard'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { router } from 'expo-router'
 import { useCurrentUser } from '../../store/useAuthStore'
@@ -79,8 +80,10 @@ export default function MenuScreen() {
     },
   ]
 
-  const handleCopyReferral = () => {
-    Clipboard.setString(referralCode)
+  const handleCopyReferral = async () => {
+    // Not auto-cleared like lib/clipboard.ts's copyWithAutoClear — a referral
+    // code is meant to be shared/pasted later, unlike account or ID numbers.
+    await Clipboard.setStringAsync(referralCode)
     Alert.alert('Copied!', 'Referral code copied to clipboard.')
   }
 

@@ -98,6 +98,10 @@ export default function ApplyStep1Screen() {
     config?.membership.additional_fields
       .filter((field) => field.required)
       .every((field) => {
+        // The backend rejects any FILE-type custom field answer outright
+        // (there is no upload path for these) — never block submission on
+        // a required field the member has no way to complete.
+        if (field.type === 'file') return true
         const value = customFieldValues[field.key]
         if (field.type === 'number') {
           const numValue = Number(value?.replace(/[^0-9]/g, '') || 0)
@@ -255,6 +259,15 @@ export default function ApplyStep1Screen() {
                 numberOfLines={3}
                 textAlignVertical="top"
               />
+            ) : field.type === 'file' ? (
+              // The backend has no upload path for custom-field file
+              // answers and rejects any value submitted for one — show
+              // this honestly rather than a text box that can never work.
+              <View className="border rounded-xl p-2.5" style={{ backgroundColor: c.surfaceAlt, borderColor: c.border }}>
+                <Text className="text-xs" style={{ color: c.textFaint }}>
+                  Not supported yet — contact {saccoName} directly for this.
+                </Text>
+              </View>
             ) : (
               <TextInput
                 className="border rounded-xl p-2.5 text-xs"

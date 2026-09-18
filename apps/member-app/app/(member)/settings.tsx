@@ -11,6 +11,7 @@ import { useCurrentUser } from '../../store/useAuthStore'
 import { loadRefreshToken } from '../../hooks/useAuth'
 import { Icon } from '../../components/ui/Icon'
 import { useTheme } from '../../theme/ThemeProvider'
+import { usePreferencesStore } from '../../store/usePreferencesStore'
 
 const BIOMETRIC_TOKEN_KEY = 'saccosphere_biometric_refresh_token'
 const INSTALL_ID_KEY = 'saccosphere_install_id'
@@ -42,6 +43,8 @@ export default function SettingsScreen() {
   const [biometricSupported, setBiometricSupported] = useState(false)
   const [biometricEnabled, setBiometricEnabled] = useState(false)
   const [loadingBiometrics, setLoadingBiometrics] = useState(false)
+  const autoLockEnabled = usePreferencesStore((s) => s.autoLockEnabled)
+  const setAutoLockEnabled = usePreferencesStore((s) => s.setAutoLockEnabled)
 
   const [passwordModalVisible, setPasswordModalVisible] = useState(false)
   const [oldPassword, setOldPassword] = useState('')
@@ -257,6 +260,26 @@ export default function SettingsScreen() {
             </TouchableOpacity>
           </View>
         </View>
+
+        {/* Auto-lock */}
+        {biometricSupported && (
+          <View style={{ backgroundColor: c.surface, borderRadius: 12, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: c.border }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+              <View style={{ flex: 1, paddingRight: 16 }}>
+                <Text style={{ color: c.text, fontSize: 14, fontWeight: '600', marginBottom: 4 }}>Auto-lock</Text>
+                <Text style={{ color: c.textMuted, fontSize: 12 }}>Require FaceID or Fingerprint again if the app has been in the background for a while.</Text>
+              </View>
+              <TouchableOpacity
+                style={{ width: 48, height: 28, borderRadius: 14, backgroundColor: autoLockEnabled ? c.success : c.surface, borderWidth: 1, borderColor: autoLockEnabled ? c.success : c.border, padding: 2, justifyContent: 'center' }}
+                onPress={() => setAutoLockEnabled(!autoLockEnabled)}
+                accessibilityRole="switch"
+                accessibilityState={{ checked: autoLockEnabled }}
+              >
+                <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: '#fff', alignSelf: autoLockEnabled ? 'flex-end' : 'flex-start' }} />
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
 
         {/* Change Password */}
         <TouchableOpacity 

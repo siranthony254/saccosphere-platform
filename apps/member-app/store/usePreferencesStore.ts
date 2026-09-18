@@ -75,6 +75,10 @@ interface PreferencesState {
    * a separate concern from balanceHidden, e.g. for someone who wants their
    * identity hidden from a shoulder-surfer but doesn't mind showing amounts. */
   personalDetailsHidden: boolean
+  /** Require biometric re-auth after returning from background. Only ever
+   * enforced when the device actually supports biometrics (see
+   * AppLockGuard) — this just tracks the member's own preference. */
+  autoLockEnabled: boolean
   /** Selected theme id, or 'system' to follow the OS light/dark setting. */
   themeId: ThemeId
   /** Per-card nature-scene backdrop choice, keyed by card slot. */
@@ -87,6 +91,7 @@ interface PreferencesState {
   setBalanceHidden: (hidden: boolean) => void
   togglePersonalDetailsHidden: () => void
   setPersonalDetailsHidden: (hidden: boolean) => void
+  setAutoLockEnabled: (enabled: boolean) => void
   setThemeId: (id: ThemeId) => void
   setCardBackdrop: (slot: CardBackdropSlot, id: CardBackdropId | null) => void
   markCoachmarkSeen: (id: CoachmarkId) => void
@@ -97,6 +102,7 @@ export const usePreferencesStore = create<PreferencesState>()(
     (set, get) => ({
       balanceHidden: false,
       personalDetailsHidden: false,
+      autoLockEnabled: true,
       themeId: 'midnight',
       cardBackdrops: DEFAULT_CARD_BACKDROPS,
       seenCoachmarks: DEFAULT_SEEN_COACHMARKS,
@@ -105,6 +111,7 @@ export const usePreferencesStore = create<PreferencesState>()(
       setBalanceHidden: (hidden) => set({ balanceHidden: hidden }),
       togglePersonalDetailsHidden: () => set({ personalDetailsHidden: !get().personalDetailsHidden }),
       setPersonalDetailsHidden: (hidden) => set({ personalDetailsHidden: hidden }),
+      setAutoLockEnabled: (enabled) => set({ autoLockEnabled: enabled }),
       setThemeId: (id) => set({ themeId: id }),
       setCardBackdrop: (slot, id) =>
         set({ cardBackdrops: { ...get().cardBackdrops, [slot]: id } }),
@@ -117,6 +124,7 @@ export const usePreferencesStore = create<PreferencesState>()(
       partialize: (state) => ({
         balanceHidden: state.balanceHidden,
         personalDetailsHidden: state.personalDetailsHidden,
+        autoLockEnabled: state.autoLockEnabled,
         themeId: state.themeId,
         cardBackdrops: state.cardBackdrops,
         seenCoachmarks: state.seenCoachmarks,
