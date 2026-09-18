@@ -352,10 +352,8 @@ const normalizeAdminMember = (member: any): AdminMember => {
     repayment_rate_pct: Number(member.repayment_rate_pct ?? 0),
     joined_at: member.approved_date ?? member.application_date ?? member.joined_at ?? null,
     last_active: recentTransactions[0]?.created_at ?? null,
-    // Backend AdminMemberDetailSerializer fields
-    sacco: member.sacco ? { id: String(member.sacco.id), name: member.sacco.name } : null,
-    application_date: member.application_date ?? null,
-    approved_date: member.approved_date ?? null,
+    // Backend AdminMemberDetailSerializer fields — only present on the
+    // single-member detail fetch (see the note on AdminMemberSchema).
     savings_breakdown: savingsBreakdown.map((s: any) => ({
       savings_type: s.savings_type,
       amount: Number(s.amount ?? 0),

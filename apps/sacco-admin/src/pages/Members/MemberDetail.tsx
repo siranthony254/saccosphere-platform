@@ -47,8 +47,14 @@ export function MemberDetail() {
         <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-xl">
           <div className="text-sm font-semibold text-blue-800 mb-1">Application pending</div>
           <p className="text-[11px] text-blue-700">
-            Approving or rejecting a member isn’t available from this console yet — contact SaccoSphere
-            support to action this application.
+            Approve or reject this application from the{' '}
+            <button
+              onClick={() => navigate('/applications')}
+              className="underline font-semibold bg-transparent border-none cursor-pointer text-blue-800 p-0"
+            >
+              Applications
+            </button>{' '}
+            list.
           </p>
         </div>
       )}
@@ -113,6 +119,75 @@ export function MemberDetail() {
           </div>
         ))}
       </div>
+
+      {/* Savings breakdown */}
+      {member.savings_breakdown.length > 0 && (
+        <div className="bg-white border border-[#e5ede9] rounded-[10px] p-4 mb-4">
+          <div className="font-semibold text-sm text-ink mb-3">Savings breakdown</div>
+          <div className="flex flex-col gap-2">
+            {member.savings_breakdown.map((s, i) => (
+              <div key={i} className="flex items-center justify-between px-3 py-2 bg-surface-2 rounded-lg">
+                <div>
+                  <div className="text-xs font-medium text-ink">{s.savings_type || 'General'}</div>
+                  <div className="text-[10px] text-ink-muted">
+                    +KES {s.total_contributions.toLocaleString()} contributed · -KES {s.total_withdrawals.toLocaleString()} withdrawn
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-xs font-semibold text-ink">KES {s.amount.toLocaleString()}</div>
+                  {s.status && <div className="text-[10px] text-ink-muted">{s.status}</div>}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Active loans */}
+      {member.active_loans.length > 0 && (
+        <div className="bg-white border border-[#e5ede9] rounded-[10px] p-4 mb-4">
+          <div className="font-semibold text-sm text-ink mb-3">Active loans</div>
+          <div className="flex flex-col gap-2">
+            {member.active_loans.map(loan => (
+              <div key={loan.id} className="flex items-center justify-between px-3 py-2 bg-surface-2 rounded-lg">
+                <div>
+                  <div className="text-xs font-medium text-ink">{loan.loan_type || 'Loan'}</div>
+                  <div className="text-[10px] text-ink-muted">
+                    KES {loan.amount.toLocaleString()} at {loan.interest_rate}%{loan.term_months ? ` · ${loan.term_months} months` : ''}
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-xs font-semibold text-ink">KES {loan.outstanding_balance.toLocaleString()} owed</div>
+                  {loan.status && <div className="text-[10px] text-ink-muted">{loan.status}</div>}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Recent transactions */}
+      {member.recent_transactions.length > 0 && (
+        <div className="bg-white border border-[#e5ede9] rounded-[10px] p-4 mb-4">
+          <div className="font-semibold text-sm text-ink mb-3">Recent transactions</div>
+          <div className="flex flex-col gap-2">
+            {member.recent_transactions.map(t => (
+              <div key={t.id} className="flex items-center justify-between px-3 py-2 bg-surface-2 rounded-lg">
+                <div>
+                  <div className="text-xs font-medium text-ink">{t.description || t.transaction_type || 'Transaction'}</div>
+                  <div className="text-[10px] text-ink-muted">
+                    {t.reference || t.id} · {t.created_at ? new Date(t.created_at).toLocaleDateString() : '—'}
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-xs font-semibold text-ink">KES {t.amount.toLocaleString()}</div>
+                  {t.status && <div className="text-[10px] text-ink-muted">{t.status}</div>}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Roles section — lists every role this user holds (member AND admin of same SACCO, etc.) */}
       {roles && roles.length > 0 && (

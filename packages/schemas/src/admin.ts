@@ -99,6 +99,36 @@ export const AdminMemberSchema = z.object({
   repayment_rate_pct: z.number(),
   joined_at: z.string().nullable(),
   last_active: z.string().nullable(),
+  // Only populated by the single-member detail fetch (AdminMemberDetailView
+  // / AdminMemberDetailSerializer) — the list endpoint behind getMembers()/
+  // getApplications() doesn't compute these per-object aggregations, so
+  // they're empty arrays there rather than missing/undefined.
+  savings_breakdown: z.array(z.object({
+    savings_type: z.string().nullable(),
+    amount: z.number(),
+    total_contributions: z.number(),
+    total_withdrawals: z.number(),
+    status: z.string().nullable(),
+  })),
+  active_loans: z.array(z.object({
+    id: z.string().uuid(),
+    loan_type: z.string().nullable(),
+    amount: z.number(),
+    interest_rate: z.number(),
+    term_months: z.number().nullable(),
+    outstanding_balance: z.number(),
+    status: z.string().nullable(),
+    created_at: z.string().nullable(),
+  })),
+  recent_transactions: z.array(z.object({
+    id: z.string().uuid(),
+    reference: z.string().nullable(),
+    transaction_type: z.string().nullable(),
+    amount: z.number(),
+    status: z.string().nullable(),
+    description: z.string().nullable(),
+    created_at: z.string().nullable(),
+  })),
 })
 export type AdminMember = z.infer<typeof AdminMemberSchema>
 
