@@ -140,7 +140,7 @@ export function ApplicationsList() {
                   )}
                   <button
                     className="px-4 py-1.5 rounded-lg border border-violet-200 bg-violet-50 text-violet-700 text-xs font-bold cursor-pointer hover:bg-violet-100 transition-colors"
-                    onClick={() => navigate(`/members/${app.user_id}`)}
+                    onClick={() => navigate(`/members/${app.id}`)}
                   >
                     Details
                   </button>
