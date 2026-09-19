@@ -1,16 +1,27 @@
+import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Icon } from '@saccosphere/ui'
-import { useMemberDetail } from '../../hooks/useMembers'
+import { useMemberDetail, useOpenSavingsAccount } from '../../hooks/useMembers'
 import { useUserRoles } from '../../hooks/useRoles'
+import { useSavingsTypesList } from '../../hooks/useSavingsTypes'
+import { useAuthStore } from '../../store/useAuthStore'
 
 export function MemberDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { data: member, isLoading, error } = useMemberDetail(id!)
+  const { user } = useAuthStore()
 
   // Fetch all roles for this user (they may be both a member AND a SACCO admin)
   // user_id is populated from the backend member.user.id field
   const { data: roles } = useUserRoles(member?.user_id ?? '')
+
+  const { data: savingsTypes } = useSavingsTypesList(user?.sacco_id ?? undefined)
+  const openSavingsAccount = useOpenSavingsAccount()
+  const [selectedTypeId, setSelectedTypeId] = useState('')
+  const [openingBalance, setOpeningBalance] = useState('')
+  const [openAccountError, setOpenAccountError] = useState<string | null>(null)
+  const [openAccountSuccess, setOpenAccountSuccess] = useState<string | null>(null)
 
   if (isLoading) return <div className="p-5 text-ink-muted text-sm">Loading member...</div>
   if (error) return <div className="p-5 text-red-600 text-sm">Failed to load member. Please try again.</div>
@@ -19,6 +30,31 @@ export function MemberDetail() {
   const isPending = member.membership_status === 'applied' || member.membership_status === 'under_review'
 
   const roleBadge = 'bg-violet-50 text-violet-700'
+
+  const handleOpenSavingsAccount = () => {
+    setOpenAccountError(null)
+    setOpenAccountSuccess(null)
+    if (!selectedTypeId) {
+      setOpenAccountError('Choose a savings type.')
+      return
+    }
+    const balance = openingBalance.trim() ? Number(openingBalance) : undefined
+    if (balance !== undefined && (Number.isNaN(balance) || balance < 0)) {
+      setOpenAccountError('Opening balance must be a non-negative number.')
+      return
+    }
+    openSavingsAccount.mutate(
+      { membership_id: member.id, savings_type_id: selectedTypeId, opening_balance: balance },
+      {
+        onSuccess: (result) => {
+          setOpenAccountSuccess(`Opened ${result.savings_type_name} savings account.`)
+          setSelectedTypeId('')
+          setOpeningBalance('')
+        },
+        onError: (err: any) => setOpenAccountError(err?.message || err?.response?.data?.detail || 'Failed to open savings account.'),
+      },
+    )
+  }
 
   return (
     <div className="p-5">
@@ -119,6 +155,56 @@ export function MemberDetail() {
           </div>
         ))}
       </div>
+
+      {/* Open savings account */}
+      {member.membership_status === 'active' && (
+        <div className="bg-white border border-[#e5ede9] rounded-[10px] p-4 mb-4">
+          <div className="font-semibold text-sm text-ink mb-1">Open a savings account</div>
+          <p className="text-xs text-ink-muted mb-3">
+            The only way this member gets a savings account to contribute into — there's no
+            automatic account on approval.
+          </p>
+          <div className="grid grid-cols-[1fr_140px_auto] gap-2 items-end">
+            <div>
+              <label className="text-xs text-ink-muted mb-1 block">Savings type</label>
+              <select
+                className="w-full p-2 border border-[#e5ede9] rounded-lg text-sm bg-white focus:ring-2 focus:ring-violet-500 focus:outline-none"
+                value={selectedTypeId}
+                onChange={e => setSelectedTypeId(e.target.value)}
+              >
+                <option value="">Select a type…</option>
+                {(savingsTypes ?? []).filter(t => t.is_active).map(t => (
+                  <option key={t.id} value={t.id}>{t.name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="text-xs text-ink-muted mb-1 block">Opening balance (optional)</label>
+              <input
+                className="w-full p-2 border border-[#e5ede9] rounded-lg text-sm focus:ring-2 focus:ring-violet-500 focus:outline-none"
+                value={openingBalance}
+                onChange={e => setOpeningBalance(e.target.value)}
+                placeholder="0"
+                inputMode="decimal"
+              />
+            </div>
+            <button
+              onClick={handleOpenSavingsAccount}
+              disabled={openSavingsAccount.isPending}
+              className="px-4 py-2 rounded-lg border-none bg-violet-600 text-white text-sm font-semibold cursor-pointer hover:bg-violet-700 transition-colors disabled:opacity-50"
+            >
+              {openSavingsAccount.isPending ? 'Opening…' : 'Open account'}
+            </button>
+          </div>
+          {(savingsTypes ?? []).length === 0 && (
+            <p className="text-[11px] text-amber-700 mt-2">
+              No savings types configured for this SACCO yet — add one in Settings first.
+            </p>
+          )}
+          {openAccountError && <p className="text-[11px] text-red-600 mt-2">{openAccountError}</p>}
+          {openAccountSuccess && <p className="text-[11px] text-mint-700 mt-2">{openAccountSuccess}</p>}
+        </div>
+      )}
 
       {/* Savings breakdown */}
       {member.savings_breakdown.length > 0 && (

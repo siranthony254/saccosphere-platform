@@ -2550,6 +2550,23 @@ export const api = {
     deleteSavingsType: (id: string) =>
       apiCall<void>('DELETE', `/services/savings-types/${uuid(id)}/`),
 
+    // The only path anywhere that creates a Saving row — there is no
+    // auto-open-on-approval or member self-service flow. Without this, a
+    // newly-approved member has no savings account to deposit into at all.
+    openSavingsAccount: async (data: { membership_id: string; savings_type_id: string; opening_balance?: number }) => {
+      const r = await apiCall<any>('POST', '/services/savings/admin/', {
+        membership_id: uuid(data.membership_id),
+        savings_type_id: uuid(data.savings_type_id),
+        ...(data.opening_balance !== undefined ? { opening_balance: data.opening_balance } : {}),
+      })
+      return {
+        id: String(r.id),
+        savings_type_name: String(r.savings_type?.name ?? ''),
+        amount: Number(r.amount ?? 0),
+        status: String(r.status ?? ''),
+      }
+    },
+
     getDividendDeclaration: (id: string) =>
       apiCall<any>('GET', `/management/dividends/declarations/${uuid(id)}/`),
 

@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { QueryKeys } from '@saccosphere/config'
 import { api } from '@saccosphere/api-client'
 
@@ -32,5 +32,19 @@ export function useMemberDetail(id: string) {
     staleTime: 0,
     refetchInterval: 60_000, // refresh detail every 60 s
     enabled: !!id,
+  })
+}
+
+export function useOpenSavingsAccount() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (data: { membership_id: string; savings_type_id: string; opening_balance?: number }) =>
+      api.saccoAdmin.openSavingsAccount(data),
+    onSuccess: (_result, { membership_id }) => {
+      queryClient.invalidateQueries({ queryKey: QueryKeys.adminMember(membership_id) })
+      // Shorter prefix (not the factory call) so it partial-matches every
+      // cached filter variant of the members list, not just an empty one.
+      queryClient.invalidateQueries({ queryKey: ['admin-members'] })
+    },
   })
 }
