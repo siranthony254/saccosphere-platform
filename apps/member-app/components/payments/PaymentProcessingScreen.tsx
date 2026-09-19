@@ -1,9 +1,15 @@
 import { useEffect, useState } from 'react'
-import { View, Text, ActivityIndicator, TouchableOpacity } from 'react-native'
+import { View, Text, ActivityIndicator, TouchableOpacity, TextInput } from 'react-native'
 import { usePaymentStatus } from '../../hooks/usePayment'
 import { useTheme } from '../../theme/ThemeProvider'
 import type { ThemeColors } from '../../theme/tokens'
 import { hapticError } from '../../lib/haptics'
+
+// Loose sanity check only - the backend normalizes and authoritatively
+// validates the real format (any of 07XXXXXXXX / 01XXXXXXXX / +2547XXXXXXXX /
+// 2547XXXXXXXX). This just catches "empty" or "obviously not a phone number"
+// before spending an STK push attempt on it.
+const looksLikePhoneNumber = (value: string) => /^\+?\d{9,13}$/.test(value.replace(/\s/g, ''))
 
 interface PaymentProcessingScreenProps {
   checkoutRequestId: string | null
@@ -11,6 +17,7 @@ interface PaymentProcessingScreenProps {
   saccoName: string
   purpose: 'SAVING_DEPOSIT' | 'LOAN_REPAYMENT'
   phoneNumber: string
+  onPhoneNumberChange: (value: string) => void
   onConfirmStkPush: () => void
   onComplete: (success: boolean, transactionId?: string, errorMessage?: string) => void
   onCancel: () => void
@@ -22,6 +29,7 @@ export default function PaymentProcessingScreen({
   saccoName,
   purpose,
   phoneNumber,
+  onPhoneNumberChange,
   onConfirmStkPush,
   onComplete,
   onCancel,
@@ -108,7 +116,21 @@ export default function PaymentProcessingScreen({
         <DetailRow label="Type" value={purposeLabel} c={c} />
         <DetailRow label="Amount" value={`KES ${amount.toLocaleString()}`} c={c} />
         <DetailRow label="Platform fee (2%)" value={`KES ${platformFee}`} c={c} />
-        <DetailRow label="From" value={phoneNumber} c={c} />
+        {isConfirming ? (
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 6 }}>
+            <Text style={{ fontSize: 11, color: c.textMuted }}>M-Pesa number</Text>
+            <TextInput
+              value={phoneNumber}
+              onChangeText={onPhoneNumberChange}
+              keyboardType="phone-pad"
+              placeholder="07XXXXXXXX"
+              placeholderTextColor={c.textFaint}
+              style={{ fontSize: 11, fontWeight: '600', color: c.text, textAlign: 'right', minWidth: 130 }}
+            />
+          </View>
+        ) : (
+          <DetailRow label="From" value={phoneNumber} c={c} />
+        )}
         <View
           style={{
             borderTopWidth: 0.5,
@@ -141,7 +163,7 @@ export default function PaymentProcessingScreen({
       >
         <Text style={{ fontSize: 11, color: c.text, lineHeight: 16 }}>
           {isConfirming
-            ? 'A push prompt will appear on your phone after confirmation. Enter your M-Pesa PIN to complete.'
+            ? 'Double check the M-Pesa number above (edit it if you want the prompt sent elsewhere) — a push prompt will appear on it after you confirm.'
             : 'Check your phone for the M-Pesa prompt. Enter your PIN to complete the payment.'}
         </Text>
       </View>
@@ -151,9 +173,14 @@ export default function PaymentProcessingScreen({
         <>
           <TouchableOpacity
             onPress={() => {
+              if (!looksLikePhoneNumber(phoneNumber)) {
+                hapticError()
+                return
+              }
               onConfirmStkPush()
             }}
             activeOpacity={0.8}
+            disabled={!looksLikePhoneNumber(phoneNumber)}
             style={{
               backgroundColor: c.accent,
               borderRadius: 12,
@@ -161,10 +188,16 @@ export default function PaymentProcessingScreen({
               alignItems: 'center',
               width: '100%',
               marginBottom: 8,
+              opacity: looksLikePhoneNumber(phoneNumber) ? 1 : 0.5,
             }}
           >
             <Text style={{ color: '#fff', fontSize: 13, fontWeight: '600' }}>Send M-Pesa prompt</Text>
           </TouchableOpacity>
+          {!looksLikePhoneNumber(phoneNumber) && (
+            <Text style={{ fontSize: 10, color: c.danger, marginBottom: 8, textAlign: 'center' }}>
+              Enter a valid M-Pesa number to continue.
+            </Text>
+          )}
           <TouchableOpacity
             onPress={onCancel}
             style={{ alignItems: 'center', paddingVertical: 8 }}

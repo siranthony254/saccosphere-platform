@@ -50,8 +50,14 @@ export default function PayScreen() {
   const platformFee = feePreview ? Math.round(feePreview.platform_fee) : Math.round(numericAmount * 0.02)
   const grossCharge = feePreview ? Math.round(feePreview.gross_amount) : numericAmount + platformFee
   const saccoName = membership?.sacco_name ?? selectedLoan?.sacco_name ?? slug
-  const phoneNumber = user?.phone_number ?? user?.phone ?? ''
+  const registeredPhoneNumber = user?.phone_number ?? user?.phone ?? ''
+  const [phoneNumber, setPhoneNumber] = useState(registeredPhoneNumber)
   const primarySaving = savingsQuery.data?.[0]
+  // The only way a Saving account gets created is a SACCO admin explicitly
+  // opening one (there's no self-service or auto-open-on-approval path) -
+  // a member approved but not yet given an account has no saving_id to pay
+  // into at all, which the backend requires for every deposit.
+  const hasNoSavingsAccount = !isRepayment && !savingsQuery.isLoading && !primarySaving
   const acceptedMethods = config?.payments?.accepted_methods ?? ['mpesa', 'bank_transfer']
   const acceptsMpesa = acceptedMethods.some(m => String(m).toLowerCase() === 'mpesa')
   const acceptsBank = acceptedMethods.some(m => String(m).toLowerCase() === 'bank_transfer')
@@ -121,12 +127,34 @@ export default function PayScreen() {
     setCheckoutRequestId(null)
   }
 
-  if (membershipLoading) {
+  if (membershipLoading || (!isRepayment && savingsQuery.isLoading)) {
     return (
       <DeepSpaceBackground>
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
           <ActivityIndicator color={c.accent} />
           <Text style={{ color: c.textFaint, fontSize: 12, marginTop: 10 }}>Loading payment details...</Text>
+        </View>
+      </DeepSpaceBackground>
+    )
+  }
+
+  if (hasNoSavingsAccount) {
+    return (
+      <DeepSpaceBackground>
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+          <Text style={{ color: c.text, fontSize: 16, fontWeight: '700', marginBottom: 8, textAlign: 'center' }}>
+            No savings account yet
+          </Text>
+          <Text style={{ color: c.textMuted, fontSize: 13, textAlign: 'center', lineHeight: 20, marginBottom: 24 }}>
+            {saccoName} hasn&apos;t opened a savings account for you yet, so there&apos;s nothing to contribute
+            into. Contact them to get one set up.
+          </Text>
+          <TouchableOpacity
+            style={{ backgroundColor: c.accent, borderRadius: 16, paddingVertical: 14, paddingHorizontal: 32 }}
+            onPress={() => router.back()}
+          >
+            <Text style={{ color: '#fff', fontSize: 14, fontWeight: '700' }}>Go back</Text>
+          </TouchableOpacity>
         </View>
       </DeepSpaceBackground>
     )
@@ -172,6 +200,7 @@ export default function PayScreen() {
         saccoName={saccoName}
         purpose={isRepayment ? 'LOAN_REPAYMENT' : 'SAVING_DEPOSIT'}
         phoneNumber={phoneNumber}
+        onPhoneNumberChange={setPhoneNumber}
         onConfirmStkPush={confirmStkPush}
         onComplete={handlePaymentComplete}
         onCancel={handleCancelPayment}
