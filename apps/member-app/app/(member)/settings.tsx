@@ -305,6 +305,18 @@ export default function SettingsScreen() {
           <Text style={{ color: c.textMuted, fontSize: 18 }}>{'>'}</Text>
         </TouchableOpacity>
 
+        {/* Appearance */}
+        <TouchableOpacity
+          style={{ backgroundColor: c.surface, borderRadius: 12, padding: 16, borderWidth: 1, borderColor: c.border, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}
+          onPress={() => router.push('/(member)/appearance' as any)}
+        >
+          <View>
+            <Text style={{ color: c.text, fontSize: 14, fontWeight: '600', marginBottom: 4 }}>Appearance</Text>
+            <Text style={{ color: c.textMuted, fontSize: 12 }}>Choose your theme and card background photos.</Text>
+          </View>
+          <Text style={{ color: c.textMuted, fontSize: 18 }}>{'>'}</Text>
+        </TouchableOpacity>
+
         {/* Privacy & Data */}
         <TouchableOpacity
           style={{ backgroundColor: c.surface, borderRadius: 12, padding: 16, borderWidth: 1, borderColor: c.border, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}
@@ -312,7 +324,7 @@ export default function SettingsScreen() {
         >
           <View>
             <Text style={{ color: c.text, fontSize: 14, fontWeight: '600', marginBottom: 4 }}>Privacy & Data</Text>
-            <Text style={{ color: c.textMuted, fontSize: 12 }}>Manage consents, connect Google, export or delete your data.</Text>
+            <Text style={{ color: c.textMuted, fontSize: 12 }}>Hide balances or personal details, manage consents, connect Google, export or delete your data.</Text>
           </View>
           <Text style={{ color: c.textMuted, fontSize: 18 }}>{'>'}</Text>
         </TouchableOpacity>
