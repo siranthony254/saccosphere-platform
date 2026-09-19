@@ -83,6 +83,7 @@ export default function MemberTabLayout() {
         <Tabs.Screen name="transaction-detail" options={{ href: null }} />
         <Tabs.Screen name="withdraw" options={{ href: null }} />
         <Tabs.Screen name="privacy" options={{ href: null }} />
+        <Tabs.Screen name="appearance" options={{ href: null }} />
         <Tabs.Screen name="dividends" options={{ href: null }} />
         <Tabs.Screen name="guarantor-inbox" options={{ href: null }} />
         <Tabs.Screen name="notifications" options={{ href: null }} />
