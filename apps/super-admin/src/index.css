@@ -2,9 +2,27 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Fallback accent scale (Indigo, this app's default AdminThemeProvider
+   theme) for the brief window before it mounts and overwrites these via
+   inline style - see packages/ui/src/theme/AdminThemeProvider.tsx. Stored
+   as "r g b" triplets, not hex, to match Tailwind's CSS-variable-with-
+   opacity pattern used in tailwind.config.js. */
+:root {
+  --accent-50: 238 242 255;
+  --accent-100: 224 231 255;
+  --accent-200: 199 210 254;
+  --accent-300: 165 180 252;
+  --accent-400: 129 140 248;
+  --accent-500: 99 102 241;
+  --accent-600: 79 70 229;
+  --accent-700: 67 56 202;
+}
+
 /* Custom composite utilities */
 @layer utilities {
-  /* Violet brand utilities */
+  /* Violet brand utilities - "violet" now resolves via CSS custom
+     properties (see the :root block above and AdminThemeProvider), so
+     these follow the selected theme rather than being a fixed hue. */
   .btn-primary {
     @apply bg-violet-500 hover:bg-violet-600 active:bg-violet-700 text-white font-semibold rounded-lg;
   }

@@ -1,4 +1,17 @@
 /** @type {import('tailwindcss').Config} */
+
+// CSS custom properties store "r g b" triplets (see index.css and
+// AdminThemeProvider), so opacity-modifier classes like bg-violet-500/20
+// still work: Tailwind can combine a pre-split triplet with an alpha value
+// at runtime, but can't extract channels out of an opaque `var(--x)` hex
+// string at build time.
+function withOpacity(variableName) {
+  return ({ opacityValue }) =>
+    opacityValue === undefined
+      ? `rgb(var(${variableName}))`
+      : `rgb(var(${variableName}) / ${opacityValue})`
+}
+
 module.exports = {
   content: ['./src/**/*.{ts,tsx}', './web/**/*.{ts,tsx}', '../../packages/ui/src/**/*.{ts,tsx}'],
   theme: {
@@ -13,17 +26,24 @@ module.exports = {
           600: '#1F2D5C',
           500: '#263670',
         },
-        // Brand Colors - Electric Violet
+        // Brand accent - resolves via CSS custom properties written by
+        // AdminThemeProvider (packages/ui/src/theme), so every violet-*
+        // class (buttons, active nav links, focus rings, links, and any
+        // bg-violet-500/20-style opacity variant) follows the admin's
+        // selected theme instead of a fixed hue. "violet" stays the class
+        // name for zero churn across existing usages.
         violet: {
-          700: '#3B0E8C',
-          600: '#5018B8',
-          500: '#6D28D9',
-          400: '#7C3AED',
-          300: '#8B5CF6',
-          200: '#A78BFA',
-          100: '#C4B5FD',
-          50: '#EDE9FE',
-          25: '#F5F3FF',
+          700: withOpacity('--accent-700'),
+          600: withOpacity('--accent-600'),
+          500: withOpacity('--accent-500'),
+          400: withOpacity('--accent-400'),
+          300: withOpacity('--accent-300'),
+          200: withOpacity('--accent-200'),
+          100: withOpacity('--accent-100'),
+          50: withOpacity('--accent-50'),
+          // No dedicated near-white shade per theme; reuses 50 (a pale
+          // tint either way, so the difference from 25 is negligible).
+          25: withOpacity('--accent-50'),
         },
         // Brand Colors - Mint
         mint: {

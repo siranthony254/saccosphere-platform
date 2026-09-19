@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo, useState, type ReactNode } from 'react'
+import { createContext, useContext, useLayoutEffect, useMemo, useState, type ReactNode } from 'react'
 import { ADMIN_THEME_PRESETS, DEFAULT_ADMIN_THEME, type AdminThemeId, type AdminThemePreset } from './presets'
 
 const STORAGE_KEY = 'saccosphere_admin_theme'
@@ -11,6 +11,20 @@ interface AdminThemeContextValue {
 }
 
 const AdminThemeContext = createContext<AdminThemeContextValue | null>(null)
+
+// Stored as an "r g b" triplet (Tailwind's documented pattern for CSS
+// variable colors - see tailwind.config.js's `withOpacity` helper) rather
+// than the hex string, so existing opacity-modifier classes like
+// bg-violet-50/30 keep working: Tailwind can't extract channels out of an
+// opaque `var(--x)` hex value at build time, only combine a pre-split
+// triplet with an alpha value at runtime.
+function hexToRgbTriplet(hex: string): string {
+  const clean = hex.replace('#', '')
+  const r = parseInt(clean.substring(0, 2), 16)
+  const g = parseInt(clean.substring(2, 4), 16)
+  const b = parseInt(clean.substring(4, 6), 16)
+  return `${r} ${g} ${b}`
+}
 
 function readStoredThemeId(fallback: AdminThemeId): AdminThemeId {
   if (typeof window === 'undefined') return fallback
@@ -53,6 +67,17 @@ export function AdminThemeProvider({
     () => ADMIN_THEME_PRESETS.find((p) => p.id === themeId) ?? ADMIN_THEME_PRESETS[0],
     [themeId]
   )
+
+  // Every `accent-*` Tailwind class (see both apps' tailwind.config.js)
+  // resolves to one of these custom properties, so switching themes
+  // re-colors every button/active-nav-link/focus-ring/link app-wide with
+  // no per-component wiring - only the CSS variables change.
+  useLayoutEffect(() => {
+    const root = document.documentElement
+    for (const [shade, value] of Object.entries(preset.accent)) {
+      root.style.setProperty(`--accent-${shade}`, hexToRgbTriplet(value))
+    }
+  }, [preset])
 
   const value = useMemo(
     () => ({ themeId, preset, setThemeId, presets: ADMIN_THEME_PRESETS }),
