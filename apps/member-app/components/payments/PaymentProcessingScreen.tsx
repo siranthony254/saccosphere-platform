@@ -16,6 +16,13 @@ const looksLikePhoneNumber = (value: string) => /^\+?\d{9,13}$/.test(value.repla
 interface PaymentProcessingScreenProps {
   checkoutRequestId: string | null
   amount: number
+  // Real, backend-computed fee (SaccoInvoiceFeeCalculator: 1% deposits,
+  // 0.5% repayments - never a flat guessed rate). Null while the fee
+  // preview is still loading; the confirm button stays disabled until
+  // it resolves, rather than ever showing a guessed total right before
+  // a real charge.
+  platformFee: number | null
+  grossAmount: number | null
   saccoName: string
   purpose: 'SAVING_DEPOSIT' | 'LOAN_REPAYMENT'
   phoneNumber: string
@@ -28,6 +35,8 @@ interface PaymentProcessingScreenProps {
 export default function PaymentProcessingScreen({
   checkoutRequestId,
   amount,
+  platformFee,
+  grossAmount,
   saccoName,
   purpose,
   phoneNumber,
@@ -81,10 +90,11 @@ export default function PaymentProcessingScreen({
   }, [onComplete, hasStartedPolling])
 
   const purposeLabel = purpose === 'LOAN_REPAYMENT' ? 'Loan repayment' : 'Contribution'
-  const platformFee = Math.round(amount * 0.02) // 2% platform fee
-  const totalAmount = amount + platformFee
+  const feeKnown = platformFee !== null && grossAmount !== null
+  const totalAmount = grossAmount ?? amount
 
   const isConfirming = !hasStartedPolling
+  const canConfirm = feeKnown && looksLikePhoneNumber(phoneNumber)
 
   return (
     <DeepSpaceBackground>
@@ -128,7 +138,7 @@ export default function PaymentProcessingScreen({
         <DetailRow label="SACCO" value={saccoName} c={c} />
         <DetailRow label="Type" value={purposeLabel} c={c} />
         <DetailRow label="Amount" value={`KES ${amount.toLocaleString()}`} c={c} />
-        <DetailRow label="Platform fee (2%)" value={`KES ${platformFee}`} c={c} />
+        <DetailRow label="Platform fee" value={feeKnown ? `KES ${platformFee}` : 'Calculating…'} c={c} />
         {isConfirming ? (
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 6 }}>
             <Text style={{ fontSize: 11, color: c.textMuted }}>M-Pesa number</Text>
@@ -157,7 +167,7 @@ export default function PaymentProcessingScreen({
         >
           <Text style={{ fontSize: 12, fontWeight: '600', color: c.text }}>Total</Text>
           <Text style={{ fontSize: 14, fontWeight: '700', color: c.success }}>
-            KES {totalAmount.toLocaleString()}
+            {feeKnown ? `KES ${totalAmount.toLocaleString()}` : 'Calculating…'}
           </Text>
         </View>
       </View>
@@ -186,14 +196,14 @@ export default function PaymentProcessingScreen({
         <>
           <TouchableOpacity
             onPress={() => {
-              if (!looksLikePhoneNumber(phoneNumber)) {
+              if (!canConfirm) {
                 hapticError()
                 return
               }
               onConfirmStkPush()
             }}
             activeOpacity={0.8}
-            disabled={!looksLikePhoneNumber(phoneNumber)}
+            disabled={!canConfirm}
             style={{
               backgroundColor: c.accent,
               borderRadius: 12,
@@ -201,12 +211,14 @@ export default function PaymentProcessingScreen({
               alignItems: 'center',
               width: '100%',
               marginBottom: 8,
-              opacity: looksLikePhoneNumber(phoneNumber) ? 1 : 0.5,
+              opacity: canConfirm ? 1 : 0.5,
             }}
           >
-            <Text style={{ color: '#fff', fontSize: 13, fontWeight: '600' }}>Send M-Pesa prompt</Text>
+            <Text style={{ color: '#fff', fontSize: 13, fontWeight: '600' }}>
+              {feeKnown ? 'Send M-Pesa prompt' : 'Calculating fee…'}
+            </Text>
           </TouchableOpacity>
-          {!looksLikePhoneNumber(phoneNumber) && (
+          {feeKnown && !looksLikePhoneNumber(phoneNumber) && (
             <Text style={{ fontSize: 10, color: c.danger, marginBottom: 8, textAlign: 'center' }}>
               Enter a valid M-Pesa number to continue.
             </Text>

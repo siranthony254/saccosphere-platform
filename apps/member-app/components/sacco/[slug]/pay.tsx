@@ -46,9 +46,12 @@ export default function PayScreen() {
   const [checkoutRequestId, setCheckoutRequestId] = useState<string | null>(null)
 
   const numericAmount = Number(String(amount || defaultAmount || 0).replace(/[^0-9.]/g, ''))
+  // Real, backend-computed fee (SaccoInvoiceFeeCalculator) - null (not a
+  // guessed flat rate) until it loads, so nothing shows a fee/total that
+  // could differ from what the member is actually charged.
   const { data: feePreview } = useFeePreview({ type: isRepayment ? 'repayment' : 'deposit', amount: numericAmount })
-  const platformFee = feePreview ? Math.round(feePreview.platform_fee) : Math.round(numericAmount * 0.02)
-  const grossCharge = feePreview ? Math.round(feePreview.gross_amount) : numericAmount + platformFee
+  const platformFee = feePreview ? Math.round(feePreview.platform_fee) : null
+  const grossCharge = feePreview ? Math.round(feePreview.gross_amount) : null
   const saccoName = membership?.sacco_name ?? selectedLoan?.sacco_name ?? slug
   const registeredPhoneNumber = user?.phone_number ?? user?.phone ?? ''
   const [phoneNumber, setPhoneNumber] = useState(registeredPhoneNumber)
@@ -181,7 +184,7 @@ export default function PayScreen() {
         subtitle={subtitle}
         saccoName={saccoName}
         amount={String(numericAmount)}
-        mpesaFee={platformFee}
+        mpesaFee={platformFee ?? 0}
         bankFee={0}
         mpesaDisabled={!acceptsMpesa}
         bankDisabled={!acceptsBank}
@@ -197,6 +200,8 @@ export default function PayScreen() {
       <PaymentProcessingScreen
         checkoutRequestId={checkoutRequestId}
         amount={numericAmount}
+        platformFee={platformFee}
+        grossAmount={grossCharge}
         saccoName={saccoName}
         purpose={isRepayment ? 'LOAN_REPAYMENT' : 'SAVING_DEPOSIT'}
         phoneNumber={phoneNumber}
@@ -271,8 +276,8 @@ export default function PayScreen() {
           <BankRow label="Accepted Methods" value={acceptedMethods.map(m => m === 'mpesa' ? 'M-Pesa' : m === 'bank_transfer' ? 'Bank' : m).join(', ')} />
           {numericAmount >= 10 ? (
             <>
-              <BankRow label="Platform fee" value={`KES ${platformFee.toLocaleString()}`} />
-              <BankRow label="You pay" value={`KES ${grossCharge.toLocaleString()}`} />
+              <BankRow label="Platform fee" value={platformFee !== null ? `KES ${platformFee.toLocaleString()}` : 'Calculating…'} />
+              <BankRow label="You pay" value={grossCharge !== null ? `KES ${grossCharge.toLocaleString()}` : 'Calculating…'} />
               <BankRow label={isRepayment ? 'Applied to loan' : 'Credited to savings'} value={`KES ${numericAmount.toLocaleString()}`} />
             </>
           ) : null}
