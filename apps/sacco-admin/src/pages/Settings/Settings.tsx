@@ -20,8 +20,16 @@ import {
 // save. Use a document upload requirement for file-based needs instead.
 const FIELD_TYPES = ['TEXT', 'NUMBER', 'DATE', 'SELECT', 'BOOLEAN'] as const
 
+// SavingsType.name is a Django `choices` field on the backend - not free
+// text - restricted to exactly these three values. The member-app
+// dashboard's BOSA/FOSA/share-capital breakdown matches on this exact
+// string, so anything else the backend would accept silently (or reject)
+// makes this dropdown, not a text box with a "type this exactly" placeholder,
+// the only safe way to set it.
+const SAVINGS_TYPE_NAMES = ['BOSA', 'FOSA', 'SHARE_CAPITAL'] as const
+
 const EMPTY_ST = {
-  name: '',
+  name: SAVINGS_TYPE_NAMES[0] as string,
   description: '',
   interest_rate: '',
   minimum_contribution: '',
@@ -157,12 +165,15 @@ function SavingsTypesCard() {
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="text-xs text-ink-muted mb-1 block">Name</label>
-            <input
-              className="w-full p-2 border border-[#e5ede9] rounded-lg text-sm focus:ring-2 focus:ring-violet-500 focus:outline-none"
+            <select
+              className="w-full p-2 border border-[#e5ede9] rounded-lg text-sm bg-white focus:ring-2 focus:ring-violet-500 focus:outline-none"
               value={form.name}
               onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
-              placeholder="e.g. FOSA"
-            />
+            >
+              {SAVINGS_TYPE_NAMES.map(n => (
+                <option key={n} value={n}>{n === 'SHARE_CAPITAL' ? 'Share capital' : n}</option>
+              ))}
+            </select>
           </div>
           <div>
             <label className="text-xs text-ink-muted mb-1 block">Description</label>
