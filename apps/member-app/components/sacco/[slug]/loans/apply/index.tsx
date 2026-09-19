@@ -25,7 +25,12 @@ export default function LoanStep1() {
   const { data: eligibility } = useLoanEligibility(membership?.sacco_id ?? '')
 
   const [productKey, setProductKey] = useState(step1?.loan_product_key ?? '')
-  const [amount, setAmount] = useState(step1?.amount_requested?.toString() ?? '100000')
+  // No hardcoded default here on purpose - a fixed guess (previously 100000)
+  // has no relation to what this specific member can actually borrow, and
+  // silently pre-filling an amount above their real limit meant hitting
+  // Continue could immediately fail with "exceeds limit" before they'd
+  // touched the field at all.
+  const [amount, setAmount] = useState(step1?.amount_requested?.toString() ?? '')
   const [months, setMonths] = useState(step1?.period_months?.toString() ?? '24')
   const [purpose, setPurpose] = useState(step1?.purpose ?? '')
 
@@ -42,9 +47,10 @@ export default function LoanStep1() {
   const maxAmount = eligibility?.max_amount ?? 0
   const monthlyRate = (selectedProduct?.interest_rate_pct ?? 12) / 100 / 12
   const n = parseInt(months)
+  const numericAmount = Number(amount) || 0
   const instalment = monthlyRate > 0
-    ? (parseFloat(amount) * monthlyRate * Math.pow(1 + monthlyRate, n)) / (Math.pow(1 + monthlyRate, n) - 1)
-    : parseFloat(amount) / n
+    ? (numericAmount * monthlyRate * Math.pow(1 + monthlyRate, n)) / (Math.pow(1 + monthlyRate, n) - 1)
+    : numericAmount / n
 
   const handleNext = () => {
     if (!membership) {
@@ -64,7 +70,11 @@ export default function LoanStep1() {
       Alert.alert('No Loan Limit', 'Your current loan limit is KES 0. Please build your savings to increase your limit.')
       return
     }
-    const requestedAmount = parseFloat(amount)
+    const requestedAmount = Number(amount)
+    if (!amount || Number.isNaN(requestedAmount) || requestedAmount <= 0) {
+      Alert.alert('Enter an amount', 'Enter how much you want to borrow.')
+      return
+    }
     if (requestedAmount > eligibility.max_amount) {
       Alert.alert('Amount Exceeds Limit', `Your maximum loan limit is KES ${eligibility.max_amount.toLocaleString()}. Please reduce your loan amount.`)
       return
@@ -156,6 +166,34 @@ export default function LoanStep1() {
     )
   }
 
+  if (config.loan_products.length === 0) {
+    return (
+      <DeepSpaceBackground>
+        <ScrollView
+          className="flex-1"
+          contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 40, paddingTop: insets.top }}
+        >
+          <View className="flex-row items-center mb-6">
+            <TouchableOpacity onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Go back" className="mr-3">
+              <Text className="text-lg" style={{ color: c.textMuted }}>←</Text>
+            </TouchableOpacity>
+            <View>
+              <Text className="text-xl font-bold" style={{ color: c.text }}>Apply for loan</Text>
+            </View>
+          </View>
+
+          <View className="bg-yellow-500/10 border border-yellow-500/30 rounded-2xl p-6 items-center">
+            <Icon name="cash" size={24} color="#facc15" style={{ marginBottom: 12 }} />
+            <Text className="text-lg font-bold mb-2" style={{ color: c.text }}>No loan products yet</Text>
+            <Text className="text-sm text-center" style={{ color: c.textMuted }}>
+              This SACCO hasn&apos;t set up any loan products yet, so there&apos;s nothing to apply for. Contact them to get this set up.
+            </Text>
+          </View>
+        </ScrollView>
+      </DeepSpaceBackground>
+    )
+  }
+
   return (
     <DeepSpaceBackground>
       <ScrollView
@@ -205,6 +243,7 @@ export default function LoanStep1() {
           value={amount}
           onChangeText={setAmount}
           keyboardType="number-pad"
+          placeholder={maxAmount ? String(Math.round(maxAmount)) : '0'}
           placeholderTextColor={c.textFaint}
         />
         <Text className="text-[10px] font-medium mb-6 ml-1" style={{ color: c.textFaint }}>Your limit: KES {maxAmount.toLocaleString()}</Text>
@@ -243,8 +282,8 @@ export default function LoanStep1() {
         {/* Summary */}
         <View className="border rounded-2xl p-4 mb-8" style={{ backgroundColor: c.surface, borderColor: c.border }}>
           {[
-            { label: 'Principal', value: `KES ${parseFloat(amount || '0').toLocaleString()}` },
-            { label: `Interest (${selectedProduct?.interest_rate_pct ?? 12}% p.a.)`, value: `KES ${(instalment * n - parseFloat(amount || '0')).toLocaleString('en-KE', { maximumFractionDigits: 0 })}` },
+            { label: 'Principal', value: `KES ${numericAmount.toLocaleString()}` },
+            { label: `Interest (${selectedProduct?.interest_rate_pct ?? 12}% p.a.)`, value: `KES ${(instalment * n - numericAmount).toLocaleString('en-KE', { maximumFractionDigits: 0 })}` },
             { label: 'Monthly instalment', value: `KES ${instalment.toLocaleString('en-KE', { maximumFractionDigits: 0 })}`, highlight: true },
             { label: 'Total repayable', value: `KES ${(instalment * n).toLocaleString('en-KE', { maximumFractionDigits: 0 })}` },
           ].map((row, i, arr) => (
@@ -260,9 +299,9 @@ export default function LoanStep1() {
         </View>
 
         <TouchableOpacity
-          className={`bg-violet-600 rounded-2xl p-4 items-center ${(!purpose || isPending) ? 'opacity-50' : ''}`}
+          className={`bg-violet-600 rounded-2xl p-4 items-center ${(!purpose || !numericAmount || isPending) ? 'opacity-50' : ''}`}
           onPress={handleNext}
-          disabled={!purpose || isPending}
+          disabled={!purpose || !numericAmount || isPending}
         >
           {isPending ? <ActivityIndicator color="#fff" /> : <Text className="text-white text-sm font-bold uppercase tracking-wider">Continue →</Text>}
         </TouchableOpacity>

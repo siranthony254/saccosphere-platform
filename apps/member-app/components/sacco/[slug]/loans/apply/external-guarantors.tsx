@@ -1,13 +1,16 @@
 import { View, Text, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, Alert } from 'react-native'
 import { useLocalSearchParams, router } from 'expo-router'
 import { useEffect, useState } from 'react'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { api } from '@saccosphere/api-client'
 import { useLoanApplicationStore } from '../../../../../store/useLoanApplicationStore'
 import { useQuery, useMutation } from '@tanstack/react-query'
+import { DeepSpaceBackground } from '../../../../DeepSpaceBackground'
 import { useTheme } from '../../../../../theme/ThemeProvider'
 
 export default function ExternalGuarantorsScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>()
+  const insets = useSafeAreaInsets()
   const { colors: c } = useTheme()
   const { loanId } = useLoanApplicationStore()
 
@@ -58,13 +61,26 @@ export default function ExternalGuarantorsScreen() {
   const isValid = fullName.length > 2 && phone.length > 8 && idNumber.length === 8
 
   return (
-    <ScrollView style={{ backgroundColor: c.bg }} contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
-      <View className="flex-row gap-1 mb-1.5">
-        <View className="flex-1 h-0.75 rounded bg-violet-500" />
-        <View className="flex-1 h-0.75 rounded bg-violet-500" />
-        <View className="flex-1 h-0.75 rounded" style={{ backgroundColor: c.border }} />
-      </View>
-      <Text className="text-xs mb-5" style={{ color: c.textFaint }}>Step 2 of 3 - External Guarantors</Text>
+    <DeepSpaceBackground>
+      <ScrollView
+        className="flex-1"
+        contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 40, paddingTop: insets.top }}
+      >
+        <View className="flex-row items-center mb-6">
+          <TouchableOpacity onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Go back" className="mr-3">
+            <Text className="text-lg" style={{ color: c.textMuted }}>←</Text>
+          </TouchableOpacity>
+          <View>
+            <Text className="text-xl font-bold" style={{ color: c.text }}>Apply for loan</Text>
+            <Text className="text-[10px] font-bold uppercase tracking-wider" style={{ color: c.textFaint }}>Step 2 of 3 - Guarantors</Text>
+          </View>
+        </View>
+
+        <View className="flex-row gap-2 mb-6">
+          <View className="flex-1 h-1 rounded-full bg-violet-500" />
+          <View className="flex-1 h-1 rounded-full bg-violet-500" />
+          <View className="flex-1 h-1 rounded-full" style={{ backgroundColor: c.border }} />
+        </View>
 
       <Text className="text-sm font-semibold mb-2" style={{ color: c.text }}>Add External Guarantor</Text>
       <Text className="text-xs leading-5 mb-5" style={{ color: c.textMuted }}>
@@ -191,6 +207,7 @@ export default function ExternalGuarantorsScreen() {
       >
         <Text className="text-violet-600 text-xs font-semibold">Continue to Review →</Text>
       </TouchableOpacity>
-    </ScrollView>
+      </ScrollView>
+    </DeepSpaceBackground>
   )
 }

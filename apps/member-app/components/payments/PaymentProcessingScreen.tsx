@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
-import { View, Text, ActivityIndicator, TouchableOpacity, TextInput } from 'react-native'
+import { View, Text, ActivityIndicator, TouchableOpacity, TextInput, ScrollView } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { usePaymentStatus } from '../../hooks/usePayment'
+import { DeepSpaceBackground } from '../DeepSpaceBackground'
 import { useTheme } from '../../theme/ThemeProvider'
 import type { ThemeColors } from '../../theme/tokens'
 import { hapticError } from '../../lib/haptics'
@@ -35,6 +37,7 @@ export default function PaymentProcessingScreen({
   onCancel,
 }: PaymentProcessingScreenProps) {
   const { colors: c } = useTheme()
+  const insets = useSafeAreaInsets()
   const { data: status, isLoading } = usePaymentStatus(checkoutRequestId ?? '')
   const [pollCount, setPollCount] = useState(0)
   const [hasStartedPolling, setHasStartedPolling] = useState(false)
@@ -84,7 +87,17 @@ export default function PaymentProcessingScreen({
   const isConfirming = !hasStartedPolling
 
   return (
-    <View style={{ flex: 1, backgroundColor: c.bg, justifyContent: 'center', alignItems: 'center', padding: 24 }}>
+    <DeepSpaceBackground>
+      <ScrollView
+        contentContainerStyle={{
+          flexGrow: 1,
+          justifyContent: 'center',
+          alignItems: 'center',
+          padding: 24,
+          paddingTop: insets.top + 24,
+          paddingBottom: insets.bottom + 24,
+        }}
+      >
       {/* M-Pesa icon */}
       <View
         style={{
@@ -216,7 +229,8 @@ export default function PaymentProcessingScreen({
           </Text>
         </>
       )}
-    </View>
+      </ScrollView>
+    </DeepSpaceBackground>
   )
 }
 

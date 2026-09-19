@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { ActivityIndicator, Alert, Text, TextInput, TouchableOpacity, View } from 'react-native'
+import { ActivityIndicator, Alert, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native'
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller'
 import { router, useLocalSearchParams } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -211,7 +211,10 @@ export default function PayScreen() {
   if (methodStep === 'bank') {
     return (
       <DeepSpaceBackground>
-        <View style={{ flex: 1, padding: 20, paddingTop: insets.top }}>
+        <ScrollView
+          className="flex-1"
+          contentContainerStyle={{ padding: 20, paddingTop: insets.top, paddingBottom: insets.bottom + 20 }}
+        >
           <Text style={{ color: c.text, fontSize: 22, fontWeight: '700', marginBottom: 6 }}>Bank transfer</Text>
           <Text style={{ color: c.textMuted, fontSize: 13, lineHeight: 20, marginBottom: 24 }}>
             Use your SACCO bank instructions to complete this payment. The app will reflect the payment after the SACCO posts it.
@@ -228,7 +231,7 @@ export default function PayScreen() {
           >
             <Text style={{ color: '#fff', fontSize: 14, fontWeight: '700' }}>Back to methods</Text>
           </TouchableOpacity>
-        </View>
+        </ScrollView>
       </DeepSpaceBackground>
     )
   }
