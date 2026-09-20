@@ -13,6 +13,12 @@ import {
   useUpdateSavingsType,
   useDeleteSavingsType,
 } from '../../hooks/useSavingsTypes'
+import {
+  useLoanTypesList,
+  useCreateLoanType,
+  useUpdateLoanType,
+  useDeleteLoanType,
+} from '../../hooks/useLoanTypes'
 
 // FILE is intentionally excluded: the backend rejects creating a FILE-type
 // field outright (there's no upload path for a custom-field answer to ever
@@ -220,6 +226,261 @@ function SavingsTypesCard() {
             />
             Allow multiple accounts per member
           </label>
+        </div>
+
+        {formError && <p className="text-[11px] text-red-600 mt-2">{formError}</p>}
+
+        <div className="flex items-center gap-2 mt-3">
+          <button
+            onClick={handleSubmit}
+            disabled={busy}
+            className="px-5 py-2 rounded-lg border-none bg-violet-600 text-white text-sm font-semibold cursor-pointer hover:bg-violet-700 transition-colors disabled:opacity-60"
+          >
+            {busy ? 'Saving…' : editingId ? 'Save changes' : 'Add product'}
+          </button>
+          {editingId && (
+            <button onClick={reset} className="text-[11px] text-ink-muted hover:text-ink">
+              Cancel
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+const EMPTY_LT = {
+  name: '',
+  description: '',
+  interest_rate: '',
+  max_term_months: '',
+  min_amount: '',
+  max_amount: '',
+  requires_guarantors: false,
+  min_guarantors: '',
+  is_active: true,
+}
+
+function LoanTypesCard() {
+  const { user } = useAuthStore()
+  const saccoId = user?.sacco_id ?? undefined
+  const { data: types, isLoading, error } = useLoanTypesList(saccoId)
+  const create = useCreateLoanType()
+  const update = useUpdateLoanType()
+  const remove = useDeleteLoanType()
+
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [form, setForm] = useState({ ...EMPTY_LT })
+  const [formError, setFormError] = useState<string | null>(null)
+
+  const reset = () => {
+    setEditingId(null)
+    setForm({ ...EMPTY_LT })
+    setFormError(null)
+  }
+
+  const startEdit = (t: {
+    id: string
+    name: string
+    description: string
+    interest_rate: number
+    max_term_months: number
+    min_amount: number
+    max_amount: number
+    requires_guarantors: boolean
+    min_guarantors: number
+    is_active: boolean
+  }) => {
+    setEditingId(t.id)
+    setFormError(null)
+    setForm({
+      name: t.name,
+      description: t.description,
+      interest_rate: String(t.interest_rate ?? ''),
+      max_term_months: String(t.max_term_months ?? ''),
+      min_amount: String(t.min_amount ?? ''),
+      max_amount: String(t.max_amount ?? ''),
+      requires_guarantors: t.requires_guarantors,
+      min_guarantors: String(t.min_guarantors ?? ''),
+      is_active: t.is_active,
+    })
+  }
+
+  const handleSubmit = () => {
+    setFormError(null)
+    if (!form.name.trim()) {
+      setFormError('Name is required.')
+      return
+    }
+    const payload = {
+      name: form.name.trim(),
+      description: form.description.trim(),
+      interest_rate: Number(form.interest_rate || 0),
+      max_term_months: Number(form.max_term_months || 0),
+      min_amount: Number(form.min_amount || 0),
+      max_amount: Number(form.max_amount || 0),
+      requires_guarantors: form.requires_guarantors,
+      min_guarantors: form.requires_guarantors ? Number(form.min_guarantors || 1) : 0,
+      is_active: form.is_active,
+    }
+    const onError = (err: any) => setFormError(err?.message || 'Save failed.')
+    if (editingId) {
+      update.mutate({ id: editingId, data: payload }, { onSuccess: reset, onError })
+    } else {
+      create.mutate(payload, { onSuccess: reset, onError })
+    }
+  }
+
+  const busy = create.isPending || update.isPending
+
+  return (
+    <div className="bg-white border border-[#e5ede9] rounded-[10px] p-5 mt-5">
+      <div className="font-semibold text-sm text-ink mb-1 border-b border-surface-3 pb-3">Loan products</div>
+      <p className="text-xs text-ink-muted mb-4">
+        The loan products members can apply for in this SACCO, with their interest rate, amount
+        range, and term. This is what powers the loan-apply screen in the member app — a SACCO
+        with none defined here has nothing for members to apply for.
+      </p>
+
+      {isLoading ? (
+        <div className="text-sm text-ink-muted py-2">Loading loan products…</div>
+      ) : error ? (
+        <div className="text-sm text-red-600 py-2">
+          Failed to load loan products{(error as { status?: number })?.status === 403 ? ' (SACCO-admin role required).' : '.'}
+        </div>
+      ) : (types ?? []).length === 0 ? (
+        <div className="text-sm text-ink-muted py-2">No loan products defined.</div>
+      ) : (
+        <div className="space-y-2 mb-4">
+          {(types ?? []).map(t => (
+            <div key={t.id} className="flex items-center justify-between px-3 py-2 bg-surface-2 rounded-lg">
+              <div>
+                <span className="text-sm font-medium text-ink">{t.name}</span>
+                {!t.is_active && <span className="ml-2 text-[10px] text-ink-faint">inactive</span>}
+                {t.requires_guarantors && (
+                  <span className="ml-1.5 text-[10px] text-violet-700">{t.min_guarantors} guarantor(s)</span>
+                )}
+                <span className="ml-2 text-[10px] text-ink-faint">
+                  {t.interest_rate}% p.a. · KES {Number(t.min_amount).toLocaleString()}–{Number(t.max_amount).toLocaleString()} · up to {t.max_term_months} mo
+                </span>
+                {t.description && <div className="text-[10px] text-ink-faint mt-0.5">{t.description}</div>}
+              </div>
+              <div className="flex items-center gap-3 shrink-0">
+                <button
+                  onClick={() => update.mutate({ id: t.id, data: { is_active: !t.is_active } })}
+                  disabled={update.isPending}
+                  className="text-[11px] text-ink-muted hover:text-ink font-medium disabled:opacity-50"
+                >
+                  {t.is_active ? 'Deactivate' : 'Activate'}
+                </button>
+                <button
+                  onClick={() => startEdit(t)}
+                  className="text-[11px] text-violet-700 hover:text-violet-800 font-medium"
+                >
+                  Edit
+                </button>
+                <button
+                  onClick={() => remove.mutate(t.id)}
+                  disabled={remove.isPending}
+                  className="text-[11px] text-red-600 hover:text-red-700 font-medium disabled:opacity-50"
+                >
+                  Remove
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="border-t border-surface-3 pt-4">
+        <div className="text-xs font-semibold text-ink mb-2">
+          {editingId ? 'Edit loan product' : 'Add a loan product'}
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="text-xs text-ink-muted mb-1 block">Name</label>
+            <input
+              className="w-full p-2 border border-[#e5ede9] rounded-lg text-sm focus:ring-2 focus:ring-violet-500 focus:outline-none"
+              value={form.name}
+              onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
+              placeholder="e.g. Development Loan"
+            />
+          </div>
+          <div>
+            <label className="text-xs text-ink-muted mb-1 block">Description</label>
+            <input
+              className="w-full p-2 border border-[#e5ede9] rounded-lg text-sm focus:ring-2 focus:ring-violet-500 focus:outline-none"
+              value={form.description}
+              onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
+              placeholder="Optional"
+            />
+          </div>
+          <div>
+            <label className="text-xs text-ink-muted mb-1 block">Interest rate (% p.a.)</label>
+            <input
+              type="number"
+              className="w-full p-2 border border-[#e5ede9] rounded-lg text-sm focus:ring-2 focus:ring-violet-500 focus:outline-none"
+              value={form.interest_rate}
+              onChange={e => setForm(p => ({ ...p, interest_rate: e.target.value }))}
+            />
+          </div>
+          <div>
+            <label className="text-xs text-ink-muted mb-1 block">Max term (months)</label>
+            <input
+              type="number"
+              className="w-full p-2 border border-[#e5ede9] rounded-lg text-sm focus:ring-2 focus:ring-violet-500 focus:outline-none"
+              value={form.max_term_months}
+              onChange={e => setForm(p => ({ ...p, max_term_months: e.target.value }))}
+            />
+          </div>
+          <div>
+            <label className="text-xs text-ink-muted mb-1 block">Minimum amount (KES)</label>
+            <input
+              type="number"
+              className="w-full p-2 border border-[#e5ede9] rounded-lg text-sm focus:ring-2 focus:ring-violet-500 focus:outline-none"
+              value={form.min_amount}
+              onChange={e => setForm(p => ({ ...p, min_amount: e.target.value }))}
+            />
+          </div>
+          <div>
+            <label className="text-xs text-ink-muted mb-1 block">Maximum amount (KES)</label>
+            <input
+              type="number"
+              className="w-full p-2 border border-[#e5ede9] rounded-lg text-sm focus:ring-2 focus:ring-violet-500 focus:outline-none"
+              value={form.max_amount}
+              onChange={e => setForm(p => ({ ...p, max_amount: e.target.value }))}
+            />
+          </div>
+        </div>
+        <div className="flex items-center gap-5 mt-3">
+          <label className="flex items-center gap-1.5 text-xs text-ink-muted">
+            <input
+              type="checkbox"
+              checked={form.is_active}
+              onChange={e => setForm(p => ({ ...p, is_active: e.target.checked }))}
+            />
+            Active
+          </label>
+          <label className="flex items-center gap-1.5 text-xs text-ink-muted">
+            <input
+              type="checkbox"
+              checked={form.requires_guarantors}
+              onChange={e => setForm(p => ({ ...p, requires_guarantors: e.target.checked }))}
+            />
+            Requires guarantors
+          </label>
+          {form.requires_guarantors && (
+            <div className="flex items-center gap-1.5">
+              <label className="text-xs text-ink-muted">Min guarantors</label>
+              <input
+                type="number"
+                min={1}
+                className="w-16 p-1.5 border border-[#e5ede9] rounded-lg text-sm focus:ring-2 focus:ring-violet-500 focus:outline-none"
+                value={form.min_guarantors}
+                onChange={e => setForm(p => ({ ...p, min_guarantors: e.target.value }))}
+              />
+            </div>
+          )}
         </div>
 
         {formError && <p className="text-[11px] text-red-600 mt-2">{formError}</p>}
@@ -536,6 +797,8 @@ export function Settings() {
       </div>
 
       <SavingsTypesCard />
+
+      <LoanTypesCard />
 
       <ThemeSettingsCard />
 

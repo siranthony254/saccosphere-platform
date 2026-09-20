@@ -234,19 +234,16 @@ const normalizeMembership = (membership: any): Membership => {
           ? 'withdrawn'
           : status
 
-  // Extract sacco_id - handle all possible formats
-  let saccoId = membership.sacco_id
-  if (!saccoId && typeof sacco === 'object' && sacco.id) {
-    saccoId = sacco.id
-  }
-  if (!saccoId) {
-    saccoId = membership.id
-  }
-  // Convert to string, handling nested objects
-  if (typeof saccoId === 'object') {
-    saccoId = saccoId.id ?? saccoId.uuid ?? JSON.stringify(saccoId)
-  }
-  const saccoIdStr = String(saccoId ?? '')
+  // MembershipSaccoSerializer now sends a real sacco.id (previously it only
+  // had name/logo, which silently fell back to membership.id here - the
+  // Membership's own id masquerading as the SACCO's id. That broke every
+  // call site needing the real sacco UUID (Contribute, statement downloads,
+  // savings lookups) with no visible error. Left empty rather than
+  // reintroducing a wrong-but-plausible fallback if a caller somehow still
+  // omits it - an honest empty string surfaces as a clear "SACCO loading"
+  // guard instead of a confusing 404 deep in an unrelated request.
+  const saccoId = membership.sacco_id ?? sacco.id ?? ''
+  const saccoIdStr = String(saccoId)
 
   // Handle applied_at - ensure valid datetime format
   let appliedAt = membership.applied_at ?? membership.application_date
@@ -2549,6 +2546,60 @@ export const api = {
 
     deleteSavingsType: (id: string) =>
       apiCall<void>('DELETE', `/services/savings-types/${uuid(id)}/`),
+
+    // LoanTypeViewSet: an authenticated admin of this SACCO gets the full
+    // serializer (real id included) here — see the caller-tier check in
+    // LoanTypeViewSet.get_serializer_class(). `sacco` is read-only, same as
+    // savings types — the backend scopes it from the caller's role.
+    getLoanTypes: async (saccoId: string) => {
+      const items = unwrapResults(
+        await apiCall<any[] | PaginatedResponse<any>>('GET', '/services/loan-types/', undefined, {
+          params: { sacco: saccoId },
+        })
+      )
+      return items.map((item: any) => ({
+        id: String(item.id),
+        name: String(item.name ?? ''),
+        description: item.description ?? '',
+        interest_rate: Number(item.interest_rate ?? 0),
+        max_term_months: Number(item.max_term_months ?? 0),
+        min_amount: Number(item.min_amount ?? 0),
+        max_amount: Number(item.max_amount ?? 0),
+        requires_guarantors: !!item.requires_guarantors,
+        min_guarantors: Number(item.min_guarantors ?? 0),
+        is_active: item.is_active !== false,
+      }))
+    },
+
+    createLoanType: (data: {
+      name: string
+      description?: string
+      interest_rate: number
+      max_term_months: number
+      min_amount: number
+      max_amount: number
+      requires_guarantors?: boolean
+      min_guarantors?: number
+      is_active?: boolean
+    }) => apiCall<any>('POST', '/services/loan-types/', data),
+
+    updateLoanType: (
+      id: string,
+      data: Partial<{
+        name: string
+        description: string
+        interest_rate: number
+        max_term_months: number
+        min_amount: number
+        max_amount: number
+        requires_guarantors: boolean
+        min_guarantors: number
+        is_active: boolean
+      }>,
+    ) => apiCall<any>('PATCH', `/services/loan-types/${uuid(id)}/`, data),
+
+    deleteLoanType: (id: string) =>
+      apiCall<void>('DELETE', `/services/loan-types/${uuid(id)}/`),
 
     // The only path anywhere that creates a Saving row — there is no
     // auto-open-on-approval or member self-service flow. Without this, a
