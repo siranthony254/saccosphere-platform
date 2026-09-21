@@ -13,6 +13,7 @@ import {
   useUpdateSavingsType,
   useDeleteSavingsType,
 } from '../../hooks/useSavingsTypes'
+import { usePaymentConfigSubmissions, useSubmitPaymentConfig } from '../../hooks/usePaymentConfig'
 import {
   useLoanTypesList,
   useCreateLoanType,
@@ -504,6 +505,208 @@ function LoanTypesCard() {
   )
 }
 
+const PAYMENT_STATUS_COPY: Record<string, { label: string; tone: string; help: string }> = {
+  PENDING: {
+    label: 'Awaiting review',
+    tone: 'bg-amber-50 text-amber-700',
+    help: 'Submitted — the SaccoSphere team will verify these details before payments go live.',
+  },
+  VERIFIED: {
+    label: 'Verified',
+    tone: 'bg-blue-50 text-blue-700',
+    help: 'Credentials checked out. Waiting on final approval.',
+  },
+  VERIFICATION_FAILED: {
+    label: 'Verification failed',
+    tone: 'bg-red-50 text-red-700',
+    help: 'The SaccoSphere team is re-checking these details.',
+  },
+  APPROVED: {
+    label: 'Active',
+    tone: 'bg-mint-50 text-mint-700',
+    help: 'Approved — members can pay into this SACCO through M-Pesa.',
+  },
+  REJECTED: {
+    label: 'Rejected',
+    tone: 'bg-red-50 text-red-700',
+    help: 'This submission was rejected. Correct the details below and submit again.',
+  },
+}
+
+const OPEN_PAYMENT_STATUSES = ['PENDING', 'VERIFIED', 'VERIFICATION_FAILED']
+
+function PaymentSetupCard() {
+  const { data: submissions, isLoading, error } = usePaymentConfigSubmissions()
+  const submit = useSubmitPaymentConfig()
+
+  const [shortcodeType, setShortcodeType] = useState<'PAYBILL' | 'TILL_NUMBER'>('PAYBILL')
+  const [shortcode, setShortcode] = useState('')
+  const [passkey, setPasskey] = useState('')
+  const [environment, setEnvironment] = useState<'SANDBOX' | 'LIVE'>('SANDBOX')
+  const [ownApp, setOwnApp] = useState(false)
+  const [consumerKey, setConsumerKey] = useState('')
+  const [consumerSecret, setConsumerSecret] = useState('')
+  const [formError, setFormError] = useState<string | null>(null)
+  const [justSubmitted, setJustSubmitted] = useState(false)
+
+  // Newest first (backend orders by -submitted_at).
+  const latest = (submissions ?? [])[0]
+  const hasOpenSubmission = !!latest && OPEN_PAYMENT_STATUSES.includes(latest.status)
+  const lastApproved = (submissions ?? []).find(s => s.status === 'APPROVED')
+  const statusCopy = latest ? PAYMENT_STATUS_COPY[latest.status] : undefined
+
+  const handleSubmit = () => {
+    setFormError(null)
+    setJustSubmitted(false)
+    if (!/^\d{5,10}$/.test(shortcode.trim())) {
+      setFormError('Enter your paybill or till number — digits only.')
+      return
+    }
+    if (!passkey.trim()) {
+      setFormError('The STK passkey is required.')
+      return
+    }
+    if (ownApp && (!consumerKey.trim() || !consumerSecret.trim())) {
+      setFormError('Enter both the consumer key and consumer secret, or turn off "Use my own Daraja app".')
+      return
+    }
+    submit.mutate(
+      {
+        shortcode_type: shortcodeType,
+        shortcode: shortcode.trim(),
+        stk_passkey: passkey.trim(),
+        environment,
+        ...(ownApp ? { daraja_consumer_key: consumerKey.trim(), daraja_consumer_secret: consumerSecret.trim() } : {}),
+      },
+      {
+        onSuccess: () => {
+          // Secrets are cleared immediately and never shown again.
+          setShortcode('')
+          setPasskey('')
+          setConsumerKey('')
+          setConsumerSecret('')
+          setOwnApp(false)
+          setJustSubmitted(true)
+        },
+        onError: (err: any) => setFormError(err?.message || 'Submission failed.'),
+      },
+    )
+  }
+
+  const inputCls =
+    'w-full p-2 border border-[#e5ede9] rounded-lg text-sm focus:ring-2 focus:ring-violet-500 focus:outline-none'
+
+  return (
+    <div className="bg-white border border-[#e5ede9] rounded-[10px] p-5 mt-5">
+      <div className="font-semibold text-sm text-ink mb-1 border-b border-surface-3 pb-3">Payment setup (M-Pesa)</div>
+      <p className="text-xs text-ink-muted mb-4">
+        Where member contributions and loan repayments are paid. Members' money goes straight into
+        your own paybill or till number — SaccoSphere never holds it. Submitted details are checked by
+        the SaccoSphere team before payments go live.
+      </p>
+
+      {isLoading ? (
+        <div className="text-sm text-ink-muted py-2">Loading payment setup…</div>
+      ) : error ? (
+        <div className="text-sm text-red-600 py-2">Failed to load payment setup.</div>
+      ) : latest && statusCopy ? (
+        <div className="mb-4 rounded-lg bg-surface-2 p-3">
+          <div className="flex items-center justify-between">
+            <div className="text-sm font-medium text-ink">
+              {latest.shortcode_type === 'TILL_NUMBER' ? 'Till' : 'Paybill'} {latest.shortcode}
+              <span className="ml-2 text-[10px] text-ink-faint">{latest.environment === 'LIVE' ? 'Live' : 'Sandbox'}</span>
+            </div>
+            <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${statusCopy.tone}`}>{statusCopy.label}</span>
+          </div>
+          <p className="text-[11px] text-ink-muted mt-1.5">{statusCopy.help}</p>
+          {latest.status === 'REJECTED' && latest.rejection_reason && (
+            <p className="text-[11px] text-red-700 mt-1.5">Reason: {latest.rejection_reason}</p>
+          )}
+          {latest.status !== 'APPROVED' && lastApproved && (
+            <p className="text-[10px] text-ink-faint mt-1.5">
+              Your previously approved setup ({lastApproved.shortcode}) stays live until this one is approved.
+            </p>
+          )}
+        </div>
+      ) : (
+        <div className="text-sm text-ink-muted py-2 mb-2">
+          No payment setup submitted yet — members can't pay through M-Pesa until one is approved.
+        </div>
+      )}
+
+      {justSubmitted && (
+        <p className="text-[11px] text-mint-700 mb-3">Submitted. Your passkey has been sent securely and won't be shown again.</p>
+      )}
+
+      {!isLoading && !hasOpenSubmission && (
+        <div className="border-t border-surface-3 pt-4">
+          <div className="text-xs font-semibold text-ink mb-2">
+            {lastApproved ? 'Update payment details' : 'Submit payment details'}
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs text-ink-muted mb-1 block">Type</label>
+              <select className={`${inputCls} bg-white`} value={shortcodeType} onChange={e => setShortcodeType(e.target.value as 'PAYBILL' | 'TILL_NUMBER')}>
+                <option value="PAYBILL">Paybill number</option>
+                <option value="TILL_NUMBER">Till number</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-xs text-ink-muted mb-1 block">Paybill / till number</label>
+              <input className={inputCls} value={shortcode} onChange={e => setShortcode(e.target.value)} inputMode="numeric" placeholder="e.g. 174379" />
+            </div>
+            <div>
+              <label className="text-xs text-ink-muted mb-1 block">STK passkey</label>
+              <input
+                className={inputCls}
+                type="password"
+                autoComplete="off"
+                value={passkey}
+                onChange={e => setPasskey(e.target.value)}
+                placeholder="From your Safaricom Daraja portal"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-ink-muted mb-1 block">Environment</label>
+              <select className={`${inputCls} bg-white`} value={environment} onChange={e => setEnvironment(e.target.value as 'SANDBOX' | 'LIVE')}>
+                <option value="SANDBOX">Sandbox (testing)</option>
+                <option value="LIVE">Live (real money)</option>
+              </select>
+            </div>
+          </div>
+
+          <label className="flex items-center gap-1.5 text-xs text-ink-muted mt-3">
+            <input type="checkbox" checked={ownApp} onChange={e => setOwnApp(e.target.checked)} />
+            Use my own Daraja app (advanced — otherwise SaccoSphere's shared app is used)
+          </label>
+          {ownApp && (
+            <div className="grid grid-cols-2 gap-3 mt-2">
+              <div>
+                <label className="text-xs text-ink-muted mb-1 block">Consumer key</label>
+                <input className={inputCls} value={consumerKey} onChange={e => setConsumerKey(e.target.value)} autoComplete="off" />
+              </div>
+              <div>
+                <label className="text-xs text-ink-muted mb-1 block">Consumer secret</label>
+                <input className={inputCls} type="password" value={consumerSecret} onChange={e => setConsumerSecret(e.target.value)} autoComplete="off" />
+              </div>
+            </div>
+          )}
+
+          {formError && <p className="text-[11px] text-red-600 mt-2">{formError}</p>}
+
+          <button
+            onClick={handleSubmit}
+            disabled={submit.isPending}
+            className="mt-3 px-5 py-2 rounded-lg border-none bg-violet-600 text-white text-sm font-semibold cursor-pointer hover:bg-violet-700 transition-colors disabled:opacity-60"
+          >
+            {submit.isPending ? 'Submitting…' : 'Submit for review'}
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
 function ThemeSettingsCard() {
   return (
     <div className="bg-white border border-[#e5ede9] rounded-[10px] p-5 mt-5">
@@ -795,6 +998,8 @@ export function Settings() {
           )}
         </div>
       </div>
+
+      <PaymentSetupCard />
 
       <SavingsTypesCard />
 

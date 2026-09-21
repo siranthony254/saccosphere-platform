@@ -511,6 +511,24 @@ const normalizeSaving = (saving: any) => ({
 })
 
 
+export type PaymentConfigStatus = 'PENDING' | 'VERIFIED' | 'VERIFICATION_FAILED' | 'APPROVED' | 'REJECTED'
+
+const normalizePaymentConfigSubmission = (s: any) => ({
+  id: String(s.id),
+  sacco_id: String(s.sacco),
+  shortcode: String(s.shortcode ?? ''),
+  shortcode_type: String(s.shortcode_type ?? '') as 'PAYBILL' | 'TILL_NUMBER',
+  environment: String(s.environment ?? '') as 'SANDBOX' | 'LIVE',
+  has_own_daraja_app: Boolean(s.has_own_daraja_app),
+  status: String(s.status ?? 'PENDING') as PaymentConfigStatus,
+  verification_result: String(s.verification_result ?? ''),
+  submitted_by_email: (s.submitted_by_email ?? null) as string | null,
+  submitted_at: (s.submitted_at ?? null) as string | null,
+  reviewed_by_email: (s.reviewed_by_email ?? null) as string | null,
+  reviewed_at: (s.reviewed_at ?? null) as string | null,
+  rejection_reason: String(s.rejection_reason ?? ''),
+})
+
 export interface PaginatedResponse<T> {
   results: T[]
   count: number
@@ -2278,6 +2296,38 @@ export const api = {
     },
 
     // KYC management
+    // Self-service payment setup. A SACCO admin only ever sees their own
+    // SACCO's submissions; secrets (passkey, consumer secret) are write-only —
+    // the backend never returns them, so neither does this.
+    getPaymentConfigSubmissions: async () => {
+      const response = await apiCall<any>('GET', '/accounts/payment-config/submissions/')
+      return unwrapResults(response).map(normalizePaymentConfigSubmission)
+    },
+
+    submitPaymentConfig: async (data: {
+      shortcode_type: 'PAYBILL' | 'TILL_NUMBER'
+      shortcode: string
+      stk_passkey: string
+      environment: 'SANDBOX' | 'LIVE'
+      daraja_consumer_key?: string
+      daraja_consumer_secret?: string
+    }) =>
+      normalizePaymentConfigSubmission(
+        await apiCall<any>('POST', '/accounts/payment-config/submissions/', {
+          shortcode_type: data.shortcode_type,
+          shortcode: data.shortcode,
+          stk_passkey: data.stk_passkey,
+          environment: data.environment,
+          // Both or neither: the backend rejects a lone key or secret.
+          ...(data.daraja_consumer_key && data.daraja_consumer_secret
+            ? {
+                daraja_consumer_key: data.daraja_consumer_key,
+                daraja_consumer_secret: data.daraja_consumer_secret,
+              }
+            : {}),
+        }),
+      ),
+
     getKycQueue: async (params?: { status?: string }) => {
       const response = await apiCall<any>('GET', '/management/kyc/queue/', undefined, { params })
       return Array.isArray(response) ? response : response.results ?? []
@@ -3028,6 +3078,29 @@ export const api = {
       const response = await apiCall<any>('GET', '/management/kyc/queue/')
       return unwrapResults(response)
     },
+
+    // Payment-config onboarding review (accounts/payment_config_views.py).
+    // Super admin sees every SACCO's submissions; verify/approve/reject are
+    // super-admin-only and never touch a SACCO's live config until approve.
+    getPaymentConfigSubmissions: async (params?: { status?: string }) => {
+      const response = await apiCall<any>('GET', '/accounts/payment-config/submissions/', undefined, { params })
+      return unwrapResults(response).map(normalizePaymentConfigSubmission)
+    },
+
+    verifyPaymentConfigSubmission: async (id: string) =>
+      normalizePaymentConfigSubmission(
+        await apiCall<any>('POST', `/accounts/payment-config/submissions/${uuid(id)}/verify/`),
+      ),
+
+    approvePaymentConfigSubmission: async (id: string) =>
+      normalizePaymentConfigSubmission(
+        await apiCall<any>('POST', `/accounts/payment-config/submissions/${uuid(id)}/approve/`),
+      ),
+
+    rejectPaymentConfigSubmission: async (id: string, reason: string) =>
+      normalizePaymentConfigSubmission(
+        await apiCall<any>('POST', `/accounts/payment-config/submissions/${uuid(id)}/reject/`, { reason }),
+      ),
 
     // NOTE: no AML / transaction-monitoring API exists. ComplianceFlag is
     // exposed only as the read-only /management/superadmin/alerts/ list
