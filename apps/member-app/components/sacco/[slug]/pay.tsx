@@ -110,7 +110,13 @@ export default function PayScreen() {
             transaction: response.transaction_id ?? response.merchant_request_id ?? response.checkout_request_id,
           })
         },
-        onError: (err) => Alert.alert('Payment failed', err.message),
+        onError: (err) => {
+          const correlationId = (err as { correlationId?: string })?.correlationId
+          Alert.alert(
+            'Payment failed',
+            correlationId ? `${err.message}\n\nReference: ${correlationId}` : err.message
+          )
+        },
       }
     )
   }

@@ -34,3 +34,21 @@ export function useDownloadLedgerPDF() {
       api.saccoAdmin.downloadLedgerStatementPDF(params),
   })
 }
+
+// Double-entry general ledger (P03) — separate system from the ledger
+// entries/statement above.
+export function useGLTrialBalance(asOf?: string) {
+  return useQuery({
+    queryKey: ['gl-trial-balance', asOf],
+    queryFn: () => api.saccoAdmin.getGLTrialBalance(asOf),
+    staleTime: 15_000,
+  })
+}
+
+export function useGLReconciliation() {
+  return useQuery({
+    queryKey: ['gl-reconciliation'],
+    queryFn: () => api.saccoAdmin.getGLReconciliation(),
+    staleTime: 15_000,
+  })
+}

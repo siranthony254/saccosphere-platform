@@ -66,7 +66,10 @@ export default function WithdrawScreen() {
             { text: 'OK', onPress: () => router.back() },
           ])
         },
-        onError: (e: any) => Alert.alert('Withdrawal failed', e?.message ?? 'Please try again.'),
+        onError: (e: any) => {
+          const message = e?.message ?? 'Please try again.'
+          Alert.alert('Withdrawal failed', e?.correlationId ? `${message}\n\nReference: ${e.correlationId}` : message)
+        },
       }
     )
   }

@@ -5,6 +5,8 @@ import {
   useLedgerBalance,
   useLedgerStatement,
   useDownloadLedgerPDF,
+  useGLTrialBalance,
+  useGLReconciliation,
 } from '../../hooks/useLedger'
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -35,7 +37,7 @@ export function LedgerManagement() {
   const { data: sacco } = useSacco()
   const saccoId = sacco?.id || ''
 
-  const [activeTab, setActiveTab] = useState<'entries' | 'statement' | 'chart_of_accounts' | 'adjustment'>('entries')
+  const [activeTab, setActiveTab] = useState<'entries' | 'statement' | 'trial_balance' | 'adjustment'>('entries')
 
   // Filters for entries
   const [fromDate, setFromDate] = useState(() => {
@@ -60,6 +62,8 @@ export function LedgerManagement() {
     to_date: toDate,
   })
   const downloadPDF = useDownloadLedgerPDF()
+  const { data: trialBalance, isLoading: isTrialBalanceLoading } = useGLTrialBalance()
+  const { data: reconciliation, isLoading: isReconciliationLoading } = useGLReconciliation()
 
   // Adjustment form state
   const [adjCategory, setAdjCategory] = useState('ADJUSTMENT')
@@ -189,14 +193,14 @@ export function LedgerManagement() {
           Financial Statement & PDF Export
         </button>
         <button
-          onClick={() => setActiveTab('chart_of_accounts')}
+          onClick={() => setActiveTab('trial_balance')}
           className={`pb-2.5 px-1 border-b-2 transition-colors cursor-pointer ${
-            activeTab === 'chart_of_accounts'
+            activeTab === 'trial_balance'
               ? 'border-violet-600 text-violet-700 font-semibold'
               : 'border-transparent text-ink-muted hover:text-ink'
           }`}
         >
-          Chart of Accounts Setup
+          Trial Balance & Reconciliation
         </button>
         <button
           onClick={() => setActiveTab('adjustment')}
@@ -422,59 +426,139 @@ export function LedgerManagement() {
         </div>
       )}
 
-      {/* TAB 3: CHART OF ACCOUNTS SETUP */}
-      {activeTab === 'chart_of_accounts' && (
-        <div className="bg-white border border-[#e5ede9] rounded-[10px] p-5 space-y-4 shadow-sm">
-          <div>
-            <div className="font-semibold text-base text-ink">Chart of Accounts Mapping</div>
-            <div className="text-xs text-ink-muted">Standard SACCO Double-Entry Account Mapping Schema.</div>
+      {/* TAB 3: TRIAL BALANCE & RECONCILIATION (real double-entry GL data) */}
+      {activeTab === 'trial_balance' && (
+        <div className="space-y-5">
+          <div className="bg-white border border-[#e5ede9] rounded-[10px] p-5 space-y-4 shadow-sm">
+            <div className="flex justify-between items-center">
+              <div>
+                <div className="font-semibold text-base text-ink">Trial Balance</div>
+                <div className="text-xs text-ink-muted">
+                  Every GL account with its debit/credit totals{trialBalance?.as_of ? ` as of ${trialBalance.as_of}` : ''}.
+                </div>
+              </div>
+              {trialBalance && (
+                <span
+                  className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                    trialBalance.balanced ? 'bg-mint-50 text-mint-700' : 'bg-red-50 text-red-700'
+                  }`}
+                >
+                  {trialBalance.balanced ? 'Balanced' : 'Out of balance'}
+                </span>
+              )}
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm border-collapse">
+                <thead>
+                  <tr className="border-b border-[#e5ede9] text-xs font-semibold text-ink-muted uppercase tracking-wider bg-surface-2">
+                    <th className="py-2.5 px-3">Code</th>
+                    <th className="py-2.5 px-3">Account</th>
+                    <th className="py-2.5 px-3">Type</th>
+                    <th className="py-2.5 px-3 text-right">Debit</th>
+                    <th className="py-2.5 px-3 text-right">Credit</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#e5ede9]">
+                  {isTrialBalanceLoading ? (
+                    <tr>
+                      <td colSpan={5} className="py-8 text-center text-ink-muted text-sm">
+                        Loading trial balance...
+                      </td>
+                    </tr>
+                  ) : (trialBalance?.accounts ?? []).length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="py-8 text-center text-ink-muted text-sm">
+                        No GL accounts found for this SACCO yet.
+                      </td>
+                    </tr>
+                  ) : (
+                    (trialBalance?.accounts ?? []).map((a: { code: string; name: string; type: string; debit: number; credit: number }) => (
+                      <tr key={a.code} className="hover:bg-surface-1 transition-colors">
+                        <td className="py-2.5 px-3 font-mono text-xs text-ink-soft">{a.code}</td>
+                        <td className="py-2.5 px-3 text-ink text-xs">{a.name}</td>
+                        <td className="py-2.5 px-3 text-xs text-ink-muted uppercase">{a.type}</td>
+                        <td className="py-2.5 px-3 text-right font-semibold text-amber-700 text-xs">
+                          {a.debit ? formatCurrency(a.debit) : '—'}
+                        </td>
+                        <td className="py-2.5 px-3 text-right font-semibold text-mint-700 text-xs">
+                          {a.credit ? formatCurrency(a.credit) : '—'}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+                {trialBalance && (trialBalance.accounts ?? []).length > 0 && (
+                  <tfoot>
+                    <tr className="border-t-2 border-[#e5ede9] font-bold text-xs">
+                      <td colSpan={3} className="py-2.5 px-3 text-ink">Total</td>
+                      <td className="py-2.5 px-3 text-right text-amber-700">{formatCurrency(trialBalance.total_debit)}</td>
+                      <td className="py-2.5 px-3 text-right text-mint-700">{formatCurrency(trialBalance.total_credit)}</td>
+                    </tr>
+                  </tfoot>
+                )}
+              </table>
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="p-4 rounded-lg bg-surface-2 border border-[#e5ede9]">
-              <div className="font-bold text-xs uppercase text-violet-700 tracking-wider mb-2">
-                1000 — Assets Accounts
+          <div className="bg-white border border-[#e5ede9] rounded-[10px] p-5 space-y-4 shadow-sm">
+            <div className="flex justify-between items-center">
+              <div>
+                <div className="font-semibold text-base text-ink">Control Account Reconciliation</div>
+                <div className="text-xs text-ink-muted">
+                  Compares each control account's GL balance against its independently computed sub-ledger figure.
+                </div>
               </div>
-              <ul className="text-xs space-y-1 text-ink font-mono">
-                <li>• 1010 — M-Pesa B2C/C2B Settlement Account (Asset)</li>
-                <li>• 1020 — Commercial Bank Reserve Account (Asset)</li>
-                <li>• 1100 — Loans Portfolio Control Account (Asset)</li>
-                <li>• 1200 — Interest Receivable Account (Asset)</li>
-              </ul>
+              {reconciliation && (
+                <span
+                  className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                    reconciliation.all_reconciled ? 'bg-mint-50 text-mint-700' : 'bg-amber-50 text-amber-700'
+                  }`}
+                >
+                  {reconciliation.all_reconciled ? 'All reconciled' : 'Discrepancy found'}
+                </span>
+              )}
             </div>
 
-            <div className="p-4 rounded-lg bg-surface-2 border border-[#e5ede9]">
-              <div className="font-bold text-xs uppercase text-emerald-700 tracking-wider mb-2">
-                2000 — Liabilities Accounts
-              </div>
-              <ul className="text-xs space-y-1 text-ink font-mono">
-                <li>• 2010 — Member Shares & Savings Control Account (Liability)</li>
-                <li>• 2020 — External Guarantor Frozen Hold Balances (Liability)</li>
-                <li>• 2030 — Unallocated Deposits / Suspense Account (Liability)</li>
-                <li>• 2040 — Declared Dividend Payable Account (Liability)</li>
-              </ul>
-            </div>
-
-            <div className="p-4 rounded-lg bg-surface-2 border border-[#e5ede9]">
-              <div className="font-bold text-xs uppercase text-blue-700 tracking-wider mb-2">
-                3000 — Income / Revenue Accounts
-              </div>
-              <ul className="text-xs space-y-1 text-ink font-mono">
-                <li>• 3010 — Loan Interest Income Account (Revenue)</li>
-                <li>• 3020 — Membership Registration Fee Income (Revenue)</li>
-                <li>• 3030 — Penalty & Default Fine Revenue (Revenue)</li>
-              </ul>
-            </div>
-
-            <div className="p-4 rounded-lg bg-surface-2 border border-[#e5ede9]">
-              <div className="font-bold text-xs uppercase text-amber-700 tracking-wider mb-2">
-                4000 — Expense & Equity Accounts
-              </div>
-              <ul className="text-xs space-y-1 text-ink font-mono">
-                <li>• 4010 — Provision for Bad Debts / NPL Expense (Expense)</li>
-                <li>• 4020 — Platform Operating & SMS Gateway Fees (Expense)</li>
-                <li>• 5000 — SACCO Institutional Reserves & Capital (Equity)</li>
-              </ul>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm border-collapse">
+                <thead>
+                  <tr className="border-b border-[#e5ede9] text-xs font-semibold text-ink-muted uppercase tracking-wider bg-surface-2">
+                    <th className="py-2.5 px-3">Account</th>
+                    <th className="py-2.5 px-3 text-right">GL Balance</th>
+                    <th className="py-2.5 px-3 text-right">Sub-Ledger Balance</th>
+                    <th className="py-2.5 px-3 text-right">Difference</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#e5ede9]">
+                  {isReconciliationLoading ? (
+                    <tr>
+                      <td colSpan={4} className="py-8 text-center text-ink-muted text-sm">
+                        Loading reconciliation...
+                      </td>
+                    </tr>
+                  ) : (reconciliation?.results ?? []).length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="py-8 text-center text-ink-muted text-sm">
+                        No control accounts configured for this SACCO yet.
+                      </td>
+                    </tr>
+                  ) : (
+                    (reconciliation?.results ?? []).map((row: { account_code: string; account_name: string; gl_balance: number; sub_ledger_balance: number; difference: number }) => (
+                      <tr key={row.account_code} className="hover:bg-surface-1 transition-colors">
+                        <td className="py-2.5 px-3 text-ink text-xs">
+                          <span className="font-mono text-ink-soft">{row.account_code}</span> — {row.account_name}
+                        </td>
+                        <td className="py-2.5 px-3 text-right text-xs text-ink">{formatCurrency(row.gl_balance)}</td>
+                        <td className="py-2.5 px-3 text-right text-xs text-ink">{formatCurrency(row.sub_ledger_balance)}</td>
+                        <td className={`py-2.5 px-3 text-right text-xs font-semibold ${row.difference === 0 ? 'text-mint-700' : 'text-red-700'}`}>
+                          {formatCurrency(row.difference)}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
         </div>

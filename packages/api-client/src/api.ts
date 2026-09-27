@@ -1441,7 +1441,7 @@ export const api = {
       }
     },
 
-    apply: async (data: LoanApplicationInput) => {
+    apply: async (data: LoanApplicationInput, idempotencyKey?: string) => {
       const membership = await api.member.getMembership(data.membership_id).catch(() => null)
       const amount = Number(data.amount_requested)
       const termMonths = Number(data.period_months)
@@ -1456,7 +1456,7 @@ export const api = {
         amount,
         term_months: termMonths,
         application_notes: data.purpose || '',
-      })
+      }, { idempotent: true, idempotencyKey })
 
       const loans = await api.loans
         .list(membership?.sacco_id ? { sacco: membership.sacco_id } : undefined)
@@ -1489,7 +1489,12 @@ export const api = {
       })
     },
 
-    repay: (id: string, amount: number, data: { sacco_id: string; phone_number: string; instalment_number?: number }) =>
+    repay: (
+      id: string,
+      amount: number,
+      data: { sacco_id: string; phone_number: string; instalment_number?: number },
+      idempotencyKey?: string
+    ) =>
       apiCall<any>('POST', '/payments/mpesa/stk-push/', {
         loan_id: uuid(id),
         sacco_id: uuid(data.sacco_id),
@@ -1499,6 +1504,7 @@ export const api = {
         instalment_number: data?.instalment_number ?? 1,
       }, {
         idempotent: true,
+        idempotencyKey,
       }).then(normalizeStkPushResponse),
 
     compare: async (params: { amount: number; months: number }) => {
@@ -1606,9 +1612,10 @@ export const api = {
   // ─── PAYMENTS ──────────────────────────────────────────────────────────────
 
   payments: {
-    stkPush: (data: STKPushInput) =>
+    stkPush: (data: STKPushInput, idempotencyKey?: string) =>
       apiCall<any>('POST', '/payments/mpesa/stk-push/', parseInput(STKPushInputSchema, data), {
         idempotent: true,
+        idempotencyKey,
       }).then(normalizeStkPushResponse),
 
     // STKStatusView returns {checkout_request_id, merchant_request_id, status,
@@ -1687,13 +1694,16 @@ export const api = {
     },
 
     // Member-initiated M-Pesa B2C withdrawal from a savings account.
-    withdrawSavings: (data: { sacco_id: string; saving_id: string; amount: number; phone_number: string }) =>
+    withdrawSavings: (
+      data: { sacco_id: string; saving_id: string; amount: number; phone_number: string },
+      idempotencyKey?: string
+    ) =>
       apiCall<any>('POST', '/payments/mpesa/b2c/withdraw/', {
         sacco_id: uuid(data.sacco_id),
         saving_id: uuid(data.saving_id),
         amount: data.amount,
         phone_number: data.phone_number,
-      }, { idempotent: true }),
+      }, { idempotent: true, idempotencyKey }),
   },
 
   // ─── KYC ───────────────────────────────────────────────────────────────────
@@ -2817,6 +2827,43 @@ export const api = {
       return {
         blob: response.data as Blob,
         filename: filenameMatch?.[1] ?? `ledger_statement_${params.from_date}_${params.to_date}.pdf`,
+      }
+    },
+
+    // Double-entry GL (P03) — separate from the simple ledger above. Sacco
+    // context comes from the caller's own single SACCO_ADMIN role (no
+    // X-Sacco-ID header — see the interceptor's note on why that header is
+    // never sent), which SaccoScopedMixin accepts for a single-SACCO admin.
+    getGLTrialBalance: async (asOf?: string) => {
+      const r = await apiCall<any>('GET', '/ledger/gl/trial-balance/', undefined, {
+        params: asOf ? { as_of: asOf } : undefined,
+      })
+      return {
+        as_of: String(r.as_of ?? ''),
+        accounts: (r.accounts ?? []).map((a: any) => ({
+          code: String(a.code ?? ''),
+          name: String(a.name ?? ''),
+          type: String(a.type ?? ''),
+          debit: Number(a.debit ?? 0),
+          credit: Number(a.credit ?? 0),
+        })),
+        total_debit: Number(r.total_debit ?? 0),
+        total_credit: Number(r.total_credit ?? 0),
+        balanced: Boolean(r.balanced),
+      }
+    },
+
+    getGLReconciliation: async () => {
+      const r = await apiCall<any>('GET', '/ledger/gl/reconciliation/')
+      return {
+        results: (r.results ?? []).map((row: any) => ({
+          account_code: String(row.account_code ?? ''),
+          account_name: String(row.account_name ?? ''),
+          gl_balance: Number(row.gl_balance ?? 0),
+          sub_ledger_balance: Number(row.sub_ledger_balance ?? 0),
+          difference: Number(row.difference ?? 0),
+        })),
+        all_reconciled: Boolean(r.all_reconciled),
       }
     },
   },

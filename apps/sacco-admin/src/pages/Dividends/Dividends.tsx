@@ -13,9 +13,12 @@ import type { DividendDeclaration, DividendPayout } from '@saccosphere/schemas'
 
 const statusStyles: Record<string, { bg: string; color: string }> = {
   DRAFT: { bg: 'bg-amber-50', color: 'text-amber-700' },
+  CALCULATING: { bg: 'bg-blue-50', color: 'text-blue-700' },
   CALCULATED: { bg: 'bg-blue-50', color: 'text-blue-700' },
   APPROVED: { bg: 'bg-violet-50', color: 'text-violet-700' },
+  DISBURSING: { bg: 'bg-violet-50', color: 'text-violet-700' },
   DISBURSED: { bg: 'bg-mint-50', color: 'text-mint-700' },
+  FAILED: { bg: 'bg-red-50', color: 'text-red-700' },
 }
 
 export function Dividends() {
@@ -35,9 +38,50 @@ export function Dividends() {
   const { data: payouts, isLoading: isPayoutsLoading } = useDividendPayouts()
 
   const { mutate: createDeclaration, isPending: isCreating } = useCreateDividendDeclaration()
-  const { mutate: calculateDividend } = useCalculateDividend()
-  const { mutate: approveDividend } = useApproveDividend()
-  const { mutate: disburseDividend } = useDisburseDividend()
+  const calculateMutation = useCalculateDividend()
+  const approveMutation = useApproveDividend()
+  const disburseMutation = useDisburseDividend()
+
+  // calculate/disburse now queue a background job (202) instead of
+  // completing inline, so "in progress" has to come from the declaration's
+  // own status (kept fresh by useDividendDeclarations' polling), not just
+  // this mutation's isPending — the 202 response lands almost instantly,
+  // well before the job actually finishes.
+  const handleCalculate = (id: string) => {
+    calculateMutation.mutate(id, {
+      onError: (err: any) => {
+        if (err?.status === 409) {
+          alert('A calculation is already running for this declaration — wait for it to finish.')
+        } else {
+          alert(err?.message || 'Failed to start dividend calculation.')
+        }
+      },
+    })
+  }
+
+  const handleApprove = (id: string) => {
+    approveMutation.mutate(id, {
+      onError: (err: any) => {
+        if (err?.status === 403) {
+          alert(err?.message || 'This declaration needs to be approved by a different admin than whoever created it.')
+        } else {
+          alert(err?.message || 'Failed to approve dividend declaration.')
+        }
+      },
+    })
+  }
+
+  const handleDisburse = (id: string) => {
+    disburseMutation.mutate(id, {
+      onError: (err: any) => {
+        if (err?.status === 409) {
+          alert('Disbursement is already running for this declaration — wait for it to finish.')
+        } else {
+          alert(err?.message || 'Failed to start dividend disbursement.')
+        }
+      },
+    })
+  }
 
   const handleDeclare = (e: React.FormEvent) => {
     e.preventDefault()
@@ -153,33 +197,54 @@ export function Dividends() {
                         {new Date(dec.created_at).toLocaleDateString()}
                       </td>
                       <td className="px-3 py-3">
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 items-center">
                           {dec.status === 'DRAFT' && (
                             <button
-                              onClick={() => calculateDividend(dec.id)}
-                              className="px-2.5 py-1 rounded bg-blue-600 text-white text-[11px] font-medium hover:bg-blue-700"
+                              onClick={() => handleCalculate(dec.id)}
+                              disabled={calculateMutation.isPending && calculateMutation.variables === dec.id}
+                              className="px-2.5 py-1 rounded bg-blue-600 text-white text-[11px] font-medium hover:bg-blue-700 disabled:opacity-50"
                             >
                               Calculate Payouts
                             </button>
                           )}
+                          {dec.status === 'CALCULATING' && (
+                            <span className="text-xs text-blue-600 font-medium">Calculating…</span>
+                          )}
                           {dec.status === 'CALCULATED' && (
                             <button
-                              onClick={() => approveDividend(dec.id)}
-                              className="px-2.5 py-1 rounded bg-violet-600 text-white text-[11px] font-medium hover:bg-violet-700"
+                              onClick={() => handleApprove(dec.id)}
+                              disabled={approveMutation.isPending && approveMutation.variables === dec.id}
+                              className="px-2.5 py-1 rounded bg-violet-600 text-white text-[11px] font-medium hover:bg-violet-700 disabled:opacity-50"
                             >
                               Approve Declaration
                             </button>
                           )}
                           {dec.status === 'APPROVED' && (
                             <button
-                              onClick={() => disburseDividend(dec.id)}
-                              className="px-2.5 py-1 rounded bg-mint-600 text-white text-[11px] font-medium hover:bg-mint-700"
+                              onClick={() => handleDisburse(dec.id)}
+                              disabled={disburseMutation.isPending && disburseMutation.variables === dec.id}
+                              className="px-2.5 py-1 rounded bg-mint-600 text-white text-[11px] font-medium hover:bg-mint-700 disabled:opacity-50"
                             >
                               Disburse Dividends
                             </button>
                           )}
+                          {dec.status === 'DISBURSING' && (
+                            <span className="text-xs text-violet-600 font-medium">Disbursing…</span>
+                          )}
                           {dec.status === 'DISBURSED' && (
                             <span className="text-xs text-mint-600 font-medium">Disbursed</span>
+                          )}
+                          {dec.status === 'FAILED' && (
+                            <>
+                              <span className="text-xs text-red-600 font-medium">Calculation failed</span>
+                              <button
+                                onClick={() => handleCalculate(dec.id)}
+                                disabled={calculateMutation.isPending && calculateMutation.variables === dec.id}
+                                className="px-2.5 py-1 rounded bg-blue-600 text-white text-[11px] font-medium hover:bg-blue-700 disabled:opacity-50"
+                              >
+                                Retry
+                              </button>
+                            </>
                           )}
                         </div>
                       </td>

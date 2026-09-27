@@ -98,7 +98,8 @@ export default function LoanStep1() {
 
         onError: (err) => {
           console.error('Loan application error:', err)
-          Alert.alert('Error', err.message)
+          const correlationId = (err as { correlationId?: string })?.correlationId
+          Alert.alert('Error', correlationId ? `${err.message}\n\nReference: ${correlationId}` : err.message)
         },
       }
     )

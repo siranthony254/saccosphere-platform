@@ -1,10 +1,16 @@
+import { useRef } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { QueryKeys, STALE_TIMES } from '@saccosphere/config'
-import { api } from '@saccosphere/api-client'
+import { api, generateIdempotencyKey } from '@saccosphere/api-client'
+import type { STKPushInput } from '@saccosphere/schemas'
 
 export function useInitiatePayment() {
+  // One key per mount of the screen that owns this hook (i.e. per payment
+  // attempt) — reused across any retry/double-tap of that same attempt so
+  // the backend can't double-charge, per the Idempotency-Key contract.
+  const idempotencyKeyRef = useRef(generateIdempotencyKey())
   return useMutation({
-    mutationFn: api.payments.stkPush,
+    mutationFn: (data: STKPushInput) => api.payments.stkPush(data, idempotencyKeyRef.current),
   })
 }
 
@@ -19,9 +25,10 @@ export function useFeePreview(params: { type: 'deposit' | 'repayment' | 'withdra
 }
 
 export function useWithdrawSavings() {
+  const idempotencyKeyRef = useRef(generateIdempotencyKey())
   return useMutation({
     mutationFn: (data: { sacco_id: string; saving_id: string; amount: number; phone_number: string }) =>
-      api.payments.withdrawSavings(data),
+      api.payments.withdrawSavings(data, idempotencyKeyRef.current),
   })
 }
 

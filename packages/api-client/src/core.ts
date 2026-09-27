@@ -202,11 +202,21 @@ export interface ApiError {
   field?: string
   fields?: Record<string, string[]>
   details?: Record<string, unknown>
+  /** Echoed X-Correlation-ID, if the response carried one — safe to show the user as a support reference. */
+  correlationId?: string
 }
 
 export interface ApiCallOptions {
   params?: Record<string, unknown>
+  /**
+   * Send an Idempotency-Key header. When `idempotencyKey` is also given, that
+   * exact value is used (the caller owns generating it once per user action
+   * and reusing it across retries — see `generateIdempotencyKey`); otherwise
+   * a fresh key is generated per call, which only protects a single request,
+   * not a retry of it.
+   */
   idempotent?: boolean
+  idempotencyKey?: string
   responseSchema?: ZodType
 }
 
@@ -241,10 +251,15 @@ export async function apiCall<T>(
     }
   }
 
-  if (options?.idempotent) {
+  if (options?.idempotencyKey) {
     config.headers = {
       ...config.headers,
-      'Idempotency-Key': generateRequestId(), 
+      'Idempotency-Key': options.idempotencyKey,
+    }
+  } else if (options?.idempotent) {
+    config.headers = {
+      ...config.headers,
+      'Idempotency-Key': generateRequestId(),
     }
   }
 
@@ -287,6 +302,8 @@ export async function apiCall<T>(
         details: typeof responseData === 'object' ? responseData : undefined,
       }
       apiError.status = error.response.status
+      const correlationId = error.response.headers?.['x-correlation-id']
+      if (correlationId) apiError.correlationId = String(correlationId)
       throw apiError
     }
     const isTimeout =
@@ -308,5 +325,16 @@ function generateRequestId(): string {
     return crypto.randomUUID()
   }
   return Math.random().toString(36).substring(2) + Date.now().toString(36)
+}
+
+/**
+ * Generate an Idempotency-Key for a user-initiated action (a tap of
+ * "Deposit"/"Withdraw"/"Apply"). Call this ONCE per action — e.g. in a
+ * `useRef` at the top of the confirm screen/mutation hook — and reuse the
+ * same value across any automatic retry or double-tap of that same action.
+ * A fresh call/remount naturally means a fresh key for a genuinely new action.
+ */
+export function generateIdempotencyKey(): string {
+  return generateRequestId()
 }
 

@@ -1,10 +1,22 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '@saccosphere/api-client'
+import type { DividendDeclaration } from '@saccosphere/schemas'
+
+const IN_PROGRESS_STATUSES = ['CALCULATING', 'DISBURSING']
 
 export function useDividendDeclarations() {
   return useQuery({
     queryKey: ['dividend-declarations'],
     queryFn: api.saccoAdmin.getDividendDeclarations,
+    // calculate/disburse now queue a background job and return immediately
+    // (202, status CALCULATING/DISBURSING) instead of completing inline —
+    // poll while anything is mid-flight so the table reflects CALCULATED/
+    // DISBURSED/FAILED without the admin needing to manually refresh.
+    refetchInterval: (query) => {
+      const declarations = query.state.data as DividendDeclaration[] | undefined
+      const hasInProgress = declarations?.some((d) => IN_PROGRESS_STATUSES.includes(d.status))
+      return hasInProgress ? 3000 : false
+    },
   })
 }
 

@@ -1,12 +1,15 @@
+import { useRef } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { QueryKeys } from '@saccosphere/config'
-import { api } from '@saccosphere/api-client'
+import { api, generateIdempotencyKey } from '@saccosphere/api-client'
+import type { LoanApplicationInput } from '@saccosphere/schemas'
 
 export function useSubmitLoanApplication() {
   const queryClient = useQueryClient()
+  const idempotencyKeyRef = useRef(generateIdempotencyKey())
 
   return useMutation({
-    mutationFn: api.loans.apply,
+    mutationFn: (data: LoanApplicationInput) => api.loans.apply(data, idempotencyKeyRef.current),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QueryKeys.loans() })
       queryClient.invalidateQueries({ queryKey: QueryKeys.dashboard() })
@@ -16,6 +19,7 @@ export function useSubmitLoanApplication() {
 
 export function useRepayLoan() {
   const queryClient = useQueryClient()
+  const idempotencyKeyRef = useRef(generateIdempotencyKey())
 
   return useMutation({
     mutationFn: ({
@@ -35,7 +39,7 @@ export function useRepayLoan() {
         sacco_id: saccoId,
         phone_number: phoneNumber,
         instalment_number: instalmentNumber,
-      }),
+      }, idempotencyKeyRef.current),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QueryKeys.loans() })
       queryClient.invalidateQueries({ queryKey: QueryKeys.dashboard() })
