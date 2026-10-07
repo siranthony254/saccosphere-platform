@@ -104,11 +104,13 @@ export const AdminMemberSchema = z.object({
   // getApplications() doesn't compute these per-object aggregations, so
   // they're empty arrays there rather than missing/undefined.
   savings_breakdown: z.array(z.object({
+    id: z.string().optional(),
     savings_type: z.string().nullable(),
     amount: z.number(),
     total_contributions: z.number(),
     total_withdrawals: z.number(),
     status: z.string().nullable(),
+    dividend_eligible: z.boolean().optional(),
   })),
   active_loans: z.array(z.object({
     id: z.string().uuid(),

@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { useMutation } from '@tanstack/react-query'
+import { api } from '@saccosphere/api-client'
 import { useInvoices, useInvoice, useDownloadInvoice, useMarkInvoicePaid } from '../../hooks/useBilling'
 import { useAllSaccos } from '../../hooks/usePlatformData'
 
@@ -21,6 +23,25 @@ export function Billing() {
   const { data: saccos } = useAllSaccos()
   const downloadInvoice = useDownloadInvoice()
   const markPaid = useMarkInvoicePaid()
+
+  const resendMutation = useMutation({
+    mutationFn: (id: string) => api.superAdmin.resendInvoice(id),
+    onSuccess: () => setNotice({ ok: true, text: 'Invoice notification resent.' }),
+    onError: (err: any) => setNotice({ ok: false, text: err?.message || 'Failed to resend invoice.' }),
+  })
+
+  const [exemptionReason, setExemptionReason] = useState('')
+  const [isExempt, setIsExempt] = useState(true)
+
+  const exemptionMutation = useMutation({
+    mutationFn: (data: { saccoId: string; exempt: boolean; reason?: string }) =>
+      api.superAdmin.updateBillingExemption(data.saccoId, { exempt: data.exempt, reason: data.reason }),
+    onSuccess: () => {
+      setNotice({ ok: true, text: 'SACCO billing exemption status updated successfully.' })
+      setExemptionReason('')
+    },
+    onError: (err: any) => setNotice({ ok: false, text: err?.message || 'Failed to update billing exemption.' }),
+  })
 
   const handleMarkPaid = async () => {
     if (!selectedInvoice || !paymentRef.trim()) {
@@ -139,15 +160,16 @@ export function Billing() {
                       <div className="flex gap-1">
                         <button
                           onClick={(e) => { e.stopPropagation(); handleDownload(invoice.id, 'pdf') }}
-                          className="px-2 py-1 rounded text-xs bg-violet-50 text-violet-700 hover:bg-violet-100"
+                          className="px-2 py-1 rounded text-xs bg-violet-50 text-violet-700 hover:bg-violet-100 cursor-pointer"
                         >
                           PDF
                         </button>
                         <button
-                          onClick={(e) => { e.stopPropagation(); handleDownload(invoice.id, 'csv') }}
-                          className="px-2 py-1 rounded text-xs bg-violet-50 text-violet-700 hover:bg-violet-100"
+                          onClick={(e) => { e.stopPropagation(); resendMutation.mutate(invoice.id) }}
+                          disabled={resendMutation.isPending}
+                          className="px-2 py-1 rounded text-xs bg-indigo-50 text-indigo-700 hover:bg-indigo-100 font-semibold cursor-pointer disabled:opacity-50"
                         >
-                          CSV
+                          Resend
                         </button>
                       </div>
                     </td>
@@ -238,6 +260,58 @@ export function Billing() {
             <div className="text-sm text-ink-muted">Select an invoice to view details.</div>
           )}
         </div>
+      </div>
+
+      {/* SACCO Billing Exemption Controls */}
+      <div className="mt-5 bg-surface border border-mid rounded-[10px] p-4">
+        <div className="font-semibold text-sm text-ink mb-1">SACCO Billing Exemption &amp; Overdue Suspension Bypass</div>
+        <p className="text-xs text-ink-muted mb-3">
+          Grant a SACCO temporary exemption from automated platform fee collection / overdue account suspension during system onboarding or disputes.
+        </p>
+
+        {saccoFilter ? (
+          <div className="max-w-md space-y-3 pt-2">
+            <div className="flex items-center gap-3">
+              <label className="text-xs text-ink-muted font-medium">Exemption Status:</label>
+              <button
+                type="button"
+                onClick={() => setIsExempt(!isExempt)}
+                className={`px-3 py-1 text-xs font-bold rounded-full border cursor-pointer ${
+                  isExempt ? 'bg-amber-50 text-amber-800 border-amber-300' : 'bg-surface-2 text-ink-muted border-mid'
+                }`}
+              >
+                {isExempt ? 'EXEMPT (Bypass Suspension)' : 'NOT EXEMPT (Standard Billing)'}
+              </button>
+            </div>
+
+            <div>
+              <label className="text-xs text-ink-muted mb-1 block">Audit Justification / Exemption Reason</label>
+              <textarea
+                rows={2}
+                placeholder="Reason for granting billing exemption..."
+                value={exemptionReason}
+                onChange={(e) => setExemptionReason(e.target.value)}
+                className="w-full py-1.5 px-2 border border-mid rounded-lg text-xs outline-none bg-surface"
+                required
+              />
+            </div>
+
+            <button
+              onClick={() => {
+                if (!saccoFilter || !exemptionReason) return
+                exemptionMutation.mutate({ saccoId: saccoFilter, exempt: isExempt, reason: exemptionReason })
+              }}
+              disabled={exemptionMutation.isPending || !exemptionReason}
+              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs rounded-lg transition-colors cursor-pointer disabled:opacity-50"
+            >
+              {exemptionMutation.isPending ? 'Updating...' : 'Update Exemption Status'}
+            </button>
+          </div>
+        ) : (
+          <p className="text-xs text-amber-800 bg-amber-50 p-2.5 rounded-lg border border-amber-200">
+            Select a specific SACCO in the dropdown filter above to manage its billing exemption status.
+          </p>
+        )}
       </div>
     </div>
   )

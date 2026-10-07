@@ -42,7 +42,7 @@ export default function PayScreen() {
   const [methodStep, setMethodStep] = useState<'amount' | 'method' | 'bank' | 'processing' | 'success'>(
     step === 'method' ? 'method' : 'amount'
   )
-  const [receipt, setReceipt] = useState<{ checkout: string; transaction: string } | null>(null)
+  const [receipt, setReceipt] = useState<{ checkout: string; transaction: string; mpesaRef: string } | null>(null)
   const [checkoutRequestId, setCheckoutRequestId] = useState<string | null>(null)
 
   const numericAmount = Number(String(amount || defaultAmount || 0).replace(/[^0-9.]/g, ''))
@@ -121,8 +121,34 @@ export default function PayScreen() {
     )
   }
 
-  const handlePaymentComplete = (success: boolean, _txnId?: string, errorMessage?: string) => {
+  const handlePaymentComplete = async (success: boolean, _txnId?: string, errorMessage?: string) => {
     if (success) {
+      try {
+        const finalRef = receipt?.transaction
+        const transaction = finalRef && /^[0-9a-f-]{36}$/i.test(finalRef)
+          ? await api.member.getTransaction(finalRef)
+          : null
+        if (transaction?.payment_ref) {
+          setReceipt((current) => current ? { ...current, mpesaRef: transaction.payment_ref, transaction: transaction.ref } : current)
+        } else {
+          const list = await api.member.getTransactions({ sacco: slug })
+          const completed = (list.results ?? []).find((txn: any) =>
+            txn.status === 'completed' &&
+            txn.amount === numericAmount &&
+            txn.txn_type === (isRepayment ? 'loan_repayment' : 'contribution') &&
+            (txn.payment_ref || txn.ref)
+          )
+          if (completed) {
+            setReceipt((current) => current ? {
+              ...current,
+              mpesaRef: completed.payment_ref ?? completed.ref,
+              transaction: completed.ref,
+            } : current)
+          }
+        }
+      } catch (err) {
+        console.warn('Could not refresh final payment receipt:', err)
+      }
       setMethodStep('success')
     } else {
       Alert.alert('Payment Cancelled / Failed', errorMessage ?? 'The payment was not completed. Please try again.')
@@ -175,7 +201,7 @@ export default function PayScreen() {
         amount={numericAmount}
         saccoName={saccoName}
         purpose={isRepayment ? 'LOAN_REPAYMENT' : 'SAVING_DEPOSIT'}
-        mpesaRef={receipt.checkout}
+        mpesaRef={receipt.mpesaRef}
         saccosphereRef={receipt.transaction}
         onBackToDashboard={() => router.replace('/(member)')}
         onViewReceipt={() => router.push({ pathname: '/sacco/[slug]/statement', params: { slug } })}

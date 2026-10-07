@@ -52,3 +52,12 @@ export function useGLReconciliation() {
     staleTime: 15_000,
   })
 }
+
+export function useGLAccountStatement(accountId: string, params?: { from_date?: string; to_date?: string }) {
+  return useQuery({
+    queryKey: ['gl-account-statement', accountId, params],
+    queryFn: () => api.saccoAdmin.getGLAccountStatement(accountId, params),
+    enabled: Boolean(accountId),
+    staleTime: 15_000,
+  })
+}

@@ -1,10 +1,13 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { useQueryClient, useMutation } from '@tanstack/react-query'
+import { api } from '@saccosphere/api-client'
 import { Icon } from '@saccosphere/ui'
 import { useMemberDetail, useOpenSavingsAccount } from '../../hooks/useMembers'
 import { useUserRoles } from '../../hooks/useRoles'
 import { useSavingsTypesList } from '../../hooks/useSavingsTypes'
 import { useAuthStore } from '../../store/useAuthStore'
+import { StepUpModal } from '../../components/auth/StepUpModal'
 
 export function MemberDetail() {
   const { id } = useParams<{ id: string }>()
@@ -14,6 +17,7 @@ export function MemberDetail() {
 
   // Fetch all roles for this user (they may be both a member AND a SACCO admin)
   // user_id is populated from the backend member.user.id field
+  const queryClient = useQueryClient()
   const { data: roles } = useUserRoles(member?.user_id ?? '')
 
   const { data: savingsTypes } = useSavingsTypesList(user?.sacco_id ?? undefined)
@@ -22,6 +26,60 @@ export function MemberDetail() {
   const [openingBalance, setOpeningBalance] = useState('')
   const [openAccountError, setOpenAccountError] = useState<string | null>(null)
   const [openAccountSuccess, setOpenAccountSuccess] = useState<string | null>(null)
+
+  // Savings Admin Actions state
+  const [statusModalSaving, setStatusModalSaving] = useState<{ id: string; type: string; currentStatus: string } | null>(null)
+  const [newStatus, setNewStatus] = useState<'freeze' | 'close' | 'reactivate'>('freeze')
+  const [statusReason, setStatusReason] = useState('')
+
+  const [dividendModalSaving, setDividendModalSaving] = useState<{ id: string; type: string; currentEligible: boolean } | null>(null)
+  const [dividendReason, setDividendReason] = useState('')
+
+  const [reversalModalSaving, setReversalModalSaving] = useState<{ id: string; type: string } | null>(null)
+  const [reversalAmount, setReversalAmount] = useState('')
+  const [reversalDirection, setReversalDirection] = useState<'DEBIT' | 'CREDIT'>('DEBIT')
+  const [reversalReason, setReversalReason] = useState('')
+  const [showStepUp, setShowStepUp] = useState(false)
+  const [pendingReversalPayload, setPendingReversalPayload] = useState<{ id: string; amount: number; direction: 'CREDIT' | 'DEBIT'; reason: string } | null>(null)
+
+  const [actionError, setActionError] = useState<string | null>(null)
+
+  const updateStatusMutation = useMutation({
+    mutationFn: (data: { id: string; action: 'freeze' | 'close' | 'reactivate'; reason: string }) =>
+      api.saccoAdmin.updateSavingsStatus(data.id, { action: data.action, reason: data.reason }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-member', id] })
+      setStatusModalSaving(null)
+      setStatusReason('')
+      setActionError(null)
+    },
+    onError: (err: any) => setActionError(err?.message || 'Failed to update savings status.'),
+  })
+
+  const updateDividendMutation = useMutation({
+    mutationFn: (data: { id: string; eligible: boolean; reason: string }) =>
+      api.saccoAdmin.updateSavingsDividendEligibility(data.id, { eligible: data.eligible, reason: data.reason }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-member', id] })
+      setDividendModalSaving(null)
+      setDividendReason('')
+      setActionError(null)
+    },
+    onError: (err: any) => setActionError(err?.message || 'Failed to update dividend eligibility.'),
+  })
+
+  const reverseTransactionMutation = useMutation({
+    mutationFn: (data: { id: string; amount: number; direction: 'CREDIT' | 'DEBIT'; reason: string }) =>
+      api.saccoAdmin.reverseSavingsTransaction(data.id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-member', id] })
+      setReversalModalSaving(null)
+      setReversalAmount('')
+      setReversalReason('')
+      setActionError(null)
+    },
+    onError: (err: any) => setActionError(err?.message || 'Failed to reverse savings entry.'),
+  })
 
   if (isLoading) return <div className="p-5 text-ink-muted text-sm">Loading member...</div>
   if (error) return <div className="p-5 text-red-600 text-sm">Failed to load member. Please try again.</div>
@@ -209,20 +267,56 @@ export function MemberDetail() {
       {/* Savings breakdown */}
       {member.savings_breakdown.length > 0 && (
         <div className="bg-white border border-[#e5ede9] rounded-[10px] p-4 mb-4">
-          <div className="font-semibold text-sm text-ink mb-3">Savings breakdown</div>
-          <div className="flex flex-col gap-2">
+          <div className="font-semibold text-sm text-ink mb-3">Savings breakdown &amp; Admin Controls</div>
+          <div className="flex flex-col gap-2.5">
             {member.savings_breakdown.map((s, i) => (
-              <div key={i} className="flex items-center justify-between px-3 py-2 bg-surface-2 rounded-lg">
-                <div>
-                  <div className="text-xs font-medium text-ink">{s.savings_type || 'General'}</div>
-                  <div className="text-[10px] text-ink-muted">
-                    +KES {s.total_contributions.toLocaleString()} contributed · -KES {s.total_withdrawals.toLocaleString()} withdrawn
+              <div key={i} className="p-3 bg-surface-2 rounded-lg space-y-2">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-xs font-bold text-ink">{s.savings_type || 'General'}</div>
+                    <div className="text-[10px] text-ink-muted">
+                      +KES {s.total_contributions.toLocaleString()} contributed · -KES {s.total_withdrawals.toLocaleString()} withdrawn
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-xs font-bold text-ink">KES {s.amount.toLocaleString()}</div>
+                    <div className="text-[10px] font-semibold text-violet-700 capitalize">
+                      {s.status || 'Active'} · {s.dividend_eligible !== false ? 'Dividend Eligible' : 'Ineligible for Dividend'}
+                    </div>
                   </div>
                 </div>
-                <div className="text-right">
-                  <div className="text-xs font-semibold text-ink">KES {s.amount.toLocaleString()}</div>
-                  {s.status && <div className="text-[10px] text-ink-muted">{s.status}</div>}
-                </div>
+
+                {s.id && (
+                  <div className="flex gap-2 pt-1.5 border-t border-surface-3 justify-end">
+                    <button
+                      onClick={() => {
+                        setActionError(null)
+                        setStatusModalSaving({ id: s.id!, type: s.savings_type || 'General', currentStatus: s.status || 'ACTIVE' })
+                      }}
+                      className="px-2 py-1 bg-white border border-[#e5ede9] rounded text-[10px] font-semibold text-ink-muted hover:text-ink cursor-pointer"
+                    >
+                      Status Action
+                    </button>
+                    <button
+                      onClick={() => {
+                        setActionError(null)
+                        setDividendModalSaving({ id: s.id!, type: s.savings_type || 'General', currentEligible: s.dividend_eligible !== false })
+                      }}
+                      className="px-2 py-1 bg-white border border-[#e5ede9] rounded text-[10px] font-semibold text-ink-muted hover:text-ink cursor-pointer"
+                    >
+                      Dividend Eligibility
+                    </button>
+                    <button
+                      onClick={() => {
+                        setActionError(null)
+                        setReversalModalSaving({ id: s.id!, type: s.savings_type || 'General' })
+                      }}
+                      className="px-2 py-1 bg-red-50 border border-red-200 text-red-700 rounded text-[10px] font-bold hover:bg-red-100 cursor-pointer"
+                    >
+                      Reverse Transaction
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -298,6 +392,173 @@ export function MemberDetail() {
           </div>
         </div>
       )}
+
+      {/* MODAL 1: SAVINGS STATUS */}
+      {statusModalSaving && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-xl space-y-4 border border-[#e5ede9]">
+            <div className="flex justify-between items-center border-b border-[#e5ede9] pb-3">
+              <div className="font-bold text-base text-ink">Change Savings Account Status</div>
+              <button onClick={() => setStatusModalSaving(null)} className="text-ink-muted text-lg font-bold">&times;</button>
+            </div>
+            {actionError && <div className="p-2 bg-red-50 text-red-700 text-xs rounded font-semibold">{actionError}</div>}
+            <div className="text-xs text-ink-muted">
+              Account: <span className="font-bold text-ink">{statusModalSaving.type}</span> (Current: {statusModalSaving.currentStatus})
+            </div>
+            <div>
+              <label className="text-xs text-ink-muted mb-1 block">New Status</label>
+              <select
+                value={newStatus}
+                onChange={(e) => setNewStatus(e.target.value as any)}
+                className="w-full p-2 border border-[#e5ede9] rounded text-xs bg-white"
+              >
+                <option value="freeze">Freeze Account (Suspend deposits &amp; withdrawals)</option>
+                <option value="reactivate">Reactivate Account</option>
+                <option value="close">Close Account</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-xs text-ink-muted mb-1 block">Audit Reason</label>
+              <textarea
+                rows={3}
+                placeholder="Reason for changing account status..."
+                value={statusReason}
+                onChange={(e) => setStatusReason(e.target.value)}
+                className="w-full p-2 border border-[#e5ede9] rounded text-xs bg-white"
+                required
+              />
+            </div>
+            <div className="flex gap-2">
+              <button onClick={() => setStatusModalSaving(null)} className="flex-1 py-2 border border-ink-faint rounded text-xs text-ink-muted font-semibold cursor-pointer">Cancel</button>
+              <button
+                onClick={() => updateStatusMutation.mutate({ id: statusModalSaving.id, action: newStatus, reason: statusReason })}
+                disabled={updateStatusMutation.isPending || !statusReason}
+                className="flex-1 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded text-xs font-semibold cursor-pointer"
+              >
+                {updateStatusMutation.isPending ? 'Updating...' : 'Update Status'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 2: DIVIDEND ELIGIBILITY */}
+      {dividendModalSaving && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-xl space-y-4 border border-[#e5ede9]">
+            <div className="flex justify-between items-center border-b border-[#e5ede9] pb-3">
+              <div className="font-bold text-base text-ink">Dividend Eligibility Toggle</div>
+              <button onClick={() => setDividendModalSaving(null)} className="text-ink-muted text-lg font-bold">&times;</button>
+            </div>
+            {actionError && <div className="p-2 bg-red-50 text-red-700 text-xs rounded font-semibold">{actionError}</div>}
+            <div className="text-xs text-ink-muted">
+              Account: <span className="font-bold text-ink">{dividendModalSaving.type}</span> (Currently: {dividendModalSaving.currentEligible ? 'Eligible' : 'Ineligible'})
+            </div>
+            <div>
+              <label className="text-xs text-ink-muted mb-1 block">Reason for Toggling Dividend Eligibility</label>
+              <textarea
+                rows={3}
+                placeholder="Provide justification..."
+                value={dividendReason}
+                onChange={(e) => setDividendReason(e.target.value)}
+                className="w-full p-2 border border-[#e5ede9] rounded text-xs bg-white"
+                required
+              />
+            </div>
+            <div className="flex gap-2">
+              <button onClick={() => setDividendModalSaving(null)} className="flex-1 py-2 border border-ink-faint rounded text-xs text-ink-muted font-semibold cursor-pointer">Cancel</button>
+              <button
+                onClick={() => updateDividendMutation.mutate({ id: dividendModalSaving.id, eligible: !dividendModalSaving.currentEligible, reason: dividendReason })}
+                disabled={updateDividendMutation.isPending || !dividendReason}
+                className="flex-1 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded text-xs font-semibold cursor-pointer"
+              >
+                {updateDividendMutation.isPending ? 'Updating...' : `Set as ${dividendModalSaving.currentEligible ? 'Ineligible' : 'Eligible'}`}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 3: REVERSAL */}
+      {reversalModalSaving && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-xl space-y-4 border border-[#e5ede9]">
+            <div className="flex justify-between items-center border-b border-[#e5ede9] pb-3">
+              <div className="font-bold text-base text-ink">Reverse Savings Entry</div>
+              <button onClick={() => setReversalModalSaving(null)} className="text-ink-muted text-lg font-bold">&times;</button>
+            </div>
+            {actionError && <div className="p-2 bg-red-50 text-red-700 text-xs rounded font-semibold">{actionError}</div>}
+            <div className="text-xs text-ink-muted">
+              Reversing entry on <span className="font-bold text-ink">{reversalModalSaving.type}</span> account. Reversals require step-up verification.
+            </div>
+            <div>
+              <label className="text-xs text-ink-muted mb-1 block">Reversal Amount (KES)</label>
+              <input
+                type="number"
+                placeholder="Amount to reverse"
+                value={reversalAmount}
+                onChange={(e) => setReversalAmount(e.target.value)}
+                className="w-full p-2 border border-[#e5ede9] rounded text-xs bg-white"
+                required
+              />
+            </div>
+            <div>
+              <label className="text-xs text-ink-muted mb-1 block">Direction</label>
+              <select
+                value={reversalDirection}
+                onChange={(e) => setReversalDirection(e.target.value as any)}
+                className="w-full p-2 border border-[#e5ede9] rounded text-xs bg-white"
+              >
+                <option value="DEBIT">DEBIT (Deduct incorrectly credited funds)</option>
+                <option value="CREDIT">CREDIT (Refund incorrectly debited funds)</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-xs text-ink-muted mb-1 block">Reason / Reference</label>
+              <textarea
+                rows={3}
+                placeholder="Audit reason for reversal..."
+                value={reversalReason}
+                onChange={(e) => setReversalReason(e.target.value)}
+                className="w-full p-2 border border-[#e5ede9] rounded text-xs bg-white"
+                required
+              />
+            </div>
+            <div className="flex gap-2">
+              <button onClick={() => setReversalModalSaving(null)} className="flex-1 py-2 border border-ink-faint rounded text-xs text-ink-muted font-semibold cursor-pointer">Cancel</button>
+              <button
+                onClick={() => {
+                  if (!reversalAmount || !reversalReason) return
+                  setPendingReversalPayload({
+                    id: reversalModalSaving.id,
+                    amount: Number(reversalAmount),
+                    direction: reversalDirection,
+                    reason: reversalReason,
+                  })
+                  setShowStepUp(true)
+                }}
+                disabled={!reversalAmount || !reversalReason}
+                className="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white rounded text-xs font-semibold cursor-pointer"
+              >
+                Request Reversal
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <StepUpModal
+        isOpen={showStepUp}
+        title="Authorize Savings Reversal"
+        description="Savings entry reversals are high-risk financial actions requiring staff step-up authorization."
+        onClose={() => setShowStepUp(false)}
+        onSuccess={() => {
+          if (pendingReversalPayload) {
+            reverseTransactionMutation.mutate(pendingReversalPayload)
+            setPendingReversalPayload(null)
+          }
+        }}
+      />
     </div>
   )
 }

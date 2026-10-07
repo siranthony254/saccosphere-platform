@@ -20,6 +20,7 @@ import {
   useUpdateLoanType,
   useDeleteLoanType,
 } from '../../hooks/useLoanTypes'
+import { api } from '@saccosphere/api-client'
 
 // FILE is intentionally excluded: the backend rejects creating a FILE-type
 // field outright (there's no upload path for a custom-field answer to ever
@@ -847,6 +848,130 @@ function MemberFieldsCard() {
   )
 }
 
+function StaffMfaSetupCard() {
+  const [mfaData, setMfaData] = useState<{ secret: string; qr_code: string; recovery_codes: string[] } | null>(null)
+  const [code, setCode] = useState('')
+  const [status, setStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
+
+  const handleEnroll = async () => {
+    setIsLoading(true)
+    setStatus(null)
+    try {
+      const res = await api.auth.mfaEnroll()
+      setMfaData(res)
+    } catch (err: any) {
+      setStatus({ type: 'error', message: err?.message || 'Failed to initiate MFA enrollment.' })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleConfirm = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!code.trim()) return
+    setIsLoading(true)
+    setStatus(null)
+    try {
+      await api.auth.mfaConfirm(code.trim())
+      setStatus({ type: 'success', message: 'MFA confirmed and enabled for your staff account!' })
+      setMfaData(null)
+      setCode('')
+    } catch (err: any) {
+      setStatus({ type: 'error', message: err?.message || 'Failed to confirm MFA code.' })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleReset = async () => {
+    setIsLoading(true)
+    setStatus(null)
+    try {
+      await api.auth.mfaReset()
+      setStatus({ type: 'success', message: 'MFA reset successfully.' })
+      setMfaData(null)
+    } catch (err: any) {
+      setStatus({ type: 'error', message: err?.message || 'Failed to reset MFA.' })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  return (
+    <div className="bg-white border border-[#e5ede9] rounded-[10px] p-5 mt-5">
+      <div className="font-semibold text-sm text-ink mb-1 border-b border-surface-3 pb-3">Staff 2FA / MFA Security</div>
+      <p className="text-xs text-ink-muted mb-4">
+        Multi-Factor Authentication (TOTP / Authenticator App) for staff step-up verification on high-value actions (disbursements, reversals, payment settings).
+      </p>
+
+      {status && (
+        <div className={`p-3 rounded-lg text-xs font-semibold mb-3 ${status.type === 'success' ? 'bg-mint-50 text-mint-800 border border-mint-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
+          {status.message}
+        </div>
+      )}
+
+      {!mfaData ? (
+        <div className="flex gap-3">
+          <button
+            onClick={handleEnroll}
+            disabled={isLoading}
+            className="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white font-semibold text-xs rounded-lg transition-colors cursor-pointer"
+          >
+            {isLoading ? 'Loading...' : 'Enroll Authenticator / TOTP'}
+          </button>
+          <button
+            onClick={handleReset}
+            disabled={isLoading}
+            className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-ink-muted font-semibold text-xs rounded-lg transition-colors cursor-pointer"
+          >
+            Reset MFA
+          </button>
+        </div>
+      ) : (
+        <div className="space-y-4 bg-surface-2 p-4 rounded-xl border border-ink-faint">
+          <div className="text-xs font-bold text-ink">Scan QR Code or copy secret key into your Authenticator app (Google Authenticator, Authy, 1Password):</div>
+
+          {mfaData.qr_code ? (
+            <img src={mfaData.qr_code} alt="MFA QR Code" className="w-36 h-36 bg-white p-2 rounded border" />
+          ) : (
+            <div className="p-2 bg-white rounded font-mono text-xs text-violet-700 font-bold border">
+              Secret: {mfaData.secret}
+            </div>
+          )}
+
+          {mfaData.recovery_codes && mfaData.recovery_codes.length > 0 && (
+            <div>
+              <div className="text-[11px] font-bold text-ink mb-1">Save your recovery codes:</div>
+              <div className="flex flex-wrap gap-1 font-mono text-[10px] bg-white p-2 rounded border">
+                {mfaData.recovery_codes.join(', ')}
+              </div>
+            </div>
+          )}
+
+          <form onSubmit={handleConfirm} className="flex gap-2 items-center pt-2">
+            <input
+              type="text"
+              placeholder="Enter 6-digit code"
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              className="p-2 border border-ink-faint rounded-lg text-xs font-mono bg-white"
+              required
+            />
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="px-4 py-2 bg-mint-600 hover:bg-mint-700 text-white font-bold text-xs rounded-lg cursor-pointer"
+            >
+              {isLoading ? 'Verifying...' : 'Confirm & Activate MFA'}
+            </button>
+          </form>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export function Settings() {
   const { data, isLoading, error, isPending, save } = useSaccoSettings()
 
@@ -1000,6 +1125,8 @@ export function Settings() {
       </div>
 
       <PaymentSetupCard />
+
+      <StaffMfaSetupCard />
 
       <SavingsTypesCard />
 

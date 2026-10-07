@@ -7,6 +7,8 @@ import { clearTokens } from '@saccosphere/api-client'
 import { useApplications } from '../../hooks/useApplications'
 import { useAdminLoans } from '../../hooks/useLoans'
 import { useKycQueue } from '../../hooks/useKyc'
+import { useQuery } from '@tanstack/react-query'
+import { api } from '@saccosphere/api-client'
 
 export function AppShell() {
   const { sidebarCollapsed } = useLayoutStore()
@@ -28,8 +30,16 @@ export function AppShell() {
   const pendingLoansCount = loans?.count ?? 0
   const pendingKycCount = kycQueue?.length ?? 0
 
+  const { data: pendingApprovals = [] } = useQuery({
+    queryKey: ['approvals-pending'],
+    queryFn: () => api.approvals.getPending().catch(() => []),
+    staleTime: 15_000,
+  })
+  const pendingApprovalsCount = pendingApprovals.length
+
   const NAV_ITEMS: { path: string; label: string; icon: IconName; badge: string | null }[] = [
     { path: '/dashboard', label: 'Dashboard', icon: 'dashboard', badge: null },
+    { path: '/approvals', label: 'Maker-Checker', icon: 'check-square', badge: pendingApprovalsCount > 0 ? String(pendingApprovalsCount) : null },
     { path: '/members', label: 'Members', icon: 'users', badge: null },
     { path: '/applications', label: 'Applications', icon: 'file-text', badge: pendingAppsCount > 0 ? String(pendingAppsCount) : null },
     { path: '/loans', label: 'Loan approvals', icon: 'coins', badge: pendingLoansCount > 0 ? String(pendingLoansCount) : null },

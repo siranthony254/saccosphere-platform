@@ -125,10 +125,8 @@ function NotifItem({ notification: n }: { notification: Notification }) {
 
   const handlePress = () => {
     if (!n.is_read) markRead.mutate(n.id)
-    if (n.category === 'GUARANTOR') {
-      router.push('/(member)/guarantor-inbox')
-      return
-    }
+    const target = resolveNotificationTarget(n)
+    if (target) router.push(target as any)
   }
 
   const content = (
@@ -191,4 +189,29 @@ function getTimeAgo(dateStr: string): string {
   const hrs = Math.floor(mins / 60)
   if (hrs < 24) return `${hrs} hour${hrs === 1 ? '' : 's'} ago`
   return new Date(dateStr).toLocaleDateString('en-KE', { day: 'numeric', month: 'short' })
+}
+
+function resolveNotificationTarget(n: Notification): string | null {
+  const raw = n.action_url?.trim()
+  if (raw) {
+    try {
+      const parsed = raw.startsWith('http') ? new URL(raw) : new URL(raw, 'saccosphere://app')
+      const path = parsed.pathname
+      const loanId = parsed.searchParams.get('loan_id') || parsed.searchParams.get('loanId')
+      const slug = parsed.searchParams.get('sacco') || parsed.searchParams.get('sacco_slug') || parsed.searchParams.get('slug')
+      if (path.includes('guarantor')) return '/(member)/guarantor-inbox'
+      if (path.includes('loan-repayment')) return '/(member)/loan-repayment'
+      if (path.includes('loan') && loanId) return `/(member)/loan-detail?id=${encodeURIComponent(loanId)}`
+      if (path.includes('payment') || path.includes('transaction')) return '/(member)/transaction-detail'
+      if (path.includes('statement') && slug) return `/sacco/${encodeURIComponent(slug)}/statement`
+      if (path.startsWith('/(member)') || path.startsWith('/sacco/')) return `${path}${parsed.search}`
+    } catch {
+      if (raw.startsWith('/(member)') || raw.startsWith('/sacco/')) return raw
+    }
+  }
+
+  if (n.category === 'GUARANTOR') return '/(member)/guarantor-inbox'
+  if (n.category === 'LOAN') return '/(member)/loan-repayment'
+  if (n.category === 'PAYMENT' || n.category === 'DIVIDEND') return '/(member)/notifications'
+  return null
 }

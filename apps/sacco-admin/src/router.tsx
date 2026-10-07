@@ -23,6 +23,7 @@ import { SASRAReturns } from './pages/Reports/SASRAReturns'
 import { LiquidityNPLDashboard } from './pages/Analytics/LiquidityNPLDashboard'
 import { LedgerManagement } from './pages/Ledger/LedgerManagement'
 import { BulkSMS } from './pages/BulkSMS/BulkSMS'
+import { ApprovalsList } from './pages/Approvals/ApprovalsList'
 
 export const router = createBrowserRouter([
   {
@@ -58,6 +59,7 @@ export const router = createBrowserRouter([
       { path: 'roles', element: <Roles /> },
       { path: 'import', element: <Import /> },
       { path: 'external-guarantors', element: <ExternalGuarantors /> },
+      { path: 'approvals', element: <ApprovalsList /> },
     ],
   },
   { path: '*', element: <Navigate to="/" replace /> },

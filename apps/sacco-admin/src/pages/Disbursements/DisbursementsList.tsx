@@ -1,6 +1,9 @@
 import React, { useState } from 'react'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { api } from '@saccosphere/api-client'
 import { useAdminLoans, useManualDisburseLoan, useDisbursementHistory, useB2CStatus, useLoanDisbursementAudit } from '../../hooks/useLoans'
 import { useDisbursementsDashboard } from '../../hooks/useSaccoAdminDashboard'
+import { StepUpModal } from '../../components/auth/StepUpModal'
 
 function DisbursementAuditTrail({ loanId }: { loanId: string }) {
   const { data, isLoading } = useLoanDisbursementAudit(loanId)
@@ -57,17 +60,36 @@ function B2CStatusBadge({ conversationId }: { conversationId: string }) {
 }
 
 export function DisbursementsList() {
+  const queryClient = useQueryClient()
   const [view, setView] = useState<'pending' | 'history'>('pending')
   const { data: dashboard } = useDisbursementsDashboard()
   const { data: loansData, isLoading: loadingLoans } = useAdminLoans({ status: 'approved' })
   const { data: historyData, isLoading: loadingHistory } = useDisbursementHistory()
   const { mutate: disburse, isPending: disbursing } = useManualDisburseLoan()
 
-  
   const [activeId, setActiveId] = useState<string | null>(null)
   const [phone, setPhone] = useState('')
   const [amount, setAmount] = useState('')
   const [lastConvId, setLastConvId] = useState<string | null>(null)
+
+  // Alternate number B2C state
+  const [isAlternateNumber, setIsAlternateNumber] = useState(false)
+  const [alternateReason, setAlternateReason] = useState('')
+  const [showStepUp, setShowStepUp] = useState(false)
+
+  const alternateDisburseMutation = useMutation({
+    mutationFn: (data: { loan_id: string; phone_number: string; amount: number; remarks?: string; reason: string }) =>
+      api.saccoAdmin.disburseToAlternateNumber(data),
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: ['admin-loans'] })
+      queryClient.invalidateQueries({ queryKey: ['disbursements-dashboard'] })
+      setActiveId(null)
+      setIsAlternateNumber(false)
+      setAlternateReason('')
+      setLastConvId(data.conversation_id || data.checkout_request_id || 'ALTPAYOUT')
+    },
+    onError: (err: any) => alert(err?.message || 'Alternate-number payout failed.'),
+  })
 
   return (
     <div className="p-5">
@@ -200,7 +222,7 @@ export function DisbursementsList() {
                                   ))}
                                 </div>
                                 <div>
-                                  <div className="mb-4">
+                                  <div className="mb-3">
                                     <label className="text-[11px] font-bold text-ink-soft mb-1.5 block uppercase tracking-wider">M-Pesa Phone Number</label>
                                     <input
                                       type="text"
@@ -210,6 +232,40 @@ export function DisbursementsList() {
                                       onChange={e => setPhone(e.target.value)}
                                     />
                                   </div>
+
+                                  <div className="mb-3">
+                                    <label className="flex items-center gap-2 text-xs text-amber-800 font-semibold cursor-pointer">
+                                      <input
+                                        type="checkbox"
+                                        checked={isAlternateNumber}
+                                        onChange={(e) => setIsAlternateNumber(e.target.checked)}
+                                      />
+                                      Disburse to Alternate M-Pesa Number (Requires Step-Up &amp; Reason)
+                                    </label>
+                                  </div>
+
+                                  {isAlternateNumber && (
+                                    <div className="mb-3 p-3 bg-amber-50 border border-amber-200 rounded-lg space-y-2">
+                                      <div className="text-[11px] font-bold text-amber-800">
+                                        ⚠️ Security Warning: Alternate Number Payout
+                                      </div>
+                                      <p className="text-[10px] text-amber-700">
+                                        Payout to a number other than the member's registered account phone is high-risk. Provide audit reason below; staff step-up security verification is required.
+                                      </p>
+                                      <div>
+                                        <label className="text-[10px] font-bold text-amber-900 block mb-1">Mandatory Audit Justification</label>
+                                        <textarea
+                                          rows={2}
+                                          placeholder="e.g. Member requested payout to business phone per signed authorization form #1092"
+                                          value={alternateReason}
+                                          onChange={(e) => setAlternateReason(e.target.value)}
+                                          className="w-full p-2 border border-amber-300 rounded text-xs bg-white"
+                                          required
+                                        />
+                                      </div>
+                                    </div>
+                                  )}
+
                                   <div className="mb-5">
                                     <label className="text-[11px] font-bold text-ink-soft mb-1.5 block uppercase tracking-wider">Disbursement Amount (KES)</label>
                                     <input
@@ -219,27 +275,41 @@ export function DisbursementsList() {
                                       onChange={e => setAmount(e.target.value)}
                                     />
                                   </div>
+
                                   <div className="flex gap-3">
-                                    <button
-                                      className={`px-5 py-2.5 rounded-lg border-none bg-[#0d7a4e] text-white text-sm font-bold cursor-pointer hover:bg-[#0b6340] transition-colors ${disbursing ? 'opacity-60' : ''}`}
-                                      onClick={() => disburse({
-                                        loanId: loanId,
-                                        amount: Number(amount),
-                                        phone_number: phone,
-                                        remarks: 'Loan disbursement via M-Pesa B2C'
-                                      }, {
-                                        onSuccess: (data: any) => {
-                                          setActiveId(null);
-                                          setLastConvId(data.conversation_id || data.checkout_request_id);
-                                        }
-                                      })}
-                                      disabled={disbursing || !phone || !amount}
-                                    >
-                                      {disbursing ? 'Processing...' : 'Initiate Payout'}
-                                    </button>
+                                    {isAlternateNumber ? (
+                                      <button
+                                        className="px-5 py-2.5 rounded-lg border-none bg-amber-700 hover:bg-amber-800 text-white text-sm font-bold cursor-pointer transition-colors disabled:opacity-60"
+                                        onClick={() => {
+                                          if (!phone || !amount || !alternateReason) return
+                                          setShowStepUp(true)
+                                        }}
+                                        disabled={alternateDisburseMutation.isPending || !phone || !amount || !alternateReason}
+                                      >
+                                        {alternateDisburseMutation.isPending ? 'Disbursing...' : 'Authorize Alternate Payout'}
+                                      </button>
+                                    ) : (
+                                      <button
+                                        className={`px-5 py-2.5 rounded-lg border-none bg-[#0d7a4e] text-white text-sm font-bold cursor-pointer hover:bg-[#0b6340] transition-colors ${disbursing ? 'opacity-60' : ''}`}
+                                        onClick={() => disburse({
+                                          loanId: loanId,
+                                          amount: Number(amount),
+                                          phone_number: phone,
+                                          remarks: 'Loan disbursement via M-Pesa B2C'
+                                        }, {
+                                          onSuccess: (data: any) => {
+                                            setActiveId(null);
+                                            setLastConvId(data.conversation_id || data.checkout_request_id);
+                                          }
+                                        })}
+                                        disabled={disbursing || !phone || !amount}
+                                      >
+                                        {disbursing ? 'Processing...' : 'Initiate Payout'}
+                                      </button>
+                                    )}
                                     <button
                                       className="px-5 py-2.5 rounded-lg border border-[#e5ede9] bg-white text-sm font-medium cursor-pointer hover:bg-surface-2 transition-colors"
-                                      onClick={() => setActiveId(null)}
+                                      onClick={() => { setActiveId(null); setIsAlternateNumber(false); setAlternateReason('') }}
                                     >
                                       Cancel
                                     </button>
@@ -289,6 +359,24 @@ export function DisbursementsList() {
           </table>
         </div>
       )}
+
+      <StepUpModal
+        isOpen={showStepUp}
+        title="Authorize Alternate-Number B2C Disbursement"
+        description="Disbursing loan funds to an alternate M-Pesa phone number is a high-risk financial action requiring staff step-up security verification."
+        onClose={() => setShowStepUp(false)}
+        onSuccess={() => {
+          if (activeId && phone && amount && alternateReason) {
+            alternateDisburseMutation.mutate({
+              loan_id: activeId,
+              phone_number: phone,
+              amount: Number(amount),
+              remarks: 'Alternate-number loan disbursement',
+              reason: alternateReason,
+            })
+          }
+        }}
+      />
     </div>
   )
 }

@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { api } from '@saccosphere/api-client'
 import { useSacco } from '../../hooks/useSacco'
 import {
   useLedgerEntries,
@@ -64,6 +65,18 @@ export function LedgerManagement() {
   const downloadPDF = useDownloadLedgerPDF()
   const { data: trialBalance, isLoading: isTrialBalanceLoading } = useGLTrialBalance()
   const { data: reconciliation, isLoading: isReconciliationLoading } = useGLReconciliation()
+
+  // GL Account Statement Drill-Down State
+  const [selectedGlAccount, setSelectedGlAccount] = useState<{ id: string; code: string; name: string } | null>(null)
+
+  const { data: glAccountStatement, isLoading: isGlAccountStatementLoading } = useQuery({
+    queryKey: ['gl-account-statement', selectedGlAccount?.id, fromDate, toDate],
+    queryFn: () =>
+      selectedGlAccount?.id
+        ? api.saccoAdmin.getGLAccountStatement(selectedGlAccount.id, { from_date: fromDate, to_date: toDate })
+        : null,
+    enabled: Boolean(selectedGlAccount?.id),
+  })
 
   // Adjustment form state
   const [adjCategory, setAdjCategory] = useState('ADJUSTMENT')
@@ -473,10 +486,15 @@ export function LedgerManagement() {
                       </td>
                     </tr>
                   ) : (
-                    (trialBalance?.accounts ?? []).map((a: { code: string; name: string; type: string; debit: number; credit: number }) => (
-                      <tr key={a.code} className="hover:bg-surface-1 transition-colors">
-                        <td className="py-2.5 px-3 font-mono text-xs text-ink-soft">{a.code}</td>
-                        <td className="py-2.5 px-3 text-ink text-xs">{a.name}</td>
+                    (trialBalance?.accounts ?? []).map((a: { code: string; name: string; type: string; debit: number; credit: number; id?: string }) => (
+                      <tr
+                        key={a.code}
+                        onClick={() => setSelectedGlAccount({ id: a.id || a.code, code: a.code, name: a.name })}
+                        className="hover:bg-violet-50/50 cursor-pointer transition-colors"
+                        title="Click to drill down into GL account statement"
+                      >
+                        <td className="py-2.5 px-3 font-mono text-xs text-violet-700 font-bold">{a.code}</td>
+                        <td className="py-2.5 px-3 text-ink text-xs font-medium">{a.name}</td>
                         <td className="py-2.5 px-3 text-xs text-ink-muted uppercase">{a.type}</td>
                         <td className="py-2.5 px-3 text-right font-semibold text-amber-700 text-xs">
                           {a.debit ? formatCurrency(a.debit) : '—'}
@@ -676,6 +694,109 @@ export function LedgerManagement() {
               Post Journal Entry to Ledger
             </button>
           </form>
+        </div>
+      )}
+
+      {/* GL ACCOUNT STATEMENT DRILL-DOWN MODAL */}
+      {selectedGlAccount && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl max-w-3xl w-full p-6 shadow-2xl space-y-4 border border-[#e5ede9] max-h-[90vh] flex flex-col">
+            <div className="flex justify-between items-center border-b border-[#e5ede9] pb-3 shrink-0">
+              <div>
+                <div className="font-bold text-lg text-ink">
+                  GL Account Statement: <span className="text-violet-700">{selectedGlAccount.code}</span> — {selectedGlAccount.name}
+                </div>
+                <div className="text-xs text-ink-muted">Detailed postings for this general ledger account</div>
+              </div>
+              <button
+                onClick={() => setSelectedGlAccount(null)}
+                className="text-ink-muted hover:text-ink text-xl font-bold cursor-pointer"
+              >
+                &times;
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 bg-surface-2 p-3 rounded-lg shrink-0 text-xs">
+              <div>
+                <span className="text-ink-muted block">Opening Balance</span>
+                <span className="font-bold text-ink text-sm">
+                  {isGlAccountStatementLoading ? '...' : formatCurrency(glAccountStatement?.opening_balance)}
+                </span>
+              </div>
+              <div>
+                <span className="text-ink-muted block">Total Debits</span>
+                <span className="font-bold text-amber-700 text-sm">
+                  {isGlAccountStatementLoading ? '...' : formatCurrency(glAccountStatement?.total_debits)}
+                </span>
+              </div>
+              <div>
+                <span className="text-ink-muted block">Total Credits</span>
+                <span className="font-bold text-mint-700 text-sm">
+                  {isGlAccountStatementLoading ? '...' : formatCurrency(glAccountStatement?.total_credits)}
+                </span>
+              </div>
+              <div>
+                <span className="text-ink-muted block">Closing Balance</span>
+                <span className="font-bold text-violet-700 text-sm">
+                  {isGlAccountStatementLoading ? '...' : formatCurrency(glAccountStatement?.closing_balance)}
+                </span>
+              </div>
+            </div>
+
+            <div className="overflow-y-auto flex-1">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="border-b border-[#e5ede9] font-semibold text-ink-muted uppercase bg-surface-2 sticky top-0">
+                    <th className="py-2 px-3">Date</th>
+                    <th className="py-2 px-3">Reference</th>
+                    <th className="py-2 px-3">Description</th>
+                    <th className="py-2 px-3 text-right">Debit</th>
+                    <th className="py-2 px-3 text-right">Credit</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#e5ede9]">
+                  {isGlAccountStatementLoading ? (
+                    <tr>
+                      <td colSpan={5} className="py-8 text-center text-ink-muted">
+                        Loading GL account postings...
+                      </td>
+                    </tr>
+                  ) : (glAccountStatement?.entries ?? []).length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="py-8 text-center text-ink-muted">
+                        No postings found for this GL account in the selected date range.
+                      </td>
+                    </tr>
+                  ) : (
+                    (glAccountStatement?.entries ?? []).map((e: any, idx: number) => (
+                      <tr key={e.id || idx} className="hover:bg-surface-1">
+                        <td className="py-2 px-3 text-ink-muted">
+                          {e.created_at ? new Date(e.created_at).toLocaleDateString() : '—'}
+                        </td>
+                        <td className="py-2 px-3 font-mono">{e.reference || e.ref || '—'}</td>
+                        <td className="py-2 px-3">{e.description || '—'}</td>
+                        <td className="py-2 px-3 text-right font-semibold text-amber-700">
+                          {e.entry_type === 'DEBIT' || e.type === 'DEBIT' ? formatCurrency(e.amount) : '—'}
+                        </td>
+                        <td className="py-2 px-3 text-right font-semibold text-mint-700">
+                          {e.entry_type === 'CREDIT' || e.type === 'CREDIT' ? formatCurrency(e.amount) : '—'}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="pt-2 border-t border-[#e5ede9] flex justify-end shrink-0">
+              <button
+                onClick={() => setSelectedGlAccount(null)}
+                className="px-4 py-1.5 bg-gray-100 hover:bg-gray-200 text-ink-muted text-xs font-semibold rounded-lg cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

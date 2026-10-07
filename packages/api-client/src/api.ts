@@ -352,11 +352,13 @@ const normalizeAdminMember = (member: any): AdminMember => {
     // Backend AdminMemberDetailSerializer fields — only present on the
     // single-member detail fetch (see the note on AdminMemberSchema).
     savings_breakdown: savingsBreakdown.map((s: any) => ({
+      id: s.id ? String(s.id) : undefined,
       savings_type: s.savings_type,
       amount: Number(s.amount ?? 0),
       total_contributions: Number(s.total_contributions ?? 0),
       total_withdrawals: Number(s.total_withdrawals ?? 0),
       status: s.status,
+      dividend_eligible: s.dividend_eligible != null ? Boolean(s.dividend_eligible) : true,
     })),
     active_loans: activeLoans.map((l: any) => ({
       id: String(l.id),
@@ -726,6 +728,79 @@ export const api = {
         id_token: data.id_token,
         ...(data.nonce ? { nonce: data.nonce } : {}),
       }),
+
+    // Staff MFA & Step-Up
+    mfaEnroll: () =>
+      apiCall<{ secret: string; qr_code: string; recovery_codes: string[] }>('POST', '/accounts/mfa/enroll/'),
+
+    mfaConfirm: (code: string) =>
+      apiCall<{ message?: string; detail?: string }>('POST', '/accounts/mfa/confirm/', { code }),
+
+    mfaLoginVerify: (data: { temp_token: string; code: string }) =>
+      apiCall<any>('POST', '/accounts/mfa/login-verify/', data),
+
+    mfaReset: (userId?: string) =>
+      apiCall<{ detail?: string; message?: string }>('POST', '/accounts/mfa/reset/', userId ? { user_id: userId } : undefined),
+
+    requestStepUpOtp: () =>
+      apiCall<{ message?: string; detail?: string }>('POST', '/accounts/step-up/request-otp/'),
+  },
+
+  approvals: {
+    getPending: async () => {
+      const response = await apiCall<any>('GET', '/approvals/pending/')
+      const items = Array.isArray(response) ? response : response.results ?? response.data ?? []
+      return items.map((item: any) => ({
+        id: String(item.id),
+        action: String(item.action ?? item.action_type ?? item.requested_action ?? ''),
+        status: String(item.status ?? 'PENDING'),
+        requester: item.requester_name ?? item.requested_by_name ?? item.requester_email ?? item.requested_by_email ?? '',
+        resource_type: item.resource_type ?? item.model_name ?? '',
+        resource_id: item.resource_id ?? null,
+        amount: item.amount != null ? Number(item.amount) : null,
+        reason: item.reason ?? item.notes ?? item.description ?? '',
+        created_at: item.created_at ?? item.requested_at ?? null,
+        raw: item,
+      }))
+    },
+
+    getHistory: async () => {
+      const response = await apiCall<any>('GET', '/approvals/history/')
+      const items = Array.isArray(response) ? response : response.results ?? response.data ?? []
+      return items.map((item: any) => ({
+        id: String(item.id),
+        action: String(item.action ?? item.action_type ?? item.requested_action ?? ''),
+        status: String(item.status ?? ''),
+        requester: item.requester_name ?? item.requested_by_name ?? item.requester_email ?? item.requested_by_email ?? '',
+        decided_by: item.decided_by_name ?? item.approver_name ?? item.decided_by_email ?? '',
+        reason: item.reason ?? item.notes ?? item.description ?? '',
+        decision_notes: item.decision_notes ?? item.review_notes ?? '',
+        created_at: item.created_at ?? item.requested_at ?? null,
+        decided_at: item.decided_at ?? item.reviewed_at ?? null,
+        raw: item,
+      }))
+    },
+
+    approve: (id: string, notes?: string) =>
+      apiCall<any>('POST', `/approvals/${uuid(id)}/approve/`, { notes: notes ?? '' }),
+
+    reject: (id: string, reason: string) =>
+      apiCall<any>('POST', `/approvals/${uuid(id)}/reject/`, { reason }),
+
+    getSupportAccessGrants: async () => {
+      const response = await apiCall<any>('GET', '/approvals/support-access-grants/')
+      return Array.isArray(response) ? response : response.results ?? response.data ?? []
+    },
+
+    createSupportAccessGrant: (data: { sacco_id: string; reason: string; expires_at?: string }) =>
+      apiCall<any>('POST', '/approvals/support-access-grants/', {
+        sacco: uuid(data.sacco_id),
+        reason: data.reason,
+        ...(data.expires_at ? { expires_at: data.expires_at } : {}),
+      }),
+
+    revokeSupportAccessGrant: (id: string) =>
+      apiCall<void>('DELETE', `/approvals/support-access-grants/${uuid(id)}/`),
   },
 
   // ─── ACCOUNT / PRIVACY (ODPC) ──────────────────────────────────────────────
@@ -783,6 +858,12 @@ export const api = {
         '/accounts/me/erasure-requests/',
         { reason: z.string().min(1).parse(reason) }
       ),
+
+    reviewDataErasure: (requestId: string, data: { action: 'approve' | 'reject' | 'hold'; reason?: string }) =>
+      apiCall<any>('POST', `/accounts/erasure-requests/${uuid(requestId)}/review/`, {
+        action: data.action.toUpperCase(),
+        reason: data.reason ?? '',
+      }),
   },
 
   //  MEMBER PROFILE and DASHBOARD
@@ -2508,10 +2589,14 @@ export const api = {
       }
     },
 
-    // NOTE: no invoice "resend" wrapper. /billing/invoices/{id}/resend/ resolves
-    // a MonthlySaccoInvoice, but every invoice list/detail endpoint returns
-    // Invoice rows (a different table) and nothing exposes MonthlySaccoInvoice
-    // ids — so the call can never be made with a valid id from either console.
+    resendInvoice: (id: string) =>
+      apiCall<{ detail?: string; message?: string }>('POST', `/billing/invoices/${uuid(id)}/resend/`),
+
+    updateBillingExemption: (saccoId: string, data: { exempt: boolean; reason?: string }) =>
+      apiCall<any>('PATCH', `/billing/saccos/${uuid(saccoId)}/exemption/`, {
+        exempt: data.exempt,
+        reason: data.reason ?? '',
+      }),
 
     downloadInvoice: async (id: string, format: 'csv' | 'pdf' = 'pdf') => {
       const response = await axiosInstance.get(`/billing/invoices/${uuid(id)}/download/`, {
@@ -2677,6 +2762,24 @@ export const api = {
         status: String(r.status ?? ''),
       }
     },
+
+    updateSavingsStatus: (id: string, data: { status: string; reason?: string }) =>
+      apiCall<any>('POST', `/services/savings/${uuid(id)}/status/`, {
+        status: data.status,
+        reason: data.reason ?? '',
+      }),
+
+    updateSavingsDividendEligibility: (id: string, data: { eligible: boolean; reason?: string }) =>
+      apiCall<any>('POST', `/services/savings/${uuid(id)}/dividend-eligibility/`, {
+        eligible: data.eligible,
+        reason: data.reason ?? '',
+      }),
+
+    reverseSavingTransaction: (id: string, data: { reason: string; reference?: string }) =>
+      apiCall<any>('POST', `/services/savings/${uuid(id)}/reversal/`, {
+        reason: data.reason,
+        reference: data.reference ?? '',
+      }),
 
     getDividendDeclaration: (id: string) =>
       apiCall<any>('GET', `/management/dividends/declarations/${uuid(id)}/`),
@@ -2866,6 +2969,36 @@ export const api = {
         all_reconciled: Boolean(r.all_reconciled),
       }
     },
+
+    getGLAccountStatement: async (accountId: string, params?: { from_date?: string; to_date?: string }) => {
+      const r = await apiCall<any>('GET', `/ledger/gl/accounts/${uuid(accountId)}/statement/`, undefined, { params })
+      return {
+        account: r.account ?? null,
+        opening_balance: Number(r.opening_balance ?? 0),
+        closing_balance: Number(r.closing_balance ?? 0),
+        total_debits: Number(r.total_debits ?? r.total_debit ?? 0),
+        total_credits: Number(r.total_credits ?? r.total_credit ?? 0),
+        entries: Array.isArray(r.entries) ? r.entries : r.results ?? [],
+      }
+    },
+
+    updateSavingsStatus: (id: string, data: { action: 'freeze' | 'close' | 'reactivate'; reason: string }) =>
+      apiCall<any>('POST', `/services/savings/${uuid(id)}/status/`, data),
+
+    updateSavingsDividendEligibility: (id: string, data: { eligible: boolean; reason: string }) =>
+      apiCall<any>('POST', `/services/savings/${uuid(id)}/dividend-eligibility/`, data),
+
+    reverseSavingsTransaction: (id: string, data: { amount: number; direction: 'CREDIT' | 'DEBIT'; reason: string }) =>
+      apiCall<any>('POST', `/services/savings/${uuid(id)}/reversal/`, data),
+
+    disburseToAlternateNumber: (data: { loan_id: string; phone_number: string; amount: number; remarks?: string; reason: string }) =>
+      apiCall<any>('POST', '/payments/mpesa/b2c/disburse/alternate-number/', {
+        loan_id: uuid(data.loan_id),
+        phone_number: data.phone_number,
+        amount: data.amount,
+        remarks: data.remarks ?? 'Loan Disbursement',
+        reason: data.reason,
+      }),
   },
 
   // ─── SUPER ADMIN ───────────────────────────────────────────────────────────
@@ -3081,6 +3214,15 @@ export const api = {
         { amount: data.amount, payment_ref: data.payment_ref, payment_method: data.payment_method },
       ),
 
+    resendInvoice: (id: string) =>
+      apiCall<{ detail?: string; message?: string }>('POST', `/billing/invoices/${uuid(id)}/resend/`),
+
+    updateBillingExemption: (saccoId: string, data: { exempt: boolean; reason?: string }) =>
+      apiCall<any>('PATCH', `/billing/saccos/${uuid(saccoId)}/exemption/`, {
+        exempt: data.exempt,
+        reason: data.reason ?? '',
+      }),
+
     getTopSaccos: async () => {
       const response = await apiCall<any>('GET', '/management/superadmin/top-saccos/')
       const items = Array.isArray(response) ? response : response.results || []
@@ -3200,5 +3342,21 @@ export const api = {
     // (IsSaccoAdminOrSuperAdmin) — the drill-down for one dispute row.
     getDisbursementAudit: (loanId: string) =>
       api.saccoAdmin.getLoanDisbursementAudit(loanId),
+
+    // Platform Holiday Mode
+    getHolidayMode: () =>
+      apiCall<{ holiday_mode_enabled: boolean }>('GET', '/management/superadmin/holiday-mode/'),
+
+    updateHolidayMode: (enabled: boolean) =>
+      apiCall<{ holiday_mode_enabled: boolean }>('POST', '/management/superadmin/holiday-mode/', {
+        holiday_mode_enabled: enabled,
+      }),
+
+    // Background Job Health Diagnostic
+    getJobHealth: () =>
+      apiCall<{
+        status: string
+        jobs: Array<{ name: string; status: string; last_run: string; details?: string }>
+      }>('GET', '/health/jobs/'),
   },
 }

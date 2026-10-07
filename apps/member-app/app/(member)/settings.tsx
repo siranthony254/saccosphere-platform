@@ -6,6 +6,7 @@ import { router } from 'expo-router'
 import * as LocalAuthentication from 'expo-local-authentication'
 import * as SecureStore from 'expo-secure-store'
 import * as ImagePicker from 'expo-image-picker'
+import { useQuery } from '@tanstack/react-query'
 import { api } from '@saccosphere/api-client'
 import { useCurrentUser } from '../../store/useAuthStore'
 import { loadRefreshToken } from '../../hooks/useAuth'
@@ -57,6 +58,11 @@ export default function SettingsScreen() {
   const [uploadingKyc, setUploadingKyc] = useState(false)
 
   const [devices, setDevices] = useState<any[]>([])
+  const { data: kycStatus, refetch: refetchKycStatus } = useQuery({
+    queryKey: ['kycStatus'],
+    queryFn: () => api.kyc.getStatus(),
+    staleTime: 30_000,
+  })
   const [loadingDevices, setLoadingDevices] = useState(false)
   const [devicesLoadError, setDevicesLoadError] = useState(false)
 
@@ -225,6 +231,7 @@ export default function SettingsScreen() {
         file: { uri: kycImage, name: 'kyc_id.jpg', type: 'image/jpeg' },
       })
       Alert.alert('Success', 'KYC document uploaded successfully. Our team will review it shortly.')
+      refetchKycStatus()
       setKycModalVisible(false)
       setKycImage(null)
     } catch (err: any) {
@@ -293,17 +300,31 @@ export default function SettingsScreen() {
           <Text style={{ color: c.textMuted, fontSize: 18 }}>{'>'}</Text>
         </TouchableOpacity>
 
-        {/* Upload KYC */}
-        <TouchableOpacity
-          style={{ backgroundColor: c.surface, borderRadius: 12, padding: 16, borderWidth: 1, borderColor: c.border, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}
-          onPress={() => setKycModalVisible(true)}
-        >
-          <View>
-            <Text style={{ color: c.text, fontSize: 14, fontWeight: '600', marginBottom: 4 }}>Upload KYC</Text>
-            <Text style={{ color: c.textMuted, fontSize: 12 }}>Upload ID or documents for account verification.</Text>
+        {/* KYC status */}
+        <View style={{ backgroundColor: c.surface, borderRadius: 12, padding: 16, borderWidth: 1, borderColor: c.border, marginBottom: 16 }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: c.text, fontSize: 14, fontWeight: '600', marginBottom: 4 }}>KYC Status</Text>
+              <Text style={{ color: c.textMuted, fontSize: 12 }}>
+                {kycStatus?.status_display || kycStatus?.status || user?.kyc_status || 'Not started'}
+                {kycStatus?.iprs_verified ? ' - IPRS verified' : ''}
+              </Text>
+            </View>
+            <TouchableOpacity onPress={() => setKycModalVisible(true)} style={{ backgroundColor: c.accent, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8 }}>
+              <Text style={{ color: '#fff', fontSize: 11, fontWeight: '700' }}>
+                {kycStatus?.status === 'rejected' || kycStatus?.status === 'iprs_rejected' ? 'Resubmit' : 'Upload'}
+              </Text>
+            </TouchableOpacity>
           </View>
-          <Text style={{ color: c.textMuted, fontSize: 18 }}>{'>'}</Text>
-        </TouchableOpacity>
+          {(kycStatus?.rejection_reason || kycStatus?.admin_review_reason || kycStatus?.iprs_error) ? (
+            <Text style={{ color: c.danger, fontSize: 11, lineHeight: 16, marginTop: 10 }}>
+              {kycStatus.rejection_reason || kycStatus.admin_review_reason || kycStatus.iprs_error}
+            </Text>
+          ) : null}
+          <Text style={{ color: c.textFaint, fontSize: 10, marginTop: 8 }}>
+            Documents on file: {kycStatus?.has_passport ? 'Passport' : [kycStatus?.has_id_front ? 'ID front' : null, kycStatus?.has_id_back ? 'ID back' : null].filter(Boolean).join(', ') || 'None'}
+          </Text>
+        </View>
 
         {/* Appearance */}
         <TouchableOpacity

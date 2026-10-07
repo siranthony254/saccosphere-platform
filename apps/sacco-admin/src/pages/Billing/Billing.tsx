@@ -1,3 +1,5 @@
+import { useMutation } from '@tanstack/react-query'
+import { api } from '@saccosphere/api-client'
 import { useInvoices, useCurrentMonthBilling, useDownloadInvoice } from '../../hooks/useBilling'
 import type { MonthlyInvoice } from '@saccosphere/schemas'
 
@@ -11,6 +13,12 @@ export function Billing() {
   const { data: invoiceData, isLoading } = useInvoices()
   const { data: currentMonth } = useCurrentMonthBilling()
   const { mutate: downloadInvoice } = useDownloadInvoice()
+
+  const resendMutation = useMutation({
+    mutationFn: (id: string) => api.saccoAdmin.resendInvoice(id),
+    onSuccess: () => alert('Invoice notification email resent successfully.'),
+    onError: (err: any) => alert(err?.message || 'Failed to resend invoice.'),
+  })
 
   const handleDownload = (id: string, format: 'pdf' | 'csv') => {
     downloadInvoice(
@@ -105,12 +113,19 @@ export function Billing() {
                     </td>
                     <td className="px-3 py-3 text-xs text-ink-muted">{inv.due_date}</td>
                     <td className="px-3 py-3 text-xs text-ink-muted">{inv.paid_date ?? '—'}</td>
-                    <td className="px-3 py-3">
+                    <td className="px-3 py-3 flex gap-1.5">
                       <button
                         onClick={() => handleDownload(inv.id, 'pdf')}
-                        className="px-2.5 py-1 rounded border border-ink-faint bg-white text-ink text-[11px] font-medium hover:bg-surface-2"
+                        className="px-2.5 py-1 rounded border border-ink-faint bg-white text-ink text-[11px] font-medium hover:bg-surface-2 cursor-pointer"
                       >
                         PDF
+                      </button>
+                      <button
+                        onClick={() => resendMutation.mutate(inv.id)}
+                        disabled={resendMutation.isPending}
+                        className="px-2.5 py-1 rounded border border-violet-200 bg-violet-50 text-violet-700 text-[11px] font-semibold hover:bg-violet-100 cursor-pointer disabled:opacity-50"
+                      >
+                        Resend
                       </button>
                     </td>
                   </tr>
