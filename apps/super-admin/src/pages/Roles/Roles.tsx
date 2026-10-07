@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { toast } from 'react-hot-toast'
 import { useUserRoles, useAssignRole, useRevokeRole } from '../../hooks/useRoles'
 
 export function Roles() {
@@ -19,7 +20,7 @@ export function Roles() {
       setSaccoId('')
     } catch (error) {
       console.error('Failed to assign role:', error)
-      alert('Failed to assign role. Check console for details.')
+      toast.error('Failed to assign role. Check console for details.')
     }
   }
 
@@ -29,7 +30,7 @@ export function Roles() {
       refetch()
     } catch (error) {
       console.error('Failed to revoke role:', error)
-      alert('Failed to revoke role. Check console for details.')
+      toast.error('Failed to revoke role. Check console for details.')
     }
   }
 

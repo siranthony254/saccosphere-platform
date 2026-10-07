@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { toast } from 'react-hot-toast'
 import {
   useDividendDeclarations,
   useCreateDividendDeclaration,
@@ -51,9 +52,9 @@ export function Dividends() {
     calculateMutation.mutate(id, {
       onError: (err: any) => {
         if (err?.status === 409) {
-          alert('A calculation is already running for this declaration — wait for it to finish.')
+          toast.error('A calculation is already running for this declaration — wait for it to finish.')
         } else {
-          alert(err?.message || 'Failed to start dividend calculation.')
+          toast.error(err?.message || 'Failed to start dividend calculation.')
         }
       },
     })
@@ -63,9 +64,9 @@ export function Dividends() {
     approveMutation.mutate(id, {
       onError: (err: any) => {
         if (err?.status === 403) {
-          alert(err?.message || 'This declaration needs to be approved by a different admin than whoever created it.')
+          toast.error(err?.message || 'This declaration needs to be approved by a different admin than whoever created it.')
         } else {
-          alert(err?.message || 'Failed to approve dividend declaration.')
+          toast.error(err?.message || 'Failed to approve dividend declaration.')
         }
       },
     })
@@ -75,9 +76,9 @@ export function Dividends() {
     disburseMutation.mutate(id, {
       onError: (err: any) => {
         if (err?.status === 409) {
-          alert('Disbursement is already running for this declaration — wait for it to finish.')
+          toast.error('Disbursement is already running for this declaration — wait for it to finish.')
         } else {
-          alert(err?.message || 'Failed to start dividend disbursement.')
+          toast.error(err?.message || 'Failed to start dividend disbursement.')
         }
       },
     })
@@ -86,7 +87,7 @@ export function Dividends() {
   const handleDeclare = (e: React.FormEvent) => {
     e.preventDefault()
     if (!savingsTypeId) {
-      alert('Select a savings type for this declaration.')
+      toast.error('Select a savings type for this declaration.')
       return
     }
     createDeclaration(
@@ -100,9 +101,9 @@ export function Dividends() {
       {
         onSuccess: () => {
           setShowDeclareModal(false)
-          alert('Dividend declaration created successfully!')
+          toast.success('Dividend declaration created successfully!')
         },
-        onError: (err: any) => alert(err?.message || 'Failed to create dividend declaration.'),
+        onError: (err: any) => toast.error(err?.message || 'Failed to create dividend declaration.'),
       }
     )
   }

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
+import { toast } from 'react-hot-toast'
 import { api } from '@saccosphere/api-client'
 
 type ReportType = 'par' | 'financial_position' | 'membership'
@@ -40,7 +41,7 @@ export function SASRAReturns() {
       a.click()
       URL.revokeObjectURL(url)
     },
-    onError: () => alert('Could not export the SASRA return.'),
+    onError: () => toast.error('Could not export the SASRA return.'),
   })
 
   return (

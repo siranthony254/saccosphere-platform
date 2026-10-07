@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { toast } from 'react-hot-toast'
 import { Icon } from '@saccosphere/ui'
 import { useMembers } from '../../hooks/useMembers'
 import { useSaccoAdminDashboard } from '../../hooks/useSaccoAdminDashboard'
@@ -25,7 +26,7 @@ export function MembersList() {
 
   const handleExportCSV = () => {
     if (!data?.results || data.results.length === 0) {
-      alert('No members to export')
+      toast.error('No members to export')
       return
     }
 

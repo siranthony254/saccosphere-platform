@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { toast } from 'react-hot-toast'
 import { useSaccoAdminDashboard } from '../../hooks/useSaccoAdminDashboard'
 import { useDownloadReport } from '../../hooks/useReports'
 
@@ -24,7 +25,7 @@ export function Reports() {
       URL.revokeObjectURL(url)
     } catch (error) {
       console.error('Failed to download report:', error)
-      alert('Failed to download report. Check console for details.')
+      toast.error('Failed to download report. Check console for details.')
     }
   }
 

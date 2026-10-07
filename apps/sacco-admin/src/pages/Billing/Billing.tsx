@@ -1,4 +1,5 @@
 import { useMutation } from '@tanstack/react-query'
+import { toast } from 'react-hot-toast'
 import { api } from '@saccosphere/api-client'
 import { useInvoices, useCurrentMonthBilling, useDownloadInvoice } from '../../hooks/useBilling'
 import type { MonthlyInvoice } from '@saccosphere/schemas'
@@ -16,8 +17,8 @@ export function Billing() {
 
   const resendMutation = useMutation({
     mutationFn: (id: string) => api.saccoAdmin.resendInvoice(id),
-    onSuccess: () => alert('Invoice notification email resent successfully.'),
-    onError: (err: any) => alert(err?.message || 'Failed to resend invoice.'),
+    onSuccess: () => toast.success('Invoice notification email resent successfully.'),
+    onError: (err: any) => toast.error(err?.message || 'Failed to resend invoice.'),
   })
 
   const handleDownload = (id: string, format: 'pdf' | 'csv') => {
@@ -34,7 +35,7 @@ export function Billing() {
           document.body.removeChild(a)
           URL.revokeObjectURL(url)
         },
-        onError: (err: any) => alert(err?.message || 'Failed to download invoice document.'),
+        onError: (err: any) => toast.error(err?.message || 'Failed to download invoice document.'),
       }
     )
   }

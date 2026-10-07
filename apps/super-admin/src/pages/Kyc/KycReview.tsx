@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { toast } from 'react-hot-toast'
 import { Icon } from '@saccosphere/ui'
 import { useKycQueue } from '../../hooks/usePlatformData'
 import { api } from '@saccosphere/api-client'
@@ -15,7 +16,7 @@ export function KycReview() {
       setSelectedId(null)
     } catch (error) {
       console.error('Failed to review KYC:', error)
-      alert('Review failed. Ensure rejection reason is provided if rejecting.')
+      toast.error('Review failed. Ensure rejection reason is provided if rejecting.')
     }
   }
 

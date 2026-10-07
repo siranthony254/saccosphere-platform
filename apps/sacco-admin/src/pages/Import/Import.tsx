@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { toast } from 'react-hot-toast'
 import { useImportMembers, useImportJobStatus } from '../../hooks/useImport'
 
 export function Import() {
@@ -23,7 +24,7 @@ export function Import() {
       setFile(null)
     } catch (error) {
       console.error('Failed to import members:', error)
-      alert('Failed to import members. Check console for details.')
+      toast.error('Failed to import members. Check console for details.')
     }
   }
 

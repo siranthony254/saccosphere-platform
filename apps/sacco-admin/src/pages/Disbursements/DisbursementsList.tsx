@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'react-hot-toast'
 import { api } from '@saccosphere/api-client'
 import { useAdminLoans, useManualDisburseLoan, useDisbursementHistory, useB2CStatus, useLoanDisbursementAudit } from '../../hooks/useLoans'
 import { useDisbursementsDashboard } from '../../hooks/useSaccoAdminDashboard'
@@ -88,7 +89,7 @@ export function DisbursementsList() {
       setAlternateReason('')
       setLastConvId(data.conversation_id || data.checkout_request_id || 'ALTPAYOUT')
     },
-    onError: (err: any) => alert(err?.message || 'Alternate-number payout failed.'),
+    onError: (err: any) => toast.error(err?.message || 'Alternate-number payout failed.'),
   })
 
   return (

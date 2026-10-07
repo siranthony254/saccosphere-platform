@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { toast } from 'react-hot-toast'
 import { api } from '@saccosphere/api-client'
 import { useSacco } from '../../hooks/useSacco'
 import {
@@ -98,7 +99,7 @@ export function LedgerManagement() {
       a.click()
       window.URL.revokeObjectURL(url)
     } catch (err: any) {
-      alert('Failed to download PDF statement: ' + (err?.message || 'Error occurred.'))
+      toast.error('Failed to download PDF statement: ' + (err?.message || 'Error occurred.'))
     }
   }
 

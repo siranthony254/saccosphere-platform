@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { toast } from 'react-hot-toast'
 import { useSMSCampaigns, useCreateSMSCampaign, useSendSMSCampaign } from '../../hooks/useBulkSMS'
 import type { BulkSMSCampaign } from '@saccosphere/schemas'
 
@@ -36,9 +37,9 @@ export function BulkSMS() {
         onSuccess: () => {
           setShowModal(false)
           setMessage('')
-          alert('Bulk SMS campaign created as a draft.')
+          toast.success('Bulk SMS campaign created as a draft.')
         },
-        onError: (err: any) => alert(err?.message || 'Failed to create campaign.'),
+        onError: (err: any) => toast.error(err?.message || 'Failed to create campaign.'),
       }
     )
   }

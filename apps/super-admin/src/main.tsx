@@ -1,10 +1,12 @@
 import ReactDOM from 'react-dom/client'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { RouterProvider } from 'react-router-dom'
+import { Toaster } from 'react-hot-toast'
 import { router } from './router'
 import { useAuthBootstrap } from './hooks/useAuth'
 import { AdminThemeProvider } from '@saccosphere/ui'
 import './index.css'
+import 'react-hot-toast/dist/index.css'
 
 function registerServiceWorker() {
   if (typeof window === 'undefined') return
@@ -44,6 +46,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
   <QueryClientProvider client={queryClient}>
     <AdminThemeProvider defaultThemeId="indigo">
       <App />
+      <Toaster position="top-right" />
     </AdminThemeProvider>
   </QueryClientProvider>
 )

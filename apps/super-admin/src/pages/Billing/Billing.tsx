@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
+import { toast } from 'react-hot-toast'
 import { api } from '@saccosphere/api-client'
 import { useInvoices, useInvoice, useDownloadInvoice, useMarkInvoicePaid } from '../../hooks/useBilling'
 import { useAllSaccos } from '../../hooks/usePlatformData'
@@ -75,7 +76,7 @@ export function Billing() {
       URL.revokeObjectURL(url)
     } catch (error) {
       console.error('Failed to download invoice:', error)
-      alert('Failed to download invoice')
+      toast.error('Failed to download invoice')
     }
   }
 
