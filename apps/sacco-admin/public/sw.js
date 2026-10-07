@@ -69,10 +69,13 @@ self.addEventListener('fetch', (event) => {
       (async () => {
         try {
           const fresh = await fetch(req);
-          const cloned = fresh.clone();
-          const cache = await caches.open(CACHE_NAME);
-          // Cache the latest shell response for next offline load.
-          await cache.put('/index.html', cloned).catch(() => undefined);
+          // Only cache successful responses
+          if (fresh.ok && fresh.type === 'basic') {
+            const cloned = fresh.clone();
+            const cache = await caches.open(CACHE_NAME);
+            // Cache the latest shell response for next offline load.
+            await cache.put('/index.html', cloned).catch(() => undefined);
+          }
           return fresh;
         } catch {
           const cachedShell = await caches.match('/index.html');
@@ -91,9 +94,12 @@ self.addEventListener('fetch', (event) => {
 
       try {
         const res = await fetch(req);
-        const cloned = res.clone();
-        const cache = await caches.open(CACHE_NAME);
-        cache.put(req, cloned).catch(() => undefined);
+        // Only cache successful responses
+        if (res.ok && res.type === 'basic') {
+          const cloned = res.clone();
+          const cache = await caches.open(CACHE_NAME);
+          cache.put(req, cloned).catch(() => undefined);
+        }
         return res;
       } catch {
         // If it was an asset request and we can't fetch, just fail.
