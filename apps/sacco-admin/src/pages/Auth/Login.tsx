@@ -14,6 +14,7 @@ export function Login() {
     event.preventDefault()
     try {
       await loginMutation.mutateAsync({ email, password })
+      console.log('Navigating to:', from)
       navigate(from, { replace: true })
     } catch (error) {
       console.error('SACCO Admin login submission failed:', error)

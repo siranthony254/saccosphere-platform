@@ -62,5 +62,5 @@ export const router = createBrowserRouter([
       { path: 'approvals', element: <ApprovalsList /> },
     ],
   },
-  { path: '*', element: <Navigate to="/" replace /> },
+  { path: '*', element: <Navigate to="/login" replace /> },
 ])

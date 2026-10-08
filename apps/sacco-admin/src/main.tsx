@@ -10,15 +10,17 @@ import { ErrorBoundary } from './components/error/ErrorBoundary'
 import './index.css'
 
 function registerServiceWorker() {
+  // Temporarily disable service worker to debug 404 errors
   if (typeof window === 'undefined') return
   if (!('serviceWorker' in navigator)) return
 
   window.addEventListener('load', () => {
-    navigator.serviceWorker
-      .register('/sw.js')
-      .catch((error) => {
-        console.warn('Service worker registration failed:', error)
-      })
+    // Commented out to debug routing issues
+    // navigator.serviceWorker
+    //   .register('/sw.js')
+    //   .catch((error) => {
+    //     console.warn('Service worker registration failed:', error)
+    //   })
   })
 }
 
