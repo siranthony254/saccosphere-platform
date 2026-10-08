@@ -9,6 +9,7 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   return {
     plugins: [react()],
+    base: '/',
     css: {
       postcss: './postcss.config.js',
     },
