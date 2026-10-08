@@ -96,9 +96,11 @@ const normalizeStkPushResponse = (payload: any): STKPushResponse => ({
 const normalizeUser = (user: any, roleOverrides?: { role?: User['role']; sacco_id?: string | null; sacco_slug?: string | null }): User => {
   const createdAt = user.created_at ?? user.date_joined ?? new Date().toISOString()
   const kycStatus = String(user.kyc_status ?? user.status ?? 'not_started').toLowerCase()
+  const saccoContext = user.sacco_context ?? {}
 
-  // Map backend roles (uppercase) to frontend roles (lowercase)
-  const rawRole = (roleOverrides?.role ?? user.role ?? 'member').toLowerCase()
+  // Backend authority is saccomanagement.Role, exposed through sacco_context.
+  // User.role may remain MEMBER even when the user has a SACCO_ADMIN role row.
+  const rawRole = String(roleOverrides?.role ?? saccoContext.role ?? user.role ?? 'member').toLowerCase()
   let role: User['role'] = 'member'
   if (rawRole === 'superadmin' || rawRole === 'super_admin') role = 'superadmin'
   else if (rawRole === 'sacco_admin') role = 'sacco_admin'
@@ -112,8 +114,8 @@ const normalizeUser = (user: any, roleOverrides?: { role?: User['role']; sacco_i
     kyc_status: kycStatus === 'approved' ? 'verified' : kycStatus,
     iprs_verified: Boolean(user.iprs_verified),
     national_id: user.national_id ?? null,
-    sacco_id: roleOverrides?.sacco_id ?? user.sacco_id ?? null,
-    sacco_slug: roleOverrides?.sacco_slug ?? user.sacco_slug ?? null,
+    sacco_id: roleOverrides?.sacco_id ?? saccoContext.sacco_id ?? user.sacco_id ?? null,
+    sacco_slug: roleOverrides?.sacco_slug ?? saccoContext.sacco_slug ?? user.sacco_slug ?? null,
     created_at: createdAt,
   })
 }
@@ -554,7 +556,11 @@ export const api = {
       // payload can omit admin role context, while /accounts/me/ resolves
       // sacco_id for SACCO admins server-side.
       const [profile, kyc] = await Promise.all([
-        apiCall<any>('GET', '/accounts/me/').catch(() => payload.user),
+        apiCall<any>('GET', '/accounts/me/').catch(() => ({
+          ...payload.user,
+          sacco_context: payload.sacco_context,
+          sacco_id: payload.sacco_id ?? payload.sacco_context?.sacco_id,
+        })),
         apiCall<any>('GET', '/accounts/kyc/status/').catch(() => ({ status: 'not_started' })),
       ])
 
