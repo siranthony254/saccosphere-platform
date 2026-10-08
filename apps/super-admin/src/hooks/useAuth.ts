@@ -100,6 +100,7 @@ export function useLogin() {
 
   return useMutation({
     mutationFn: async (data: LoginInput) => {
+      console.info('Super Admin login request:', { email: data.email })
       const tokens = await api.auth.login(data)
       setAccessToken(tokens.access)
       await saveRefreshToken(tokens.refresh)
@@ -107,7 +108,11 @@ export function useLogin() {
       return tokens
     },
     onSuccess: () => {
+      console.info('Super Admin login succeeded')
       queryClient.clear()
+    },
+    onError: (error) => {
+      console.error('Super Admin login failed:', error)
     },
   })
 }

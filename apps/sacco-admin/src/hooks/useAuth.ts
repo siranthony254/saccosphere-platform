@@ -109,6 +109,7 @@ export function useLogin() {
 
   return useMutation({
     mutationFn: async (data: LoginInput) => {
+      console.info('SACCO Admin login request:', { email: data.email })
       const tokens = await api.auth.login(data)
       setAccessToken(tokens.access)
       await saveRefreshToken(tokens.refresh)
@@ -119,7 +120,11 @@ export function useLogin() {
       return tokens
     },
     onSuccess: () => {
+      console.info('SACCO Admin login succeeded')
       queryClient.clear()
+    },
+    onError: (error) => {
+      console.error('SACCO Admin login failed:', error)
     },
   })
 }

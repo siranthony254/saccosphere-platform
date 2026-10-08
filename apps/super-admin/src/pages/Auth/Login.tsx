@@ -18,7 +18,7 @@ export function Login() {
       // but let's try the Router navigate first with a small delay or check
       navigate(from, { replace: true })
     } catch (error) {
-      console.error('Super Admin login failed:', error)
+      console.error('Super Admin login submission failed:', error)
     }
   }
 
