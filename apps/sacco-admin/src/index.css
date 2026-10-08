@@ -1,6 +1,17 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  overflow: hidden;
+  background: rgb(241 245 249);
+}
 
 /* Fallback accent scale (Mint, this app's default AdminThemeProvider theme)
    for the brief window before it mounts and overwrites these via inline

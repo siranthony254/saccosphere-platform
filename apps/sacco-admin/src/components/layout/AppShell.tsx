@@ -7,8 +7,6 @@ import { clearTokens } from '@saccosphere/api-client'
 import { useApplications } from '../../hooks/useApplications'
 import { useAdminLoans } from '../../hooks/useLoans'
 import { useKycQueue } from '../../hooks/useKyc'
-import { useQuery } from '@tanstack/react-query'
-import { api } from '@saccosphere/api-client'
 
 export function AppShell() {
   const { sidebarCollapsed } = useLayoutStore()
@@ -30,16 +28,10 @@ export function AppShell() {
   const pendingLoansCount = loans?.count ?? 0
   const pendingKycCount = kycQueue?.length ?? 0
 
-  const { data: pendingApprovals = [] } = useQuery({
-    queryKey: ['approvals-pending'],
-    queryFn: () => api.approvals.getPending().catch(() => []),
-    staleTime: 15_000,
-  })
-  const pendingApprovalsCount = pendingApprovals.length
 
   const NAV_ITEMS: { path: string; label: string; icon: IconName; badge: string | null }[] = [
     { path: '/dashboard', label: 'Dashboard', icon: 'dashboard', badge: null },
-    { path: '/approvals', label: 'Maker-Checker', icon: 'user-check', badge: pendingApprovalsCount > 0 ? String(pendingApprovalsCount) : null },
+    { path: '/approvals', label: 'Maker-Checker', icon: 'user-check', badge: null },
     { path: '/members', label: 'Members', icon: 'users', badge: null },
     { path: '/applications', label: 'Applications', icon: 'file-text', badge: pendingAppsCount > 0 ? String(pendingAppsCount) : null },
     { path: '/loans', label: 'Loan approvals', icon: 'coins', badge: pendingLoansCount > 0 ? String(pendingLoansCount) : null },
@@ -61,9 +53,9 @@ export function AppShell() {
 
 
   return (
-    <div className="flex h-screen font-sans bg-surface-2 text-ink">
+    <div className="flex h-dvh overflow-hidden font-sans bg-surface-2 text-ink">
       {/* Sidebar */}
-      <aside className={`bg-navy-950 flex flex-col transition-[width] duration-200 shrink-0 border-r border-white/5 ${sidebarCollapsed ? 'w-[60px]' : 'w-[210px]'}`}>
+      <aside className={`bg-navy-950 flex min-h-0 flex-col transition-[width] duration-200 shrink-0 border-r border-white/5 ${sidebarCollapsed ? 'w-[60px]' : 'w-[210px]'}`}>
         {/* Logo */}
         <div className="pt-[18px] pb-[14px] px-4 border-b border-white/5">
           {!sidebarCollapsed && (
@@ -84,7 +76,7 @@ export function AppShell() {
         )}
 
         {/* Nav */}
-        <nav className="flex-1 pt-2">
+        <nav className="min-h-0 flex-1 overflow-y-auto pt-2 pb-2">
           {NAV_ITEMS.map(item => (
             <NavLink
               key={item.path}
@@ -130,7 +122,7 @@ export function AppShell() {
 
       {/* Main */}
       <AdminBackground>
-        <main className="flex-1 overflow-y-auto">
+        <main className="min-h-0 flex-1 overflow-y-auto">
           <Outlet />
         </main>
       </AdminBackground>
