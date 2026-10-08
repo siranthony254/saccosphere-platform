@@ -1,7 +1,7 @@
 {
   "buildCommand": "pnpm --filter sacco-admin build",
   "installCommand": "pnpm install --no-frozen-lockfile",
-  "outputDirectory": "apps/sacco-admin/dist",
+  "outputDirectory": "dist",
   "framework": "vite",
   "rewrites": [
     {
