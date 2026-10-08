@@ -117,6 +117,10 @@ export function useLogin() {
       // tokens.user already carries sacco_id (UserProfileSerializer resolves it
       // server-side). No roles lookup — see useAuthBootstrap.
       setAuth({ token: tokens.access, user: tokens.user })
+      console.info('SACCO Admin auth state set', {
+        role: tokens.user.role,
+        hasSaccoId: tokens.user.sacco_id != null,
+      })
       return tokens
     },
     onSuccess: () => {

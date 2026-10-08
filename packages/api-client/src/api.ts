@@ -550,13 +550,18 @@ export const api = {
 
       setAccessToken(payload.access)
 
-      // Fetch KYC status immediately after login to ensure store accuracy
-      const kyc = await apiCall<any>('GET', '/accounts/kyc/status/').catch(() => ({ status: 'not_started' }))
+      // Fetch the authoritative profile after the access token is set. The login
+      // payload can omit admin role context, while /accounts/me/ resolves
+      // sacco_id for SACCO admins server-side.
+      const [profile, kyc] = await Promise.all([
+        apiCall<any>('GET', '/accounts/me/').catch(() => payload.user),
+        apiCall<any>('GET', '/accounts/kyc/status/').catch(() => ({ status: 'not_started' })),
+      ])
 
       return AuthTokensSchema.parse({
         access: payload.access,
         refresh: payload.refresh,
-        user: normalizeUser({ ...payload.user, kyc_status: kyc.status }),
+        user: normalizeUser({ ...profile, kyc_status: kyc.status }),
       })
     },
 
