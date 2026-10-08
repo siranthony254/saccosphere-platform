@@ -16,7 +16,9 @@ function registerServiceWorker() {
   window.addEventListener('load', () => {
     navigator.serviceWorker
       .register('/sw.js')
-      .catch(() => undefined)
+      .catch((error) => {
+        console.warn('Service worker registration failed:', error)
+      })
   })
 }
 
