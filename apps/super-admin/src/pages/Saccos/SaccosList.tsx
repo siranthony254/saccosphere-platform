@@ -10,6 +10,8 @@ export function SaccosList() {
   const navigate = useNavigate()
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState('all')
+  const [page, setPage] = useState(1)
+  const pageSize = 25
 
   // The backend list is unpaginated and unfiltered — one fetch, filter here.
   const { data, isLoading } = useAllSaccos()
@@ -25,6 +27,9 @@ export function SaccosList() {
     })
   }, [data, search, status])
 
+  const pageCount = Math.max(1, Math.ceil(rows.length / pageSize))
+  const visibleRows = rows.slice((page - 1) * pageSize, page * pageSize)
+
   return (
     <div className="p-5">
       <PageHeader
@@ -37,12 +42,12 @@ export function SaccosList() {
           className="flex-1 py-2 px-3 border border-mid rounded-lg text-[13px] outline-none"
           placeholder="Search SACCO name..."
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => { setSearch(e.target.value); setPage(1) }}
         />
         <select
           className="py-2 px-3 border border-mid rounded-lg text-[13px] outline-none bg-surface"
           value={status}
-          onChange={(e) => setStatus(e.target.value)}
+          onChange={(e) => { setStatus(e.target.value); setPage(1) }}
         >
           <option value="all">All statuses</option>
           <option value="active">Active</option>
@@ -87,11 +92,15 @@ export function SaccosList() {
               row.last_transaction_at ? new Date(row.last_transaction_at).toLocaleDateString() : '—',
           },
         ]}
-        data={rows}
+        data={visibleRows}
         loading={isLoading}
         emptyMessage={search || status !== 'all' ? "No SACCOs match your filters." : "No SACCOs registered on the platform yet."}
         keyExtractor={(row: SuperAdminSacco) => row.id}
         onRowClick={(row: SuperAdminSacco) => navigate(`/saccos/${row.id}`)}
+        page={page}
+        pageSize={pageSize}
+        totalItems={rows.length}
+        onPageChange={(nextPage) => setPage(Math.min(pageCount, Math.max(1, nextPage)))}
       />
     </div>
   )

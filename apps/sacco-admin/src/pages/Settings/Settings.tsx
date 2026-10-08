@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { ThemePicker } from '@saccosphere/ui'
+import { toast } from 'react-hot-toast'
 import { useSaccoSettings } from '../../hooks/useSaccoSettings'
 import { useAuthStore } from '../../store/useAuthStore'
 import {
@@ -44,6 +45,15 @@ const EMPTY_ST = {
   is_active: true,
   allows_multiple_accounts: false,
 }
+
+const SETTINGS_FIELDS = {
+  min_loan_amount: 'Minimum loan amount',
+  max_loan_amount: 'Maximum loan amount',
+  loan_multiplier: 'Loan multiplier',
+  registration_fee: 'Registration fee',
+  monthly_contribution_amount: 'Monthly contribution',
+  sms_daily_limit: 'SMS daily limit',
+} as const
 
 function SavingsTypesCard() {
   const { user } = useAuthStore()
@@ -1001,7 +1011,7 @@ export function Settings() {
   }, [settings])
 
   const handleSave = () => {
-    save({
+    const values: Record<string, number | string> = {
       guarantor_type_allowed: formData.guarantor_type_allowed,
       min_loan_amount: Number(formData.min_loan_amount),
       max_loan_amount: Number(formData.max_loan_amount),
@@ -1009,6 +1019,23 @@ export function Settings() {
       registration_fee: Number(formData.registration_fee),
       monthly_contribution_amount: Number(formData.monthly_contribution_amount),
       sms_daily_limit: Number(formData.sms_daily_limit),
+    }
+
+    const invalid = Object.entries(values).find(([, value]) => typeof value !== 'number' || !Number.isFinite(value) || value < 0)
+    if (invalid) {
+      toast.error(`${SETTINGS_FIELDS[invalid[0] as keyof typeof SETTINGS_FIELDS]} must be a valid non-negative number.`)
+      return
+    }
+
+    if (values.max_loan_amount < values.min_loan_amount) {
+      toast.error('Maximum loan amount must be greater than or equal to the minimum loan amount.')
+      return
+    }
+
+    save(values, {
+      onSuccess: () => toast.success('SACCO settings saved.'),
+      onError: (error: any) =>
+        toast.error(error?.response?.data?.detail || error?.message || 'Failed to save SACCO settings.'),
     })
   }
 

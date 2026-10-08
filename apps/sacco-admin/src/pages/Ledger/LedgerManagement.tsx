@@ -109,12 +109,17 @@ export function LedgerManagement() {
       setAdjStatus({ type: 'error', message: 'Please fill in all required fields.' })
       return
     }
-    // Simulation / Post manual entry feedback
-    setAdjStatus({ type: 'success', message: `Adjustment entry ${adjReference} posted successfully.` })
-    setAdjAmount('')
-    setAdjReference('')
-    setAdjDescription('')
-    setTimeout(() => setAdjStatus(null), 4000)
+
+    const amount = Number(adjAmount)
+    if (!Number.isFinite(amount) || amount <= 0) {
+      setAdjStatus({ type: 'error', message: 'Amount must be a positive number.' })
+      return
+    }
+
+    setAdjStatus({
+      type: 'error',
+      message: 'Manual journal posting is not available because the backend does not provide a SACCO-scoped posting endpoint.',
+    })
   }
 
   const formatCurrency = (val: number | undefined) =>
@@ -588,9 +593,9 @@ export function LedgerManagement() {
       {activeTab === 'adjustment' && (
         <div className="bg-white border border-[#e5ede9] rounded-[10px] p-5 max-w-2xl space-y-4 shadow-sm">
           <div>
-            <div className="font-semibold text-base text-ink">Post Manual Journal Entry</div>
+            <div className="font-semibold text-base text-ink">Manual Journal Entry</div>
             <div className="text-xs text-ink-muted">
-              Record manual ledger adjustments, corrections, or audited manual postings.
+              Manual journal posting is unavailable until the backend exposes a SACCO-scoped posting endpoint.
             </div>
           </div>
 

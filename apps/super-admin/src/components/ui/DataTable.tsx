@@ -15,6 +15,10 @@ interface DataTableProps<T> {
   keyExtractor: (row: T, index: number) => string
   rowClassName?: (row: T, index: number) => string
   onRowClick?: (row: T) => void
+  page?: number
+  pageSize?: number
+  totalItems?: number
+  onPageChange?: (page: number) => void
 }
 
 export function DataTable<T>({
@@ -25,6 +29,10 @@ export function DataTable<T>({
   keyExtractor,
   rowClassName,
   onRowClick,
+  page,
+  pageSize,
+  totalItems,
+  onPageChange,
 }: DataTableProps<T>) {
   return (
     <div className="bg-surface border border-mid rounded-[10px] overflow-hidden">
@@ -76,6 +84,29 @@ export function DataTable<T>({
           )}
         </tbody>
       </table>
+      {typeof page === 'number' && typeof pageSize === 'number' && typeof totalItems === 'number' && onPageChange && (
+        <div className="flex items-center justify-between gap-3 border-t border-mid bg-surface-2 px-3 py-2 text-xs text-ink-muted">
+          <span>
+            Showing {(page - 1) * pageSize + 1}-{Math.min(page * pageSize, totalItems)} of {totalItems}
+          </span>
+          <div className="flex gap-2">
+            <button
+              className="rounded-lg border border-mid bg-surface px-2.5 py-1.5 disabled:opacity-40"
+              disabled={page <= 1}
+              onClick={() => onPageChange(page - 1)}
+            >
+              Previous
+            </button>
+            <button
+              className="rounded-lg border border-mid bg-surface px-2.5 py-1.5 disabled:opacity-40"
+              disabled={page * pageSize >= totalItems}
+              onClick={() => onPageChange(page + 1)}
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

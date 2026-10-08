@@ -88,7 +88,13 @@ export function useSaccoSettings() {
     isLoading: q.isLoading,
     error: q.error,
     isPending: m.isPending,
-    save: (settings: any) => m.mutate(settings),
+    save: (
+      settings: any,
+      options?: {
+        onSuccess?: () => void
+        onError?: (error: unknown) => void
+      },
+    ) => m.mutate(settings, options),
   }
 }
 

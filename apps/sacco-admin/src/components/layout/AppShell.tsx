@@ -45,9 +45,7 @@ export function AppShell() {
     { path: '/loans', label: 'Loan approvals', icon: 'coins', badge: pendingLoansCount > 0 ? String(pendingLoansCount) : null },
     { path: '/disbursements', label: 'Disbursements', icon: 'send', badge: null },
     { path: '/contributions', label: 'Contributions', icon: 'download', badge: null },
-    // 'General Ledger' hidden: /api/v1/ledger/* only serves the caller's own
-    // membership ledger, so a SACCO admin (not a member) gets 400/404. Re-add
-    // once the backend exposes a SACCO-scoped ledger endpoint.
+    { path: '/ledger', label: 'General Ledger', icon: 'file-text', badge: null },
     { path: '/dividends', label: 'Dividends', icon: 'gem', badge: null },
     { path: '/sms', label: 'Bulk SMS', icon: 'message', badge: null },
     { path: '/reports', label: 'Reports', icon: 'bar-chart', badge: null },
