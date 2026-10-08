@@ -6,11 +6,13 @@ import { useAuthStore } from '../../store/useAuthStore'
 export function Login() {
   const navigate = useNavigate()
   const location = useLocation()
-  const from = (location.state as { from?: { pathname: string } })?.from?.pathname ?? '/dashboard'
+  const requestedPath = (location.state as { from?: { pathname: string } })?.from?.pathname
+  const from = requestedPath && requestedPath !== '/login' ? requestedPath : '/dashboard'
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const loginMutation = useLogin()
   const { user, authReady } = useAuthStore()
+  const isSaccoAdmin = user?.role === 'sacco_admin' && user.sacco_id != null
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -21,12 +23,14 @@ export function Login() {
     }
   }
 
-  // Navigate only after auth state is ready and user is set
+  // Navigate from auth state instead of mutation state. The login mutation clears
+  // the query client on success, which can reset mutation status before effects run.
   useEffect(() => {
-    if (authReady && user && loginMutation.isSuccess) {
+    if (authReady && isSaccoAdmin) {
+      console.info('SACCO Admin auth ready; redirecting', { destination: from })
       navigate(from, { replace: true })
     }
-  }, [authReady, user, loginMutation.isSuccess, navigate, from])
+  }, [authReady, isSaccoAdmin, navigate, from])
 
   return (
     <div className="min-h-screen bg-[#071014] text-white flex items-center justify-center px-4">
@@ -68,7 +72,7 @@ export function Login() {
             disabled={loginMutation.isPending}
             className="w-full rounded-xl bg-mint-600 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-mint-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {loginMutation.isPending ? 'Signing in…' : 'Sign in'}
+            {loginMutation.isPending ? 'Signing in...' : 'Sign in'}
           </button>
         </form>
       </div>
