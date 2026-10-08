@@ -33,9 +33,9 @@ export function AppShell() {
   }
 
   return (
-    <div className="flex h-screen font-sans bg-surface-2 text-ink">
+    <div className="flex h-dvh overflow-hidden font-sans bg-surface-2 text-ink">
       {/* Sidebar — dark slate, distinct from SACCO admin */}
-      <aside className="w-[220px] bg-navy-950 flex flex-col shrink-0 border-r border-white/5">
+      <aside className="w-[220px] bg-navy-950 flex min-h-0 flex-col shrink-0 border-r border-white/5">
         {/* Logo */}
         <div className="pt-[18px] pb-[14px] px-4 border-b border-white/5">
           <div className="font-bold text-base text-white font-serif">Saccosphere</div>
@@ -49,7 +49,7 @@ export function AppShell() {
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 pt-2">
+        <nav className="min-h-0 flex-1 overflow-y-auto pt-2 pb-2">
           {navItems.map(item => (
             <NavLink key={item.path} to={item.path}
               className={({ isActive }) => 
@@ -93,7 +93,7 @@ export function AppShell() {
 
       {/* Main */}
       <AdminBackground>
-        <main className="flex-1 overflow-y-auto"><Outlet /></main>
+        <main className="min-h-0 flex-1 overflow-y-auto"><Outlet /></main>
       </AdminBackground>
     </div>
   )
