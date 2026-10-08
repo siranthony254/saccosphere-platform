@@ -17,8 +17,8 @@ export function Login() {
       // Use window.location for a clean redirect if React Router unmounting is crashing
       // but let's try the Router navigate first with a small delay or check
       navigate(from, { replace: true })
-    } catch {
-      // Error is already tracked in loginMutation.error
+    } catch (error) {
+      console.error('Super Admin login failed:', error)
     }
   }
 

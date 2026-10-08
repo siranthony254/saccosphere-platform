@@ -15,7 +15,8 @@ export function Login() {
     try {
       await loginMutation.mutateAsync({ email, password })
       navigate(from, { replace: true })
-    } catch {
+    } catch (error) {
+      console.error('SACCO Admin login failed:', error)
     }
   }
 
