@@ -13,9 +13,23 @@ export function Login() {
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     try {
-      await loginMutation.mutateAsync({ email, password })
-      // Use window.location for a clean redirect if React Router unmounting is crashing
-      // but let's try the Router navigate first with a small delay or check
+      const tokens = await loginMutation.mutateAsync({ email, password })
+      const { user } = tokens
+
+      if (user.role !== 'superadmin') {
+        console.error('Super Admin login denied: unexpected role', {
+          email,
+          role: user.role,
+          allowedRole: 'superadmin',
+        })
+        throw new Error(`This account is not authorized for the Super Admin portal (role: ${user.role}).`)
+      }
+
+      console.info('Super Admin login authorized; redirecting to overview', {
+        email,
+        role: user.role,
+        destination: from,
+      })
       navigate(from, { replace: true })
     } catch (error) {
       console.error('Super Admin login submission failed:', error)
