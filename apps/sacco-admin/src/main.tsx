@@ -8,7 +8,6 @@ import { useAuthBootstrap } from './hooks/useAuth'
 import { AdminThemeProvider } from '@saccosphere/ui'
 import { ErrorBoundary } from './components/error/ErrorBoundary'
 import './index.css'
-import 'react-hot-toast/dist/index.css'
 
 function registerServiceWorker() {
   if (typeof window === 'undefined') return
