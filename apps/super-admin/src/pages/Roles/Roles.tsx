@@ -19,8 +19,7 @@ export function Roles() {
       setUserId('')
       setSaccoId('')
     } catch (error) {
-      console.error('Failed to assign role:', error)
-      toast.error('Failed to assign role. Check console for details.')
+      toast.error(error instanceof Error ? error.message : 'Failed to assign role.')
     }
   }
 
@@ -29,8 +28,7 @@ export function Roles() {
       await revokeRole.mutateAsync(roleId)
       refetch()
     } catch (error) {
-      console.error('Failed to revoke role:', error)
-      toast.error('Failed to revoke role. Check console for details.')
+      toast.error(error instanceof Error ? error.message : 'Failed to revoke role.')
     }
   }
 

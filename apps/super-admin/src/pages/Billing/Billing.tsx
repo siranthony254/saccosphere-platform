@@ -75,8 +75,7 @@ export function Billing() {
       document.body.removeChild(a)
       URL.revokeObjectURL(url)
     } catch (error) {
-      console.error('Failed to download invoice:', error)
-      toast.error('Failed to download invoice')
+      toast.error(error instanceof Error ? error.message : 'Failed to download invoice.')
     }
   }
 

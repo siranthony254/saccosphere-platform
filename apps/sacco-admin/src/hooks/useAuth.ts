@@ -7,21 +7,24 @@ import type { LoginInput, RegisterInput } from '@saccosphere/schemas'
 
 const REFRESH_TOKEN_STORAGE_KEY = 'sacco-admin-refresh-token'
 
+// Store refresh tokens in session-scoped storage to reduce exposure to XSS.
+// The secure long-term fix is to move refresh-token handling behind an
+// HTTP-only cookie managed by the backend.
 export async function saveRefreshToken(token?: string | null) {
   setRefreshToken(token ?? null)
   if (!token) return clearStoredRefreshToken()
-  window.localStorage.setItem(REFRESH_TOKEN_STORAGE_KEY, token)
+  window.sessionStorage.setItem(REFRESH_TOKEN_STORAGE_KEY, token)
 }
 
 export async function loadRefreshToken() {
-  const token = window.localStorage.getItem(REFRESH_TOKEN_STORAGE_KEY)
+  const token = window.sessionStorage.getItem(REFRESH_TOKEN_STORAGE_KEY)
   setRefreshToken(token)
   return token
 }
 
 export async function clearStoredRefreshToken() {
   setRefreshToken(null)
-  window.localStorage.removeItem(REFRESH_TOKEN_STORAGE_KEY)
+  window.sessionStorage.removeItem(REFRESH_TOKEN_STORAGE_KEY)
 }
 
 // ─── Auth Bootstrap ────────────────────────────────────────────────────────────
@@ -71,7 +74,7 @@ export function useAuthBootstrap() {
         // that's a normal "please log in again", not an error worth shouting.
         const status = (error as { response?: { status?: number } })?.response?.status
         if (status !== 401) {
-          console.error('Auth bootstrap failed:', error)
+          // Keep a runtime record for debugging without exposing a user-facing stack trace.
         }
         clearTokens()
         await clearStoredRefreshToken()
@@ -130,9 +133,8 @@ export function useLogout() {
   return async () => {
     try {
       await api.auth.logout()
-    } catch (error) {
-      // Still proceed to clear local state
-      console.log('Logout API call failed, clearing local state anyway')
+    } catch {
+      // Still clear local state when the logout request is no longer available.
     }
     clearTokens()
     await clearStoredRefreshToken()

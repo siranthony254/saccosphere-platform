@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { toast } from 'react-hot-toast'
 import { useKycQueue, useReviewKyc } from '../../hooks/useKyc'
 
 export function KycReview() {
@@ -8,38 +9,28 @@ export function KycReview() {
   const [reviewingId, setReviewingId] = useState<string | null>(null)
   const [rejectionReason, setRejectionReason] = useState('')
 
-  const [alertInfo, setAlertInfo] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
-
-  const showAlert = (type: 'success' | 'error', message: string) => {
-    setAlertInfo({ type, message })
-    setTimeout(() => setAlertInfo(null), 3000)
-  }
-
   const handleReview = async (id: string, status: 'APPROVED' | 'REJECTED') => {
+    if (status === 'REJECTED' && !rejectionReason.trim()) {
+      toast.error('Enter a rejection reason before rejecting this KYC document.')
+      return
+    }
+
     try {
-      await reviewKyc({ 
-        id, 
-        status, 
-        rejection_reason: status === 'REJECTED' ? rejectionReason : undefined 
+      await reviewKyc({
+        id,
+        status,
+        rejection_reason: status === 'REJECTED' ? rejectionReason.trim() : undefined,
       })
       setReviewingId(null)
       setRejectionReason('')
-      showAlert('success', `KYC verification ${status.toLowerCase()} successfully.`)
+      toast.success(`KYC verification ${status.toLowerCase()} successfully.`)
     } catch (error: any) {
-      console.error('Failed to review KYC:', error)
-      showAlert('error', error?.message || 'Failed to review KYC. Please try again.')
+      toast.error(error?.message || 'Failed to review KYC. Please try again.')
     }
   }
 
   return (
     <div className="p-5 relative">
-      {alertInfo && (
-        <div className={`fixed top-4 right-4 px-4 py-2 rounded-lg text-sm font-medium z-50 shadow-lg ${
-          alertInfo.type === 'success' ? 'bg-mint-500 text-white' : 'bg-red-500 text-white'
-        }`}>
-          {alertInfo.message}
-        </div>
-      )}
       <div className="flex justify-between items-center mb-5">
         <div>
           <div className="text-lg font-semibold text-ink">KYC Review</div>
@@ -125,6 +116,8 @@ export function KycReview() {
                     placeholder="Rejection reason (required if rejecting)..."
                     value={rejectionReason}
                     onChange={e => setRejectionReason(e.target.value)}
+                    aria-label="Rejection reason"
+                    required={kyc.status === 'PENDING'}
                   />
                 )}
                 <div className="flex gap-2">
@@ -140,7 +133,7 @@ export function KycReview() {
                       <button
                         className="px-4.5 py-2 rounded-lg border-none text-sm font-semibold cursor-pointer text-red-700 bg-red-50 hover:bg-red-100 transition-colors"
                         onClick={() => handleReview(kyc.id, 'REJECTED')}
-                        disabled={isPending || !rejectionReason}
+                        disabled={isPending || !rejectionReason.trim()}
                       >
                         Reject
                       </button>

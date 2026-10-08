@@ -24,8 +24,7 @@ export function Reports() {
       document.body.removeChild(a)
       URL.revokeObjectURL(url)
     } catch (error) {
-      console.error('Failed to download report:', error)
-      toast.error('Failed to download report. Check console for details.')
+      toast.error(error instanceof Error ? error.message : 'Failed to download report. Please try again.')
     }
   }
 

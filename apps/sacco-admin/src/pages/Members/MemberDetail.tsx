@@ -46,7 +46,7 @@ export function MemberDetail() {
 
   const updateStatusMutation = useMutation({
     mutationFn: (data: { id: string; action: 'freeze' | 'close' | 'reactivate'; reason: string }) =>
-      api.saccoAdmin.updateSavingsStatus(data.id, { action: data.action, reason: data.reason }),
+      api.saccoAdmin.updateSavingsStatus(data.id, { status: data.action.toUpperCase(), reason: data.reason }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-member', id] })
       setStatusModalSaving(null)

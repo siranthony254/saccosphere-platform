@@ -2982,12 +2982,6 @@ export const api = {
       }
     },
 
-    updateSavingsStatus: (id: string, data: { action: 'freeze' | 'close' | 'reactivate'; reason: string }) =>
-      apiCall<any>('POST', `/services/savings/${uuid(id)}/status/`, data),
-
-    updateSavingsDividendEligibility: (id: string, data: { eligible: boolean; reason: string }) =>
-      apiCall<any>('POST', `/services/savings/${uuid(id)}/dividend-eligibility/`, data),
-
     reverseSavingsTransaction: (id: string, data: { amount: number; direction: 'CREDIT' | 'DEBIT'; reason: string }) =>
       apiCall<any>('POST', `/services/savings/${uuid(id)}/reversal/`, data),
 

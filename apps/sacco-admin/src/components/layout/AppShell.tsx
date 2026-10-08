@@ -39,7 +39,7 @@ export function AppShell() {
 
   const NAV_ITEMS: { path: string; label: string; icon: IconName; badge: string | null }[] = [
     { path: '/dashboard', label: 'Dashboard', icon: 'dashboard', badge: null },
-    { path: '/approvals', label: 'Maker-Checker', icon: 'check-square', badge: pendingApprovalsCount > 0 ? String(pendingApprovalsCount) : null },
+    { path: '/approvals', label: 'Maker-Checker', icon: 'user-check', badge: pendingApprovalsCount > 0 ? String(pendingApprovalsCount) : null },
     { path: '/members', label: 'Members', icon: 'users', badge: null },
     { path: '/applications', label: 'Applications', icon: 'file-text', badge: pendingAppsCount > 0 ? String(pendingAppsCount) : null },
     { path: '/loans', label: 'Loan approvals', icon: 'coins', badge: pendingLoansCount > 0 ? String(pendingLoansCount) : null },

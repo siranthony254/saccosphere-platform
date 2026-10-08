@@ -1,9 +1,10 @@
+import { useMemo } from 'react'
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { Icon, type IconName, AdminBackground } from '@saccosphere/ui'
 import { useAuthStore } from '../../store/useAuthStore'
 import { useLogout } from '../../hooks/useAuth'
 
-const NAV: { path: string; label: string; icon: IconName; badge: string | null; live?: boolean }[] = [
+const NAV_ITEMS: { path: string; label: string; icon: IconName; badge: string | null; live?: boolean }[] = [
   { path: '/overview',     label: 'System overview',    icon: 'globe',            badge: null },
   { path: '/saccos',       label: 'All SACCOs',         icon: 'building',         badge: null },
   { path: '/members',      label: 'All Members',        icon: 'users',            badge: null },
@@ -23,6 +24,8 @@ export function AppShell() {
   const { user } = useAuthStore()
   const navigate = useNavigate()
   const logout = useLogout()
+
+  const navItems = useMemo(() => NAV_ITEMS, [])
 
   const handleLogout = async () => {
     await logout()
@@ -47,7 +50,7 @@ export function AppShell() {
 
         {/* Nav */}
         <nav className="flex-1 pt-2">
-          {NAV.map(item => (
+          {navItems.map(item => (
             <NavLink key={item.path} to={item.path}
               className={({ isActive }) => 
                 `flex items-center gap-2 py-[7px] px-2.5 mx-1.5 rounded-md no-underline text-[13px] transition-colors ${

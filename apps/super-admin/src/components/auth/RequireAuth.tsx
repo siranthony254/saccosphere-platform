@@ -16,11 +16,9 @@ export function RequireAuth({ children }: { children: ReactNode }) {
     )
   }
 
-  if (!user) {
+  if (!user || user.role !== 'superadmin') {
     return <Navigate to="/login" state={{ from: location }} replace />
   }
 
-  // Backend handles permission checks via API responses
-  // If user is authenticated, let them access - backend will deny unauthorized requests
   return <>{children}</>
 }

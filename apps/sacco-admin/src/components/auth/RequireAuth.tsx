@@ -2,6 +2,9 @@ import type { ReactNode } from 'react'
 import { useLocation, Navigate } from 'react-router-dom'
 import { useAuthStore } from '../../store/useAuthStore'
 
+const isSaccoAdmin = (user: ReturnType<typeof useAuthStore.getState>['user']) =>
+  user?.role === 'sacco_admin' && user.sacco_id !== null
+
 export function RequireAuth({ children }: { children: ReactNode }) {
   const { user, authReady } = useAuthStore()
   const location = useLocation()
@@ -16,11 +19,9 @@ export function RequireAuth({ children }: { children: ReactNode }) {
     )
   }
 
-  if (!user) {
+  if (!user || !isSaccoAdmin(user)) {
     return <Navigate to="/login" state={{ from: location }} replace />
   }
 
-  // Backend handles permission checks via API responses
-  // If user is authenticated, let them access 
   return <>{children}</>
 }

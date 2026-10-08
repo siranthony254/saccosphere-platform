@@ -15,8 +15,7 @@ export function KycReview() {
       refetch()
       setSelectedId(null)
     } catch (error) {
-      console.error('Failed to review KYC:', error)
-      toast.error('Review failed. Ensure rejection reason is provided if rejecting.')
+      toast.error(error instanceof Error ? error.message : 'Review failed. Please try again.')
     }
   }
 
@@ -147,10 +146,7 @@ export function KycReview() {
                                     </button>
                                     <button
                                       className="flex-1 py-3 bg-red-50 text-red-700 border border-red-200 rounded-xl font-bold hover:bg-red-100 active:scale-95 transition-all"
-                                      onClick={() => {
-                                        const reason = prompt('Rejection reason:')
-                                        if (reason) handleReview(kyc.id, 'REJECTED', reason)
-                                      }}
+                                      onClick={() => handleReview(kyc.id, 'REJECTED')}
                                     >
                                       Reject Identity
                                     </button>

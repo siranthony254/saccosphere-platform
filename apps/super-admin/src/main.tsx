@@ -5,6 +5,7 @@ import { Toaster } from 'react-hot-toast'
 import { router } from './router'
 import { useAuthBootstrap } from './hooks/useAuth'
 import { AdminThemeProvider } from '@saccosphere/ui'
+import { ErrorBoundary } from './components/error/ErrorBoundary'
 import './index.css'
 import 'react-hot-toast/dist/index.css'
 
@@ -45,8 +46,10 @@ function App() {
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <QueryClientProvider client={queryClient}>
     <AdminThemeProvider defaultThemeId="indigo">
-      <App />
-      <Toaster position="top-right" />
+      <ErrorBoundary>
+        <App />
+        <Toaster position="top-right" toastOptions={{ duration: 4000 }} />
+      </ErrorBoundary>
     </AdminThemeProvider>
   </QueryClientProvider>
 )

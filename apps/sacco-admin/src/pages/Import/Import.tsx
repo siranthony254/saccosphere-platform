@@ -23,8 +23,7 @@ export function Import() {
       setJobId(result.job_id)
       setFile(null)
     } catch (error) {
-      console.error('Failed to import members:', error)
-      toast.error('Failed to import members. Check console for details.')
+      toast.error(error instanceof Error ? error.message : 'Failed to import members. Please try again.')
     }
   }
 

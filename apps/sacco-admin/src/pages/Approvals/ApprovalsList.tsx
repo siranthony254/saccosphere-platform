@@ -1,18 +1,15 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@saccosphere/api-client'
-import { Icon } from '@saccosphere/ui'
 
 export function ApprovalsList() {
   const queryClient = useQueryClient()
   const [activeTab, setActiveTab] = useState<'pending' | 'history' | 'support_access'>('pending')
   const [selectedRequest, setSelectedRequest] = useState<any | null>(null)
   const [reviewNotes, setReviewNotes] = useState('')
-  const [verificationCode, setVerificationCode] = useState('')
   const [reviewError, setReviewError] = useState<string | null>(null)
 
   // Support access grant form state
-  const [grantEmail, setGrantEmail] = useState('')
   const [grantActionType, setGrantActionType] = useState('SYSTEM_DIAGNOSTIC')
   const [grantReason, setGrantReason] = useState('')
   const [grantHours, setGrantHours] = useState('24')
@@ -46,7 +43,6 @@ export function ApprovalsList() {
       queryClient.invalidateQueries({ queryKey: ['approvals-history'] })
       setSelectedRequest(null)
       setReviewNotes('')
-      setVerificationCode('')
       setReviewError(null)
     },
     onError: (err: any) => {
@@ -62,7 +58,6 @@ export function ApprovalsList() {
       queryClient.invalidateQueries({ queryKey: ['approvals-history'] })
       setSelectedRequest(null)
       setReviewNotes('')
-      setVerificationCode('')
       setReviewError(null)
     },
     onError: (err: any) => {
@@ -77,7 +72,6 @@ export function ApprovalsList() {
       queryClient.invalidateQueries({ queryKey: ['support-access-grants'] })
       setGrantStatus({ type: 'success', message: 'Support access grant issued successfully.' })
       setGrantReason('')
-      setGrantEmail('')
       setTimeout(() => setGrantStatus(null), 4000)
     },
     onError: (err: any) => {
@@ -230,7 +224,6 @@ export function ApprovalsList() {
                             setSelectedRequest(req)
                             setReviewError(null)
                             setReviewNotes('')
-                            setVerificationCode('')
                           }}
                           className="px-3 py-1 bg-violet-600 hover:bg-violet-700 text-white rounded text-xs font-semibold cursor-pointer transition-colors"
                         >

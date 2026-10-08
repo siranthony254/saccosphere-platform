@@ -68,7 +68,6 @@ export function LoansList() {
           showAlert('success', `Loan ${msg} successfully`)
         },
         onError: (error: any) => {
-          console.error('Failed to process loan:', error)
           showAlert('error', error?.response?.data?.detail || error?.message || 'Failed to process loan. Please try again.')
         }
       }
@@ -105,7 +104,6 @@ export function LoansList() {
           showAlert('success', `Loan disbursed successfully`)
         },
         onError: (error: any) => {
-          console.error('Failed to disburse loan:', error)
           showAlert('error', error?.response?.data?.detail || error?.message || 'Failed to disburse loan. Please try again.')
         }
       }

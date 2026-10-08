@@ -6,21 +6,24 @@ import type { LoginInput } from '@saccosphere/schemas'
 
 const REFRESH_TOKEN_STORAGE_KEY = 'super-admin-refresh-token'
 
+// Store refresh tokens in session-scoped storage to reduce exposure to XSS.
+// The secure long-term fix is to move refresh-token handling behind an
+// HTTP-only cookie managed by the backend.
 export async function saveRefreshToken(token?: string | null) {
   setRefreshToken(token ?? null)
   if (!token) return clearStoredRefreshToken()
-  window.localStorage.setItem(REFRESH_TOKEN_STORAGE_KEY, token)
+  window.sessionStorage.setItem(REFRESH_TOKEN_STORAGE_KEY, token)
 }
 
 export async function loadRefreshToken() {
-  const token = window.localStorage.getItem(REFRESH_TOKEN_STORAGE_KEY)
+  const token = window.sessionStorage.getItem(REFRESH_TOKEN_STORAGE_KEY)
   setRefreshToken(token)
   return token
 }
 
 export async function clearStoredRefreshToken() {
   setRefreshToken(null)
-  window.localStorage.removeItem(REFRESH_TOKEN_STORAGE_KEY)
+  window.sessionStorage.removeItem(REFRESH_TOKEN_STORAGE_KEY)
 }
 
 // ─── Auth Bootstrap ────────────────────────────────────────────────────────────
@@ -62,9 +65,8 @@ export function useAuthBootstrap() {
         
         // Invalidate all queries to ensure fresh data on page load
         queryClient.invalidateQueries()
-      } catch (error) {
-        // Clear tokens on any error (401, network, etc.)
-        console.error('Auth bootstrap failed:', error)
+      } catch {
+        // Clear tokens on any error; the user will be redirected back to login.
         clearTokens()
         await clearStoredRefreshToken()
         clearAuth()
@@ -119,10 +121,8 @@ export function useLogout() {
   return async () => {
     try {
       await api.auth.logout()
-    } catch (error) {
-      // Ignore 401 errors - token may already be expired
-      // Still proceed to clear local state
-      console.log('Logout API call failed, clearing local state anyway')
+    } catch {
+      // Ignore 401 errors; the token may already be expired.
     }
     clearTokens()
     await clearStoredRefreshToken()
