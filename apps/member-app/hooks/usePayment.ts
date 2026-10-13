@@ -14,9 +14,9 @@ export function useInitiatePayment() {
   })
 }
 
-export function useFeePreview(params: { type: 'deposit' | 'repayment' | 'withdrawal'; amount: number }) {
+export function useFeePreview(params: { type: 'deposit' | 'repayment' | 'withdrawal'; amount: number; sacco_id?: string }) {
   return useQuery({
-    queryKey: ['fee-preview', params.type, params.amount],
+    queryKey: ['fee-preview', params.type, params.amount, params.sacco_id],
     queryFn: () => api.payments.getFeePreview(params),
     staleTime: 300_000,
     gcTime: 600_000,
@@ -27,8 +27,24 @@ export function useFeePreview(params: { type: 'deposit' | 'repayment' | 'withdra
 export function useWithdrawSavings() {
   const idempotencyKeyRef = useRef(generateIdempotencyKey())
   return useMutation({
-    mutationFn: (data: { sacco_id: string; saving_id: string; amount: number; phone_number: string }) =>
+    mutationFn: (data: { sacco_id: string; saving_id: string; amount: number; phone_number: string; verification_code?: string }) =>
       api.payments.withdrawSavings(data, idempotencyKeyRef.current),
+  })
+}
+
+// Polls the dedicated withdrawal-status endpoint once a withdrawal is
+// REQUESTED/PENDING_APPROVAL/APPROVED/SUBMITTED/UNKNOWN — stops once it
+// lands on a genuinely terminal state (COMPLETED/FAILED/REJECTED).
+export function useWithdrawalStatus(transactionId: string | null) {
+  return useQuery({
+    queryKey: ['withdrawal-status', transactionId],
+    queryFn: () => api.payments.checkWithdrawalStatus(transactionId!),
+    enabled: Boolean(transactionId),
+    refetchInterval: (query) => {
+      const data = query.state.data
+      if (!data) return 5000
+      return data.is_completed || data.is_failed ? false : 5000
+    },
   })
 }
 

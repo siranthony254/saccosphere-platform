@@ -146,6 +146,12 @@ const normalizeApprovalRequest = (item: any) => ({
 })
 
 
+export type WithdrawSavingsResult =
+  | { kind: 'initiated'; conversationId: string; requestedAmount: number; netAmountSent: number; platformFee: number; transactionId: string; message: string }
+  | { kind: 'pending_approval'; approvalRequestId: string; transactionId: string; detail: string }
+  | { kind: 'unknown'; transactionId: string; message: string }
+  | { kind: 'duplicate'; transactionId: string | null; conversationId: string | null; message: string }
+
 export type StaffLoginResult =
   | { kind: 'tokens'; access: string; refresh?: string; user: User }
   | { kind: 'mfa_required'; challenge_token: string }
@@ -504,6 +510,18 @@ const TXN_STATUS_MAP: Record<string, Transaction['status']> = {
   failed: 'failed',
   amount_mismatch: 'failed',
   reversed: 'reversed',
+  // P10 withdrawal state machine (REQUESTED -> PENDING_APPROVAL -> APPROVED
+  // -> SUBMITTED -> COMPLETED, or REJECTED/UNKNOWN) - without these the
+  // default fallback below silently treated a REJECTED withdrawal the same
+  // as one still in progress. There's no "unknown" bucket in this schema;
+  // callers that need to tell UNKNOWN apart from genuinely-pending should
+  // use payments.checkWithdrawalStatus() instead of this list/detail call.
+  requested: 'pending',
+  pending_approval: 'pending',
+  approved: 'pending',
+  submitted: 'pending',
+  unknown: 'pending',
+  rejected: 'failed',
 }
 
 const normalizeTransaction = (item: any): Transaction => {
@@ -1938,9 +1956,9 @@ export const api = {
     },
 
     // Pre-confirmation fee breakdown: "you pay / platform fee / you receive".
-    getFeePreview: async (data: { type: 'deposit' | 'repayment' | 'withdrawal'; amount: number }) => {
+    getFeePreview: async (data: { type: 'deposit' | 'repayment' | 'withdrawal'; amount: number; sacco_id?: string }) => {
       const r = await apiCall<any>('GET', '/payments/fee-preview/', undefined, {
-        params: { type: data.type, amount: data.amount },
+        params: { type: data.type, amount: data.amount, ...(data.sacco_id ? { sacco_id: data.sacco_id } : {}) },
       })
       return {
         gross_amount: Number(r.gross_amount ?? data.amount),
@@ -1952,16 +1970,81 @@ export const api = {
     },
 
     // Member-initiated M-Pesa B2C withdrawal from a savings account.
-    withdrawSavings: (
-      data: { sacco_id: string; saving_id: string; amount: number; phone_number: string },
+    // Returns a discriminated union rather than a raw payload, since the
+    // same 2xx-ish range covers four genuinely different outcomes (see
+    // payments/withdrawals.py request_savings_withdrawal): a real B2C
+    // accept, queued-for-a-second-admin's-approval, Safaricom's accept
+    // call itself timing out (genuinely unknown, never imply success or
+    // failure), and a duplicate of an already-in-flight request replayed
+    // by the idempotency key. 400/502 still throw as a normal ApiError -
+    // this module's error shape is flat ({error, error_code}), so
+    // err.code already carries e.g. WITHDRAWABLE_SAVINGS_NOT_ALLOWED,
+    // B2C_CREDENTIALS_NOT_VERIFIED, B2C_COOLING_OFF_ACTIVE, etc.
+    withdrawSavings: async (
+      data: { sacco_id: string; saving_id: string; amount: number; phone_number: string; verification_code?: string },
       idempotencyKey?: string
-    ) =>
-      apiCall<any>('POST', '/payments/mpesa/b2c/withdraw/', {
+    ): Promise<WithdrawSavingsResult> => {
+      const r = await apiCall<any>('POST', '/payments/mpesa/b2c/withdraw/', {
         sacco_id: uuid(data.sacco_id),
         saving_id: uuid(data.saving_id),
         amount: data.amount,
         phone_number: data.phone_number,
-      }, { idempotent: true, idempotencyKey }),
+        ...(data.verification_code ? { verification_code: data.verification_code } : {}),
+      }, { idempotent: true, idempotencyKey })
+
+      if (r.duplicate) {
+        return {
+          kind: 'duplicate',
+          transactionId: r.transaction_id ?? null,
+          conversationId: r.conversation_id ?? null,
+          message: String(r.message ?? 'This withdrawal is already being processed.'),
+        }
+      }
+      if (r.approval_request_id) {
+        return {
+          kind: 'pending_approval',
+          approvalRequestId: String(r.approval_request_id),
+          transactionId: String(r.transaction_id ?? ''),
+          detail: String(r.detail ?? 'Queued for a second admin’s approval.'),
+        }
+      }
+      if (String(r.status).toUpperCase() === 'UNKNOWN') {
+        return {
+          kind: 'unknown',
+          transactionId: String(r.transaction_id ?? ''),
+          message: String(r.message ?? 'Status unknown — your funds remain reserved and this will resolve automatically.'),
+        }
+      }
+      return {
+        kind: 'initiated',
+        conversationId: String(r.conversation_id ?? ''),
+        requestedAmount: Number(r.requested_amount ?? data.amount),
+        netAmountSent: Number(r.net_amount_sent ?? 0),
+        platformFee: Number(r.platform_fee ?? 0),
+        transactionId: String(r.transaction_id ?? ''),
+        message: String(r.message ?? 'Withdrawal initiated.'),
+      }
+    },
+
+    // The dedicated status-poll endpoint for a withdrawal (or any other)
+    // Transaction - deliberately bypasses normalizeTransaction's collapsed
+    // pending/completed/failed/reversed vocabulary, which has no slot for
+    // UNKNOWN and would silently treat it as still-pending.
+    checkWithdrawalStatus: async (transactionId: string) => {
+      const t = await apiCall<any>('GET', `/payments/transactions/${uuid(transactionId)}/`)
+      const rawStatus = String(t.status ?? '').toUpperCase()
+      return {
+        status: rawStatus,
+        is_completed: rawStatus === 'COMPLETED',
+        is_failed: rawStatus === 'FAILED' || rawStatus === 'REJECTED',
+        is_unknown: rawStatus === 'UNKNOWN',
+        is_in_progress: ['REQUESTED', 'PENDING_APPROVAL', 'APPROVED', 'SUBMITTED'].includes(rawStatus),
+        failure_reason: String(
+          t.metadata?.withdrawal_reversal_reason ?? t.metadata?.rejection_reason ?? t.metadata?.failure_reason ?? ''
+        ) || null,
+        net_amount: t.net_amount != null ? Number(t.net_amount) : null,
+      }
+    },
   },
 
   // ─── KYC ───────────────────────────────────────────────────────────────────
