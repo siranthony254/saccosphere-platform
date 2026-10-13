@@ -92,6 +92,59 @@ const normalizeStkPushResponse = (payload: any): STKPushResponse => ({
   message: String(payload.message ?? 'Check your phone to enter your M-Pesa PIN.'),
 })
 
+// Mirrors approvals.models.ActionType (backend) - kept here, not fetched,
+// since the choices are static and there is no endpoint that lists them.
+export const APPROVAL_ACTION_TYPE_LABELS: Record<string, string> = {
+  WITHDRAWAL: 'Savings withdrawal',
+  LOAN_DISBURSEMENT: 'Loan disbursement',
+  SAVINGS_REVERSAL: 'Savings balance reversal',
+  PRODUCT_RATE_CHANGE: 'Product rate or fee change',
+  MEMBER_PHONE_CHANGE: 'Member phone number change',
+  DIVIDEND_APPROVE: 'Dividend declaration approval',
+  DIVIDEND_DISBURSE: 'Dividend disbursement',
+  WRITE_OFF: 'Loan write-off',
+  SUSPENSE_CLEARING: 'Suspense clearing',
+  SUSPENSE_REFUND: 'Suspense refund via B2C',
+  B2C_FLOAT_MOVE: 'B2C float move',
+  RESTRUCTURING: 'Loan restructuring',
+  LOAN_INSIDER_APPROVAL: 'Insider loan approval',
+  CHECKOFF_VARIANCE_RESOLUTION: 'Check-off variance resolution',
+  GUARANTOR_RECOVERY: 'Guarantor pledge recovery',
+  MEMBER_EXIT_REFUND: 'Member exit refund payout',
+  DECEASED_CLAIM_SETTLEMENT: 'Deceased member claim settlement',
+  SACCO_ONBOARDING_COMMIT: 'SACCO onboarding commit',
+  SACCO_ONBOARDING_ROLLBACK: 'SACCO onboarding rollback',
+}
+
+// Matches approvals.serializers.ApprovalRequestSerializer exactly -
+// requested_by/sacco are bare FK ids (no nested user data exists to
+// resolve them against), decisions carry each decider's own id/reason/
+// decided_at.
+const normalizeApprovalRequest = (item: any) => ({
+  id: String(item.id),
+  action_type: String(item.action_type ?? ''),
+  action_label: APPROVAL_ACTION_TYPE_LABELS[item.action_type] ?? String(item.action_type ?? 'Unknown action'),
+  status: String(item.status ?? 'PENDING'),
+  payload: (item.payload ?? {}) as Record<string, unknown>,
+  amount: item.amount != null ? Number(item.amount) : null,
+  requested_by: item.requested_by != null ? String(item.requested_by) : null,
+  required_approvals: Number(item.required_approvals ?? 0),
+  approvals_received: Number(item.approvals_received ?? 0),
+  error_message: item.error_message ?? null,
+  expires_at: item.expires_at ?? null,
+  created_at: item.created_at ?? null,
+  resolved_at: item.resolved_at ?? null,
+  decisions: Array.isArray(item.decisions)
+    ? item.decisions.map((d: any) => ({
+        id: String(d.id),
+        user: d.user != null ? String(d.user) : null,
+        decision: String(d.decision ?? ''),
+        reason: String(d.reason ?? ''),
+        decided_at: d.decided_at ?? null,
+      }))
+    : [],
+})
+
 
 const normalizeUser = (user: any, roleOverrides?: { role?: User['role']; sacco_id?: string | null; sacco_slug?: string | null }): User => {
   const createdAt = user.created_at ?? user.date_joined ?? new Date().toISOString()
@@ -758,56 +811,77 @@ export const api = {
   },
 
   approvals: {
+    // ApprovalRequestSerializer is read_only_fields = fields on a plain
+    // ModelSerializer: `requested_by`/`sacco` are bare FK ids (no nested
+    // name/email - there's no user-directory endpoint to resolve them
+    // against), and the decision's reason/decided-by/decided-at live
+    // inside `decisions[]`, not on the request itself. Map honestly to
+    // what the API actually returns rather than guessing field names that
+    // don't exist.
     getPending: async () => {
       const response = await apiCall<any>('GET', '/approvals/pending/')
       const items = Array.isArray(response) ? response : response.results ?? response.data ?? []
-      return items.map((item: any) => ({
-        id: String(item.id),
-        action: String(item.action ?? item.action_type ?? item.requested_action ?? ''),
-        status: String(item.status ?? 'PENDING'),
-        requester: item.requester_name ?? item.requested_by_name ?? item.requester_email ?? item.requested_by_email ?? '',
-        resource_type: item.resource_type ?? item.model_name ?? '',
-        resource_id: item.resource_id ?? null,
-        amount: item.amount != null ? Number(item.amount) : null,
-        reason: item.reason ?? item.notes ?? item.description ?? '',
-        created_at: item.created_at ?? item.requested_at ?? null,
-        raw: item,
-      }))
+      return items.map(normalizeApprovalRequest)
     },
 
-    getHistory: async () => {
-      const response = await apiCall<any>('GET', '/approvals/history/')
+    getHistory: async (params?: { action_type?: string; status?: string }) => {
+      const response = await apiCall<any>('GET', '/approvals/history/', undefined, { params })
       const items = Array.isArray(response) ? response : response.results ?? response.data ?? []
-      return items.map((item: any) => ({
-        id: String(item.id),
-        action: String(item.action ?? item.action_type ?? item.requested_action ?? ''),
-        status: String(item.status ?? ''),
-        requester: item.requester_name ?? item.requested_by_name ?? item.requester_email ?? item.requested_by_email ?? '',
-        decided_by: item.decided_by_name ?? item.approver_name ?? item.decided_by_email ?? '',
-        reason: item.reason ?? item.notes ?? item.description ?? '',
-        decision_notes: item.decision_notes ?? item.review_notes ?? '',
-        created_at: item.created_at ?? item.requested_at ?? null,
-        decided_at: item.decided_at ?? item.reviewed_at ?? null,
-        raw: item,
-      }))
+      return items.map(normalizeApprovalRequest)
     },
 
-    approve: (id: string, notes?: string) =>
-      apiCall<any>('POST', `/approvals/${uuid(id)}/approve/`, { notes: notes ?? '' }),
+    // Deciding ALWAYS requires a fresh step-up verification (TOTP if the
+    // user has an enrolled authenticator device, else a phone OTP) -
+    // every call site must be ready for a 428 response (ApiError.status
+    // === 428) and retry with `verification_code` once the caller has one
+    // (see requestStepUpOtp, under `auth`).
+    approve: (id: string, data?: { reason?: string; verification_code?: string }) =>
+      apiCall<any>('POST', `/approvals/${uuid(id)}/approve/`, {
+        reason: data?.reason ?? '',
+        ...(data?.verification_code ? { verification_code: data.verification_code } : {}),
+      }),
 
-    reject: (id: string, reason: string) =>
-      apiCall<any>('POST', `/approvals/${uuid(id)}/reject/`, { reason }),
+    reject: (id: string, data: { reason: string; verification_code?: string }) =>
+      apiCall<any>('POST', `/approvals/${uuid(id)}/reject/`, {
+        reason: data.reason,
+        ...(data.verification_code ? { verification_code: data.verification_code } : {}),
+      }),
 
     getSupportAccessGrants: async () => {
       const response = await apiCall<any>('GET', '/approvals/support-access-grants/')
-      return Array.isArray(response) ? response : response.results ?? response.data ?? []
+      const items = Array.isArray(response) ? response : response.results ?? response.data ?? []
+      return items.map((item: any) => ({
+        id: String(item.id),
+        sacco: item.sacco ?? null,
+        action_type: item.action_type ?? null,
+        granted_to: item.granted_to != null ? String(item.granted_to) : '',
+        granted_by: item.granted_by != null ? String(item.granted_by) : '',
+        reason: String(item.reason ?? ''),
+        starts_at: item.starts_at ?? null,
+        expires_at: item.expires_at ?? null,
+        revoked_at: item.revoked_at ?? null,
+      }))
     },
 
-    createSupportAccessGrant: (data: { sacco_id: string; reason: string; expires_at?: string }) =>
+    // granted_to is the platform support engineer's own user id - there is
+    // no staff directory endpoint to look this up by name/email, so the
+    // caller must have been given it (e.g. by the support ticket). sacco
+    // is the admin's own SACCO (resolve via useSacco(), never a placeholder).
+    createSupportAccessGrant: (data: {
+      sacco_id: string
+      granted_to: string
+      reason: string
+      action_type?: string | null
+      starts_at?: string
+      expires_at: string
+    }) =>
       apiCall<any>('POST', '/approvals/support-access-grants/', {
         sacco: uuid(data.sacco_id),
+        granted_to: data.granted_to,
         reason: data.reason,
-        ...(data.expires_at ? { expires_at: data.expires_at } : {}),
+        action_type: data.action_type || null,
+        starts_at: data.starts_at ?? new Date().toISOString(),
+        expires_at: data.expires_at,
       }),
 
     revokeSupportAccessGrant: (id: string) =>
