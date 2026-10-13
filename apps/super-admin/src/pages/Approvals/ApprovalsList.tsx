@@ -1,9 +1,11 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { api } from '@saccosphere/api-client'
+import { api, APPROVAL_ACTION_TYPE_LABELS } from '@saccosphere/api-client'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { Card } from '../../components/ui/Card'
 import { Badge } from '../../components/ui/Badge'
+
+type DecisionKind = 'approve' | 'reject'
 
 export function ApprovalsList() {
   const queryClient = useQueryClient()
@@ -11,6 +13,7 @@ export function ApprovalsList() {
   const [selectedRequest, setSelectedRequest] = useState<any | null>(null)
   const [reviewNotes, setReviewNotes] = useState('')
   const [reviewError, setReviewError] = useState<string | null>(null)
+  const [stepUp, setStepUp] = useState<{ kind: DecisionKind; code: string; otpSent: boolean } | null>(null)
 
   // Data erasure form state
   const [selectedErasureId, setSelectedErasureId] = useState<string | null>(null)
@@ -18,23 +21,22 @@ export function ApprovalsList() {
   const [erasureReason, setErasureReason] = useState('')
   const [erasureStatus, setErasureStatus] = useState<string | null>(null)
 
-  // Support Access Grant form
   const { data: saccosData } = useQuery({
     queryKey: ['superadmin-saccos'],
     queryFn: () => api.superAdmin.getSaccos(),
   })
-  const saccos = saccosData?.results ?? []
-
-  const [selectedSaccoId, setSelectedSaccoId] = useState('')
-  const [grantReason, setGrantReason] = useState('')
-  const [grantHours, setGrantHours] = useState('24')
-  const [grantStatus, setGrantStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
+  const saccoNames = useMemo(() => {
+    const map = new Map<string, string>()
+    for (const s of saccosData?.results ?? []) map.set(String(s.id), s.name)
+    return map
+  }, [saccosData])
 
   // Queries
   const { data: pendingApprovals = [], isLoading: isPendingLoading } = useQuery({
     queryKey: ['approvals-pending'],
     queryFn: () => api.approvals.getPending(),
     staleTime: 10_000,
+    refetchInterval: 30_000,
   })
 
   const { data: historyApprovals = [], isLoading: isHistoryLoading } = useQuery({
@@ -43,55 +45,62 @@ export function ApprovalsList() {
     staleTime: 30_000,
   })
 
+  // Platform staff only ever see grants made TO them, read-only - creating
+  // one is a SACCO_ADMIN-only action (perform_create rejects anyone else
+  // with a 403), so there's no create form here.
   const { data: supportGrants = [], isLoading: isGrantsLoading } = useQuery({
     queryKey: ['support-access-grants'],
     queryFn: () => api.approvals.getSupportAccessGrants(),
     staleTime: 30_000,
   })
 
-  // Mutations
-  const approveMutation = useMutation({
-    mutationFn: ({ id, notes }: { id: string; notes?: string }) => api.approvals.approve(id, notes),
+  const requestStepUpOtpMutation = useMutation({
+    mutationFn: () => api.auth.requestStepUpOtp(),
+  })
+
+  const closeModal = () => {
+    setSelectedRequest(null)
+    setReviewNotes('')
+    setReviewError(null)
+    setStepUp(null)
+  }
+
+  const decideMutation = useMutation({
+    mutationFn: ({ kind, id, reason, verification_code }: {
+      kind: DecisionKind; id: string; reason: string; verification_code?: string
+    }) =>
+      kind === 'approve'
+        ? api.approvals.approve(id, { reason, verification_code })
+        : api.approvals.reject(id, { reason, verification_code }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['approvals-pending'] })
       queryClient.invalidateQueries({ queryKey: ['approvals-history'] })
-      setSelectedRequest(null)
-      setReviewNotes('')
+      closeModal()
     },
-    onError: (err: any) => setReviewError(err?.message || 'Failed to approve request.'),
+    onError: (err: any, variables) => {
+      if (err?.status === 428) {
+        setStepUp((prev) => ({ kind: variables.kind, code: '', otpSent: prev?.otpSent ?? false }))
+        setReviewError(stepUp ? (err?.message || 'Incorrect verification code.') : null)
+        return
+      }
+      setReviewError(err?.message || `Failed to ${variables.kind} this request.`)
+    },
   })
 
-  const rejectMutation = useMutation({
-    mutationFn: ({ id, reason }: { id: string; reason: string }) => api.approvals.reject(id, reason),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['approvals-pending'] })
-      queryClient.invalidateQueries({ queryKey: ['approvals-history'] })
-      setSelectedRequest(null)
-      setReviewNotes('')
-    },
-    onError: (err: any) => setReviewError(err?.message || 'Failed to reject request.'),
-  })
-
-  const createGrantMutation = useMutation({
-    mutationFn: (data: { sacco_id: string; reason: string; expires_at?: string }) =>
-      api.approvals.createSupportAccessGrant(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['support-access-grants'] })
-      setGrantStatus({ type: 'success', message: 'Support access grant created successfully.' })
-      setGrantReason('')
-      setSelectedSaccoId('')
-      setTimeout(() => setGrantStatus(null), 4000)
-    },
-    onError: (err: any) =>
-      setGrantStatus({ type: 'error', message: err?.message || 'Failed to create support grant.' }),
-  })
-
-  const revokeGrantMutation = useMutation({
-    mutationFn: (id: string) => api.approvals.revokeSupportAccessGrant(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['support-access-grants'] })
-    },
-  })
+  const handleDecide = (kind: DecisionKind) => {
+    if (!selectedRequest) return
+    if (kind === 'reject' && !reviewNotes.trim()) {
+      setReviewError('A reason is required to reject a request.')
+      return
+    }
+    setReviewError(null)
+    decideMutation.mutate({
+      kind,
+      id: selectedRequest.id,
+      reason: reviewNotes.trim(),
+      verification_code: stepUp?.code || undefined,
+    })
+  }
 
   const reviewErasureMutation = useMutation({
     mutationFn: (data: { requestId: string; action: 'approve' | 'reject' | 'hold'; reason?: string }) =>
@@ -105,17 +114,6 @@ export function ApprovalsList() {
     onError: (err: any) => setErasureStatus(err?.message || 'Failed to submit erasure review.'),
   })
 
-  const handleCreateGrant = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!selectedSaccoId || !grantReason) return
-    const expiresAt = new Date(Date.now() + Number(grantHours) * 3600 * 1000).toISOString()
-    createGrantMutation.mutate({
-      sacco_id: selectedSaccoId,
-      reason: grantReason,
-      expires_at: expiresAt,
-    })
-  }
-
   const handleReviewErasure = (e: React.FormEvent) => {
     e.preventDefault()
     if (!selectedErasureId) return
@@ -124,6 +122,23 @@ export function ApprovalsList() {
       action: erasureAction,
       reason: erasureReason,
     })
+  }
+
+  const formatCurrency = (val: number | null) =>
+    val != null ? `KES ${Number(val).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : '—'
+
+  const renderPayload = (payload: Record<string, unknown>) => {
+    const entries = Object.entries(payload || {})
+    if (entries.length === 0) return <span className="text-ink-faint italic">—</span>
+    return (
+      <div className="flex flex-wrap gap-1">
+        {entries.map(([key, value]) => (
+          <span key={key} className="px-1.5 py-0.5 rounded bg-surface-2 text-[10px] text-ink-soft font-mono">
+            {key}: {String(value)}
+          </span>
+        ))}
+      </div>
+    )
   }
 
   return (
@@ -168,7 +183,7 @@ export function ApprovalsList() {
               : 'border-transparent text-ink-muted hover:text-ink'
           }`}
         >
-          Support Access Grants
+          My Support Access Grants
         </button>
         <button
           onClick={() => setActiveTab('erasure')}
@@ -190,45 +205,31 @@ export function ApprovalsList() {
               <thead>
                 <tr className="border-b border-[#e5ede9] text-xs font-semibold text-ink-muted uppercase bg-surface-2">
                   <th className="py-2.5 px-3">Action</th>
-                  <th className="py-2.5 px-3">Requester</th>
                   <th className="py-2.5 px-3">Amount</th>
-                  <th className="py-2.5 px-3">Reason</th>
+                  <th className="py-2.5 px-3">Details</th>
+                  <th className="py-2.5 px-3">Approvals</th>
                   <th className="py-2.5 px-3">Requested At</th>
                   <th className="py-2.5 px-3 text-right">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#e5ede9]">
                 {isPendingLoading ? (
-                  <tr>
-                    <td colSpan={6} className="py-6 text-center text-ink-muted text-xs">
-                      Loading pending approvals...
-                    </td>
-                  </tr>
+                  <tr><td colSpan={6} className="py-6 text-center text-ink-muted text-xs">Loading pending approvals...</td></tr>
                 ) : pendingApprovals.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="py-6 text-center text-ink-muted text-xs">
-                      No pending approvals in queue.
-                    </td>
-                  </tr>
+                  <tr><td colSpan={6} className="py-6 text-center text-ink-muted text-xs">No pending approvals in queue.</td></tr>
                 ) : (
                   pendingApprovals.map((req: any) => (
                     <tr key={req.id} className="hover:bg-surface-1">
-                      <td className="py-2.5 px-3 font-semibold text-xs text-violet-700">{req.action}</td>
-                      <td className="py-2.5 px-3 text-xs text-ink">{req.requester || '—'}</td>
-                      <td className="py-2.5 px-3 text-xs font-bold text-ink">
-                        {req.amount != null ? `KES ${Number(req.amount).toLocaleString()}` : '—'}
-                      </td>
-                      <td className="py-2.5 px-3 text-xs text-ink max-w-xs truncate">{req.reason || '—'}</td>
+                      <td className="py-2.5 px-3 font-semibold text-xs text-violet-700">{req.action_label}</td>
+                      <td className="py-2.5 px-3 text-xs font-bold text-ink">{formatCurrency(req.amount)}</td>
+                      <td className="py-2.5 px-3 text-xs max-w-xs">{renderPayload(req.payload)}</td>
+                      <td className="py-2.5 px-3 text-xs text-ink-muted">{req.approvals_received} / {req.required_approvals}</td>
                       <td className="py-2.5 px-3 text-xs text-ink-muted">
                         {req.created_at ? new Date(req.created_at).toLocaleString() : '—'}
                       </td>
                       <td className="py-2.5 px-3 text-right">
                         <button
-                          onClick={() => {
-                            setSelectedRequest(req)
-                            setReviewError(null)
-                            setReviewNotes('')
-                          }}
+                          onClick={() => { setSelectedRequest(req); setReviewError(null); setReviewNotes(''); setStepUp(null) }}
                           className="px-3 py-1 bg-violet-600 hover:bg-violet-700 text-white rounded text-xs font-semibold cursor-pointer"
                         >
                           Review
@@ -251,34 +252,77 @@ export function ApprovalsList() {
               <thead>
                 <tr className="border-b border-[#e5ede9] text-xs font-semibold text-ink-muted uppercase bg-surface-2">
                   <th className="py-2.5 px-3">Action</th>
-                  <th className="py-2.5 px-3">Requester</th>
                   <th className="py-2.5 px-3">Status</th>
-                  <th className="py-2.5 px-3">Decided By</th>
                   <th className="py-2.5 px-3">Notes</th>
-                  <th className="py-2.5 px-3">Decided At</th>
+                  <th className="py-2.5 px-3">Resolved At</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#e5ede9]">
                 {isHistoryLoading ? (
-                  <tr>
-                    <td colSpan={6} className="py-6 text-center text-ink-muted text-xs">Loading history...</td>
-                  </tr>
+                  <tr><td colSpan={4} className="py-6 text-center text-ink-muted text-xs">Loading history...</td></tr>
                 ) : historyApprovals.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="py-6 text-center text-ink-muted text-xs">No approval history found.</td>
-                  </tr>
+                  <tr><td colSpan={4} className="py-6 text-center text-ink-muted text-xs">No approval history found.</td></tr>
                 ) : (
-                  historyApprovals.map((req: any) => (
-                    <tr key={req.id} className="hover:bg-surface-1">
-                      <td className="py-2.5 px-3 font-semibold text-xs text-ink">{req.action}</td>
-                      <td className="py-2.5 px-3 text-xs text-ink-muted">{req.requester || '—'}</td>
-                      <td className="py-2.5 px-3 text-xs font-bold">
-                        <Badge variant={req.status === 'APPROVED' ? 'success' : 'error'}>{req.status}</Badge>
+                  historyApprovals.map((req: any) => {
+                    const lastDecision = req.decisions[req.decisions.length - 1]
+                    const isApproved = req.status === 'EXECUTED' || req.status === 'APPROVED'
+                    return (
+                      <tr key={req.id} className="hover:bg-surface-1">
+                        <td className="py-2.5 px-3 font-semibold text-xs text-ink">{req.action_label}</td>
+                        <td className="py-2.5 px-3 text-xs font-bold">
+                          <Badge variant={isApproved ? 'success' : 'error'}>{req.status}</Badge>
+                        </td>
+                        <td className="py-2.5 px-3 text-xs text-ink max-w-xs truncate">
+                          {lastDecision?.reason || req.error_message || '—'}
+                        </td>
+                        <td className="py-2.5 px-3 text-xs text-ink-muted">
+                          {req.resolved_at ? new Date(req.resolved_at).toLocaleString() : '—'}
+                        </td>
+                      </tr>
+                    )
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
+
+      {/* TAB 3: MY SUPPORT ACCESS GRANTS (read-only — creating one is SACCO_ADMIN-only) */}
+      {activeTab === 'support' && (
+        <Card title="Support Access Grants Issued To Me">
+          <div className="text-xs text-ink-muted mb-3">
+            Platform staff have no standing access to a tenant's money actions. A SACCO's own admin must grant
+            you time-boxed access before you can act on their behalf — grants only ever appear here, they can't
+            be created from this screen.
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="border-b border-[#e5ede9] text-ink-muted font-semibold bg-surface-2">
+                  <th className="py-2 px-3">SACCO</th>
+                  <th className="py-2 px-3">Scope</th>
+                  <th className="py-2 px-3">Reason</th>
+                  <th className="py-2 px-3">Expires At</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#e5ede9]">
+                {isGrantsLoading ? (
+                  <tr><td colSpan={4} className="py-6 text-center text-ink-muted">Loading grants...</td></tr>
+                ) : supportGrants.length === 0 ? (
+                  <tr><td colSpan={4} className="py-6 text-center text-ink-muted">No support access grants issued to you.</td></tr>
+                ) : (
+                  supportGrants.map((grant: any) => (
+                    <tr key={grant.id} className="hover:bg-surface-1">
+                      <td className="py-2 px-3 font-semibold text-ink">
+                        {saccoNames.get(String(grant.sacco)) ?? grant.sacco ?? '—'}
                       </td>
-                      <td className="py-2.5 px-3 text-xs text-ink">{req.decided_by || '—'}</td>
-                      <td className="py-2.5 px-3 text-xs text-ink max-w-xs truncate">{req.decision_notes || req.reason || '—'}</td>
-                      <td className="py-2.5 px-3 text-xs text-ink-muted">
-                        {req.decided_at ? new Date(req.decided_at).toLocaleString() : '—'}
+                      <td className="py-2 px-3 text-ink-muted">
+                        {grant.action_type ? (APPROVAL_ACTION_TYPE_LABELS[grant.action_type] ?? grant.action_type) : 'All actions'}
+                      </td>
+                      <td className="py-2 px-3 text-ink-muted">{grant.reason || '—'}</td>
+                      <td className="py-2 px-3 font-semibold text-amber-700">
+                        {grant.revoked_at ? 'Revoked' : grant.expires_at ? new Date(grant.expires_at).toLocaleString() : '—'}
                       </td>
                     </tr>
                   ))
@@ -287,123 +331,6 @@ export function ApprovalsList() {
             </table>
           </div>
         </Card>
-      )}
-
-      {/* TAB 3: SUPPORT ACCESS GRANTS */}
-      {activeTab === 'support' && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          <Card title="Grant Support Access" className="md:col-span-1">
-            <div className="text-xs text-ink-muted mb-3">
-              Issue time-boxed temporary support access to a SACCO context for debugging and customer issue resolution.
-            </div>
-
-            {grantStatus && (
-              <div
-                className={`p-2.5 rounded text-xs mb-3 font-semibold ${
-                  grantStatus.type === 'success' ? 'bg-mint-50 text-mint-700' : 'bg-red-50 text-red-700'
-                }`}
-              >
-                {grantStatus.message}
-              </div>
-            )}
-
-            <form onSubmit={handleCreateGrant} className="space-y-3">
-              <div>
-                <label className="text-xs text-ink-muted mb-1 block">Select Target SACCO</label>
-                <select
-                  value={selectedSaccoId}
-                  onChange={(e) => setSelectedSaccoId(e.target.value)}
-                  className="w-full p-2 border border-[#e5ede9] rounded text-xs bg-white"
-                  required
-                >
-                  <option value="">Select a SACCO...</option>
-                  {saccos.map((s: any) => (
-                    <option key={s.id} value={s.id}>{s.name}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="text-xs text-ink-muted mb-1 block">Duration (Hours)</label>
-                <select
-                  value={grantHours}
-                  onChange={(e) => setGrantHours(e.target.value)}
-                  className="w-full p-2 border border-[#e5ede9] rounded text-xs bg-white"
-                >
-                  <option value="4">4 Hours</option>
-                  <option value="12">12 Hours</option>
-                  <option value="24">24 Hours (1 Day)</option>
-                  <option value="48">48 Hours (2 Days)</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="text-xs text-ink-muted mb-1 block">Reason / Ticket Reference</label>
-                <textarea
-                  rows={3}
-                  value={grantReason}
-                  onChange={(e) => setGrantReason(e.target.value)}
-                  placeholder="e.g. Debugging M-Pesa B2C callback failure for ticket #8812"
-                  className="w-full p-2 border border-[#e5ede9] rounded text-xs bg-white"
-                  required
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={createGrantMutation.isPending}
-                className="w-full py-2 bg-violet-600 hover:bg-violet-700 text-white font-semibold text-xs rounded transition-colors cursor-pointer"
-              >
-                {createGrantMutation.isPending ? 'Granting...' : 'Grant Temporary Access'}
-              </button>
-            </form>
-          </Card>
-
-          <Card title="Active Support Grants" className="md:col-span-2">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs border-collapse">
-                <thead>
-                  <tr className="border-b border-[#e5ede9] text-ink-muted font-semibold bg-surface-2">
-                    <th className="py-2 px-3">Target SACCO</th>
-                    <th className="py-2 px-3">Reason</th>
-                    <th className="py-2 px-3">Expires At</th>
-                    <th className="py-2 px-3 text-right">Action</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#e5ede9]">
-                  {isGrantsLoading ? (
-                    <tr>
-                      <td colSpan={4} className="py-6 text-center text-ink-muted">Loading grants...</td>
-                    </tr>
-                  ) : supportGrants.length === 0 ? (
-                    <tr>
-                      <td colSpan={4} className="py-6 text-center text-ink-muted">No active support grants.</td>
-                    </tr>
-                  ) : (
-                    supportGrants.map((grant: any) => (
-                      <tr key={grant.id} className="hover:bg-surface-1">
-                        <td className="py-2 px-3 font-semibold text-ink">{grant.sacco_name || grant.sacco || '—'}</td>
-                        <td className="py-2 px-3 text-ink-muted">{grant.reason || 'Support'}</td>
-                        <td className="py-2 px-3 font-semibold text-amber-700">
-                          {grant.expires_at ? new Date(grant.expires_at).toLocaleString() : '—'}
-                        </td>
-                        <td className="py-2 px-3 text-right">
-                          <button
-                            onClick={() => revokeGrantMutation.mutate(grant.id)}
-                            disabled={revokeGrantMutation.isPending}
-                            className="px-2 py-1 bg-red-50 text-red-700 rounded text-[10px] font-bold border border-red-200 hover:bg-red-100 cursor-pointer"
-                          >
-                            Revoke
-                          </button>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </Card>
-        </div>
       )}
 
       {/* TAB 4: DATA ERASURE REVIEWS */}
@@ -474,7 +401,7 @@ export function ApprovalsList() {
           <div className="bg-white rounded-xl max-w-lg w-full p-6 shadow-xl space-y-4 border border-[#e5ede9]">
             <div className="flex justify-between items-center border-b border-[#e5ede9] pb-3">
               <div className="font-bold text-base text-ink">Review Approval Request</div>
-              <button onClick={() => setSelectedRequest(null)} className="text-ink-muted text-lg font-bold">
+              <button onClick={closeModal} className="text-ink-muted text-lg font-bold">
                 &times;
               </button>
             </div>
@@ -484,38 +411,85 @@ export function ApprovalsList() {
             )}
 
             <div className="space-y-2 text-xs bg-surface-2 p-3 rounded">
-              <div><span className="text-ink-muted">Action:</span> <span className="font-bold">{selectedRequest.action}</span></div>
-              <div><span className="text-ink-muted">Requester:</span> {selectedRequest.requester || '—'}</div>
-              <div><span className="text-ink-muted">Reason:</span> {selectedRequest.reason || '—'}</div>
+              <div><span className="text-ink-muted">Action:</span> <span className="font-bold">{selectedRequest.action_label}</span></div>
+              {selectedRequest.amount != null && (
+                <div><span className="text-ink-muted">Amount:</span> {formatCurrency(selectedRequest.amount)}</div>
+              )}
+              <div><span className="text-ink-muted block mb-0.5">Details:</span>{renderPayload(selectedRequest.payload)}</div>
             </div>
 
-            <div>
-              <label className="text-xs text-ink-muted block mb-1">Decision Notes</label>
-              <textarea
-                rows={3}
-                value={reviewNotes}
-                onChange={(e) => setReviewNotes(e.target.value)}
-                placeholder="Enter audit remarks..."
-                className="w-full p-2 border border-[#e5ede9] rounded text-xs bg-white"
-              />
-            </div>
+            {!stepUp ? (
+              <>
+                <div>
+                  <label className="text-xs text-ink-muted block mb-1">Decision Notes</label>
+                  <textarea
+                    rows={3}
+                    value={reviewNotes}
+                    onChange={(e) => setReviewNotes(e.target.value)}
+                    placeholder="Enter audit remarks..."
+                    className="w-full p-2 border border-[#e5ede9] rounded text-xs bg-white"
+                  />
+                </div>
 
-            <div className="flex gap-3">
-              <button
-                onClick={() => rejectMutation.mutate({ id: selectedRequest.id, reason: reviewNotes })}
-                disabled={rejectMutation.isPending}
-                className="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded cursor-pointer"
-              >
-                Reject Request
-              </button>
-              <button
-                onClick={() => approveMutation.mutate({ id: selectedRequest.id, notes: reviewNotes })}
-                disabled={approveMutation.isPending}
-                className="flex-1 py-2 bg-mint-600 hover:bg-mint-700 text-white text-xs font-semibold rounded cursor-pointer"
-              >
-                Approve Request
-              </button>
-            </div>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => handleDecide('reject')}
+                    disabled={decideMutation.isPending}
+                    className="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded cursor-pointer disabled:opacity-50"
+                  >
+                    {decideMutation.isPending ? 'Working...' : 'Reject Request'}
+                  </button>
+                  <button
+                    onClick={() => handleDecide('approve')}
+                    disabled={decideMutation.isPending}
+                    className="flex-1 py-2 bg-mint-600 hover:bg-mint-700 text-white text-xs font-semibold rounded cursor-pointer disabled:opacity-50"
+                  >
+                    {decideMutation.isPending ? 'Working...' : 'Approve Request'}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <div className="space-y-3 border-t border-[#e5ede9] pt-3">
+                <div className="text-xs font-semibold text-ink">Verification required</div>
+                <div className="text-[11px] text-ink-muted">
+                  Deciding on a governed action needs a fresh code — from your authenticator app if you've set one
+                  up, otherwise a one-time code sent to your phone.
+                </div>
+                <button
+                  type="button"
+                  onClick={() => requestStepUpOtpMutation.mutate(undefined, {
+                    onSuccess: () => setStepUp((s) => (s ? { ...s, otpSent: true } : s)),
+                  })}
+                  disabled={requestStepUpOtpMutation.isPending}
+                  className="w-full py-1.5 rounded-lg border border-violet-300 bg-violet-50 text-violet-700 text-xs font-semibold cursor-pointer disabled:opacity-50"
+                >
+                  {requestStepUpOtpMutation.isPending
+                    ? 'Sending...'
+                    : stepUp.otpSent ? 'Code sent - resend' : 'Send code to my phone'}
+                </button>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="Enter verification code"
+                  value={stepUp.code}
+                  onChange={(e) => setStepUp((s) => (s ? { ...s, code: e.target.value } : s))}
+                  className="w-full p-2 border border-ink-faint rounded-lg text-xs bg-white"
+                />
+                <div className="flex gap-3">
+                  <button type="button" onClick={() => setStepUp(null)} className="flex-1 py-2 rounded-lg border border-ink-faint bg-white text-xs text-ink-muted">
+                    Back
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDecide(stepUp.kind)}
+                    disabled={decideMutation.isPending || !stepUp.code.trim()}
+                    className="flex-1 py-2 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-xs font-semibold cursor-pointer disabled:opacity-50"
+                  >
+                    {decideMutation.isPending ? 'Verifying...' : `Confirm ${stepUp.kind === 'approve' ? 'approval' : 'rejection'}`}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

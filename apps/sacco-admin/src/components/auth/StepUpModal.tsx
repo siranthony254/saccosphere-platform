@@ -5,16 +5,27 @@ interface StepUpModalProps {
   isOpen: boolean
   title?: string
   description?: string
+  /** Set when the caller's retry with the previous code came back 428 again (wrong code). */
+  error?: string | null
   onClose: () => void
-  onSuccess: () => void
+  /**
+   * There is no standalone "verify a step-up code" endpoint — the code is
+   * only ever validated inline by the actual gated action it's sent with
+   * (approve/reject, a reversal, a disbursement, ...). This hands the
+   * typed code straight to the caller, which must retry its own mutation
+   * with `verification_code: code`; if the code was wrong, that retry 428s
+   * again and the caller should re-show this modal with an error.
+   */
+  onSubmitCode: (code: string) => void
 }
 
 export function StepUpModal({
   isOpen,
   title = 'Step-Up Verification Required',
   description = 'This is a sensitive financial action requiring second-factor staff authorization. Request an OTP or enter your MFA token.',
+  error: externalError,
   onClose,
-  onSuccess,
+  onSubmitCode,
 }: StepUpModalProps) {
   const [code, setCode] = useState('')
   const [otpSent, setOtpSent] = useState(false)
@@ -36,25 +47,17 @@ export function StepUpModal({
     }
   }
 
-  const handleVerify = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!code.trim()) {
       setError('Please enter the 6-digit verification code.')
       return
     }
-    setIsLoading(true)
     setError(null)
-    try {
-      // Confirming step-up code
-      await api.auth.mfaConfirm(code.trim())
-      onSuccess()
-      onClose()
-    } catch (err: any) {
-      setError(err?.message || 'Invalid verification code. Please try again.')
-    } finally {
-      setIsLoading(false)
-    }
+    onSubmitCode(code.trim())
   }
+
+  const shownError = error ?? externalError ?? null
 
   return (
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
@@ -68,9 +71,9 @@ export function StepUpModal({
 
         <p className="text-xs text-ink-muted leading-relaxed">{description}</p>
 
-        {error && (
+        {shownError && (
           <div className="p-2.5 bg-red-50 border border-red-200 text-red-700 text-xs rounded-lg font-semibold">
-            {error}
+            {shownError}
           </div>
         )}
 
@@ -80,7 +83,7 @@ export function StepUpModal({
           </div>
         )}
 
-        <form onSubmit={handleVerify} className="space-y-3">
+        <form onSubmit={handleSubmit} className="space-y-3">
           <div>
             <label className="text-xs text-ink-muted mb-1 block font-medium">Verification Code (MFA or Step-Up OTP)</label>
             <input
@@ -115,10 +118,9 @@ export function StepUpModal({
             </button>
             <button
               type="submit"
-              disabled={isLoading}
               className="flex-1 py-2 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-xs font-semibold cursor-pointer transition-colors disabled:opacity-50"
             >
-              {isLoading ? 'Verifying...' : 'Authorize Action'}
+              Authorize Action
             </button>
           </div>
         </form>

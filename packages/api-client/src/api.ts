@@ -146,6 +146,11 @@ const normalizeApprovalRequest = (item: any) => ({
 })
 
 
+export type StaffLoginResult =
+  | { kind: 'tokens'; access: string; refresh?: string; user: User }
+  | { kind: 'mfa_required'; challenge_token: string }
+  | { kind: 'mfa_enrollment_required'; enrollment_token: string }
+
 const normalizeUser = (user: any, roleOverrides?: { role?: User['role']; sacco_id?: string | null; sacco_slug?: string | null }): User => {
   const createdAt = user.created_at ?? user.date_joined ?? new Date().toISOString()
   const kycStatus = String(user.kyc_status ?? user.status ?? 'not_started').toLowerCase()
@@ -624,6 +629,100 @@ export const api = {
       })
     },
 
+    // Staff/admin login (sacco-admin, super-admin) — distinct from `login`
+    // above because any is_staff/SACCO_ADMIN/SUPER_ADMIN account now goes
+    // through mandatory TOTP MFA (accounts.views._user_requires_staff_mfa):
+    // /accounts/login/ returns one of three shapes, and only the first one
+    // is real tokens. No KYC/member-profile fetch here - that's member-only.
+    staffLogin: async (data: LoginInput): Promise<StaffLoginResult> => {
+      const payload = await apiCall<any>('POST', '/accounts/login/', {
+        email: data.email,
+        password: data.password,
+      })
+
+      if (payload.mfa_required) {
+        return { kind: 'mfa_required', challenge_token: String(payload.challenge_token) }
+      }
+      if (payload.mfa_enrollment_required) {
+        return { kind: 'mfa_enrollment_required', enrollment_token: String(payload.enrollment_token) }
+      }
+
+      setAccessToken(payload.access)
+      return {
+        kind: 'tokens',
+        ...AuthTokensSchema.parse({
+          access: payload.access,
+          refresh: payload.refresh,
+          user: normalizeUser({
+            ...payload.user,
+            sacco_context: payload.sacco_context,
+            sacco_id: payload.sacco_id,
+          }),
+        }),
+      }
+    },
+
+    // Begin (or restart) TOTP enrollment. `enrollmentToken` comes from a
+    // staffLogin() mfa_enrollment_required result - omit it only for the
+    // secondary path (an already-logged-in staff account that was just
+    // promoted and hasn't enrolled yet), which relies on the Bearer token
+    // already attached by the request interceptor.
+    mfaEnroll: (enrollmentToken?: string) =>
+      apiCall<{ secret: string; otpauth_uri: string }>(
+        'POST',
+        '/accounts/mfa/enroll/',
+        enrollmentToken ? { enrollment_token: enrollmentToken } : undefined,
+      ),
+
+    // Confirms enrollment with the first TOTP code and returns real tokens
+    // plus the one-and-only plaintext view of the 10 recovery codes.
+    // enrollmentToken is omitted for the secondary path — an
+    // already-authenticated staff account enrolling voluntarily (e.g. from
+    // a settings screen) relies on its Bearer token instead (see
+    // _resolve_enrolling_user).
+    mfaConfirm: async (enrollmentToken: string | undefined, code: string): Promise<StaffLoginResult & { kind: 'tokens'; recovery_codes: string[] }> => {
+      const payload = await apiCall<any>('POST', '/accounts/mfa/confirm/', {
+        ...(enrollmentToken ? { enrollment_token: enrollmentToken } : {}),
+        code,
+      })
+      setAccessToken(payload.access)
+      return {
+        kind: 'tokens',
+        recovery_codes: (payload.recovery_codes ?? []) as string[],
+        ...AuthTokensSchema.parse({
+          access: payload.access,
+          refresh: payload.refresh,
+          user: normalizeUser({
+            ...payload.user,
+            sacco_context: payload.sacco_context,
+            sacco_id: payload.sacco_id,
+          }),
+        }),
+      }
+    },
+
+    // Exchanges the login challenge_token + a TOTP/recovery code for real
+    // tokens - the second step after staffLogin() returns mfa_required.
+    mfaLoginVerify: async (challengeToken: string, code: string): Promise<StaffLoginResult> => {
+      const payload = await apiCall<any>('POST', '/accounts/mfa/login-verify/', {
+        challenge_token: challengeToken,
+        code,
+      })
+      setAccessToken(payload.access)
+      return {
+        kind: 'tokens',
+        ...AuthTokensSchema.parse({
+          access: payload.access,
+          refresh: payload.refresh,
+          user: normalizeUser({
+            ...payload.user,
+            sacco_context: payload.sacco_context,
+            sacco_id: payload.sacco_id,
+          }),
+        }),
+      }
+    },
+
     googleAuth: async (data: { token?: string; id_token?: string; code?: string; flow: 'login' | 'signup' }) => {
       const payload = await apiCall<any>('POST', '/accounts/oauth/google/callback/', {
         code: data.code || data.token || data.id_token,
@@ -793,15 +892,8 @@ export const api = {
         ...(data.nonce ? { nonce: data.nonce } : {}),
       }),
 
-    // Staff MFA & Step-Up
-    mfaEnroll: () =>
-      apiCall<{ secret: string; qr_code: string; recovery_codes: string[] }>('POST', '/accounts/mfa/enroll/'),
-
-    mfaConfirm: (code: string) =>
-      apiCall<{ message?: string; detail?: string }>('POST', '/accounts/mfa/confirm/', { code }),
-
-    mfaLoginVerify: (data: { temp_token: string; code: string }) =>
-      apiCall<any>('POST', '/accounts/mfa/login-verify/', data),
+    // Staff MFA & Step-Up — enroll/confirm/login-verify live earlier in
+    // this object, next to staffLogin() (they share its real contract).
 
     mfaReset: (userId?: string) =>
       apiCall<{ detail?: string; message?: string }>('POST', '/accounts/mfa/reset/', userId ? { user_id: userId } : undefined),
@@ -3067,16 +3159,21 @@ export const api = {
       }
     },
 
-    reverseSavingsTransaction: (id: string, data: { amount: number; direction: 'CREDIT' | 'DEBIT'; reason: string }) =>
+    // Maker-checker gated (SAVINGS_REVERSAL) — a verification_code earns
+    // the retry past a 428 step-up requirement; pass it only when the
+    // caller actually has a fresh code to spend.
+    reverseSavingsTransaction: (id: string, data: { amount: number; direction: 'CREDIT' | 'DEBIT'; reason: string; verification_code?: string }) =>
       apiCall<any>('POST', `/services/savings/${uuid(id)}/reversal/`, data),
 
-    disburseToAlternateNumber: (data: { loan_id: string; phone_number: string; amount: number; remarks?: string; reason: string }) =>
+    // Maker-checker gated (LOAN_DISBURSEMENT) — same verification_code rule.
+    disburseToAlternateNumber: (data: { loan_id: string; phone_number: string; amount: number; remarks?: string; reason: string; verification_code?: string }) =>
       apiCall<any>('POST', '/payments/mpesa/b2c/disburse/alternate-number/', {
         loan_id: uuid(data.loan_id),
         phone_number: data.phone_number,
         amount: data.amount,
         remarks: data.remarks ?? 'Loan Disbursement',
         reason: data.reason,
+        ...(data.verification_code ? { verification_code: data.verification_code } : {}),
       }),
   },
 

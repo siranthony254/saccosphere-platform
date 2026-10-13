@@ -42,7 +42,7 @@ export default function PayScreen() {
   const [methodStep, setMethodStep] = useState<'amount' | 'method' | 'bank' | 'processing' | 'success'>(
     step === 'method' ? 'method' : 'amount'
   )
-  const [receipt, setReceipt] = useState<{ checkout: string; transaction: string; mpesaRef: string } | null>(null)
+  const [receipt, setReceipt] = useState<{ checkout: string; transaction: string; mpesaRef?: string } | null>(null)
   const [checkoutRequestId, setCheckoutRequestId] = useState<string | null>(null)
 
   const numericAmount = Number(String(amount || defaultAmount || 0).replace(/[^0-9.]/g, ''))
@@ -129,7 +129,7 @@ export default function PayScreen() {
           ? await api.member.getTransaction(finalRef)
           : null
         if (transaction?.payment_ref) {
-          setReceipt((current) => current ? { ...current, mpesaRef: transaction.payment_ref, transaction: transaction.ref } : current)
+          setReceipt((current) => current ? { ...current, mpesaRef: transaction.payment_ref ?? undefined, transaction: transaction.ref } : current)
         } else {
           const list = await api.member.getTransactions({ sacco: slug })
           const completed = (list.results ?? []).find((txn: any) =>
@@ -201,7 +201,7 @@ export default function PayScreen() {
         amount={numericAmount}
         saccoName={saccoName}
         purpose={isRepayment ? 'LOAN_REPAYMENT' : 'SAVING_DEPOSIT'}
-        mpesaRef={receipt.mpesaRef}
+        mpesaRef={receipt.mpesaRef ?? receipt.transaction}
         saccosphereRef={receipt.transaction}
         onBackToDashboard={() => router.replace('/(member)')}
         onViewReceipt={() => router.push({ pathname: '/sacco/[slug]/statement', params: { slug } })}

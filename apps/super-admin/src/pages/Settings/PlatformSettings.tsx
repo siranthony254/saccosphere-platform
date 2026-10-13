@@ -96,17 +96,18 @@ function HolidayModeCard() {
       <StepUpModal
         isOpen={showStepUp}
         title="Authorize Holiday Mode Change"
-        description={`Changing Platform Holiday Mode to ${pendingTargetState ? 'ENABLED' : 'DISABLED'} requires step-up security verification.`}
+        description={`Changing Platform Holiday Mode to ${pendingTargetState ? 'ENABLED' : 'DISABLED'} requires confirmation.`}
         onClose={() => setShowStepUp(false)}
-        onSuccess={handleStepUpSuccess}
+        onSubmitCode={() => { setShowStepUp(false); handleStepUpSuccess() }}
       />
     </Card>
   )
 }
 
 function StaffMfaSetupCard() {
-  const [mfaData, setMfaData] = useState<{ secret: string; qr_code: string; recovery_codes: string[] } | null>(null)
+  const [mfaData, setMfaData] = useState<{ secret: string; otpauth_uri: string } | null>(null)
   const [code, setCode] = useState('')
+  const [recoveryCodes, setRecoveryCodes] = useState<string[] | null>(null)
   const [status, setStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
   const [isLoading, setIsLoading] = useState(false)
 
@@ -114,6 +115,8 @@ function StaffMfaSetupCard() {
     setIsLoading(true)
     setStatus(null)
     try {
+      // No enrollment_token: an already-authenticated staff account
+      // enrolling voluntarily relies on its own Bearer token instead.
       const res = await api.auth.mfaEnroll()
       setMfaData(res)
     } catch (err: any) {
@@ -129,8 +132,8 @@ function StaffMfaSetupCard() {
     setIsLoading(true)
     setStatus(null)
     try {
-      await api.auth.mfaConfirm(code.trim())
-      setStatus({ type: 'success', message: 'MFA confirmed and enabled for your super admin account!' })
+      const result = await api.auth.mfaConfirm(undefined, code.trim())
+      setRecoveryCodes(result.recovery_codes)
       setMfaData(null)
       setCode('')
     } catch (err: any) {
@@ -166,7 +169,22 @@ function StaffMfaSetupCard() {
         </div>
       )}
 
-      {!mfaData ? (
+      {recoveryCodes ? (
+        <div className="space-y-3 bg-amber-50 p-4 rounded-xl border border-amber-200">
+          <div className="text-xs font-bold text-ink">
+            MFA enabled. Save these recovery codes now — they will not be shown again:
+          </div>
+          <div className="grid grid-cols-2 gap-1 font-mono text-[11px] bg-white p-2 rounded border">
+            {recoveryCodes.map((c) => <div key={c}>{c}</div>)}
+          </div>
+          <button
+            onClick={() => { setRecoveryCodes(null); setStatus({ type: 'success', message: 'MFA is now enabled for your super admin account.' }) }}
+            className="px-4 py-2 bg-mint-600 hover:bg-mint-700 text-white font-bold text-xs rounded-lg cursor-pointer"
+          >
+            I've saved these — done
+          </button>
+        </div>
+      ) : !mfaData ? (
         <div className="flex gap-3">
           <button
             onClick={handleEnroll}
@@ -185,24 +203,11 @@ function StaffMfaSetupCard() {
         </div>
       ) : (
         <div className="space-y-4 bg-surface-2 p-4 rounded-xl border border-ink-faint">
-          <div className="text-xs font-bold text-ink">Scan QR Code or copy secret key into your Authenticator app:</div>
+          <div className="text-xs font-bold text-ink">Add this key into your Authenticator app:</div>
 
-          {mfaData.qr_code ? (
-            <img src={mfaData.qr_code} alt="MFA QR Code" className="w-36 h-36 bg-white p-2 rounded border" />
-          ) : (
-            <div className="p-2 bg-white rounded font-mono text-xs text-indigo-700 font-bold border">
-              Secret: {mfaData.secret}
-            </div>
-          )}
-
-          {mfaData.recovery_codes && mfaData.recovery_codes.length > 0 && (
-            <div>
-              <div className="text-[11px] font-bold text-ink mb-1">Save your recovery codes:</div>
-              <div className="flex flex-wrap gap-1 font-mono text-[10px] bg-white p-2 rounded border">
-                {mfaData.recovery_codes.join(', ')}
-              </div>
-            </div>
-          )}
+          <div className="p-2 bg-white rounded font-mono text-xs text-indigo-700 font-bold border tracking-wider break-all">
+            {mfaData.secret.replace(/(.{4})/g, '$1 ').trim()}
+          </div>
 
           <form onSubmit={handleConfirm} className="flex gap-2 items-center pt-2">
             <input

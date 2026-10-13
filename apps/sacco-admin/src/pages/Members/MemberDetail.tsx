@@ -40,6 +40,7 @@ export function MemberDetail() {
   const [reversalDirection, setReversalDirection] = useState<'DEBIT' | 'CREDIT'>('DEBIT')
   const [reversalReason, setReversalReason] = useState('')
   const [showStepUp, setShowStepUp] = useState(false)
+  const [stepUpError, setStepUpError] = useState<string | null>(null)
   const [pendingReversalPayload, setPendingReversalPayload] = useState<{ id: string; amount: number; direction: 'CREDIT' | 'DEBIT'; reason: string } | null>(null)
 
   const [actionError, setActionError] = useState<string | null>(null)
@@ -69,7 +70,7 @@ export function MemberDetail() {
   })
 
   const reverseTransactionMutation = useMutation({
-    mutationFn: (data: { id: string; amount: number; direction: 'CREDIT' | 'DEBIT'; reason: string }) =>
+    mutationFn: (data: { id: string; amount: number; direction: 'CREDIT' | 'DEBIT'; reason: string; verification_code?: string }) =>
       api.saccoAdmin.reverseSavingsTransaction(data.id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-member', id] })
@@ -77,8 +78,20 @@ export function MemberDetail() {
       setReversalAmount('')
       setReversalReason('')
       setActionError(null)
+      setShowStepUp(false)
+      setStepUpError(null)
     },
-    onError: (err: any) => setActionError(err?.message || 'Failed to reverse savings entry.'),
+    onError: (err: any, variables) => {
+      if (err?.status === 428) {
+        // Wrong/expired code on retry — keep the step-up modal open with
+        // the real reason instead of a silent dead end.
+        setPendingReversalPayload(variables)
+        setStepUpError(err?.message || 'Incorrect verification code.')
+        setShowStepUp(true)
+        return
+      }
+      setActionError(err?.message || 'Failed to reverse savings entry.')
+    },
   })
 
   if (isLoading) return <div className="p-5 text-ink-muted text-sm">Loading member...</div>
@@ -535,6 +548,7 @@ export function MemberDetail() {
                     direction: reversalDirection,
                     reason: reversalReason,
                   })
+                  setStepUpError(null)
                   setShowStepUp(true)
                 }}
                 disabled={!reversalAmount || !reversalReason}
@@ -551,11 +565,11 @@ export function MemberDetail() {
         isOpen={showStepUp}
         title="Authorize Savings Reversal"
         description="Savings entry reversals are high-risk financial actions requiring staff step-up authorization."
-        onClose={() => setShowStepUp(false)}
-        onSuccess={() => {
+        error={stepUpError}
+        onClose={() => { setShowStepUp(false); setStepUpError(null) }}
+        onSubmitCode={(code) => {
           if (pendingReversalPayload) {
-            reverseTransactionMutation.mutate(pendingReversalPayload)
-            setPendingReversalPayload(null)
+            reverseTransactionMutation.mutate({ ...pendingReversalPayload, verification_code: code })
           }
         }}
       />

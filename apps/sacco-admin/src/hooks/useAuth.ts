@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { api, clearTokens, setAccessToken, setRefreshToken } from '@saccosphere/api-client'
+import type { StaffLoginResult } from '@saccosphere/api-client'
 
 import { useAuthStore } from '../store/useAuthStore'
 import type { LoginInput, RegisterInput } from '@saccosphere/schemas'
@@ -102,35 +103,52 @@ export function useAuthBootstrap() {
 }
 
 // ─── Login Mutation ────────────────────────────────────────────────────────────
+//
+// Any is_staff/SACCO_ADMIN/SUPER_ADMIN account now goes through mandatory
+// TOTP MFA at login (accounts.views._user_requires_staff_mfa) — the normal
+// POST /accounts/login/ can come back as real tokens, an "enter your
+// authenticator code" challenge, or "you must enrol MFA before you can log
+// in at all". staffLogin() surfaces all three; the Login screen drives the
+// enroll/verify steps and calls useCompleteStaffLogin() once real tokens
+// land, from whichever of the three paths got there.
 
 export function useLogin() {
+  return useMutation({
+    mutationFn: (data: LoginInput) => api.auth.staffLogin(data),
+  })
+}
+
+export function useMfaEnroll() {
+  return useMutation({
+    mutationFn: (enrollmentToken: string) => api.auth.mfaEnroll(enrollmentToken),
+  })
+}
+
+export function useMfaConfirm() {
+  return useMutation({
+    mutationFn: ({ enrollmentToken, code }: { enrollmentToken: string; code: string }) =>
+      api.auth.mfaConfirm(enrollmentToken, code),
+  })
+}
+
+export function useMfaLoginVerify() {
+  return useMutation({
+    mutationFn: ({ challengeToken, code }: { challengeToken: string; code: string }) =>
+      api.auth.mfaLoginVerify(challengeToken, code),
+  })
+}
+
+// Finishes a login once real tokens exist, regardless of which path
+// produced them (no MFA needed, a login-verify, or a fresh enrollment).
+export function useCompleteStaffLogin() {
   const queryClient = useQueryClient()
   const setAuth = useAuthStore((state) => state.setAuth)
 
-  return useMutation({
-    mutationFn: async (data: LoginInput) => {
-      console.info('SACCO Admin login request:', { email: data.email })
-      const tokens = await api.auth.login(data)
-      setAccessToken(tokens.access)
-      await saveRefreshToken(tokens.refresh)
-
-      // tokens.user already carries sacco_id (UserProfileSerializer resolves it
-      // server-side). No roles lookup — see useAuthBootstrap.
-      setAuth({ token: tokens.access, user: tokens.user })
-      console.info('SACCO Admin auth state set', {
-        role: tokens.user.role,
-        hasSaccoId: tokens.user.sacco_id != null,
-      })
-      return tokens
-    },
-    onSuccess: () => {
-      console.info('SACCO Admin login succeeded')
-      queryClient.clear()
-    },
-    onError: (error) => {
-      console.error('SACCO Admin login failed:', error)
-    },
-  })
+  return async (result: StaffLoginResult & { kind: 'tokens' }) => {
+    await saveRefreshToken(result.refresh)
+    setAuth({ token: result.access, user: result.user })
+    queryClient.clear()
+  }
 }
 
 // ─── Logout ───────────────────────────────────────────────────────────────────

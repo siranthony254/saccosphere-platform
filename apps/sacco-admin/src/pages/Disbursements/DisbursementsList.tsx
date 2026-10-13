@@ -77,9 +77,10 @@ export function DisbursementsList() {
   const [isAlternateNumber, setIsAlternateNumber] = useState(false)
   const [alternateReason, setAlternateReason] = useState('')
   const [showStepUp, setShowStepUp] = useState(false)
+  const [stepUpError, setStepUpError] = useState<string | null>(null)
 
   const alternateDisburseMutation = useMutation({
-    mutationFn: (data: { loan_id: string; phone_number: string; amount: number; remarks?: string; reason: string }) =>
+    mutationFn: (data: { loan_id: string; phone_number: string; amount: number; remarks?: string; reason: string; verification_code?: string }) =>
       api.saccoAdmin.disburseToAlternateNumber(data),
     onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ['admin-loans'] })
@@ -87,9 +88,18 @@ export function DisbursementsList() {
       setActiveId(null)
       setIsAlternateNumber(false)
       setAlternateReason('')
+      setShowStepUp(false)
+      setStepUpError(null)
       setLastConvId(data.conversation_id || data.checkout_request_id || 'ALTPAYOUT')
     },
-    onError: (err: any) => toast.error(err?.message || 'Alternate-number payout failed.'),
+    onError: (err: any) => {
+      if (err?.status === 428) {
+        setStepUpError(err?.message || 'Incorrect verification code.')
+        setShowStepUp(true)
+        return
+      }
+      toast.error(err?.message || 'Alternate-number payout failed.')
+    },
   })
 
   return (
@@ -365,8 +375,9 @@ export function DisbursementsList() {
         isOpen={showStepUp}
         title="Authorize Alternate-Number B2C Disbursement"
         description="Disbursing loan funds to an alternate M-Pesa phone number is a high-risk financial action requiring staff step-up security verification."
-        onClose={() => setShowStepUp(false)}
-        onSuccess={() => {
+        error={stepUpError}
+        onClose={() => { setShowStepUp(false); setStepUpError(null) }}
+        onSubmitCode={(code) => {
           if (activeId && phone && amount && alternateReason) {
             alternateDisburseMutation.mutate({
               loan_id: activeId,
@@ -374,6 +385,7 @@ export function DisbursementsList() {
               amount: Number(amount),
               remarks: 'Alternate-number loan disbursement',
               reason: alternateReason,
+              verification_code: code,
             })
           }
         }}
