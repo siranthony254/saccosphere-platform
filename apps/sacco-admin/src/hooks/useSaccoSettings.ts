@@ -22,6 +22,7 @@ type SettingsUiModel = {
     registration_fee?: number
     monthly_contribution_amount?: number
     sms_daily_limit?: number
+    holiday_mode_enabled?: boolean
     updated_at?: string
   }
 }

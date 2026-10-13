@@ -108,7 +108,18 @@ function SavingsTypesCard() {
       is_active: form.is_active,
       allows_multiple_accounts: form.allows_multiple_accounts,
     }
-    const onError = (err: any) => setFormError(err?.message || 'Save failed.')
+    const onError = (err: any) => {
+      // This specific licence-gate rule comes back nested
+      // (response.data.errors.error_code[0]), not the flat top-level
+      // error_code other endpoints use — check both shapes rather than
+      // showing the raw code string.
+      const errorCode = err?.code ?? err?.fields?.error_code?.[0]
+      if (errorCode === 'WITHDRAWABLE_REQUIRES_DT_LICENCE') {
+        setFormError('FOSA (withdrawable) savings products require a DT (deposit-taking) SASRA licence. Contact platform support if this SACCO should be licensed as DT.')
+        return
+      }
+      setFormError(err?.message || 'Save failed.')
+    }
     if (editingId) {
       update.mutate({ id: editingId, data: payload }, { onSuccess: reset, onError })
     } else {
@@ -151,7 +162,19 @@ function SavingsTypesCard() {
               </div>
               <div className="flex items-center gap-3 shrink-0">
                 <button
-                  onClick={() => update.mutate({ id: t.id, data: { is_active: !t.is_active } })}
+                  onClick={() => update.mutate(
+                    { id: t.id, data: { is_active: !t.is_active } },
+                    {
+                      onError: (err: any) => {
+                        const errorCode = err?.code ?? err?.fields?.error_code?.[0]
+                        toast.error(
+                          errorCode === 'WITHDRAWABLE_REQUIRES_DT_LICENCE'
+                            ? 'FOSA (withdrawable) savings products require a DT (deposit-taking) SASRA licence.'
+                            : err?.message || 'Failed to update savings product.'
+                        )
+                      },
+                    }
+                  )}
                   disabled={update.isPending}
                   className="text-[11px] text-ink-muted hover:text-ink font-medium disabled:opacity-50"
                 >
@@ -987,6 +1010,58 @@ function StaffMfaSetupCard() {
   )
 }
 
+// A manual, SACCO-level risk-tightening switch (P07) — while active it
+// lowers the M-Pesa withdrawal ceiling and can force a second approval on
+// smaller withdrawals too, on top of whatever the SACCO has already
+// configured. It only ever tightens, never loosens. Independent of the
+// big settings form above (its own save, so flipping it never requires
+// touching every numeric field at once).
+function HolidayModeCard() {
+  const { data, isPending, save } = useSaccoSettings()
+  const isActive = Boolean(data?.settings?.holiday_mode_enabled)
+
+  const handleToggle = () => {
+    save(
+      { holiday_mode_enabled: !isActive },
+      {
+        onSuccess: () => toast.success(isActive ? 'Holiday mode disabled.' : 'Holiday mode enabled — withdrawal limits are now tightened.'),
+        onError: (error: any) => toast.error(error?.message || 'Failed to update holiday mode.'),
+      }
+    )
+  }
+
+  return (
+    <div className="bg-white border border-[#e5ede9] rounded-[10px] p-5 mt-5">
+      <div className="font-semibold text-sm text-ink mb-1 border-b border-surface-3 pb-3">Holiday / heightened-risk mode</div>
+      <p className="text-xs text-ink-muted mb-4">
+        A manual switch for high-fraud-risk periods (e.g. a public holiday). While active it lowers the M-Pesa
+        withdrawal ceiling and can require a second admin's approval on smaller withdrawals — it only ever
+        tightens whatever you've already configured, never loosens it.
+      </p>
+      <div className="flex items-center justify-between p-4 bg-surface-2 rounded-xl border border-ink-faint">
+        <div>
+          <div className="text-sm font-bold text-ink">Holiday mode</div>
+          <div className="text-xs text-ink-muted">
+            Current status:{' '}
+            <span className={isActive ? 'font-bold text-amber-700' : 'font-bold text-mint-700'}>
+              {isActive ? 'ENABLED — lower limits apply' : 'DISABLED — standard limits apply'}
+            </span>
+          </div>
+        </div>
+        <button
+          onClick={handleToggle}
+          disabled={isPending}
+          className={`px-4 py-2 text-xs font-bold rounded-lg transition-colors cursor-pointer text-white disabled:opacity-50 ${
+            isActive ? 'bg-amber-600 hover:bg-amber-700' : 'bg-violet-600 hover:bg-violet-700'
+          }`}
+        >
+          {isPending ? 'Updating...' : isActive ? 'Disable holiday mode' : 'Enable holiday mode'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
 export function Settings() {
   const { data, isLoading, error, isPending, save } = useSaccoSettings()
 
@@ -1155,6 +1230,8 @@ export function Settings() {
           )}
         </div>
       </div>
+
+      <HolidayModeCard />
 
       <PaymentSetupCard />
 
