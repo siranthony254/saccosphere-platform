@@ -1881,10 +1881,51 @@ export const api = {
         notes: notes,
       }),
 
-    respondToGuarantorRequest: (loanId: string, guarantorId: string, action: 'approve' | 'decline') =>
+    // P15: approving now requires otp_code (sent via
+    // requestGuarantorConsentOtp below) - consumed before the capacity
+    // check. Declining needs no code at all.
+    respondToGuarantorRequest: (
+      loanId: string,
+      guarantorId: string,
+      action: 'approve' | 'decline',
+      data?: { notes?: string; otp_code?: string }
+    ) =>
       apiCall<void>('POST', `/services/loans/${uuid(loanId)}/guarantors/${uuid(guarantorId)}/respond/`, {
         action: action === 'approve' ? 'APPROVE' : 'DECLINE',
+        ...(data?.notes ? { notes: data.notes } : {}),
+        ...(data?.otp_code ? { otp_code: data.otp_code } : {}),
       }),
+
+    // Sends an OTP to the guarantor's own registered phone - the first
+    // step of approving a pledge. Caller must be the guarantor themself.
+    requestGuarantorConsentOtp: (loanId: string, guarantorId: string) =>
+      apiCall<{ detail: string }>('POST', `/services/loans/${uuid(loanId)}/guarantors/${uuid(guarantorId)}/consent/request-otp/`),
+
+    // Self-scoped: every pledge the caller has ever made, across every
+    // SACCO they've guaranteed in, plus their own guarantee capacity.
+    // Doubles as both "pending requests needing my action" (filter
+    // status === 'PENDING') and a full "my guarantees" statement.
+    getGuarantorStatement: async () => {
+      const r = await apiCall<any>('GET', '/services/guarantors/me/statement/')
+      return {
+        pledges: (Array.isArray(r.pledges) ? r.pledges : []).map((p: any) => ({
+          id: String(p.id),
+          loan_id: String(p.loan_id ?? ''),
+          borrower_name: String(p.borrower_name ?? ''),
+          sacco_name: String(p.sacco_name ?? ''),
+          status: String(p.status ?? 'PENDING'),
+          guarantee_amount: Number(p.guarantee_amount ?? 0),
+          released_amount: Number(p.released_amount ?? 0),
+          current_exposure: Number(p.current_exposure ?? 0),
+          requested_at: p.requested_at ?? null,
+          responded_at: p.responded_at ?? null,
+        })),
+        total_savings: Number(r.total_savings ?? 0),
+        max_guarantee_capacity: Number(r.max_guarantee_capacity ?? 0),
+        active_guarantees: Number(r.active_guarantees ?? 0),
+        available_capacity: Number(r.available_capacity ?? 0),
+      }
+    },
 
     // These are unauthenticated GET endpoints keyed on a server-signed token
     // that the backend delivers by SMS / push as

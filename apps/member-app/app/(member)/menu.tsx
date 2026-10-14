@@ -40,8 +40,8 @@ export default function MenuScreen() {
 
   const menuItems: Array<{ label: string, helper: string, icon: IconName, action: () => void, disabled?: boolean }> = [
     {
-      label: 'Guarantor requests',
-      helper: 'Review and approve loan guarantees',
+      label: 'My guarantees',
+      helper: 'Review requests and see your guarantee capacity',
       icon: 'guarantor',
       action: () => router.push('/(member)/guarantor-inbox'),
     },
