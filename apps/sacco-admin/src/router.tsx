@@ -24,6 +24,7 @@ import { LiquidityNPLDashboard } from './pages/Analytics/LiquidityNPLDashboard'
 import { LedgerManagement } from './pages/Ledger/LedgerManagement'
 import { BulkSMS } from './pages/BulkSMS/BulkSMS'
 import { ApprovalsList } from './pages/Approvals/ApprovalsList'
+import { Collections } from './pages/Collections/Collections'
 
 export const router = createBrowserRouter([
   {
@@ -60,6 +61,7 @@ export const router = createBrowserRouter([
       { path: 'import', element: <Import /> },
       { path: 'external-guarantors', element: <ExternalGuarantors /> },
       { path: 'approvals', element: <ApprovalsList /> },
+      { path: 'collections', element: <Collections /> },
     ],
   },
   { path: '*', element: <Navigate to="/login" replace /> },

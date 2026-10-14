@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { ThemePicker } from '@saccosphere/ui'
 import { toast } from 'react-hot-toast'
 import { useSaccoSettings } from '../../hooks/useSaccoSettings'
+import { useReminderPolicy } from '../../hooks/useCollections'
 import { useAuthStore } from '../../store/useAuthStore'
 import {
   useMemberFieldDefinitions,
@@ -1062,6 +1063,154 @@ function HolidayModeCard() {
   )
 }
 
+// The 6 reminder steps are fixed on the backend (a Django choices field) -
+// this card can drop a step from the cadence or re-time it, but never add
+// a step that isn't one of these six.
+const REMINDER_STEPS: { code: string; label: string; defaultOffset: number }[] = [
+  { code: 'PRE_DUE_3', label: '3 days before due', defaultOffset: -3 },
+  { code: 'DUE', label: 'On the due date', defaultOffset: 0 },
+  { code: 'OVERDUE_1', label: '1 day overdue', defaultOffset: 1 },
+  { code: 'OVERDUE_7', label: '7 days overdue', defaultOffset: 7 },
+  { code: 'OVERDUE_30', label: '30 days overdue', defaultOffset: 30 },
+  { code: 'PRE_LISTING', label: 'Before CRB listing', defaultOffset: 25 },
+]
+
+function ReminderPolicyCard() {
+  const { data, isLoading, error, isSaving, save } = useReminderPolicy()
+
+  const [enabled, setEnabled] = useState<Record<string, boolean>>({})
+  const [offsets, setOffsets] = useState<Record<string, string>>({})
+  const [quietStart, setQuietStart] = useState('20:00')
+  const [quietEnd, setQuietEnd] = useState('07:00')
+  const [stkPrompts, setStkPrompts] = useState(false)
+  const [maxPerDay, setMaxPerDay] = useState('3')
+  const [guarantorDays, setGuarantorDays] = useState('30')
+  const [crbNoticeDays, setCrbNoticeDays] = useState('14')
+  const [crbMinAmount, setCrbMinAmount] = useState('0')
+
+  useEffect(() => {
+    if (!data) return
+    const byStep = new Map(data.cadence.map((c: { step: string; offset_days: number }) => [c.step, c.offset_days]))
+    setEnabled(Object.fromEntries(REMINDER_STEPS.map(s => [s.code, byStep.has(s.code)])))
+    setOffsets(Object.fromEntries(REMINDER_STEPS.map(s => [s.code, String(byStep.get(s.code) ?? s.defaultOffset)])))
+    setQuietStart(data.quiet_hours_start)
+    setQuietEnd(data.quiet_hours_end)
+    setStkPrompts(data.stk_prompts_enabled)
+    setMaxPerDay(String(data.max_reminders_per_member_per_day))
+    setGuarantorDays(String(data.guarantor_alert_after_days))
+    setCrbNoticeDays(String(data.crb_listing_notice_days))
+    setCrbMinAmount(String(data.crb_listing_min_amount))
+  }, [data])
+
+  const handleSave = () => {
+    const cadence = REMINDER_STEPS.filter(s => enabled[s.code]).map(s => ({
+      step: s.code,
+      offset_days: Number(offsets[s.code] ?? s.defaultOffset),
+    }))
+    save(
+      {
+        cadence,
+        quiet_hours_start: quietStart,
+        quiet_hours_end: quietEnd,
+        stk_prompts_enabled: stkPrompts,
+        max_reminders_per_member_per_day: Number(maxPerDay),
+        guarantor_alert_after_days: Number(guarantorDays),
+        crb_listing_notice_days: Number(crbNoticeDays),
+        crb_listing_min_amount: Number(crbMinAmount),
+      },
+      {
+        onSuccess: () => toast.success('Reminder policy saved.'),
+        onError: (err: any) => toast.error(err?.message || 'Failed to save reminder policy.'),
+      }
+    )
+  }
+
+  return (
+    <div className="bg-white border border-[#e5ede9] rounded-[10px] p-5 mt-5">
+      <div className="font-semibold text-sm text-ink mb-1 border-b border-surface-3 pb-3">Loan reminders &amp; collections notices</div>
+      <p className="text-xs text-ink-muted mb-4">
+        When members get reminded about a loan repayment, and when a quieter escalation (guarantor
+        alert, CRB listing notice) kicks in. Dropping a step below stops that reminder from firing at all.
+      </p>
+
+      {isLoading ? (
+        <div className="text-sm text-ink-muted py-2">Loading reminder policy…</div>
+      ) : error ? (
+        <div className="text-sm text-red-600 py-2">Failed to load reminder policy.</div>
+      ) : (
+        <>
+          <div className="space-y-2 mb-4">
+            {REMINDER_STEPS.map(s => (
+              <div key={s.code} className="flex items-center justify-between px-3 py-2 bg-surface-2 rounded-lg">
+                <label className="flex items-center gap-2 text-sm text-ink">
+                  <input
+                    type="checkbox"
+                    checked={!!enabled[s.code]}
+                    onChange={e => setEnabled(prev => ({ ...prev, [s.code]: e.target.checked }))}
+                  />
+                  {s.label}
+                </label>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[11px] text-ink-faint">offset (days, negative = before due)</span>
+                  <input
+                    type="number"
+                    disabled={!enabled[s.code]}
+                    className="w-16 p-1.5 border border-[#e5ede9] rounded-lg text-sm disabled:opacity-50 focus:ring-2 focus:ring-violet-500 focus:outline-none"
+                    value={offsets[s.code] ?? ''}
+                    onChange={e => setOffsets(prev => ({ ...prev, [s.code]: e.target.value }))}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 p-4 bg-surface-2 rounded-xl mb-4">
+            <div>
+              <label className="text-xs text-ink-muted mb-1 block">Quiet hours start</label>
+              <input type="time" className="w-full p-2 border border-[#e5ede9] rounded-lg text-sm focus:ring-2 focus:ring-violet-500 focus:outline-none" value={quietStart} onChange={e => setQuietStart(e.target.value)} />
+            </div>
+            <div>
+              <label className="text-xs text-ink-muted mb-1 block">Quiet hours end</label>
+              <input type="time" className="w-full p-2 border border-[#e5ede9] rounded-lg text-sm focus:ring-2 focus:ring-violet-500 focus:outline-none" value={quietEnd} onChange={e => setQuietEnd(e.target.value)} />
+            </div>
+            <div>
+              <label className="text-xs text-ink-muted mb-1 block">Max reminders per member per day</label>
+              <input type="number" min={1} className="w-full p-2 border border-[#e5ede9] rounded-lg text-sm focus:ring-2 focus:ring-violet-500 focus:outline-none" value={maxPerDay} onChange={e => setMaxPerDay(e.target.value)} />
+            </div>
+            <label className="flex items-center gap-1.5 text-xs text-ink-muted self-end pb-2.5">
+              <input type="checkbox" checked={stkPrompts} onChange={e => setStkPrompts(e.target.checked)} />
+              Include an STK push prompt with reminders
+            </label>
+          </div>
+
+          <div className="grid grid-cols-3 gap-4 p-4 bg-surface-2 rounded-xl mb-4">
+            <div>
+              <label className="text-xs text-ink-muted mb-1 block">Guarantor alert after (days overdue)</label>
+              <input type="number" min={0} className="w-full p-2 border border-[#e5ede9] rounded-lg text-sm focus:ring-2 focus:ring-violet-500 focus:outline-none" value={guarantorDays} onChange={e => setGuarantorDays(e.target.value)} />
+            </div>
+            <div>
+              <label className="text-xs text-ink-muted mb-1 block">CRB listing notice (days before)</label>
+              <input type="number" min={0} className="w-full p-2 border border-[#e5ede9] rounded-lg text-sm focus:ring-2 focus:ring-violet-500 focus:outline-none" value={crbNoticeDays} onChange={e => setCrbNoticeDays(e.target.value)} />
+            </div>
+            <div>
+              <label className="text-xs text-ink-muted mb-1 block">CRB listing minimum amount (KES)</label>
+              <input type="number" min={0} className="w-full p-2 border border-[#e5ede9] rounded-lg text-sm focus:ring-2 focus:ring-violet-500 focus:outline-none" value={crbMinAmount} onChange={e => setCrbMinAmount(e.target.value)} />
+            </div>
+          </div>
+
+          <button
+            onClick={handleSave}
+            disabled={isSaving}
+            className="px-5 py-2 rounded-lg border-none bg-violet-600 text-white text-sm font-semibold cursor-pointer hover:bg-violet-700 transition-colors disabled:opacity-60"
+          >
+            {isSaving ? 'Saving…' : 'Save reminder policy'}
+          </button>
+        </>
+      )}
+    </div>
+  )
+}
+
 export function Settings() {
   const { data, isLoading, error, isPending, save } = useSaccoSettings()
 
@@ -1232,6 +1381,8 @@ export function Settings() {
       </div>
 
       <HolidayModeCard />
+
+      <ReminderPolicyCard />
 
       <PaymentSetupCard />
 

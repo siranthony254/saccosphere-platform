@@ -2367,6 +2367,116 @@ export const api = {
       return apiCall<any>('PATCH', '/management/settings/', data)
     },
 
+    // P12a: per-SACCO reminder/collections-notice policy. cadence is a
+    // list of {step, offset_days} restricted to 6 fixed step codes
+    // (PRE_DUE_3, DUE, OVERDUE_1, OVERDUE_7, OVERDUE_30, PRE_LISTING) -
+    // an admin can drop/reorder/re-offset them but never invent a new one.
+    getReminderPolicy: async () => {
+      const r = await apiCall<any>('GET', '/management/reminder-policy/')
+      return {
+        cadence: Array.isArray(r.cadence) ? r.cadence.map((s: any) => ({ step: String(s.step), offset_days: Number(s.offset_days) })) : [],
+        quiet_hours_start: String(r.quiet_hours_start ?? '20:00'),
+        quiet_hours_end: String(r.quiet_hours_end ?? '07:00'),
+        stk_prompts_enabled: Boolean(r.stk_prompts_enabled),
+        max_reminders_per_member_per_day: Number(r.max_reminders_per_member_per_day ?? 3),
+        guarantor_alert_after_days: Number(r.guarantor_alert_after_days ?? 30),
+        crb_listing_notice_days: Number(r.crb_listing_notice_days ?? 14),
+        crb_listing_min_amount: Number(r.crb_listing_min_amount ?? 0),
+        updated_at: r.updated_at ?? null,
+      }
+    },
+
+    updateReminderPolicy: (data: {
+      cadence?: Array<{ step: string; offset_days: number }>
+      quiet_hours_start?: string
+      quiet_hours_end?: string
+      stk_prompts_enabled?: boolean
+      max_reminders_per_member_per_day?: number
+      guarantor_alert_after_days?: number
+      crb_listing_notice_days?: number
+      crb_listing_min_amount?: number
+    }) => apiCall<any>('PATCH', '/management/reminder-policy/', data),
+
+    // P12b: collections workbench. Available to SACCO_ADMIN and the new
+    // COLLECTIONS_OFFICER role (super-admin grants that role; there's no
+    // SACCO-admin self-service way to grant it yet).
+    getCollectionsQueue: async (minDays = 1) => {
+      const rows = await apiCall<any[]>('GET', '/services/collections/queue/', undefined, { params: { min_days: minDays } })
+      return (Array.isArray(rows) ? rows : []).map((row: any) => ({
+        loan_id: String(row.loan_id ?? ''),
+        member_number: String(row.member_number ?? ''),
+        borrower_name: String(row.borrower_name ?? ''),
+        days_past_due: Number(row.days_past_due ?? 0),
+        arrears_amount: Number(row.arrears_amount ?? 0),
+        outstanding_balance: Number(row.outstanding_balance ?? 0),
+        open_promise: row.open_promise
+          ? { id: String(row.open_promise.id), promised_on: String(row.open_promise.promised_on), amount: Number(row.open_promise.amount) }
+          : null,
+        last_contact: row.last_contact
+          ? { created_at: String(row.last_contact.created_at), channel: String(row.last_contact.channel), outcome: String(row.last_contact.outcome) }
+          : null,
+        contacts_count: Number(row.contacts_count ?? 0),
+      }))
+    },
+
+    getPAR: async () => {
+      const r = await apiCall<any>('GET', '/services/collections/par/')
+      return {
+        as_of: String(r.as_of ?? ''),
+        total_outstanding: Number(r.total_outstanding ?? 0),
+        shielded_exposure: Number(r.shielded_exposure ?? 0),
+        bands: (Array.isArray(r.bands) ? r.bands : []).map((b: any) => ({
+          band_days: Number(b.band_days ?? 0),
+          at_risk_amount: Number(b.at_risk_amount ?? 0),
+          at_risk_loans: Number(b.at_risk_loans ?? 0),
+          ratio: Number(b.ratio ?? 0),
+        })),
+      }
+    },
+
+    getLoanContacts: async (loanId: string) => {
+      const rows = await apiCall<any[]>('GET', `/services/collections/loans/${uuid(loanId)}/contacts/`)
+      return (Array.isArray(rows) ? rows : []).map((c: any) => ({
+        id: String(c.id),
+        channel: String(c.channel),
+        outcome: String(c.outcome),
+        notes: String(c.notes ?? ''),
+        officer: c.officer != null ? String(c.officer) : null,
+        created_at: String(c.created_at),
+      }))
+    },
+
+    logLoanContact: (loanId: string, data: { channel: 'CALL' | 'SMS' | 'VISIT' | 'OTHER'; outcome: string; notes?: string }) =>
+      apiCall<any>('POST', `/services/collections/loans/${uuid(loanId)}/contacts/`, data),
+
+    getLoanPromises: async (loanId: string) => {
+      const rows = await apiCall<any[]>('GET', `/services/collections/loans/${uuid(loanId)}/promises/`)
+      return (Array.isArray(rows) ? rows : []).map((p: any) => ({
+        id: String(p.id),
+        promised_on: String(p.promised_on),
+        amount: Number(p.amount ?? 0),
+        status: String(p.status),
+        created_at: String(p.created_at),
+        resolved_at: p.resolved_at ?? null,
+        received_amount: p.received_amount != null ? Number(p.received_amount) : null,
+      }))
+    },
+
+    createLoanPromise: (loanId: string, data: { promised_on: string; amount: number }) =>
+      apiCall<any>('POST', `/services/collections/loans/${uuid(loanId)}/promises/`, data),
+
+    cancelLoanPromise: (promiseId: string) =>
+      apiCall<any>('POST', `/services/collections/promises/${uuid(promiseId)}/cancel/`),
+
+    // Always maker-checker gated (GUARANTOR_RECOVERY is fail-closed,
+    // never configurable to zero approvals) - requires at least one
+    // logged contact attempt with a REACHED/NO_ANSWER/PROMISED/REFUSED
+    // outcome already on file for this loan, or a 400.
+    initiateGuarantorRecovery: (loanId: string, requestedAmount: number) =>
+      apiCall<any>('POST', `/services/collections/loans/${uuid(loanId)}/guarantor-recovery/`, {
+        requested_amount: requestedAmount,
+      }),
+
     getMembers: async (params?: {
       status?: string
       search?: string
