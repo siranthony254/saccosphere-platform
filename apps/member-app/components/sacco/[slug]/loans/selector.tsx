@@ -23,6 +23,10 @@ export default function SaccoLoanSelectorScreen() {
     router.push({ pathname: '/sacco/[slug]/loans/apply', params: { slug } })
   }
 
+  const handleWhatIf = (slug: string) => {
+    router.push({ pathname: '/sacco/[slug]/loans/what-if', params: { slug } } as any)
+  }
+
   const handleCompare = () => {
     router.push({ pathname: '/sacco/[slug]/compare', params: { slug: activeMemberships[0].sacco_slug } })
   }
@@ -224,6 +228,9 @@ export default function SaccoLoanSelectorScreen() {
                     </Text>
                   </View>
                 )}
+                <TouchableOpacity onPress={() => handleWhatIf(membership.sacco_slug)} style={{ marginTop: 6 }}>
+                  <Text style={{ fontSize: 10, color: c.accent, fontWeight: '600' }}>Check your eligibility first →</Text>
+                </TouchableOpacity>
               </View>
               <Text style={{ color: c.textFaint, fontSize: 18 }}>{'>'}</Text>
             </TouchableOpacity>

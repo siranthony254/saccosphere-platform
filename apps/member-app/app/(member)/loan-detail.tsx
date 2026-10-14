@@ -2,6 +2,7 @@ import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from 'rea
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { router, useLocalSearchParams } from 'expo-router'
 import { useLoan } from '../../hooks/useLoans'
+import { useAppraisalSummary, useLoanOffer } from '../../hooks/useLoanAppraisal'
 import { Badge } from '../../components/ui/Badge'
 import { useMoney } from '../../lib/money'
 import { useTheme } from '../../theme/ThemeProvider'
@@ -32,6 +33,8 @@ export default function LoanDetailScreen() {
   const insets = useSafeAreaInsets()
   const { id } = useLocalSearchParams<{ id?: string }>()
   const { data: loan, isLoading } = useLoan(id ?? '')
+  const { data: appraisal } = useAppraisalSummary(loan?.id ?? null)
+  const { data: offer } = useLoanOffer(loan?.id ?? null)
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['bottom', 'left', 'right']}>
@@ -72,12 +75,52 @@ export default function LoanDetailScreen() {
           </View>
 
           {loan.status === 'rejected' && loan.rejection_reason ? (
-            <View style={{ backgroundColor: 'rgba(248,113,113,0.08)', borderRadius: 14, borderWidth: 1, borderColor: 'rgba(248,113,113,0.3)', padding: 16 }}>
+            <View style={{ backgroundColor: 'rgba(248,113,113,0.08)', borderRadius: 14, borderWidth: 1, borderColor: 'rgba(248,113,113,0.3)', padding: 16, marginBottom: 14 }}>
               <Text style={{ color: c.danger, fontSize: 12, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>
                 Why this was rejected
               </Text>
               <Text style={{ color: c.text, fontSize: 13, lineHeight: 19 }}>{loan.rejection_reason}</Text>
             </View>
+          ) : null}
+
+          {appraisal ? (
+            <View style={{ backgroundColor: c.surface, borderRadius: 14, borderWidth: 1, borderColor: c.border, padding: 16, marginBottom: 14 }}>
+              <Text style={{ color: c.textMuted, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10 }}>
+                Why this amount
+              </Text>
+              {appraisal.reasons.map((reason: string, i: number) => (
+                <View key={i} style={{ flexDirection: 'row', gap: 8, marginBottom: 6 }}>
+                  <Text style={{ color: c.textFaint, fontSize: 13 }}>•</Text>
+                  <Text style={{ color: c.text, fontSize: 12, lineHeight: 18, flex: 1 }}>{reason}</Text>
+                </View>
+              ))}
+            </View>
+          ) : null}
+
+          {offer ? (
+            <TouchableOpacity
+              onPress={() => router.push({ pathname: '/(member)/loan-offer', params: { id: loan.id } } as any)}
+              style={{
+                backgroundColor: offer.accepted ? c.surface : c.accent,
+                borderRadius: 14,
+                borderWidth: offer.accepted ? 1 : 0,
+                borderColor: c.border,
+                padding: 16,
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+              }}
+            >
+              <View>
+                <Text style={{ color: offer.accepted ? c.text : '#fff', fontSize: 13, fontWeight: '700' }}>
+                  {offer.accepted ? 'Loan offer accepted' : 'Review your loan offer'}
+                </Text>
+                <Text style={{ color: offer.accepted ? c.textMuted : 'rgba(255,255,255,0.85)', fontSize: 11, marginTop: 2 }}>
+                  {offer.accepted ? 'Cost-of-credit disclosure' : 'See the true cost of this loan before it disburses'}
+                </Text>
+              </View>
+              <Text style={{ color: offer.accepted ? c.textMuted : '#fff', fontSize: 16 }}>{'>'}</Text>
+            </TouchableOpacity>
           ) : null}
         </ScrollView>
       )}

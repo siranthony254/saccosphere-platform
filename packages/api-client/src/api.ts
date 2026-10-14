@@ -1927,6 +1927,64 @@ export const api = {
       }
     },
 
+    // P13: a prospective borrower's eligibility preview - no application
+    // or record created, callable as often as needed. loan_type is the
+    // product's real id (SaccoConfigSchema's loan_products[].key already
+    // carries that, not a slug).
+    whatIf: async (loanTypeId: string, termMonths?: number) => {
+      const r = await apiCall<any>('POST', '/services/loans/what-if/', {
+        loan_type: uuid(loanTypeId),
+        ...(termMonths ? { term_months: termMonths } : {}),
+      })
+      return {
+        loan_type_id: String(r.loan_type_id ?? loanTypeId),
+        term_months: Number(r.term_months ?? termMonths ?? 0),
+        max_amount: Number(r.max_amount ?? 0),
+        instalment: Number(r.instalment ?? 0),
+        reasons: Array.isArray(r.reasons) ? r.reasons.map(String) : [],
+      }
+    },
+
+    // Plain-language appraisal for a real application - member-facing,
+    // no rule internals (those are admin-only, via the sacco-admin app).
+    // 404s until an appraisal record exists for this loan.
+    getAppraisalSummary: async (loanId: string) => {
+      const r = await apiCall<any>('GET', `/services/loans/${uuid(loanId)}/appraisal/summary/`)
+      return {
+        max_amount: Number(r.max_amount ?? 0),
+        recommendation: String(r.recommendation ?? ''),
+        reasons: Array.isArray(r.reasons) ? r.reasons.map(String) : [],
+        appraised_at: r.appraised_at ?? null,
+      }
+    },
+
+    // The frozen cost-of-credit disclosure - generated as a side effect
+    // of approval, never lazily. 404s until that's happened, which the
+    // caller should treat as "not ready yet", not "never will be".
+    getLoanOffer: async (loanId: string) => {
+      const r = await apiCall<any>('GET', `/services/loans/${uuid(loanId)}/offer/`)
+      return {
+        id: String(r.id ?? ''),
+        principal: Number(r.principal ?? 0),
+        term_months: Number(r.term_months ?? 0),
+        interest_rate: Number(r.interest_rate ?? 0),
+        total_interest: Number(r.total_interest ?? 0),
+        processing_fee: Number(r.processing_fee ?? 0),
+        insurance_fee: Number(r.insurance_fee ?? 0),
+        total_cost_of_credit: Number(r.total_cost_of_credit ?? 0),
+        effective_annual_rate: Number(r.effective_annual_rate ?? 0),
+        generated_at: r.generated_at ?? null,
+        accepted: Boolean(r.accepted),
+      }
+    },
+
+    // One-time and non-reversible - a second call is a clean 409, not a
+    // silent success. The caller should disable the accept action once
+    // getLoanOffer().accepted comes back true, not rely on this to be
+    // idempotent in the ordinary sense.
+    acceptLoanOffer: (loanId: string) =>
+      apiCall<{ id: string; accepted_at: string }>('POST', `/services/loans/${uuid(loanId)}/offer/accept/`),
+
     // These are unauthenticated GET endpoints keyed on a server-signed token
     // that the backend delivers by SMS / push as
     // `{FRONTEND_BASE_URL}/confirm-disbursement/?token=…`. The token embeds the
