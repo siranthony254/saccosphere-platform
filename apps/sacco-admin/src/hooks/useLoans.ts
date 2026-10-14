@@ -79,3 +79,21 @@ export function useDisbursementHistory() {
     queryFn: api.saccoAdmin.getDisbursements,
   })
 }
+
+// P17: loan restructuring/rescheduling/top-up/buy-off/penalty-waiver.
+export function useLoanRestructures(loanId: string | null) {
+  return useQuery({
+    queryKey: ['loan-restructures', loanId],
+    queryFn: () => api.saccoAdmin.getLoanRestructures(loanId!),
+    enabled: !!loanId,
+  })
+}
+
+export function useRequestLoanRestructure(loanId: string | null) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (data: Parameters<typeof api.saccoAdmin.requestLoanRestructure>[1]) =>
+      api.saccoAdmin.requestLoanRestructure(loanId!, data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['loan-restructures', loanId] }),
+  })
+}

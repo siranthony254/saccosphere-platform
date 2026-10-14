@@ -37,6 +37,7 @@ export function AppShell() {
     { path: '/loans', label: 'Loan approvals', icon: 'coins', badge: pendingLoansCount > 0 ? String(pendingLoansCount) : null },
     { path: '/disbursements', label: 'Disbursements', icon: 'send', badge: null },
     { path: '/collections', label: 'Collections', icon: 'phone', badge: null },
+    { path: '/exits', label: 'Exits & claims', icon: 'id-card', badge: null },
     { path: '/contributions', label: 'Contributions', icon: 'download', badge: null },
     { path: '/ledger', label: 'General Ledger', icon: 'file-text', badge: null },
     { path: '/dividends', label: 'Dividends', icon: 'gem', badge: null },

@@ -4,6 +4,7 @@ import { useQueryClient, useMutation } from '@tanstack/react-query'
 import { api } from '@saccosphere/api-client'
 import { Icon } from '@saccosphere/ui'
 import { useMemberDetail, useOpenSavingsAccount } from '../../hooks/useMembers'
+import { useLoanRestructures, useRequestLoanRestructure } from '../../hooks/useLoans'
 import { useUserRoles } from '../../hooks/useRoles'
 import { useSavingsTypesList } from '../../hooks/useSavingsTypes'
 import { useAuthStore } from '../../store/useAuthStore'
@@ -44,6 +45,71 @@ export function MemberDetail() {
   const [pendingReversalPayload, setPendingReversalPayload] = useState<{ id: string; amount: number; direction: 'CREDIT' | 'DEBIT'; reason: string } | null>(null)
 
   const [actionError, setActionError] = useState<string | null>(null)
+
+  // P17: loan restructure modal state (ACTIVE/DEFAULTED loans only).
+  const [restructureModalLoan, setRestructureModalLoan] = useState<{ id: string; label: string; outstanding_balance: number; interest_rate: number; term_months: number } | null>(null)
+  const [restructureType, setRestructureType] = useState<'RESTRUCTURE' | 'RESCHEDULE' | 'TOP_UP' | 'BUY_OFF' | 'PENALTY_WAIVER'>('RESTRUCTURE')
+  const [restructureReason, setRestructureReason] = useState('')
+  const [afterAmount, setAfterAmount] = useState('')
+  const [afterInterestRate, setAfterInterestRate] = useState('')
+  const [afterTermMonths, setAfterTermMonths] = useState('')
+  const [restructureError, setRestructureError] = useState<string | null>(null)
+  const [showRestructureStepUp, setShowRestructureStepUp] = useState(false)
+  const [restructureStepUpError, setRestructureStepUpError] = useState<string | null>(null)
+
+  const { data: restructureHistory = [] } = useLoanRestructures(restructureModalLoan?.id ?? null)
+  const requestRestructure = useRequestLoanRestructure(restructureModalLoan?.id ?? null)
+
+  function buildRestructurePayload() {
+    return {
+      restructure_type: restructureType,
+      reason: restructureReason.trim(),
+      ...(afterAmount.trim() ? { after_amount: Number(afterAmount) } : {}),
+      ...(afterInterestRate.trim() ? { after_interest_rate: Number(afterInterestRate) } : {}),
+      ...(afterTermMonths.trim() ? { after_term_months: Number(afterTermMonths) } : {}),
+    }
+  }
+
+  const resetRestructureModal = () => {
+    setRestructureModalLoan(null)
+    setRestructureType('RESTRUCTURE')
+    setRestructureReason('')
+    setAfterAmount('')
+    setAfterInterestRate('')
+    setAfterTermMonths('')
+    setRestructureError(null)
+    setShowRestructureStepUp(false)
+    setRestructureStepUpError(null)
+  }
+
+  const submitRestructure = (verification_code?: string) => {
+    if (!restructureReason.trim()) {
+      setRestructureError('A reason is required.')
+      return
+    }
+    const payload = { ...buildRestructurePayload(), ...(verification_code ? { verification_code } : {}) }
+    requestRestructure.mutate(payload, {
+      onSuccess: (res) => {
+        setShowRestructureStepUp(false)
+        setRestructureStepUpError(null)
+        setRestructureError(null)
+        setActionError(null)
+        if (res?.detail) {
+          // Leave the modal open so the admin sees the queued-for-approval
+          // confirmation and the refreshed history below it.
+          setRestructureReason('')
+        }
+      },
+      onError: (err: any) => {
+        if (err?.status === 428) {
+          setRestructureStepUpError(err?.message || 'Incorrect verification code.')
+          setShowRestructureStepUp(true)
+          return
+        }
+        setRestructureError(err?.message || 'Failed to request restructure.')
+      },
+    })
+  }
 
   const updateStatusMutation = useMutation({
     mutationFn: (data: { id: string; action: 'freeze' | 'close' | 'reactivate'; reason: string }) =>
@@ -349,9 +415,23 @@ export function MemberDetail() {
                     KES {loan.amount.toLocaleString()} at {loan.interest_rate}%{loan.term_months ? ` · ${loan.term_months} months` : ''}
                   </div>
                 </div>
-                <div className="text-right">
-                  <div className="text-xs font-semibold text-ink">KES {loan.outstanding_balance.toLocaleString()} owed</div>
-                  {loan.status && <div className="text-[10px] text-ink-muted">{loan.status}</div>}
+                <div className="text-right flex items-center gap-3">
+                  <div>
+                    <div className="text-xs font-semibold text-ink">KES {loan.outstanding_balance.toLocaleString()} owed</div>
+                    {loan.status && <div className="text-[10px] text-ink-muted">{loan.status}</div>}
+                  </div>
+                  <button
+                    onClick={() => setRestructureModalLoan({
+                      id: loan.id,
+                      label: loan.loan_type || 'Loan',
+                      outstanding_balance: loan.outstanding_balance,
+                      interest_rate: loan.interest_rate,
+                      term_months: loan.term_months ?? 0,
+                    })}
+                    className="px-2.5 py-1 rounded-[6px] border border-ink-faint bg-white hover:bg-surface-1 text-ink text-[11px] font-semibold cursor-pointer transition-colors"
+                  >
+                    Restructure
+                  </button>
                 </div>
               </div>
             ))}
@@ -572,6 +652,125 @@ export function MemberDetail() {
             reverseTransactionMutation.mutate({ ...pendingReversalPayload, verification_code: code })
           }
         }}
+      />
+
+      {/* MODAL 4: LOAN RESTRUCTURE (P17) */}
+      {restructureModalLoan && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl max-w-lg w-full p-6 shadow-xl space-y-4 border border-[#e5ede9] max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center border-b border-[#e5ede9] pb-3">
+              <div className="font-bold text-base text-ink">Restructure — {restructureModalLoan.label}</div>
+              <button onClick={resetRestructureModal} className="text-ink-muted text-lg font-bold">&times;</button>
+            </div>
+
+            {restructureError && <div className="p-2 bg-red-50 text-red-700 text-xs rounded font-semibold">{restructureError}</div>}
+
+            <div className="text-[11px] text-ink-muted bg-surface-2 p-2.5 rounded-lg">
+              Outstanding KES {restructureModalLoan.outstanding_balance.toLocaleString()} · {restructureModalLoan.interest_rate}% ·{' '}
+              {restructureModalLoan.term_months} months remaining. Always goes through the maker-checker queue —
+              a type that raises the loan's exposure above what its guarantors already consented to also needs
+              their fresh re-consent before it applies.
+            </div>
+
+            <div>
+              <label className="text-xs text-ink-muted mb-1 block">Restructure type</label>
+              <select
+                value={restructureType}
+                onChange={(e) => setRestructureType(e.target.value as any)}
+                className="w-full p-2 border border-[#e5ede9] rounded text-xs bg-white"
+              >
+                <option value="RESTRUCTURE">Restructure (change terms)</option>
+                <option value="RESCHEDULE">Reschedule (change term/rate)</option>
+                <option value="TOP_UP">Top-up (increase balance)</option>
+                <option value="BUY_OFF">Buy-off (settle below balance)</option>
+                <option value="PENALTY_WAIVER">Penalty waiver</option>
+              </select>
+            </div>
+
+            {restructureType !== 'PENALTY_WAIVER' && (
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <label className="text-[11px] text-ink-muted mb-1 block">
+                    {restructureType === 'TOP_UP' ? 'New balance (KES)' : 'After amount (KES)'}
+                  </label>
+                  <input
+                    type="number"
+                    placeholder={String(restructureModalLoan.outstanding_balance)}
+                    value={afterAmount}
+                    onChange={(e) => setAfterAmount(e.target.value)}
+                    className="w-full p-2 border border-[#e5ede9] rounded text-xs bg-white"
+                  />
+                </div>
+                <div>
+                  <label className="text-[11px] text-ink-muted mb-1 block">After rate (%)</label>
+                  <input
+                    type="number"
+                    placeholder={String(restructureModalLoan.interest_rate)}
+                    value={afterInterestRate}
+                    onChange={(e) => setAfterInterestRate(e.target.value)}
+                    className="w-full p-2 border border-[#e5ede9] rounded text-xs bg-white"
+                  />
+                </div>
+                <div>
+                  <label className="text-[11px] text-ink-muted mb-1 block">After term (months)</label>
+                  <input
+                    type="number"
+                    placeholder={String(restructureModalLoan.term_months)}
+                    value={afterTermMonths}
+                    onChange={(e) => setAfterTermMonths(e.target.value)}
+                    className="w-full p-2 border border-[#e5ede9] rounded text-xs bg-white"
+                  />
+                </div>
+              </div>
+            )}
+
+            <div>
+              <label className="text-xs text-ink-muted mb-1 block">Reason</label>
+              <textarea
+                rows={3}
+                placeholder="Why is this loan being restructured?"
+                value={restructureReason}
+                onChange={(e) => setRestructureReason(e.target.value)}
+                className="w-full p-2 border border-[#e5ede9] rounded text-xs bg-white"
+                required
+              />
+            </div>
+
+            <button
+              onClick={() => submitRestructure()}
+              disabled={requestRestructure.isPending || !restructureReason.trim()}
+              className="w-full py-2 bg-violet-600 hover:bg-violet-700 text-white rounded text-xs font-semibold cursor-pointer disabled:opacity-50"
+            >
+              {requestRestructure.isPending ? 'Submitting…' : 'Submit for approval'}
+            </button>
+
+            {restructureHistory.length > 0 && (
+              <div className="border-t border-[#e5ede9] pt-3">
+                <div className="text-[11px] font-semibold text-ink-soft mb-2 uppercase tracking-wide">History</div>
+                <div className="space-y-1.5 max-h-40 overflow-y-auto">
+                  {restructureHistory.map((r) => (
+                    <div key={r.id} className="flex items-center justify-between px-2.5 py-1.5 bg-surface-2 rounded text-[11px]">
+                      <div>
+                        <span className="font-semibold text-ink">{r.restructure_type}</span>
+                        <span className="ml-2 text-ink-muted">{r.status}</span>
+                      </div>
+                      <span className="text-ink-faint">{r.created_at ? new Date(r.created_at).toLocaleDateString() : '—'}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      <StepUpModal
+        isOpen={showRestructureStepUp}
+        title="Authorize loan restructure"
+        description="Restructuring a loan is a maker-checker-gated financial action requiring staff step-up authorization."
+        error={restructureStepUpError}
+        onClose={() => { setShowRestructureStepUp(false); setRestructureStepUpError(null) }}
+        onSubmitCode={(code) => submitRestructure(code)}
       />
     </div>
   )
