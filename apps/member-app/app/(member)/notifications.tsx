@@ -199,6 +199,10 @@ function resolveNotificationTarget(n: Notification): string | null {
       const path = parsed.pathname
       const loanId = parsed.searchParams.get('loan_id') || parsed.searchParams.get('loanId')
       const slug = parsed.searchParams.get('sacco') || parsed.searchParams.get('sacco_slug') || parsed.searchParams.get('slug')
+      if (path.includes('exit-share-transfers')) {
+        const exitRequestId = path.split('/').filter(Boolean).pop()
+        return exitRequestId ? `/(member)/share-transfer-respond?exitRequestId=${encodeURIComponent(exitRequestId)}` : null
+      }
       if (path.includes('guarantor')) return '/(member)/guarantor-inbox'
       if (path.includes('loan-repayment')) return '/(member)/loan-repayment'
       if (path.includes('loan') && loanId) return `/(member)/loan-detail?id=${encodeURIComponent(loanId)}`

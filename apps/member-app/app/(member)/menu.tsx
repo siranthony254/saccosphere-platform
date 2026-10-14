@@ -80,6 +80,32 @@ export default function MenuScreen() {
       },
     },
     {
+      label: 'Nominees',
+      helper: 'Who your savings and share capital go to',
+      icon: 'file',
+      action: () => {
+        if (!activeSlug) {
+          Alert.alert('No SACCOs linked', 'Join a SACCO first to register nominees.')
+          return
+        }
+        router.push({ pathname: '/sacco/[slug]/membership/nominees', params: { slug: activeSlug } } as any)
+      },
+      disabled: activeMemberships.length === 0,
+    },
+    {
+      label: 'Leave this SACCO',
+      helper: 'Start or track your membership exit',
+      icon: 'logout',
+      action: () => {
+        if (!activeSlug) {
+          Alert.alert('No SACCOs linked', "You're not an active member of a SACCO yet.")
+          return
+        }
+        router.push({ pathname: '/sacco/[slug]/membership/exit', params: { slug: activeSlug } } as any)
+      },
+      disabled: activeMemberships.length === 0,
+    },
+    {
       label: "Security & Settings",
       helper: 'Manage biometrics and account security',
       icon: 'settings',

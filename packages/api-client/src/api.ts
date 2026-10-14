@@ -145,6 +145,34 @@ const normalizeApprovalRequest = (item: any) => ({
     : [],
 })
 
+const normalizeDeceasedClaim = (item: any) => ({
+  id: String(item.id),
+  membership: item.membership != null ? String(item.membership) : null,
+  reported_at: item.reported_at ?? null,
+  status: String(item.status ?? 'DOCUMENTS_PENDING'),
+  loan_clearance_method: item.loan_clearance_method ?? null,
+  loan_clearance_reference: item.loan_clearance_reference ?? null,
+  loan_clearance_amount: item.loan_clearance_amount != null ? Number(item.loan_clearance_amount) : null,
+  insurance_policy: item.insurance_policy ?? null,
+  decided_at: item.decided_at ?? null,
+  rejection_reason: item.rejection_reason ?? null,
+  documents: (Array.isArray(item.documents) ? item.documents : []).map((d: any) => ({
+    id: String(d.id),
+    document_type: String(d.document_type),
+    file: d.file ?? null,
+    file_name: d.file_name ?? '',
+    is_verified: Boolean(d.is_verified),
+    uploaded_at: d.uploaded_at,
+  })),
+  nominee_shares: (Array.isArray(item.nominee_shares) ? item.nominee_shares : []).map((s: any) => ({
+    id: String(s.id),
+    nominee: s.nominee != null ? String(s.nominee) : null,
+    nominee_name: s.nominee_name ?? '',
+    percentage: Number(s.percentage ?? 0),
+    share_amount: Number(s.share_amount ?? 0),
+  })),
+})
+
 
 export type WithdrawSavingsResult =
   | { kind: 'initiated'; conversationId: string; requestedAmount: number; netAmountSent: number; platformFee: number; transactionId: string; message: string }
@@ -1153,8 +1181,87 @@ export const api = {
     },
 
 
-    leaveMembership: async (id: string) =>
-      apiCall<void>('POST', `/members/memberships/${uuid(id)}/leave/`),
+    // P16: starts a notice period (SACCO-configurable, default 60 days) —
+    // no longer an instant exit. See getExitStatus for the tracker.
+    requestExit: (id: string, reason?: string) =>
+      apiCall<any>('POST', `/members/memberships/${uuid(id)}/leave/`, reason ? { reason } : undefined),
+
+    getExitStatus: async (id: string) => {
+      const r = await apiCall<any>('GET', `/members/memberships/${uuid(id)}/exit/`)
+      return {
+        id: String(r.id),
+        status: String(r.status),
+        reason: r.reason ?? null,
+        notice_given_at: r.notice_given_at ?? null,
+        earliest_exit_date: r.earliest_exit_date ?? null,
+        loan_offset_amount: r.loan_offset_amount != null ? Number(r.loan_offset_amount) : null,
+        net_refund_amount: r.net_refund_amount != null ? Number(r.net_refund_amount) : null,
+        share_capital_amount: r.share_capital_amount != null ? Number(r.share_capital_amount) : null,
+        share_transfer_buyer_name: r.share_transfer_buyer_name ?? null,
+        share_transfer_buyer_consented_at: r.share_transfer_buyer_consented_at ?? null,
+        share_transfer_declined_at: r.share_transfer_declined_at ?? null,
+        completed_at: r.completed_at ?? null,
+        blockers: (Array.isArray(r.blockers) ? r.blockers : []).map((b: any) => ({
+          code: String(b.code),
+          detail: String(b.detail ?? ''),
+          loan_id: b.loan_id ?? null,
+          guarantor_id: b.guarantor_id ?? null,
+        })),
+        refund_entries: (Array.isArray(r.refund_entries) ? r.refund_entries : []).map((e: any) => ({
+          id: String(e.id),
+          amount: Number(e.amount ?? 0),
+          payout_method: String(e.payout_method),
+          status: String(e.status),
+          due_date: e.due_date ?? null,
+          payout_reference: e.payout_reference ?? null,
+          paid_at: e.paid_at ?? null,
+          created_at: e.created_at,
+        })),
+      }
+    },
+
+    cancelExit: (id: string) => apiCall<any>('POST', `/members/memberships/${uuid(id)}/exit/cancel/`),
+
+    requestShareTransfer: (id: string, buyerMembershipId: string) =>
+      apiCall<any>('POST', `/members/memberships/${uuid(id)}/exit/share-transfer/`, {
+        buyer_membership_id: buyerMembershipId,
+      }),
+
+    respondToShareTransfer: (exitRequestId: string, action: 'ACCEPT' | 'DECLINE') =>
+      apiCall<any>('POST', `/members/exit-share-transfers/${uuid(exitRequestId)}/respond/`, { action }),
+
+    getNominees: async (membershipId: string) => {
+      const rows = await apiCall<any[]>('GET', `/members/memberships/${uuid(membershipId)}/nominees/`)
+      return (Array.isArray(rows) ? rows : []).map((n: any) => ({
+        id: n.id != null ? String(n.id) : undefined,
+        full_name: String(n.full_name ?? ''),
+        id_number: String(n.id_number ?? ''),
+        relationship: String(n.relationship ?? 'OTHER'),
+        phone_number: String(n.phone_number ?? ''),
+        percentage: Number(n.percentage ?? 0),
+        is_minor: Boolean(n.is_minor),
+        guardian_name: n.guardian_name ?? '',
+        guardian_id_number: n.guardian_id_number ?? '',
+        guardian_phone: n.guardian_phone ?? '',
+      }))
+    },
+
+    // PUT always replaces the entire set — percentages must sum to
+    // exactly 100.00, and every is_minor row needs all 3 guardian fields.
+    setNominees: (
+      membershipId: string,
+      nominees: Array<{
+        full_name: string
+        id_number: string
+        relationship: string
+        phone_number: string
+        percentage: number
+        is_minor: boolean
+        guardian_name?: string
+        guardian_id_number?: string
+        guardian_phone?: string
+      }>
+    ) => apiCall<any[]>('PUT', `/members/memberships/${uuid(membershipId)}/nominees/`, { nominees }),
 
     getTransactions: async (params?: {
       sacco?: string
@@ -2811,6 +2918,102 @@ export const api = {
           : [],
       }
     },
+
+    // P17: loan restructuring/rescheduling/top-up/buy-off/penalty-waiver.
+    // Always maker-checker gated (202) and step-up gated once the policy
+    // requires >=1 approval — a 428 means resubmit with verification_code.
+    getLoanRestructures: async (loanId: string) => {
+      const rows = await apiCall<any[]>('GET', `/services/loans/${uuid(loanId)}/restructure/`)
+      return (Array.isArray(rows) ? rows : []).map((r: any) => ({
+        id: String(r.id),
+        restructure_type: String(r.restructure_type),
+        reason: r.reason ?? '',
+        before_amount: Number(r.before_amount ?? 0),
+        before_interest_rate: Number(r.before_interest_rate ?? 0),
+        before_term_months: Number(r.before_term_months ?? 0),
+        before_outstanding_balance: Number(r.before_outstanding_balance ?? 0),
+        after_amount: Number(r.after_amount ?? 0),
+        after_interest_rate: Number(r.after_interest_rate ?? 0),
+        after_term_months: Number(r.after_term_months ?? 0),
+        waived_penalty_amount: Number(r.waived_penalty_amount ?? 0),
+        pre_restructure_classification: r.pre_restructure_classification ?? null,
+        cure_period_instalments_required: r.cure_period_instalments_required ?? null,
+        status: String(r.status),
+        applied_at: r.applied_at ?? null,
+        created_at: r.created_at,
+      }))
+    },
+
+    requestLoanRestructure: (
+      loanId: string,
+      data: {
+        restructure_type: 'RESTRUCTURE' | 'RESCHEDULE' | 'TOP_UP' | 'BUY_OFF' | 'PENALTY_WAIVER'
+        reason: string
+        after_amount?: number
+        after_interest_rate?: number
+        after_term_months?: number
+        verification_code?: string
+      }
+    ) => apiCall<{ approval_request_id?: string; status?: string; detail?: string }>(
+      'POST',
+      `/services/loans/${uuid(loanId)}/restructure/`,
+      data,
+    ),
+
+    // P16: refund queue (voluntary-exit net refunds + deceased-claim
+    // nominee payouts share this one admin screen).
+    getRefundQueue: async (statusFilter?: string) => {
+      const rows = await apiCall<any[]>('GET', '/services/refunds/', undefined, {
+        params: statusFilter ? { status: statusFilter } : undefined,
+      })
+      return (Array.isArray(rows) ? rows : []).map((e: any) => ({
+        id: String(e.id),
+        amount: Number(e.amount ?? 0),
+        payout_method: String(e.payout_method),
+        status: String(e.status),
+        due_date: e.due_date ?? null,
+        sla_breached_at: e.sla_breached_at ?? null,
+        payout_reference: e.payout_reference ?? null,
+        paid_at: e.paid_at ?? null,
+        created_at: e.created_at,
+      }))
+    },
+
+    markRefundBankPayout: (id: string, bankReference: string) =>
+      apiCall<any>('POST', `/services/refunds/${uuid(id)}/bank-payout/`, { bank_reference: bankReference }),
+
+    // P16: deceased-member claims. membership_id must not already have a
+    // claim (OneToOneField on the backend) - a second POST 400s.
+    getDeceasedClaims: async () => {
+      const rows = await apiCall<any[]>('GET', '/services/deceased-claims/')
+      return (Array.isArray(rows) ? rows : []).map(normalizeDeceasedClaim)
+    },
+
+    createDeceasedClaim: async (membershipId: string) =>
+      normalizeDeceasedClaim(
+        await apiCall<any>('POST', '/services/deceased-claims/', { membership_id: membershipId }),
+      ),
+
+    uploadClaimDocument: (claimId: string, documentType: string, file: File | Blob) => {
+      const form = new FormData()
+      form.append('document_type', documentType)
+      form.append('file', file)
+      return apiCall<any>('POST', `/services/deceased-claims/${uuid(claimId)}/documents/`, form)
+    },
+
+    verifyClaimDocument: (claimId: string, documentId: string, isVerified = true) =>
+      apiCall<any>('PATCH', `/services/deceased-claims/${uuid(claimId)}/documents/${uuid(documentId)}/`, {
+        is_verified: isVerified,
+      }),
+
+    settleDeceasedClaim: (
+      claimId: string,
+      data: {
+        loan_clearance_method: 'NONE_OUTSTANDING' | 'WELFARE_FUND' | 'INSURER' | 'ESTATE_OFFSET'
+        loan_clearance_reference?: string
+        insurance_policy_id?: string
+      }
+    ) => apiCall<any>('POST', `/services/deceased-claims/${uuid(claimId)}/settle/`, data),
 
     getContributions: async (_params?: { date?: string; member?: string }) => {
       const dashboard = await api.saccoAdmin.getContributionsDashboard()
