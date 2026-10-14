@@ -26,6 +26,7 @@ import { BulkSMS } from './pages/BulkSMS/BulkSMS'
 import { ApprovalsList } from './pages/Approvals/ApprovalsList'
 import { Collections } from './pages/Collections/Collections'
 import { ExitsAndClaims } from './pages/Exits/ExitsAndClaims'
+import { Checkoff } from './pages/Checkoff/Checkoff'
 
 export const router = createBrowserRouter([
   {
@@ -64,6 +65,7 @@ export const router = createBrowserRouter([
       { path: 'approvals', element: <ApprovalsList /> },
       { path: 'collections', element: <Collections /> },
       { path: 'exits', element: <ExitsAndClaims /> },
+      { path: 'checkoff', element: <Checkoff /> },
     ],
   },
   { path: '*', element: <Navigate to="/login" replace /> },

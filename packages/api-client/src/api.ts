@@ -145,6 +145,63 @@ const normalizeApprovalRequest = (item: any) => ({
     : [],
 })
 
+const normalizeCheckoffEmployer = (item: any) => ({
+  id: String(item.id),
+  sacco: item.sacco != null ? String(item.sacco) : null,
+  name: String(item.name ?? ''),
+  code: String(item.code ?? ''),
+  contact_name: item.contact_name ?? '',
+  contact_phone: item.contact_phone ?? '',
+  contact_email: item.contact_email ?? '',
+  bank_name: item.bank_name ?? '',
+  bank_account_number: item.bank_account_number ?? '',
+  payday_day_of_month: Number(item.payday_day_of_month ?? 28),
+  remittance_deadline_days: Number(item.remittance_deadline_days ?? 10),
+  export_column_mapping: item.export_column_mapping ?? {},
+  import_column_mapping: item.import_column_mapping ?? {},
+  auto_generate_schedule: Boolean(item.auto_generate_schedule),
+  active: Boolean(item.active),
+  created_at: item.created_at ?? null,
+  updated_at: item.updated_at ?? null,
+})
+
+const normalizeCheckoffSchedule = (item: any) => ({
+  id: String(item.id),
+  employer: item.employer != null ? String(item.employer) : null,
+  period: String(item.period ?? ''),
+  status: String(item.status ?? 'DRAFT'),
+  expected_deduction_date: item.expected_deduction_date ?? null,
+  expected_remittance_date: item.expected_remittance_date ?? null,
+  generated_at: item.generated_at ?? null,
+  locked_at: item.locked_at ?? null,
+  corrects: item.corrects ?? null,
+  lines: (Array.isArray(item.lines) ? item.lines : []).map((l: any) => ({
+    id: String(l.id),
+    member_employment: l.member_employment != null ? String(l.member_employment) : null,
+    item_type: String(l.item_type),
+    repayment_schedule: l.repayment_schedule ?? null,
+    savings_type: l.savings_type ?? null,
+    amount: Number(l.amount ?? 0),
+    status: String(l.status),
+    accrued_at: l.accrued_at ?? null,
+    cleared_at: l.cleared_at ?? null,
+  })),
+})
+
+const normalizeCheckoffVariance = (item: any) => ({
+  id: String(item.id),
+  schedule_line: item.schedule_line ?? null,
+  import_line: item.import_line ?? null,
+  reason_code: String(item.reason_code),
+  status: String(item.status),
+  resolution_action: item.resolution_action ?? '',
+  resolution_notes: item.resolution_notes ?? '',
+  resolved_by: item.resolved_by ?? null,
+  resolved_at: item.resolved_at ?? null,
+  approval_request: item.approval_request ?? null,
+  created_at: item.created_at,
+})
+
 const normalizeDeceasedClaim = (item: any) => ({
   id: String(item.id),
   membership: item.membership != null ? String(item.membership) : null,
@@ -3014,6 +3071,181 @@ export const api = {
         insurance_policy_id?: string
       }
     ) => apiCall<any>('POST', `/services/deceased-claims/${uuid(claimId)}/settle/`, data),
+
+    // P14: employer payroll check-off. Admin-only — there is no
+    // member-facing "see my own deductions" endpoint anywhere in this
+    // feature (confirmed against the backend; a member cannot see their
+    // check-off deductions through any API today).
+    getCheckoffEmployers: async () => {
+      const rows = await apiCall<any[] | PaginatedResponse<any>>('GET', '/checkoff/employers/')
+      return unwrapResults(rows).map(normalizeCheckoffEmployer)
+    },
+
+    createCheckoffEmployer: async (data: {
+      name: string
+      code: string
+      contact_name?: string
+      contact_phone?: string
+      contact_email?: string
+      bank_name?: string
+      bank_account_number?: string
+      payday_day_of_month?: number
+      remittance_deadline_days?: number
+      export_column_mapping?: Record<string, string>
+      import_column_mapping?: Record<string, string>
+      auto_generate_schedule?: boolean
+      active?: boolean
+    }) => normalizeCheckoffEmployer(await apiCall<any>('POST', '/checkoff/employers/', data)),
+
+    updateCheckoffEmployer: async (id: string, data: Record<string, unknown>) =>
+      normalizeCheckoffEmployer(await apiCall<any>('PATCH', `/checkoff/employers/${uuid(id)}/`, data)),
+
+    getMemberEmployments: async (employerId: string) => {
+      const rows = await apiCall<any[] | PaginatedResponse<any>>('GET', `/checkoff/employers/${uuid(employerId)}/member-employments/`)
+      return unwrapResults(rows).map((e: any) => ({
+        id: String(e.id),
+        membership: e.membership != null ? String(e.membership) : null,
+        employer: e.employer != null ? String(e.employer) : null,
+        payroll_number: String(e.payroll_number ?? ''),
+        active_from: e.active_from ?? null,
+        active_to: e.active_to ?? null,
+        status: String(e.status ?? 'ACTIVE'),
+        created_at: e.created_at,
+      }))
+    },
+
+    createMemberEmployment: (employerId: string, data: { membership: string; payroll_number: string; active_from: string }) =>
+      apiCall<any>('POST', `/checkoff/employers/${uuid(employerId)}/member-employments/`, data),
+
+    updateMemberEmployment: (employmentId: string, data: { status?: 'ACTIVE' | 'ENDED'; active_to?: string; payroll_number?: string }) =>
+      apiCall<any>('PATCH', `/checkoff/member-employments/${uuid(employmentId)}/`, data),
+
+    getCheckoffMandates: async (employmentId: string) => {
+      const rows = await apiCall<any[] | PaginatedResponse<any>>('GET', `/checkoff/member-employments/${uuid(employmentId)}/mandates/`)
+      return unwrapResults(rows).map((m: any) => ({
+        id: String(m.id),
+        member_employment: m.member_employment != null ? String(m.member_employment) : null,
+        item_type: String(m.item_type),
+        savings_type: m.savings_type ?? null,
+        amount: Number(m.amount ?? 0),
+        effective_from: m.effective_from,
+        effective_to: m.effective_to ?? null,
+        active: Boolean(m.active),
+      }))
+    },
+
+    createCheckoffMandate: (
+      employmentId: string,
+      data: { item_type: 'DEPOSIT' | 'SHARES' | 'WELFARE' | 'OTHER'; savings_type?: string; amount: number; effective_from: string; effective_to?: string }
+    ) => apiCall<any>('POST', `/checkoff/member-employments/${uuid(employmentId)}/mandates/`, data),
+
+    generateCheckoffSchedule: (employerId: string, period: string) =>
+      apiCall<any>('POST', `/checkoff/employers/${uuid(employerId)}/schedules/generate/`, { period }),
+
+    getEmployerSchedules: async (employerId: string) => {
+      const rows = await apiCall<any[] | PaginatedResponse<any>>('GET', `/checkoff/employers/${uuid(employerId)}/schedules/`)
+      return unwrapResults(rows).map(normalizeCheckoffSchedule)
+    },
+
+    getCheckoffSchedule: async (scheduleId: string) =>
+      normalizeCheckoffSchedule(await apiCall<any>('GET', `/checkoff/schedules/${uuid(scheduleId)}/`)),
+
+    lockCheckoffSchedule: async (scheduleId: string) =>
+      normalizeCheckoffSchedule(await apiCall<any>('POST', `/checkoff/schedules/${uuid(scheduleId)}/lock/`)),
+
+    downloadCheckoffScheduleExport: async (scheduleId: string, fmt: 'csv' | 'xlsx' = 'csv') => {
+      const response = await axiosInstance.get(`/checkoff/schedules/${uuid(scheduleId)}/export/`, {
+        params: { file_format: fmt },
+        responseType: 'blob',
+      })
+      const disposition = String(response.headers?.['content-disposition'] ?? '')
+      const filenameMatch = disposition.match(/filename="?([^";]+)"?/i)
+      return { blob: response.data as Blob, filename: filenameMatch?.[1] ?? `checkoff_schedule.${fmt}` }
+    },
+
+    importCheckoffRemittance: (employerId: string, file: File, opts?: { period?: string; bank_reference?: string }) => {
+      const form = new FormData()
+      form.append('file', file)
+      if (opts?.period) form.append('period', opts.period)
+      if (opts?.bank_reference) form.append('bank_reference', opts.bank_reference)
+      return apiCall<{ job_id: string; task_id: string; status: string; rows: number }>(
+        'POST',
+        `/checkoff/employers/${uuid(employerId)}/remittances/`,
+        form,
+      )
+    },
+
+    getRemittanceImport: async (id: string) => {
+      const r = await apiCall<any>('GET', `/checkoff/remittances/${uuid(id)}/`)
+      return {
+        id: String(r.id),
+        employer: r.employer != null ? String(r.employer) : null,
+        period: String(r.period ?? ''),
+        file_name: r.file_name ?? '',
+        bank_reference: r.bank_reference ?? '',
+        amount_declared: r.amount_declared != null ? Number(r.amount_declared) : null,
+        status: String(r.status),
+        total_rows: Number(r.total_rows ?? 0),
+        processed_rows: Number(r.processed_rows ?? 0),
+        matched_rows: Number(r.matched_rows ?? 0),
+        variance_rows: Number(r.variance_rows ?? 0),
+        errors: Array.isArray(r.errors) ? r.errors : [],
+        created_at: r.created_at,
+      }
+    },
+
+    getRemittanceImportLines: async (id: string) => {
+      const rows = await apiCall<any[] | PaginatedResponse<any>>('GET', `/checkoff/remittances/${uuid(id)}/lines/`)
+      return unwrapResults(rows).map((l: any) => ({
+        id: String(l.id),
+        raw_row: l.raw_row ?? {},
+        matched_schedule_line: l.matched_schedule_line ?? null,
+        match_method: String(l.match_method ?? 'NONE'),
+        confidence_score: Number(l.confidence_score ?? 0),
+        status: String(l.status),
+        amount: Number(l.amount ?? 0),
+        created_at: l.created_at,
+      }))
+    },
+
+    getCheckoffVariances: async (params?: { reason_code?: string; status?: string }) => {
+      const rows = await apiCall<any[] | PaginatedResponse<any>>('GET', '/checkoff/variances/', undefined, { params })
+      return unwrapResults(rows).map(normalizeCheckoffVariance)
+    },
+
+    getCheckoffVariance: async (id: string) =>
+      normalizeCheckoffVariance(await apiCall<any>('GET', `/checkoff/variances/${uuid(id)}/`)),
+
+    // May come back 200 (resolved immediately) or 202 (queued for
+    // approval) depending on the variance's reason code — branch on
+    // the response, don't assume either.
+    resolveCheckoffVariance: (id: string, data: { notes?: string; manual_schedule_line_id?: string }) =>
+      apiCall<any>('POST', `/checkoff/variances/${uuid(id)}/resolve/`, data),
+
+    downloadCheckoffEvidencePack: async (employerId: string, opts?: { period?: string; file_format?: 'csv' | 'pdf' }) => {
+      const response = await axiosInstance.get(`/checkoff/employers/${uuid(employerId)}/evidence-pack/`, {
+        params: { period: opts?.period, file_format: opts?.file_format ?? 'csv' },
+        responseType: 'blob',
+      })
+      const disposition = String(response.headers?.['content-disposition'] ?? '')
+      const filenameMatch = disposition.match(/filename="?([^";]+)"?/i)
+      return { blob: response.data as Blob, filename: filenameMatch?.[1] ?? `evidence_pack.${opts?.file_format ?? 'csv'}` }
+    },
+
+    getRemittanceTimelinessDashboard: async () => {
+      const r = await apiCall<{ results: Array<{ employer_id: string; employer_name: string; on_time: number; late: number; total: number; on_time_rate: number | null }> }>(
+        'GET',
+        '/checkoff/dashboard/remittance-timeliness/',
+      )
+      return r.results ?? []
+    },
+
+    getArrearsAgeingDashboard: () =>
+      apiCall<{
+        as_of: string
+        totals: Record<string, number>
+        by_employer: Array<Record<string, unknown>>
+      }>('GET', '/checkoff/dashboard/arrears-ageing/'),
 
     getContributions: async (_params?: { date?: string; member?: string }) => {
       const dashboard = await api.saccoAdmin.getContributionsDashboard()
