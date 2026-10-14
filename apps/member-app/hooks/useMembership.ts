@@ -54,3 +54,16 @@ export function useSaccoSwitcher() {
     enabled: isAuthenticated,
   })
 }
+
+// Static paybill instructions per SACCO membership - no polling, just
+// refresh on pull-to-refresh (see api.member.getHowToPay).
+export function useHowToPay() {
+  const isAuthenticated = useIsAuthenticated()
+  return useQuery({
+    queryKey: ['how-to-pay'],
+    queryFn: api.member.getHowToPay,
+    staleTime: 60_000,
+    gcTime: 300_000,
+    enabled: isAuthenticated,
+  })
+}

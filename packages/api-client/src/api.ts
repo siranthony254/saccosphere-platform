@@ -1350,9 +1350,31 @@ export const api = {
         unread_notifications: Number(row.unread_notifications ?? 0),
       }))
     },
+
+    // P09: static paybill-payment instructions per SACCO membership -
+    // shortcode is null when that SACCO hasn't enabled paybill yet (still
+    // shown, with instructions explaining that, never silently omitted).
+    // No polling - informational only, refresh on pull-to-refresh.
+    getHowToPay: async () => {
+      const rows = await apiCall<any[]>('GET', '/dashboard/how-to-pay/')
+      return (Array.isArray(rows) ? rows : []).map((row: any) => ({
+        sacco_id: String(row.sacco_id ?? ''),
+        sacco_name: String(row.sacco_name ?? 'SACCO'),
+        shortcode: row.shortcode != null ? String(row.shortcode) : null,
+        short_number: row.short_number != null ? Number(row.short_number) : null,
+        aliases: Array.isArray(row.aliases)
+          ? row.aliases.map((a: any) => ({
+              alias: String(a.alias ?? ''),
+              target_type: String(a.target_type ?? ''),
+              label: String(a.label ?? ''),
+            }))
+          : [],
+        instructions: String(row.instructions ?? ''),
+      }))
+    },
   },
 
-  //  SACCO DISCOVERY 
+  //  SACCO DISCOVERY
 
   saccos: {
     getPublicStats: () =>
@@ -2043,6 +2065,37 @@ export const api = {
           t.metadata?.withdrawal_reversal_reason ?? t.metadata?.rejection_reason ?? t.metadata?.failure_reason ?? ''
         ) || null,
         net_amount: t.net_amount != null ? Number(t.net_amount) : null,
+      }
+    },
+
+    // P11: move money between a member's own accounts (or, if the SACCO
+    // allows it, to another member's FOSA) - FOSA is always the source.
+    // Fully synchronous, no M-Pesa call and no pending state (unlike
+    // withdrawSavings) - a 201 is immediate final success, any 4xx is
+    // immediate final failure. No polling needed.
+    internalTransfer: async (
+      data: {
+        source_saving_id: string
+        destination_kind: 'LOAN_REPAYMENT' | 'BOSA' | 'SHARE_CAPITAL' | 'MEMBER'
+        destination_id?: string
+        destination_member_number?: string
+        amount: number
+      },
+      idempotencyKey?: string
+    ) => {
+      const r = await apiCall<any>('POST', '/payments/transfers/internal/', {
+        source_saving_id: uuid(data.source_saving_id),
+        destination_kind: data.destination_kind,
+        ...(data.destination_id ? { destination_id: uuid(data.destination_id) } : {}),
+        ...(data.destination_member_number ? { destination_member_number: data.destination_member_number } : {}),
+        amount: data.amount,
+      }, { idempotent: true, idempotencyKey })
+      return {
+        status: String(r.status ?? 'completed'),
+        transaction_id: String(r.transaction_id ?? ''),
+        reference: String(r.reference ?? ''),
+        amount: Number(r.amount ?? data.amount),
+        source_balance: Number(r.source_balance ?? 0),
       }
     },
   },

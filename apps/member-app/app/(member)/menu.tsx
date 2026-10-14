@@ -59,6 +59,13 @@ export default function MenuScreen() {
       disabled: activeMemberships.length === 0,
     },
     {
+      label: 'How to pay via paybill',
+      helper: 'Pay directly from the M-Pesa menu, without opening the app',
+      icon: 'receive',
+      action: () => router.push('/(member)/how-to-pay' as any),
+      disabled: activeMemberships.length === 0,
+    },
+    {
       label: 'Compare loans',
       helper: 'Compare loan interest rates across SACCOs',
       icon: 'loan',

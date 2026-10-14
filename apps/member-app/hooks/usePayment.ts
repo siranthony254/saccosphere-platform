@@ -32,6 +32,23 @@ export function useWithdrawSavings() {
   })
 }
 
+// P11 internal transfer — fully synchronous (no M-Pesa leg, no pending
+// state), so unlike withdrawals this never needs step-up/polling handling
+// of its own: a 201 is immediate final success, any 4xx is immediate
+// final failure.
+export function useInternalTransfer() {
+  const idempotencyKeyRef = useRef(generateIdempotencyKey())
+  return useMutation({
+    mutationFn: (data: {
+      source_saving_id: string
+      destination_kind: 'LOAN_REPAYMENT' | 'BOSA' | 'SHARE_CAPITAL' | 'MEMBER'
+      destination_id?: string
+      destination_member_number?: string
+      amount: number
+    }) => api.payments.internalTransfer(data, idempotencyKeyRef.current),
+  })
+}
+
 // Polls the dedicated withdrawal-status endpoint once a withdrawal is
 // REQUESTED/PENDING_APPROVAL/APPROVED/SUBMITTED/UNKNOWN — stops once it
 // lands on a genuinely terminal state (COMPLETED/FAILED/REJECTED).

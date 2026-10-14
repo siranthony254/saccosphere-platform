@@ -12,7 +12,7 @@ import { ServicesHero } from '../../components/services/ServicesHero'
 import { useTheme } from '../../theme/ThemeProvider'
 
 
-type ServiceAction = 'contribute' | 'withdraw' | 'loan' | 'statement' | 'dividends'
+type ServiceAction = 'contribute' | 'withdraw' | 'transfer' | 'loan' | 'statement' | 'dividends'
 
 const servicesList: Array<{
   action: ServiceAction
@@ -34,6 +34,13 @@ const servicesList: Array<{
     desc: 'Send eligible savings to your M-Pesa number.',
     icon: 'withdraw',
     color: 'rgba(239, 68, 68, 0.15)',
+  },
+  {
+    action: 'transfer',
+    label: 'Transfer Between Accounts',
+    desc: 'Move FOSA savings to a loan repayment, BOSA, share capital, or another member.',
+    icon: 'transfer',
+    color: 'rgba(99, 102, 241, 0.15)',
   },
   {
     action: 'loan',
@@ -153,7 +160,13 @@ export default function ServicesScreen() {
         onSelect={(slug) => {
           if (currentAction) navigateToServiceAction(currentAction, slug)
         }}
-        title={currentAction === 'contribute' ? 'Make Contribution' : currentAction === 'withdraw' ? 'Withdraw Savings' : currentAction === 'loan' ? 'Apply for Loan' : 'Account Statement'}
+        title={
+          currentAction === 'contribute' ? 'Make Contribution'
+            : currentAction === 'withdraw' ? 'Withdraw Savings'
+            : currentAction === 'transfer' ? 'Transfer Between Accounts'
+            : currentAction === 'loan' ? 'Apply for Loan'
+            : 'Account Statement'
+        }
         subtitle="Select an active SACCO to continue"
       />
     </>
@@ -187,6 +200,11 @@ function navigateToServiceAction(action: ServiceAction, slug: string) {
 
   if (action === 'withdraw') {
     router.push({ pathname: '/(member)/withdraw', params: { slug } } as any)
+    return
+  }
+
+  if (action === 'transfer') {
+    router.push({ pathname: '/(member)/transfer', params: { slug } } as any)
     return
   }
 
