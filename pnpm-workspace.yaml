@@ -1,3 +1,15 @@
 packages:
   - "apps/*"
   - "packages/*"
+  # apps/website is a standalone Next.js app with no shared-package
+  # imports. It's excluded from the workspace and gets its own
+  # self-contained npm install instead — the root's node-linker=hoisted +
+  # public-hoist-pattern[]=* flattening copies (rather than symlinks)
+  # version-conflicting nested deps, which produced two physically
+  # separate react@18.3.1 installs (one under next/node_modules, one
+  # under styled-jsx/node_modules) and broke React's singleton-dispatcher
+  # assumption during `next build`'s /404 /500 prerender
+  # ("Cannot read properties of null (reading 'useContext')"). A plain,
+  # un-hoisted install avoids that without touching the shared linker
+  # config the Expo/Vite apps rely on.
+  - "!apps/website"
