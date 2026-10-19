@@ -134,7 +134,7 @@ export function SaccoDirectory() {
             unified portfolio — in weeks, not a core-banking migration project.
           </p>
           <a
-            href="#demo"
+            href="/for-saccos#demo"
             className="inline-flex items-center gap-2 whitespace-nowrap rounded-lg bg-navy px-5 py-3 text-[13px] font-semibold text-white transition-opacity hover:opacity-90"
           >
             Bring your SACCO onto the network
