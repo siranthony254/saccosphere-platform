@@ -1033,6 +1033,15 @@ export const api = {
       }
       return payload
     },
+
+    // P37: sets or changes the USSD transaction PIN (distinct from the
+    // account login password) — the only app/web screen for it; the PIN can
+    // never be set/changed from a USSD session itself. First-time set sends
+    // `password` (proof of possession); a change sends `old_pin` instead —
+    // the backend infers which case applies from whether a PIN already
+    // exists, so send whichever one the caller collected.
+    setUssdPin: (data: { pin: string; pin2: string; password?: string; old_pin?: string }) =>
+      apiCall<null>('POST', '/accounts/me/ussd-pin/', data),
   },
 
   approvals: {
@@ -4956,5 +4965,322 @@ export const api = {
 
     reportToBoardEmergencyBosaRelease: (id: string) =>
       apiCall<any>('POST', `/healthcare/emergency-bosa-releases/${uuid(id)}/report-to-board/`),
+  },
+
+  // ─── P30 GOVERNMENT SECTOR PACK ─────────────────────────────────────────────
+
+  government: {
+    getEmployers: () => apiCall<any[]>('GET', '/government/employers/'),
+    createEmployer: (data: { name: string; code: string; level: 'NATIONAL' | 'COUNTY' | 'AGENCY' | 'PARASTATAL' | 'OTHER'; payroll_system?: 'IPPD' | 'GPRS' | 'COUNTY' | 'OTHER' }) =>
+      apiCall<any>('POST', '/government/employers/', data),
+    // GovernmentEmployer's own PK is a plain integer (not a UUID like every
+    // other sector-pack model here) despite the backend's URL using a <uuid:>
+    // converter on the detail route — don't validate this id as a UUID.
+    getEmployer: (id: string | number) => apiCall<any>('GET', `/government/employers/${id}/`),
+
+    getDutyStations: (membershipId: string) =>
+      apiCall<{ kyc_refresh_due: boolean; records: any[] }>('GET', `/government/members/${uuid(membershipId)}/duty-stations/`),
+    addDutyStation: (membershipId: string, data: { station: string; department?: string; job_title?: string; effective_date?: string }) =>
+      apiCall<any>('POST', `/government/members/${uuid(membershipId)}/duty-stations/`, data),
+
+    getKycRefreshDue: () => apiCall<Array<{ membership_id: string; member_number: unknown; station: string; effective_date: string }>>('GET', '/government/kyc-refresh-due/'),
+
+    getPensionRecords: (membershipId: string) => apiCall<any[]>('GET', `/government/members/${uuid(membershipId)}/pension-records/`),
+    submitPensionRecord: (membershipId: string, data: { retirement_date: string; document: File }) => {
+      const form = new FormData()
+      form.append('retirement_date', data.retirement_date)
+      form.append('document', data.document)
+      return apiCall<any>('POST', `/government/members/${uuid(membershipId)}/pension-records/`, form)
+    },
+    // Plain single-officer actions, deliberately not maker-checker — the same
+    // admin can submit and verify/reject the same record.
+    verifyPensionRecord: (id: string) => apiCall<any>('POST', `/government/pension-records/${uuid(id)}/verify/`),
+    rejectPensionRecord: (id: string, reason: string) => apiCall<any>('POST', `/government/pension-records/${uuid(id)}/reject/`, { reason }),
+  },
+
+  // ─── P31 TECHNOLOGY SECTOR PACK ─────────────────────────────────────────────
+
+  technology: {
+    // 404 means the member has no approved P25 income verification yet —
+    // route to the existing /lending/ income-verification flow, not an error.
+    getVariableIncomeCeiling: (membershipId: string) => apiCall<any>('GET', `/technology/variable-income-ceiling/${uuid(membershipId)}/`),
+
+    getRemoteEmployerVerifications: (membershipId: string) =>
+      apiCall<any[]>('GET', `/technology/members/${uuid(membershipId)}/remote-employer-verifications/`),
+    createRemoteEmployerVerification: (membershipId: string, data: { employer_name: string; employer_country: string }) =>
+      apiCall<any>('POST', `/technology/members/${uuid(membershipId)}/remote-employer-verifications/`, data),
+
+    uploadRemoteEmployerVerificationDocument: (verificationId: string, kind: 'EMPLOYMENT_CONTRACT' | 'PAY_EVIDENCE' | 'EMPLOYER_ID_OR_REGISTRATION' | 'OTHER', file: File) => {
+      const form = new FormData()
+      form.append('kind', kind)
+      form.append('file', file)
+      return apiCall<any>('POST', `/technology/remote-employer-verifications/${uuid(verificationId)}/documents/`, form)
+    },
+
+    // 403 REVIEWER_NOT_INDEPENDENT / 400 DOCUMENT_REQUIRED — independent-
+    // reviewer four-eyes check enforced in the engine, not /approvals/.
+    approveRemoteEmployerVerification: (id: string, notes?: string) =>
+      apiCall<any>('POST', `/technology/remote-employer-verifications/${uuid(id)}/approve/`, { notes }),
+    rejectRemoteEmployerVerification: (id: string, notes: string) =>
+      apiCall<any>('POST', `/technology/remote-employer-verifications/${uuid(id)}/reject/`, { notes }),
+
+    getDeviceAssets: () => apiCall<any[]>('GET', '/technology/device-assets/'),
+  },
+
+  // ─── P32 FINANCE SECTOR PACK ────────────────────────────────────────────────
+
+  finance: {
+    getInvestmentProducts: () => apiCall<any[]>('GET', '/finance/investment-products/'),
+    createInvestmentProduct: (data: { name: string; lock_in_months: number; preferential_rate: number; early_withdrawal_penalty_percent: number; is_active?: boolean }) =>
+      apiCall<any>('POST', '/finance/investment-products/', data),
+
+    getInvestmentSubscriptions: (membershipId: string) =>
+      apiCall<any[]>('GET', `/finance/members/${uuid(membershipId)}/investment-subscriptions/`),
+    createInvestmentSubscription: (membershipId: string, data: { investment_product_id: string; principal_amount: number }) =>
+      apiCall<any>('POST', `/finance/members/${uuid(membershipId)}/investment-subscriptions/`, { ...data, investment_product_id: uuid(data.investment_product_id) }),
+
+    // Always full-balance, never partial — no body. Two-step async withdrawal:
+    // this only places a B2C hold (status -> WITHDRAWAL_PENDING); a separate
+    // confirm-withdrawal/ call actually closes it out (not auto-wired to the
+    // B2C callback yet).
+    withdrawInvestmentSubscription: (id: string) =>
+      apiCall<{ subscription: any; payout: any }>('POST', `/finance/investment-subscriptions/${uuid(id)}/withdraw/`),
+    confirmWithdrawInvestmentSubscription: (id: string) =>
+      apiCall<any>('POST', `/finance/investment-subscriptions/${uuid(id)}/confirm-withdrawal/`),
+
+    getGroupSubaccounts: () => apiCall<any[]>('GET', '/finance/group-subaccounts/'),
+    createGroupSubaccount: (data: { name: string; signer_membership_ids: string[]; required_signatures: number }) =>
+      apiCall<any>('POST', '/finance/group-subaccounts/', data),
+    getGroupSubaccount: (id: string) => apiCall<any>('GET', `/finance/group-subaccounts/${uuid(id)}/`),
+    depositGroupSubaccount: (id: string, amount: number) =>
+      apiCall<any>('POST', `/finance/group-subaccounts/${uuid(id)}/deposits/`, { amount }),
+    // required_signatures means signatures from signers OTHER than the
+    // initiator (the framework's own self-approval block already counts the
+    // initiator as signature #1) — fail-closed, ActionType.GROUP_SUBACCOUNT_WITHDRAWAL,
+    // decided through the generic /approvals/ endpoints with no platform-staff bypass.
+    withdrawGroupSubaccount: (id: string, amount: number) =>
+      apiCall<any>('POST', `/finance/group-subaccounts/${uuid(id)}/withdrawals/`, { amount }),
+
+    // sacco_treasury_context is informational only — never blend it into the
+    // member's own growth figure. growth_percent and sacco_treasury_context
+    // can both come back null.
+    getGrowthStatement: (membershipId: string) => apiCall<any>('GET', `/finance/members/${uuid(membershipId)}/growth-statement/`),
+
+    getProfessionalVerifications: (membershipId: string) =>
+      apiCall<any[]>('GET', `/finance/members/${uuid(membershipId)}/professional-verifications/`),
+    createProfessionalVerification: (membershipId: string, data: { employer_name: string; licensed_institution_name?: string }) =>
+      apiCall<any>('POST', `/finance/members/${uuid(membershipId)}/professional-verifications/`, data),
+    uploadProfessionalVerificationDocument: (id: string, file: File) => {
+      const form = new FormData()
+      form.append('file', file)
+      return apiCall<any>('POST', `/finance/professional-verifications/${uuid(id)}/documents/`, form)
+    },
+    // Never wired into KYC or loan eligibility — supporting evidence only.
+    // Same independent-reviewer four-eyes rule as technology's remote-employer queue.
+    verifyProfessionalVerification: (id: string) => apiCall<any>('POST', `/finance/professional-verifications/${uuid(id)}/verify/`),
+    rejectProfessionalVerification: (id: string, reason: string) =>
+      apiCall<any>('POST', `/finance/professional-verifications/${uuid(id)}/reject/`, { reason }),
+  },
+
+  // ─── P33 RETAIL SECTOR PACK ─────────────────────────────────────────────────
+
+  retail: {
+    getAgents: () => apiCall<any[]>('GET', '/retail/agents/'),
+    createAgent: (data: { user: string; is_active?: boolean }) => apiCall<any>('POST', '/retail/agents/', data),
+
+    getCollections: (agentId: string, businessDate?: string) =>
+      apiCall<any[]>('GET', `/retail/agents/${uuid(agentId)}/collections/`, undefined, { params: businessDate ? { business_date: businessDate } : undefined }),
+    recordCollection: (agentId: string, data: { membership: string; amount: number; business_date?: string }) =>
+      apiCall<any>('POST', `/retail/agents/${uuid(agentId)}/collections/`, data),
+
+    getReconciliations: (agentId: string) => apiCall<any[]>('GET', `/retail/agents/${uuid(agentId)}/reconciliations/`),
+    // Always posts a float-clearing journal entry, even on a mismatch — a
+    // variance is only ever flagged (status=BREAK), never auto-corrected.
+    recordReconciliation: (agentId: string, data: { business_date: string; amount_banked: number; bank_reference?: string }) =>
+      apiCall<any>('POST', `/retail/agents/${uuid(agentId)}/reconciliations/`, data),
+    // No money moves — this only records an admin's explanation of a break.
+    resolveReconciliation: (reconciliationId: string, notes: string) =>
+      apiCall<any>('POST', `/retail/reconciliations/${uuid(reconciliationId)}/resolve/`, { notes }),
+
+    // Reference data only — never used for collateral or agent-routing.
+    getMarketStall: (membershipId: string) => apiCall<any>('GET', `/retail/members/${uuid(membershipId)}/market-stall/`),
+    setMarketStall: (membershipId: string, data: { market_name: string; county?: string; stall_number?: string }) =>
+      apiCall<any>('POST', `/retail/members/${uuid(membershipId)}/market-stall/`, data),
+
+    getTableBankingGroups: () => apiCall<any[]>('GET', '/retail/table-banking-groups/'),
+    createTableBankingGroup: (data: { name: string; member_memberships: string[] }) =>
+      apiCall<any>('POST', '/retail/table-banking-groups/', data),
+    getTableBankingGroup: (id: string) => apiCall<any>('GET', `/retail/table-banking-groups/${uuid(id)}/`),
+
+    // Schedule tracking only — no pooled fund, no payout posting anywhere in
+    // this flow. "Whose turn is next" is a deterministic round-robin derivable
+    // client-side from each member's rotation_position.
+    getRotationCycles: (groupId: string) => apiCall<any[]>('GET', `/retail/table-banking-groups/${uuid(groupId)}/rotation/`),
+    createRotationCycle: (groupId: string, scheduledDate: string) =>
+      apiCall<any>('POST', `/retail/table-banking-groups/${uuid(groupId)}/rotation/`, { scheduled_date: scheduledDate }),
+    completeRotationCycle: (groupId: string, cycleId: string, notes?: string) =>
+      apiCall<any>('POST', `/retail/table-banking-groups/${uuid(groupId)}/rotation/${uuid(cycleId)}/complete/`, { notes }),
+
+    attachGroupToLoan: (loanId: string, groupId: string) =>
+      apiCall<any>('POST', `/retail/loans/${uuid(loanId)}/attach-group/`, { group: groupId }),
+    // Requires a documented collection-contact attempt on the borrower first,
+    // or a 400. Always fail-closed, ActionType.TABLE_BANKING_GROUP_RECOVERY.
+    requestGroupRecovery: (loanId: string, requestedAmount: number) =>
+      apiCall<any>('POST', `/retail/loans/${uuid(loanId)}/group-recovery/`, { requested_amount: requestedAmount }),
+    getGroupRecoveryCase: (caseId: string) => apiCall<any>('GET', `/retail/group-recovery-cases/${uuid(caseId)}/`),
+
+    getSupplierInvoices: (membershipId?: string) =>
+      apiCall<any[]>('GET', '/retail/supplier-invoices/', undefined, { params: membershipId ? { membership: membershipId } : undefined }),
+    createSupplierInvoice: (data: { membership: string; buyer_name: string; invoice_number: string; invoice_amount: number; due_date: string }) =>
+      apiCall<any>('POST', '/retail/supplier-invoices/', data),
+    // "Verified" is a manual officer sign-off only — no real supplier/buyer integration.
+    verifySupplierInvoice: (id: string) => apiCall<any>('POST', `/retail/supplier-invoices/${uuid(id)}/verify/`),
+    advanceSupplierInvoice: (id: string, data: { advance_amount: number; rail: 'FOSA' | 'BOSA' | 'MPESA' }) =>
+      apiCall<any>('POST', `/retail/supplier-invoices/${uuid(id)}/advance/`, data),
+    repayInvoiceAdvance: (id: string, data: { amount: number; reference?: string }) =>
+      apiCall<any>('POST', `/retail/invoice-advances/${uuid(id)}/repayment/`, data),
+  },
+
+  // ─── P34 TREASURY & INVESTMENTS REGISTER (cross-sector) ────────────────────
+
+  treasury: {
+    getCounterparties: () => apiCall<any[]>('GET', '/treasury/counterparties/'),
+    createCounterparty: (data: { name: string; counterparty_type: 'BANK' | 'GOVERNMENT' | 'SACCO_OR_UNION' | 'COMPANY' | 'OTHER'; is_active?: boolean }) =>
+      apiCall<any>('POST', '/treasury/counterparties/', data),
+
+    getInvestments: (params?: { asset_class?: string; status?: string }) =>
+      apiCall<any[]>('GET', '/treasury/investments/', undefined, { params }),
+    getInvestment: (id: string) => apiCall<any>('GET', `/treasury/investments/${uuid(id)}/`),
+    // maturity_date is required for every asset class except SHARES/PROPERTY,
+    // which must omit it — enforced both server-side and here.
+    createInvestment: (data: { counterparty: string; asset_class: 'FIXED_DEPOSIT' | 'TREASURY_BILL' | 'TREASURY_BOND' | 'COOP_UNION_DEPOSIT' | 'SHARES' | 'PROPERTY'; principal_amount: number; annual_rate: number; start_date: string; maturity_date?: string }) =>
+      apiCall<any>('POST', '/treasury/investments/', data),
+
+    // Idempotent per period-end — a duplicate period_end is rejected (400).
+    accrueInvestment: (id: string, data: { period_start: string; period_end: string }) =>
+      apiCall<any>('POST', `/treasury/investments/${uuid(id)}/accrue/`, data),
+    matureInvestment: (id: string, data: { matured_on: string; actual_proceeds: number }) =>
+      apiCall<any>('POST', `/treasury/investments/${uuid(id)}/mature/`, data),
+    // Not actually restricted to SHARES/PROPERTY at the API level, despite the conceptual framing.
+    disposeInvestment: (id: string, data: { disposed_on: string; proceeds: number }) =>
+      apiCall<any>('POST', `/treasury/investments/${uuid(id)}/dispose/`, data),
+
+    getYieldReport: (asOf?: string) => apiCall<any>('GET', '/treasury/yield-report/', undefined, { params: asOf ? { as_of: asOf } : undefined }),
+    // Based only on ACTIVE principal (deliberately excludes accrued income).
+    getConcentration: () => apiCall<any>('GET', '/treasury/concentration/'),
+  },
+
+  // ─── P35 WELFARE / BENEVOLENT FUND (cross-sector) ───────────────────────────
+
+  welfare: {
+    getConfig: () => apiCall<any>('GET', '/welfare/config/'),
+    updateConfig: (data: { mode?: 'DISCRETIONARY' | 'INSURER_BACKED'; is_lendable?: boolean; lendability_by_law_reference?: string; partner_insurer?: string; mandatory_contribution_amount?: number | null }) =>
+      apiCall<any>('POST', '/welfare/config/', data),
+
+    getContributions: () => apiCall<any[]>('GET', '/welfare/contributions/'),
+    // Omit `membership` for a SACCO-level top-up, not tied to one member.
+    // C2B and check-off contributions post themselves — this is read + manual-transfer only.
+    recordContribution: (data: { membership?: string; amount: number; reference?: string }) =>
+      apiCall<any>('POST', '/welfare/contributions/', data),
+
+    // Every response includes a computed `disclaimer` field — always render
+    // it next to indicative_amount, never show that figure as a promise.
+    getBenefitSchedule: () => apiCall<any[]>('GET', '/welfare/benefit-schedule/'),
+    createBenefitScheduleItem: (data: { beneficiary_category: 'SELF' | 'SPOUSE' | 'CHILD' | 'PARENT' | 'OTHER'; indicative_amount: number; notes?: string }) =>
+      apiCall<any>('POST', '/welfare/benefit-schedule/', data),
+
+    getClaims: (status?: string) => apiCall<any[]>('GET', '/welfare/claims/', undefined, { params: status ? { status } : undefined }),
+    getClaim: (id: string) => apiCall<any>('GET', `/welfare/claims/${uuid(id)}/`),
+    createClaim: (data: { membership: string; beneficiary_name: string; beneficiary_relationship: 'SELF' | 'SPOUSE' | 'CHILD' | 'PARENT' | 'OTHER'; claim_type: string; requested_amount: number }) =>
+      apiCall<any>('POST', '/welfare/claims/', data),
+
+    uploadClaimDocument: (claimId: string, documentType: 'DEATH_CERTIFICATE' | 'MEDICAL_REPORT' | 'ID_COPY' | 'HARDSHIP_EVIDENCE' | 'OTHER', file: File) => {
+      const form = new FormData()
+      form.append('document_type', documentType)
+      form.append('file', file)
+      return apiCall<any>('POST', `/welfare/claims/${uuid(claimId)}/documents/`, form)
+    },
+    // "At least one verified document" is the whole gate — not a claim-type-specific checklist.
+    verifyClaimDocument: (claimId: string, docId: string) =>
+      apiCall<any>('POST', `/welfare/claims/${uuid(claimId)}/documents/${uuid(docId)}/verify/`),
+
+    // DISCRETIONARY mode only. Hardcoded to require exactly 2 approvals,
+    // always fail-closed (ActionType.WELFARE_CLAIM_PAYOUT). IMPORTANT: a
+    // rejection is never mirrored onto WelfareClaim.status (it stays
+    // PENDING_APPROVAL forever) — the caller must cross-check the linked
+    // approval request's own status via the /approvals/ endpoints to detect
+    // a rejection.
+    submitClaimForApproval: (claimId: string, approvedAmount?: number) =>
+      apiCall<any>('POST', `/welfare/claims/${uuid(claimId)}/submit-for-approval/`, approvedAmount !== undefined ? { approved_amount: approvedAmount } : {}),
+
+    // INSURER_BACKED mode only. Never moves money or posts to the ledger —
+    // a pure admin-recorded status mirror. Setting status to exactly "PAID"
+    // (case-insensitive) is the only thing that flips the claim to PAID.
+    setClaimInsurerStatus: (claimId: string, data: { status: string; reference?: string }) =>
+      apiCall<any>('POST', `/welfare/claims/${uuid(claimId)}/insurer-status/`, data),
+
+    getSolvencyReport: (params?: { as_of?: string; window_months?: number }) =>
+      apiCall<any>('GET', '/welfare/solvency-report/', undefined, { params }),
+
+    getPartnerInsurers: () => apiCall<any[]>('GET', '/welfare/partner-insurers/'),
+    createPartnerInsurer: (data: { name: string; ira_license_number: string; contact_phone?: string; contact_email?: string; is_active?: boolean }) =>
+      apiCall<any>('POST', '/welfare/partner-insurers/', data),
+
+    // A real bank transfer (never B2C/phone) — a bare journal entry debiting the fund and crediting bank.
+    createPremiumRemittance: (data: { amount: number; reference?: string }) =>
+      apiCall<any>('POST', '/welfare/premium-remittances/', data),
+  },
+
+  // ─── P36 CREDIT SCORE, REPAYMENT PASSPORT & CRB SUBMISSION FILE (cross-sector) ─
+  // Admin endpoints here use IsSaccoAdmin, NOT IsSaccoAdminOrSuperAdmin — a pure
+  // platform superadmin with no SACCO_ADMIN role anywhere gets a plain 403.
+
+  creditbureau: {
+    computeCreditScore: (membershipId: string) => apiCall<any>('POST', `/creditbureau/credit-scores/${uuid(membershipId)}/compute/`),
+    // {latest, history} wrapper — latest is null if none has ever been computed.
+    getCreditScore: (membershipId: string) => apiCall<{ latest: any | null; history: any[] }>('GET', `/creditbureau/credit-scores/${uuid(membershipId)}/`),
+    // Creates a new review row every time — history, never an overwritten field.
+    reviewCreditScore: (scoreId: string, data: { decision: 'CONFIRMED' | 'OVERRIDDEN'; override_band?: 'A' | 'B' | 'C' | 'D' | 'E'; reason: string }) =>
+      apiCall<any>('POST', `/creditbureau/credit-scores/${uuid(scoreId)}/review/`, data),
+
+    // Member self-service. IsAuthenticated only. Idempotent while one is
+    // already open (SUBMITTED/UNDER_REVIEW) — a second call returns the
+    // existing request at 200 rather than creating a duplicate.
+    requestCreditScoreExplanation: (scoreId: string, memberStatement?: string) =>
+      apiCall<any>('POST', `/creditbureau/credit-scores/${uuid(scoreId)}/explanation-requests/`, { member_statement: memberStatement }),
+    resolveCreditScoreExplanation: (id: string, data: { status?: 'SUBMITTED' | 'UNDER_REVIEW' | 'RESOLVED'; resolution_notes?: string }) =>
+      apiCall<any>('PATCH', `/creditbureau/explanation-requests/${uuid(id)}/`, data),
+
+    // Member self-service (issue/revoke). `token` is re-derived fresh on every
+    // read — null whenever the passport is currently invalid (revoked/expired).
+    getRepaymentPassports: () => apiCall<any[]>('GET', '/creditbureau/repayment-passports/'),
+    // Requires fresh, active per-recipient consent already on file — build the
+    // consent-capture screen first, or this 403s with error_code CONSENT_REQUIRED.
+    issueRepaymentPassport: (data: { membership_id: string; recipient_sacco_id: string }) =>
+      apiCall<any>('POST', '/creditbureau/repayment-passports/', data),
+    // Idempotent — revoking an already-revoked passport is a safe no-op, same 200 either way.
+    revokeRepaymentPassport: (id: string) => apiCall<any>('POST', `/creditbureau/repayment-passports/${uuid(id)}/revoke/`),
+
+    // Admin-only, the deliberate cross-tenant exception — every call writes a
+    // DataConsentLog + SystemAuditLog entry. recipient_sacco_id only needed
+    // when the calling admin has no standing tenant context (platform staff).
+    verifyRepaymentPassport: (data: { token: string; recipient_sacco_id?: string }) =>
+      apiCall<{ valid: true; claims: any; model_version: string; issued_at: string; expires_at: string }>('POST', '/creditbureau/repayment-passports/verify/', data),
+
+    getSubmissionBatches: () => apiCall<any[]>('GET', '/creditbureau/submission-batches/'),
+    // template_code defaults to the one seeded sample template (metropol_submission_v1).
+    createSubmissionBatch: (data: { period: string; template_code?: string }) =>
+      apiCall<any>('POST', '/creditbureau/submission-batches/', data),
+    // Raw CSV download (Content-Disposition: attachment), not the standard JSON envelope.
+    exportSubmissionBatch: (id: string) =>
+      axiosInstance.get(`/creditbureau/submission-batches/${uuid(id)}/export/`, { responseType: 'blob' }).then((r) => r.data as Blob),
+
+    getListingDisputes: () => apiCall<any[]>('GET', '/creditbureau/listing-disputes/'),
+    // Member self-service — the real create path is listing-disputes/raise/,
+    // not bare listing-disputes/ (that's the admin GET-only queue).
+    raiseListingDispute: (data: { membership_id: string; loan_id?: string; submission_entry_id?: string; member_statement?: string }) =>
+      apiCall<any>('POST', '/creditbureau/listing-disputes/raise/', data),
+    resolveListingDispute: (id: string, data: { status: 'UNDER_REVIEW' | 'UPHELD' | 'REJECTED'; officer_notes?: string }) =>
+      apiCall<any>('PATCH', `/creditbureau/listing-disputes/${uuid(id)}/`, data),
   },
 }

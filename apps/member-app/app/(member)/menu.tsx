@@ -106,6 +106,30 @@ export default function MenuScreen() {
       disabled: activeMemberships.length === 0,
     },
     {
+      label: 'USSD PIN',
+      helper: 'Set or change the PIN you use to dial in from a feature phone',
+      icon: 'settings',
+      action: () => router.push('/(member)/ussd-pin' as any),
+    },
+    {
+      label: 'Credit score explanation',
+      helper: 'Ask your SACCO to explain or review a credit score',
+      icon: 'file',
+      action: () => router.push('/(member)/credit-score' as any),
+    },
+    {
+      label: 'Repayment passport',
+      helper: 'Share your repayment history with another SACCO, or revoke it',
+      icon: 'file',
+      action: () => router.push('/(member)/repayment-passport' as any),
+    },
+    {
+      label: 'Dispute a CRB listing',
+      helper: 'Raise a dispute about a credit reference bureau report',
+      icon: 'warning',
+      action: () => router.push('/(member)/listing-dispute' as any),
+    },
+    {
       label: "Security & Settings",
       helper: 'Manage biometrics and account security',
       icon: 'settings',

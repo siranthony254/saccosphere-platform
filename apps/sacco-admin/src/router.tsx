@@ -36,6 +36,13 @@ import { AgriculturePack } from './pages/SectorPacks/AgriculturePack'
 import { TransportPack } from './pages/SectorPacks/TransportPack'
 import { EducationPack } from './pages/SectorPacks/EducationPack'
 import { HealthcarePack } from './pages/SectorPacks/HealthcarePack'
+import { GovernmentPack } from './pages/SectorPacks/GovernmentPack'
+import { TechnologyPack } from './pages/SectorPacks/TechnologyPack'
+import { FinancePack } from './pages/SectorPacks/FinancePack'
+import { RetailPack } from './pages/SectorPacks/RetailPack'
+import { Treasury } from './pages/Treasury/Treasury'
+import { Welfare } from './pages/Welfare/Welfare'
+import { CreditBureau } from './pages/CreditBureau/CreditBureau'
 
 export const router = createBrowserRouter([
   {
@@ -83,6 +90,14 @@ export const router = createBrowserRouter([
       { path: 'transport', element: <RequireSectorModule module="transport.vehicle_compliance"><TransportPack /></RequireSectorModule> },
       { path: 'education', element: <RequireSectorModule module="education.institution_registry"><EducationPack /></RequireSectorModule> },
       { path: 'healthcare', element: <RequireSectorModule module="healthcare.health_facility_registry"><HealthcarePack /></RequireSectorModule> },
+      { path: 'government', element: <RequireSectorModule module="government.gov_payroll_checkoff"><GovernmentPack /></RequireSectorModule> },
+      { path: 'technology', element: <RequireSectorModule module="technology.remote_employer_verification"><TechnologyPack /></RequireSectorModule> },
+      { path: 'finance', element: <RequireSectorModule module="finance.voluntary_investment_products"><FinancePack /></RequireSectorModule> },
+      { path: 'retail', element: <RequireSectorModule module="retail.agent_collection"><RetailPack /></RequireSectorModule> },
+      // P34/P35/P36: cross-sector, not module-gated — available to every tenant regardless of sector.
+      { path: 'treasury', element: <Treasury /> },
+      { path: 'welfare', element: <Welfare /> },
+      { path: 'credit-bureau', element: <CreditBureau /> },
     ],
   },
   { path: '*', element: <Navigate to="/login" replace /> },
