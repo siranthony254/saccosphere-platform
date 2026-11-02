@@ -7,6 +7,7 @@ import { clearTokens } from '@saccosphere/api-client'
 import { useApplications } from '../../hooks/useApplications'
 import { useAdminLoans } from '../../hooks/useLoans'
 import { useKycQueue } from '../../hooks/useKyc'
+import { useCapabilities } from '../../hooks/useCapabilities'
 
 export function AppShell() {
   const { sidebarCollapsed } = useLayoutStore()
@@ -16,6 +17,7 @@ export function AppShell() {
   const { data: applications } = useApplications({ status: 'PENDING' })
   const { data: loans } = useAdminLoans()
   const { data: kycQueue } = useKycQueue({ status: 'PENDING' })
+  const { isModuleEnabled } = useCapabilities()
 
   const handleLogout = () => {
     clearAuth()
@@ -44,7 +46,19 @@ export function AppShell() {
     { path: '/dividends', label: 'Dividends', icon: 'gem', badge: null },
     { path: '/sms', label: 'Bulk SMS', icon: 'message', badge: null },
     { path: '/reports', label: 'Reports', icon: 'bar-chart', badge: null },
-    { path: '/reports/sasra', label: 'SASRA Returns', icon: 'landmark', badge: null },
+    { path: '/returns', label: 'Statutory Returns', icon: 'landmark', badge: null },
+    { path: '/aml', label: 'AML & Fraud', icon: 'shield-check', badge: null },
+    { path: '/governance', label: 'AGM & Governance', icon: 'landmark', badge: null },
+    // P24: sector-pack nav items are gated on the tenant's resolved
+    // capabilities, not shown unconditionally — a confirmed-OTHER (or
+    // unconfirmed self-declared) SACCO gets none of these by default,
+    // and a superadmin override can grant/revoke them independent of
+    // sector. Gated on each pack's primary/entry module.
+    ...(isModuleEnabled('lending.assets') ? [{ path: '/lending', label: 'Lending Primitives', icon: 'coins' as IconName, badge: null }] : []),
+    ...(isModuleEnabled('agriculture.produce_tracking') ? [{ path: '/agriculture', label: 'Agriculture Pack', icon: 'leaf' as IconName, badge: null }] : []),
+    ...(isModuleEnabled('transport.vehicle_compliance') ? [{ path: '/transport', label: 'Transport Pack', icon: 'truck' as IconName, badge: null }] : []),
+    ...(isModuleEnabled('education.institution_registry') ? [{ path: '/education', label: 'Education Pack', icon: 'graduation-cap' as IconName, badge: null }] : []),
+    ...(isModuleEnabled('healthcare.health_facility_registry') ? [{ path: '/healthcare', label: 'Healthcare Pack', icon: 'activity' as IconName, badge: null }] : []),
     { path: '/analytics/liquidity-npl', label: 'Liquidity & NPL', icon: 'trending-down', badge: null },
     { path: '/billing', label: 'SaaS Billing', icon: 'receipt', badge: null },
     { path: '/kyc', label: 'KYC Review', icon: 'scan-face', badge: pendingKycCount > 0 ? String(pendingKycCount) : null },

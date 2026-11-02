@@ -1,5 +1,5 @@
 
-import { apiCall, axiosInstance, setAccessToken } from './core'
+import { apiCall, axiosInstance, setAccessToken, setRefreshToken } from './core'
 import type {
   LoginInput,
   RegisterInput,
@@ -1003,6 +1003,36 @@ export const api = {
 
     requestStepUpOtp: () =>
       apiCall<{ message?: string; detail?: string }>('POST', '/accounts/step-up/request-otp/'),
+
+    // P24 Capabilities & Sector Gating
+    getCapabilities: () =>
+      apiCall<{
+        active_sacco: { id: string; name: string } | null
+        requires_active_sacco: boolean
+        licence_category: string
+        capabilities: Record<string, boolean>
+        sector: { code: string; label: string; confirmed: boolean; confirmed_at: string | null; effective_code: string }
+        modules: Array<{ code: string; name: string; enabled: boolean; source: string }>
+      }>('GET', '/accounts/me/capabilities/'),
+
+    // P24: switching active SACCO blacklists the OLD refresh token server-side
+    // and returns a brand-new {access, refresh, capabilities} triple — the
+    // caller must replace all three, not just the access token, or every
+    // subsequent silent refresh attempt uses a token the backend has already
+    // revoked.
+    setActiveSacco: async (saccoId: string, refreshToken: string) => {
+      const payload = await apiCall<any>('POST', '/accounts/me/active-sacco/', {
+        sacco_id: uuid(saccoId),
+        refresh: refreshToken,
+      })
+      if (payload.access) {
+        setAccessToken(payload.access)
+      }
+      if (payload.refresh) {
+        setRefreshToken(payload.refresh)
+      }
+      return payload
+    },
   },
 
   approvals: {
@@ -4314,5 +4344,617 @@ export const api = {
         status: string
         jobs: Array<{ name: string; status: string; last_run: string; details?: string }>
       }>('GET', '/health/jobs/'),
+
+    // P24 Sector Gating & Tenant Module Overrides
+    getSectorModules: () => apiCall<any[]>('GET', '/sectors/modules/'),
+    getSaccoModules: (saccoId: string) => apiCall<any>('GET', `/sectors/saccos/${uuid(saccoId)}/modules/`),
+    updateSaccoModuleOverride: (saccoId: string, moduleCode: string, payload: { enabled: boolean; reason: string }) =>
+      apiCall<any>('PUT', `/sectors/saccos/${uuid(saccoId)}/overrides/${moduleCode}/`, payload),
+    deleteSaccoModuleOverride: (saccoId: string, moduleCode: string) =>
+      apiCall<void>('DELETE', `/sectors/saccos/${uuid(saccoId)}/overrides/${moduleCode}/`),
+    previewSaccoReclassification: (saccoId: string, payload: { sector: string }) =>
+      apiCall<any>('POST', `/sectors/saccos/${uuid(saccoId)}/reclassify/preview/`, payload),
+    reclassifySacco: (saccoId: string, payload: { sector: string; reason: string; verification_code?: string }) =>
+      apiCall<any>('POST', `/sectors/saccos/${uuid(saccoId)}/reclassify/`, payload),
+  },
+
+  // ─── P19 RETURNS, COMPLAINTS, AGENCY ───────────────────────────────────────
+
+  returns: {
+    getTemplates: (params?: { regulator?: 'SASRA' | 'COMMISSIONER' | 'UFAA' | string }) =>
+      apiCall<any[]>('GET', '/management/returns/templates/', undefined, { params }),
+
+    getInstances: (params?: { template_code?: string; status?: string }) =>
+      apiCall<any[]>('GET', '/management/returns/instances/', undefined, { params }),
+
+    createInstance: (data: { template_code: string; period_start?: string; period_end?: string; as_of_date?: string }) =>
+      apiCall<any>('POST', '/management/returns/instances/', data),
+
+    getInstance: (id: string) =>
+      apiCall<any>('GET', `/management/returns/instances/${uuid(id)}/`),
+
+    updateManualLines: (id: string, lines: Record<string, string>) =>
+      apiCall<any>('PATCH', `/management/returns/instances/${uuid(id)}/manual-lines/`, { lines }),
+
+    validateInstance: (id: string) =>
+      apiCall<any>('POST', `/management/returns/instances/${uuid(id)}/validate/`),
+
+    submitInstance: (id: string) =>
+      apiCall<any>('POST', `/management/returns/instances/${uuid(id)}/submit/`),
+
+    amendInstance: (id: string) =>
+      apiCall<any>('POST', `/management/returns/instances/${uuid(id)}/amend/`),
+
+    exportInstance: async (id: string, exportFormat: 'json' | 'xlsx' | 'pdf') => {
+      const response = await axiosInstance.get(`/management/returns/instances/${uuid(id)}/export/`, {
+        params: { export_format: exportFormat },
+        responseType: exportFormat === 'json' ? 'json' : 'blob',
+      })
+      return response.data
+    },
+
+    getAuditorPack: async (params: { period_start: string; period_end: string }) => {
+      const response = await axiosInstance.get('/management/reports/sasra/auditor-pack/', {
+        params,
+        responseType: 'blob',
+      })
+      return response.data
+    },
+  },
+
+  complaints: {
+    list: (params?: { category?: string; status?: string }) =>
+      apiCall<any[]>('GET', '/management/complaints/', undefined, { params }),
+
+    create: (data: { category: string; description: string; complainant_name?: string; complainant_phone?: string }) =>
+      apiCall<any>('POST', '/management/complaints/', data),
+
+    get: (id: string) =>
+      apiCall<any>('GET', `/management/complaints/${uuid(id)}/`),
+
+    update: (id: string, data: Partial<{ root_cause: string; corrective_action: string; status: string }>) =>
+      apiCall<any>('PATCH', `/management/complaints/${uuid(id)}/`, data),
+
+    escalate: (id: string) =>
+      apiCall<any>('POST', `/management/complaints/${uuid(id)}/escalate/`),
+
+    exportStatistics: async (params: { period_start: string; period_end: string }) => {
+      const response = await axiosInstance.get('/management/complaints/statistics/export/', {
+        params,
+        responseType: 'blob',
+      })
+      return response.data
+    },
+  },
+
+  agency: {
+    getAgents: () =>
+      apiCall<any[]>('GET', '/management/agency/agents/'),
+
+    createAgent: (data: { agent_name: string; location: string; bank_partner: string; phone_number: string }) =>
+      apiCall<any>('POST', '/management/agency/agents/', data),
+
+    updateAgent: (id: string, data: Partial<{ status: string; notes: string }>) =>
+      apiCall<any>('PATCH', `/management/agency/agents/${uuid(id)}/`, data),
+
+    getApplicationPdf: async (id: string) => {
+      const response = await axiosInstance.get(`/management/agency/agents/${uuid(id)}/application-pdf/`, {
+        responseType: 'blob',
+      })
+      return response.data
+    },
+
+    getTransactions: () =>
+      apiCall<any[]>('GET', '/management/agency/transactions/'),
+
+    createTransaction: (data: { agent: string; period_start: string; period_end: string; transaction_type: string; total_amount: number; count: number }) =>
+      apiCall<any>('POST', '/management/agency/transactions/', data),
+  },
+
+  // ─── P20 AML & FRAUD ───────────────────────────────────────────────────────
+
+  aml: {
+    getAlerts: (params?: { severity?: string; status?: string }) =>
+      apiCall<any[]>('GET', '/aml/alerts/', undefined, { params }),
+
+    dismissAlert: (id: string) =>
+      apiCall<any>('POST', `/aml/alerts/${uuid(id)}/dismiss/`),
+
+    getCases: (params?: { status?: string; case_type?: string }) =>
+      apiCall<any[]>('GET', '/aml/cases/', undefined, { params }),
+
+    getCase: (id: string) =>
+      apiCall<any>('GET', `/aml/cases/${uuid(id)}/`),
+
+    assignCase: (id: string, assigneeId: string) =>
+      apiCall<any>('POST', `/aml/cases/${uuid(id)}/assign/`, { assigned_to: uuid(assigneeId) }),
+
+    addNote: (id: string, note: string) =>
+      apiCall<any>('POST', `/aml/cases/${uuid(id)}/notes/`, { note }),
+
+    uploadEvidence: (id: string, file: File) => {
+      const form = new FormData()
+      form.append('file', file)
+      return apiCall<any>('POST', `/aml/cases/${uuid(id)}/evidence/`, form)
+    },
+
+    closeCaseDisposition: (id: string, data: { status: 'CLOSED_STR_FILED' | 'CLOSED_FALSE_POSITIVE' | 'CLOSED_NO_ACTION'; reason: string }) =>
+      apiCall<any>('POST', `/aml/cases/${uuid(id)}/disposition/`, data),
+
+    generateStrFiling: (caseId: string) =>
+      apiCall<any>('POST', `/aml/cases/${uuid(caseId)}/str-filing/generate/`),
+
+    fileStr: (caseId: string, filingReference: string) =>
+      apiCall<any>('POST', `/aml/cases/${uuid(caseId)}/str-filing/file/`, { filing_reference: filingReference }),
+
+    getCtrReports: () =>
+      apiCall<any[]>('GET', '/aml/ctr-reports/'),
+
+    fileCtr: (id: string, filingReference: string) =>
+      apiCall<any>('POST', `/aml/ctr-reports/${uuid(id)}/file/`, { filing_reference: filingReference }),
+
+    uploadDomesticSanctions: (file: File) => {
+      const form = new FormData()
+      form.append('file', file)
+      return apiCall<any>('POST', '/aml/sanctions-lists/domestic-upload/', form)
+    },
+
+    uploadUnSanctions: (file: File) => {
+      const form = new FormData()
+      form.append('file', file)
+      return apiCall<any>('POST', '/aml/sanctions-lists/un-consolidated-upload/', form)
+    },
+
+    getSanctionsResults: () =>
+      apiCall<any[]>('GET', '/aml/sanctions-results/'),
+
+    clearSanctionsResult: (id: string) =>
+      apiCall<any>('POST', `/aml/sanctions-results/${uuid(id)}/clear/`),
+
+    confirmSanctionsResult: (id: string) =>
+      apiCall<any>('POST', `/aml/sanctions-results/${uuid(id)}/confirm/`),
+
+    getMetrics: (windowDays = 30) =>
+      apiCall<any>('GET', '/aml/metrics/', undefined, { params: { window_days: windowDays } }),
+  },
+
+  // ─── P22 GOVERNANCE, MEETINGS & ELECTIONS ──────────────────────────────────
+
+  governance: {
+    getMeetings: () =>
+      apiCall<any[]>('GET', '/governance/meetings/'),
+
+    createMeeting: (data: { meeting_type: 'AGM' | 'SGM' | 'ADM'; title: string; scheduled_at: string; venue?: string }) =>
+      apiCall<any>('POST', '/governance/meetings/', data),
+
+    getMeeting: (id: string) =>
+      apiCall<any>('GET', `/governance/meetings/${uuid(id)}/`),
+
+    sendNotice: (id: string) =>
+      apiCall<any>('POST', `/governance/meetings/${uuid(id)}/send-notice/`),
+
+    openMeeting: (id: string) =>
+      apiCall<any>('POST', `/governance/meetings/${uuid(id)}/open/`),
+
+    closeMeeting: (id: string) =>
+      apiCall<any>('POST', `/governance/meetings/${uuid(id)}/close/`),
+
+    checkIn: (meetingId: string, payload?: { membership_id?: string }) =>
+      apiCall<any>('POST', `/governance/meetings/${uuid(meetingId)}/check-in/`, payload),
+
+    getQuorum: (meetingId: string) =>
+      apiCall<any>('GET', `/governance/meetings/${uuid(meetingId)}/quorum/`),
+
+    getAgendaItems: (meetingId: string) =>
+      apiCall<any[]>('GET', `/governance/meetings/${uuid(meetingId)}/agenda-items/`),
+
+    addAgendaItem: (meetingId: string, data: { title: string; order?: number; description?: string }) =>
+      apiCall<any>('POST', `/governance/meetings/${uuid(meetingId)}/agenda-items/`, data),
+
+    getMotions: (meetingId: string) =>
+      apiCall<any[]>('GET', `/governance/meetings/${uuid(meetingId)}/motions/`),
+
+    createMotion: (meetingId: string, data: { motion_type: string; title: string; description?: string }) =>
+      apiCall<any>('POST', `/governance/meetings/${uuid(meetingId)}/motions/`, data),
+
+    recordMotionVote: (motionId: string, data: { votes_for: number; votes_against: number; votes_abstain: number; passed: boolean }) =>
+      apiCall<any>('POST', `/governance/motions/${uuid(motionId)}/record-vote/`, data),
+
+    certifyMotion: (motionId: string) =>
+      apiCall<any>('POST', `/governance/motions/${uuid(motionId)}/certify/`),
+
+    getMinutes: (meetingId: string) =>
+      apiCall<any>('GET', `/governance/meetings/${uuid(meetingId)}/minutes/`),
+
+    updateMinutes: (meetingId: string, content: string) =>
+      apiCall<any>('PUT', `/governance/meetings/${uuid(meetingId)}/minutes/`, { content }),
+
+    finalizeMinutes: (meetingId: string) =>
+      apiCall<any>('POST', `/governance/meetings/${uuid(meetingId)}/minutes/finalize/`),
+
+    getZones: () =>
+      apiCall<any[]>('GET', '/governance/zones/'),
+
+    createZone: (data: { name: string; description?: string }) =>
+      apiCall<any>('POST', '/governance/zones/', data),
+
+    assignMemberToZone: (zoneId: string, data: { membership_id: string }) =>
+      apiCall<any>('POST', `/governance/zones/${uuid(zoneId)}/assign/`, data),
+
+    getZoneDelegates: (zoneId: string) =>
+      apiCall<any[]>('GET', `/governance/zones/${uuid(zoneId)}/delegates/`),
+
+    getDelegateRecord: (delegateId: string) =>
+      apiCall<any>('GET', `/governance/delegates/${uuid(delegateId)}/record/`),
+
+    getRecallMotions: (delegateId: string) =>
+      apiCall<any[]>('GET', `/governance/delegates/${uuid(delegateId)}/recall-motions/`),
+
+    createRecallMotion: (delegateId: string, data: { reason: string }) =>
+      apiCall<any>('POST', `/governance/delegates/${uuid(delegateId)}/recall-motions/`, data),
+
+    signRecallMotion: (recallId: string) =>
+      apiCall<any>('POST', `/governance/recall-motions/${uuid(recallId)}/sign/`),
+
+    getElections: () =>
+      apiCall<any[]>('GET', '/governance/elections/'),
+
+    createElection: (data: { election_type: 'BOARD' | 'SUPERVISORY_COMMITTEE' | 'DELEGATE' | 'RECALL_VOTE'; title: string; zone?: string }) =>
+      apiCall<any>('POST', '/governance/elections/', data),
+
+    getElection: (id: string) =>
+      apiCall<any>('GET', `/governance/elections/${uuid(id)}/`),
+
+    nominateCandidate: (electionId: string, data: { membership_id: string; bio?: string }) =>
+      apiCall<any>('POST', `/governance/elections/${uuid(electionId)}/nominate/`, data),
+
+    getVettingChecklistItems: () =>
+      apiCall<any[]>('GET', '/governance/vetting-checklist-items/'),
+
+    createVettingChecklistItem: (data: { label: string; required: boolean }) =>
+      apiCall<any>('POST', '/governance/vetting-checklist-items/', data),
+
+    submitVettingResponse: (candidateId: string, responses: Array<{ item_id: string; passed: boolean; notes?: string }>) =>
+      apiCall<any>('POST', `/governance/candidates/${uuid(candidateId)}/vetting-responses/`, { responses }),
+
+    finalizeCandidates: (electionId: string) =>
+      apiCall<any>('POST', `/governance/elections/${uuid(electionId)}/finalize-candidates/`),
+
+    openVoting: (electionId: string) =>
+      apiCall<any>('POST', `/governance/elections/${uuid(electionId)}/open-voting/`),
+
+    castVote: (electionId: string, data: { option_codes: string[] }) =>
+      apiCall<any>('POST', `/governance/elections/${uuid(electionId)}/cast-vote/`, data),
+
+    castClerkVote: (electionId: string, data: { membership_id: string; option_codes: string[] }) =>
+      apiCall<any>('POST', `/governance/elections/${uuid(electionId)}/cast-vote/clerk/`, data),
+
+    closeVoting: (electionId: string) =>
+      apiCall<any>('POST', `/governance/elections/${uuid(electionId)}/close-voting/`),
+
+    // term_end is only meaningful (and only required server-side) for a
+    // DELEGATE election — there's no settings-level default for delegate
+    // term length, so the certifying admin supplies it explicitly, every
+    // time, only for that election type.
+    certifyElection: (electionId: string, data?: { term_end?: string }) =>
+      apiCall<any>('POST', `/governance/elections/${uuid(electionId)}/certify/`, data),
+
+    getElectionResults: (electionId: string) =>
+      apiCall<any>('GET', `/governance/elections/${uuid(electionId)}/results/`),
+  },
+
+  // ─── P23 DORMANCY, UFAA & PROTECTED DEPOSITS ────────────────────────────────
+
+  dormancy: {
+    getDormancyStatus: (savingId: string) =>
+      apiCall<any>('GET', `/services/savings/${uuid(savingId)}/dormancy/`),
+
+    logOutreach: (savingId: string, data: { channel: string; outcome: string; notes?: string }) =>
+      apiCall<any>('POST', `/services/savings/${uuid(savingId)}/dormancy/outreach/`, data),
+  },
+
+  ufaa: {
+    getSurrenderCandidates: () =>
+      apiCall<any[]>('GET', '/management/ufaa/surrender-candidates/'),
+
+    surrender: (data: { return_instance_id: string }) =>
+      apiCall<any>('POST', '/management/ufaa/surrender/', data),
+
+    getClaimGuidance: () =>
+      apiCall<any>('GET', '/management/ufaa/claim-guidance/'),
+  },
+
+  protectedDeposits: {
+    getMemberProtectedDeposit: () =>
+      apiCall<any>('GET', '/dashboard/protected-deposit/'),
+
+    getAdminProtectedDepositSummary: () =>
+      apiCall<any>('GET', '/management/protected-deposit/summary/'),
+  },
+
+  // ─── P25 SHARED LENDING PRIMITIVES ─────────────────────────────────────────
+
+  lending: {
+    getAssets: (params?: { asset_class?: string }) =>
+      apiCall<any[]>('GET', '/lending/assets/', undefined, { params }),
+
+    createAsset: (data: { asset_class: 'VEHICLE' | 'DEVICE' | 'EQUIPMENT' | 'PROPERTY' | 'OTHER'; identifier: string; acquisition_value: number }) =>
+      apiCall<any>('POST', '/lending/assets/', data),
+
+    getValuations: (assetId: string) =>
+      apiCall<any[]>('GET', `/lending/assets/${uuid(assetId)}/valuations/`),
+
+    addValuation: (assetId: string, data: { valuation_amount: number; valuer_name: string; valuation_date: string }) =>
+      apiCall<any>('POST', `/lending/assets/${uuid(assetId)}/valuations/`, data),
+
+    getDocuments: (assetId: string) =>
+      apiCall<any[]>('GET', `/lending/assets/${uuid(assetId)}/documents/`),
+
+    addDocument: (assetId: string, documentType: string, file: File, expiresOn?: string) => {
+      const form = new FormData()
+      form.append('document_type', documentType)
+      form.append('file', file)
+      if (expiresOn) form.append('expires_on', expiresOn)
+      return apiCall<any>('POST', `/lending/assets/${uuid(assetId)}/documents/`, form)
+    },
+
+    getCollateral: (loanId: string) =>
+      apiCall<any[]>('GET', `/lending/loans/${uuid(loanId)}/collateral/`),
+
+    pledgeCollateral: (loanId: string, data: { asset_id: string; pledged_amount: number }) =>
+      apiCall<any>('POST', `/lending/loans/${uuid(loanId)}/collateral/`, data),
+
+    registerCharge: (collateralId: string, data: { charge_reference: string }) =>
+      apiCall<any>('POST', `/lending/collateral/${uuid(collateralId)}/register-charge/`, data),
+
+    releaseCollateral: (collateralId: string) =>
+      apiCall<any>('POST', `/lending/collateral/${uuid(collateralId)}/release/`),
+
+    getTranches: (loanId: string) =>
+      apiCall<any[]>('GET', `/lending/loans/${uuid(loanId)}/tranches/`),
+
+    createTranches: (loanId: string, tranches: Array<{ sequence_number: number; amount: number; description?: string }>) =>
+      apiCall<any>('POST', `/lending/loans/${uuid(loanId)}/tranches/`, { tranches }),
+
+    inspectTranche: (trancheId: string, data: { outcome: 'PASS' | 'FAIL'; notes?: string }) =>
+      apiCall<any>('POST', `/lending/tranches/${uuid(trancheId)}/inspections/`, data),
+
+    drawdownTranche: (trancheId: string) =>
+      apiCall<any>('POST', `/lending/tranches/${uuid(trancheId)}/drawdown/`),
+
+    markTranchePaid: (trancheId: string, data: { payment_reference: string }) =>
+      apiCall<any>('POST', `/lending/tranches/${uuid(trancheId)}/mark-paid/`, data),
+
+    retryTranchePayout: (trancheId: string) =>
+      apiCall<any>('POST', `/lending/tranches/${uuid(trancheId)}/retry-payout/`),
+
+    getIncomeVerifications: () =>
+      apiCall<any[]>('GET', '/lending/income-verifications/'),
+
+    submitIncomeVerification: (data: { months_data: Array<{ month: string; net_income: number }> }) =>
+      apiCall<any>('POST', '/lending/me/income-verifications/', data),
+
+    addIncomeVerificationEvidence: (id: string, file: File) => {
+      const form = new FormData()
+      form.append('file', file)
+      return apiCall<any>('POST', `/lending/me/income-verifications/${uuid(id)}/evidence/`, form)
+    },
+
+    approveIncomeVerification: (id: string, data?: { monthly_adjustments?: Record<string, number>; notes?: string }) =>
+      apiCall<any>('POST', `/lending/income-verifications/${uuid(id)}/approve/`, data),
+
+    rejectIncomeVerification: (id: string, reason: string) =>
+      apiCall<any>('POST', `/lending/income-verifications/${uuid(id)}/reject/`, { reason }),
+
+    getMemberAffordability: (membershipId: string) =>
+      apiCall<any>('GET', `/lending/members/${uuid(membershipId)}/affordability/`),
+
+    getDataTapes: () =>
+      apiCall<any[]>('GET', '/lending/data-tapes/'),
+
+    getDataTapeCompleteness: (code: string) =>
+      apiCall<any>('GET', `/lending/data-tapes/${code}/completeness/`),
+
+    exportDataTape: async (code: string, fileFormat: 'csv' | 'xlsx' = 'csv') => {
+      const response = await axiosInstance.get(`/lending/data-tapes/${code}/export/`, {
+        params: { file_format: fileFormat },
+        responseType: 'blob',
+      })
+      return response.data
+    },
+  },
+
+  // ─── P26 AGRICULTURE SECTOR PACK ───────────────────────────────────────────
+
+  agriculture: {
+    getBuyers: () => apiCall<any[]>('GET', '/agriculture/buyers/'),
+    createBuyer: (data: { name: string; buyer_type: 'COOPERATIVE' | 'PROCESSOR'; contact_name?: string; contact_phone?: string }) =>
+      apiCall<any>('POST', '/agriculture/buyers/', data),
+    getProduceTypes: () => apiCall<any[]>('GET', '/agriculture/produce-types/'),
+    createProduceType: (data: any) => apiCall<any>('POST', '/agriculture/produce-types/', data),
+
+    importDeliveriesCsv: (file: File, buyerId: string) => {
+      const form = new FormData()
+      form.append('file', file)
+      form.append('buyer_id', uuid(buyerId))
+      return apiCall<any>('POST', '/agriculture/deliveries/import/', form)
+    },
+
+    importDeliveriesJson: (deliveries: any[]) =>
+      apiCall<any>('POST', '/agriculture/deliveries/', { deliveries }),
+
+    getDeliveries: () => apiCall<any[]>('GET', '/agriculture/deliveries/'),
+
+    getAdvanceLimit: (membershipId: string) =>
+      apiCall<any>('GET', `/agriculture/members/${uuid(membershipId)}/advance-limit/`),
+
+    getAdvances: () => apiCall<any[]>('GET', '/agriculture/advances/'),
+    getAdvance: (id: string) => apiCall<any>('GET', `/agriculture/advances/${uuid(id)}/`),
+
+    requestAdvance: (data: { membership: string; amount: number; rail: 'FOSA' | 'BOSA' | 'MPESA' }) =>
+      apiCall<any>('POST', '/agriculture/advances/', data),
+
+    getPayoutRuns: () => apiCall<any[]>('GET', '/agriculture/payout-runs/'),
+    createPayoutRun: (data: { buyer: string; period_start: string; period_end: string; destination: 'FOSA' | 'BOSA' | 'MPESA' }) =>
+      apiCall<any>('POST', '/agriculture/payout-runs/', data),
+
+    getPayoutRun: (id: string) => apiCall<any>('GET', `/agriculture/payout-runs/${uuid(id)}/`),
+    approvePayoutRun: (id: string) => apiCall<any>('POST', `/agriculture/payout-runs/${uuid(id)}/approve/`),
+    getPayoutRunStatement: (runId: string, membershipId: string) =>
+      apiCall<any>('GET', `/agriculture/payout-runs/${uuid(runId)}/lines/${uuid(membershipId)}/statement/`),
+
+    getBuyerArrears: () => apiCall<any[]>('GET', '/agriculture/buyer-arrears/'),
+    settleBuyerArrears: (buyerId: string) => apiCall<any>('POST', `/agriculture/buyer-arrears/${uuid(buyerId)}/settle/`),
+
+    getSeasonalTerms: (loanId: string) => apiCall<any>('GET', `/agriculture/loans/${uuid(loanId)}/seasonal-terms/`),
+    setSeasonalTerms: (loanId: string, data: { harvest_date: string; grace_period_days: number; interest_handling: 'PAID_AT_BALLOON' | 'CAPITALIZED' }) =>
+      apiCall<any>('POST', `/agriculture/loans/${uuid(loanId)}/seasonal-terms/`, data),
+
+    getSeasonalWatchlist: () => apiCall<any[]>('GET', '/agriculture/seasonal-loans/watchlist/'),
+
+    getAgroDealers: () => apiCall<any[]>('GET', '/agriculture/agro-dealers/'),
+    createAgroDealer: (data: any) => apiCall<any>('POST', '/agriculture/agro-dealers/', data),
+    disburseToAgroDealer: (loanId: string, data: { agro_dealer: string; rail: 'BANK' | 'B2C' }) =>
+      apiCall<any>('POST', `/agriculture/loans/${uuid(loanId)}/disburse-to-agro-dealer/`, data),
+  },
+
+  // ─── P27 TRANSPORT SECTOR PACK ──────────────────────────────────────────────
+
+  transport: {
+    getVehicles: () => apiCall<any[]>('GET', '/transport/vehicles/'),
+    registerVehicle: (data: { membership: string; plate: string; vehicle_type?: 'PSV' | 'BODA' | 'OTHER'; make?: string; model?: string; acquisition_value: number }) =>
+      apiCall<any>('POST', '/transport/vehicles/', data),
+
+    getVehicle: (id: string) => apiCall<any>('GET', `/transport/vehicles/${uuid(id)}/`),
+
+    addVehicleDocument: (id: string, documentType: string, file: File, expiresOn: string) => {
+      const form = new FormData()
+      form.append('document_type', documentType)
+      form.append('file', file)
+      form.append('expires_on', expiresOn)
+      return apiCall<any>('POST', `/transport/vehicles/${uuid(id)}/documents/`, form)
+    },
+
+    groundVehicle: (id: string, reason: string) => apiCall<any>('POST', `/transport/vehicles/${uuid(id)}/ground/`, { reason }),
+    reinstateVehicle: (id: string) => apiCall<any>('POST', `/transport/vehicles/${uuid(id)}/reinstate/`),
+
+    getComplianceCalendar: () => apiCall<any>('GET', '/transport/compliance-calendar/'),
+    getOperatorLicences: () => apiCall<any[]>('GET', '/transport/operator-licence/'),
+    createOperatorLicence: (data: any) => apiCall<any>('POST', '/transport/operator-licence/', data),
+
+    getCrew: () => apiCall<any[]>('GET', '/transport/crew/'),
+    registerCrew: (data: any) => apiCall<any>('POST', '/transport/crew/', data),
+    addCrewDocument: (crewId: string, documentType: string, file: File) => {
+      const form = new FormData()
+      form.append('document_type', documentType)
+      form.append('file', file)
+      return apiCall<any>('POST', `/transport/crew/${uuid(crewId)}/documents/`, form)
+    },
+
+    getVehicleAssignments: (vehicleId: string) => apiCall<any[]>('GET', `/transport/vehicles/${uuid(vehicleId)}/assignments/`),
+    assignCrew: (vehicleId: string, data: { crew_member: string; role: 'DRIVER' | 'CONDUCTOR'; assigned_from?: string }) =>
+      apiCall<any>('POST', `/transport/vehicles/${uuid(vehicleId)}/assignments/`, data),
+
+    getRoutes: () => apiCall<any[]>('GET', '/transport/routes/'),
+    createRoute: (data: any) => apiCall<any>('POST', '/transport/routes/', data),
+    getTermini: () => apiCall<any[]>('GET', '/transport/termini/'),
+    createTerminus: (data: any) => apiCall<any>('POST', '/transport/termini/', data),
+
+    setLevyProduct: (data: { savings_type: string }) => apiCall<any>('POST', '/transport/levy-products/', data),
+    // No body — provision_vehicle_levy() takes only the vehicle and actor;
+    // the levy product itself is set once per SACCO via setLevyProduct above.
+    openLevyAccount: (vehicleId: string) =>
+      apiCall<{ saving_id: string }>('POST', `/transport/vehicles/${uuid(vehicleId)}/levy-account/`),
+
+    getDailyLevyReport: (params?: { vehicle?: string; route?: string; start_date?: string; end_date?: string }) =>
+      apiCall<any>('GET', '/transport/levy/daily-report/', undefined, { params }),
+
+    getShortCycleSchedulePreview: (loanId: string) =>
+      apiCall<any>('GET', `/transport/loans/${uuid(loanId)}/schedule-preview/`),
+
+    getBodaRiders: () => apiCall<any[]>('GET', '/transport/boda-riders/'),
+    registerBodaRider: (data: any) => apiCall<any>('POST', '/transport/boda-riders/', data),
+  },
+
+  // ─── P28 EDUCATION SECTOR PACK ──────────────────────────────────────────────
+
+  education: {
+    getInstitutions: () => apiCall<any[]>('GET', '/education/institutions/'),
+    registerInstitution: (data: any) => apiCall<any>('POST', '/education/institutions/', data),
+
+    getAcademicTerms: () => apiCall<any[]>('GET', '/education/academic-terms/'),
+    createAcademicTerm: (data: { year: number; term_number: number; opens: string; closes: string }) =>
+      apiCall<any>('POST', '/education/academic-terms/', data),
+
+    getTermFeeTerms: (loanId: string) => apiCall<any>('GET', `/education/loans/${uuid(loanId)}/term-fee-terms/`),
+    setTermFeeTerms: (loanId: string, data: { institution: string; academic_terms: string[]; billed_per_term?: boolean }) =>
+      apiCall<any>('POST', `/education/loans/${uuid(loanId)}/term-fee-terms/`, data),
+
+    disburseToInstitution: (loanId: string, data?: { academic_term?: string }) =>
+      apiCall<any>('POST', `/education/loans/${uuid(loanId)}/disburse-to-institution/`, data),
+
+    getBursaryFundConfig: () => apiCall<any>('GET', '/education/bursary-fund/config/'),
+    updateBursaryFundConfig: (data: any) => apiCall<any>('POST', '/education/bursary-fund/config/', data),
+    contributeToBursaryFund: (data: { amount: number; reference: string }) =>
+      apiCall<any>('POST', '/education/bursary-fund/contribute/', data),
+
+    getBursaryApplications: () => apiCall<any[]>('GET', '/education/bursary-applications/'),
+    submitBursaryApplication: (data: any) => apiCall<any>('POST', '/education/bursary-applications/', data),
+    reviewBursaryApplication: (id: string, data: { notes: string; proposed_amount: number }) =>
+      apiCall<any>('POST', `/education/bursary-applications/${uuid(id)}/review/`, data),
+    awardBursaryApplication: (id: string, data: { award_amount: number; override_reason?: string }) =>
+      apiCall<any>('POST', `/education/bursary-applications/${uuid(id)}/award/`, data),
+
+    getDeviceAssets: () => apiCall<any[]>('GET', '/education/device-assets/'),
+    getParentsAssociationGroups: () => apiCall<any[]>('GET', '/education/parents-association/groups/'),
+    createParentsAssociationGroup: (data: any) => apiCall<any>('POST', '/education/parents-association/groups/', data),
+    addParentsAssociationMember: (groupId: string, data: { membership_id: string }) =>
+      apiCall<any>('POST', `/education/parents-association/groups/${uuid(groupId)}/members/`, data),
+  },
+
+  // ─── P29 HEALTHCARE SECTOR PACK ─────────────────────────────────────────────
+
+  healthcare: {
+    getFacilities: () => apiCall<any[]>('GET', '/healthcare/facilities/'),
+    registerFacility: (data: any) => apiCall<any>('POST', '/healthcare/facilities/', data),
+
+    getFastTrackDisbursements: (params?: { met_sla?: boolean }) =>
+      apiCall<any[]>('GET', '/healthcare/fast-track-disbursements/', undefined, { params }),
+
+    getTrainingProviders: () => apiCall<any[]>('GET', '/healthcare/training-providers/'),
+    registerTrainingProvider: (data: any) => apiCall<any>('POST', '/healthcare/training-providers/', data),
+
+    getCpdTerms: (loanId: string) => apiCall<any>('GET', `/healthcare/loans/${uuid(loanId)}/cpd-terms/`),
+    setCpdTerms: (loanId: string, data: { training_provider: string; course_name?: string }) =>
+      apiCall<any>('POST', `/healthcare/loans/${uuid(loanId)}/cpd-terms/`, data),
+
+    disburseToTrainingProvider: (loanId: string) =>
+      apiCall<any>('POST', `/healthcare/loans/${uuid(loanId)}/disburse-to-training-provider/`),
+
+    getEquipmentAssets: () => apiCall<any[]>('GET', '/healthcare/equipment-assets/'),
+    getLocumIncomeCeiling: (membershipId: string) =>
+      apiCall<any>('GET', `/healthcare/locum-income-ceiling/${uuid(membershipId)}/`),
+
+    getEmergencyBosaReleases: (params?: { reported?: boolean }) =>
+      apiCall<any[]>('GET', '/healthcare/emergency-bosa-releases/', undefined, { params }),
+
+    // evidence (e.g. a hospital admission letter) is a required upload —
+    // the backend's FileField has no blank=True, so this must go as
+    // multipart, not plain JSON.
+    submitEmergencyBosaRelease: (data: { membership: string; saving: string; amount: number; description: string; evidence: File }) => {
+      const form = new FormData()
+      form.append('membership', uuid(data.membership))
+      form.append('saving', uuid(data.saving))
+      form.append('amount', String(data.amount))
+      form.append('description', data.description)
+      form.append('evidence', data.evidence)
+      return apiCall<any>('POST', '/healthcare/emergency-bosa-releases/', form)
+    },
+
+    requestApprovalEmergencyBosaRelease: (id: string) =>
+      apiCall<any>('POST', `/healthcare/emergency-bosa-releases/${uuid(id)}/request-approval/`),
+
+    reportToBoardEmergencyBosaRelease: (id: string) =>
+      apiCall<any>('POST', `/healthcare/emergency-bosa-releases/${uuid(id)}/report-to-board/`),
   },
 }

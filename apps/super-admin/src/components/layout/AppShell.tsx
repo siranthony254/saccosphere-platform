@@ -13,6 +13,7 @@ const NAV_ITEMS: { path: string; label: string; icon: IconName; badge: string | 
   { path: '/kyc',          label: 'KYC Review',         icon: 'scan-face',        badge: null },
   { path: '/payment-onboarding', label: 'Payment Onboarding', icon: 'landmark', badge: null },
   { path: '/approvals',    label: 'Maker-Checker & Grants', icon: 'shield-check', badge: null },
+  { path: '/sectors',      label: 'Sector Gating',      icon: 'clipboard-list',   badge: null },
   { path: '/disbursement-disputes', label: 'Disbursement Disputes', icon: 'alert-triangle', badge: null },
   { path: '/audit-logs',   label: 'Audit Logs',         icon: 'clipboard-list',   badge: null },
   { path: '/billing',      label: 'Billing & Invoices', icon: 'receipt',          badge: null },

@@ -18,6 +18,7 @@ import { SystemHealth } from './pages/System/SystemHealth'
 import { DisbursementDisputes } from './pages/Disputes/DisbursementDisputes'
 import { PaymentOnboarding } from './pages/PaymentOnboarding/PaymentOnboarding'
 import { ApprovalsList } from './pages/Approvals/ApprovalsList'
+import { SectorManagement } from './pages/Saccos/SectorManagement'
 
 export const router = createBrowserRouter([
   {
@@ -48,6 +49,7 @@ export const router = createBrowserRouter([
       { path: 'disbursement-disputes', element: <DisbursementDisputes /> },
       { path: 'payment-onboarding', element: <PaymentOnboarding /> },
       { path: 'approvals', element: <ApprovalsList /> },
+      { path: 'sectors', element: <SectorManagement /> },
       { path: 'audit-logs', element: <AuditLogs /> },
       { path: 'billing', element: <Billing /> },
       { path: '*', element: <Navigate to="/overview" replace /> },

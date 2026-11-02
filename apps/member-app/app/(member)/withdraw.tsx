@@ -23,6 +23,10 @@ const WITHDRAWAL_ERROR_MESSAGES: Record<string, string> = {
   B2C_MONTHLY_LIMIT_EXCEEDED: "You've reached this month's withdrawal limit.",
   B2C_WALLET_DAILY_LIMIT_EXCEEDED: "This SACCO's daily payout limit has been reached — try again tomorrow.",
   B2C_MINIMUM_BALANCE_VIOLATION: "That would take your account below the SACCO's minimum balance.",
+  // P29: BOSA deposits are never withdrawable while a member, platform-wide
+  // (not just for healthcare-sector SACCOs) — kept as defense-in-depth even
+  // though the account picker below already filters to FOSA-only.
+  BOSA_WITHDRAWAL_NOT_ALLOWED: 'BOSA savings are locked while you remain a member — they transfer or refund only on exit.',
 }
 
 export default function WithdrawScreen() {
@@ -39,7 +43,9 @@ export default function WithdrawScreen() {
     staleTime: 60_000,
   })
 
-  const savings = savingsQuery.data ?? []
+  // P29: BOSA is never withdrawable while a member (platform-wide, not just
+  // for healthcare-sector SACCOs) — only FOSA accounts belong in this picker.
+  const savings = (savingsQuery.data ?? []).filter((s: any) => String(s.savings_type).toUpperCase() === 'FOSA')
   const [savingId, setSavingId] = useState<string | null>(null)
   const selectedSaving = useMemo(
     () => savings.find((s: any) => s.id === savingId) ?? savings[0] ?? null,
