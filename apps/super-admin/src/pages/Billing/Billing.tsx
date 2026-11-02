@@ -4,6 +4,7 @@ import { toast } from 'react-hot-toast'
 import { api } from '@saccosphere/api-client'
 import { useInvoices, useInvoice, useDownloadInvoice, useMarkInvoicePaid } from '../../hooks/useBilling'
 import { useAllSaccos } from '../../hooks/usePlatformData'
+import { PageHeader } from '../../components/ui/PageHeader'
 
 const STATUS_OPTIONS = ['', 'draft', 'sent', 'paid', 'overdue', 'suspended']
 const PAYMENT_METHODS: Array<'mpesa' | 'bank' | 'internal'> = ['mpesa', 'bank', 'internal']
@@ -81,12 +82,11 @@ export function Billing() {
 
   return (
     <div className="p-5">
-      <div className="flex justify-between items-center mb-5">
-        <div>
-          <div className="text-lg font-semibold text-ink">Billing & Invoices</div>
-          <div className="text-xs text-ink-muted">Monthly platform invoices across all SACCOs</div>
-        </div>
-      </div>
+      <PageHeader
+        title="Billing & Invoices"
+        subtitle="Monthly platform invoices across all SACCOs"
+        info="Each SACCO's own subscription invoice for using this platform — see what's owed, mark one paid, or give a SACCO a billing exemption."
+      />
 
       <div className="flex gap-2.5 mb-4">
         <select

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@saccosphere/api-client'
+import { InfoTip } from '@saccosphere/ui'
 
 export function AmlDashboard() {
   const queryClient = useQueryClient()
@@ -194,7 +195,10 @@ export function AmlDashboard() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <div className="text-xl font-bold text-ink">AML, Fraud Detection &amp; goAML Reporting</div>
+          <div className="text-xl font-bold text-ink flex items-center gap-1.5">
+            AML, Fraud Detection &amp; goAML Reporting
+            <InfoTip text="Flags transactions and member activity that look suspicious, so they can be investigated and — if needed — reported to the regulator." label="About AML & Fraud Detection" />
+          </div>
           <div className="text-xs text-ink-muted">
             POCAMLA compliance, 12 detection rules, case investigations, goAML Schema 5.0.2 STR/CTR, and sanctions list screening.
           </div>

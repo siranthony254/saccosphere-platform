@@ -3,6 +3,7 @@ import { useMutation } from '@tanstack/react-query'
 import { toast } from 'react-hot-toast'
 import { api } from '@saccosphere/api-client'
 import { useMembers } from '../../hooks/useMembers'
+import { InfoTip } from '@saccosphere/ui'
 import {
   useCheckoffEmployers,
   useCreateCheckoffEmployer,
@@ -701,7 +702,10 @@ export function Checkoff() {
   return (
     <div className="p-5 space-y-5">
       <div>
-        <div className="text-xl font-bold text-ink">Employer payroll check-off</div>
+        <div className="text-xl font-bold text-ink flex items-center gap-1.5">
+          Employer payroll check-off
+          <InfoTip text="Employers who deduct a member's savings/loan repayment straight from their salary and send it to this SACCO automatically." label="About Employer payroll check-off" />
+        </div>
         <div className="text-xs text-ink-muted">
           Admin/payroll-officer only — there is no member-facing "see my own deductions" screen in this
           feature yet, by design of the backend as it stands today.

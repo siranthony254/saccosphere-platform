@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { toast } from 'react-hot-toast'
 import { useUserRoles, useAssignRole, useRevokeRole } from '../../hooks/useRoles'
+import { PageHeader } from '../../components/ui/PageHeader'
 
 export function Roles() {
   const [userId, setUserId] = useState('')
@@ -34,12 +35,11 @@ export function Roles() {
 
   return (
     <div className="p-5">
-      <div className="flex justify-between items-center mb-5">
-        <div>
-          <div className="text-lg font-semibold text-ink">Role Management</div>
-          <div className="text-xs text-ink-muted">Assign and revoke user roles (SUPER_ADMIN only)</div>
-        </div>
-      </div>
+      <PageHeader
+        title="Role Management"
+        subtitle="Assign and revoke user roles (SUPER_ADMIN only)"
+        info="Give someone platform-staff access (and take it away again) — a role decides what a person is allowed to see and do."
+      />
 
       <div className="grid grid-cols-2 gap-4">
         {/* Assign role form */}

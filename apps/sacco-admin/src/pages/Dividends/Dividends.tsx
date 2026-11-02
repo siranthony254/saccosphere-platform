@@ -11,6 +11,7 @@ import {
 } from '../../hooks/useDividends'
 import { useSacco } from '../../hooks/useSacco'
 import type { DividendDeclaration, DividendPayout } from '@saccosphere/schemas'
+import { InfoTip } from '@saccosphere/ui'
 
 const statusStyles: Record<string, { bg: string; color: string }> = {
   DRAFT: { bg: 'bg-amber-50', color: 'text-amber-700' },
@@ -113,7 +114,10 @@ export function Dividends() {
       {/* Header */}
       <div className="flex justify-between items-center mb-5">
         <div>
-          <div className="text-lg font-semibold text-ink">Dividends & Share Capital Distribution</div>
+          <div className="text-lg font-semibold text-ink flex items-center gap-1.5">
+            Dividends & Share Capital Distribution
+            <InfoTip text="Once a year, calculate each member's share of the SACCO's profit based on their savings and share capital, then pay it out." label="About Dividends & Share Capital Distribution" />
+          </div>
           <div className="text-xs text-ink-muted">Declare, calculate, approve and disburse annual member dividends</div>
         </div>
         <button

@@ -48,6 +48,7 @@ export function DisbursementDisputes() {
       <PageHeader
         title="Disbursement Disputes"
         subtitle="Loans a member reported as not received — needs platform investigation"
+        info="A member said they applied for and were approved for a loan, but the money never reached them. These cases need a platform investigator to trace what happened."
       />
 
       <div className="grid grid-cols-2 gap-3 mb-5">

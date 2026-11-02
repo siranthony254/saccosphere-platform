@@ -3,6 +3,7 @@
 // Admin portals import from here.
 
 export { Icon, type IconName, type IconProps } from './Icon'
+export { InfoTip, type InfoTipProps } from './InfoTip'
 export { AdminThemeProvider, useAdminTheme } from './theme/AdminThemeProvider'
 export { AdminBackground } from './theme/AdminBackground'
 export { ThemePicker } from './theme/ThemePicker'

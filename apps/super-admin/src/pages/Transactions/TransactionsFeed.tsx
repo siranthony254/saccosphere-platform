@@ -33,6 +33,7 @@ export function TransactionsFeed() {
       <PageHeader
         title="All transactions"
         subtitle={`Platform-wide · Real-time feed · ${new Date().toLocaleDateString('en-KE', { day: 'numeric', month: 'long', year: 'numeric' })}`}
+        info="Every deposit, withdrawal and transfer happening right now, across every SACCO on the platform."
         actions={
           <div className="flex items-center gap-1.5 text-xs text-violet-600 bg-violet-50 px-3 py-1.5 rounded-md">
             <div className="w-1.5 h-1.5 rounded-full bg-violet-600" />

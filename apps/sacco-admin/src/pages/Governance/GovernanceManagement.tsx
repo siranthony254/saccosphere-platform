@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@saccosphere/api-client'
+import { InfoTip } from '@saccosphere/ui'
 
 export function GovernanceManagement() {
   const queryClient = useQueryClient()
@@ -171,7 +172,10 @@ export function GovernanceManagement() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <div className="text-xl font-bold text-ink">AGM, Delegate &amp; Secret Ballot Governance</div>
+          <div className="text-xl font-bold text-ink flex items-center gap-1.5">
+            AGM, Delegate &amp; Secret Ballot Governance
+            <InfoTip text="Run annual general meetings and committee elections, record attendance and motions, and keep a tamper-evident record of what members voted for." label="About AGM & Governance" />
+          </div>
           <div className="text-xs text-ink-muted">
             Statutory general meetings, quorum tracking, certified resolutions, electoral zones &amp; anonymous secret-ballot elections.
           </div>

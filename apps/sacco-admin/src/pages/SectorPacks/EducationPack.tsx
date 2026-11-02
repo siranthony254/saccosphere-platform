@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@saccosphere/api-client'
+import { InfoTip } from '@saccosphere/ui'
 
 export function EducationPack() {
   const queryClient = useQueryClient()
@@ -40,7 +41,10 @@ export function EducationPack() {
     <div className="p-5 space-y-5">
       <div className="flex justify-between items-center">
         <div>
-          <div className="text-xl font-bold text-ink">Education Sector Pack</div>
+          <div className="text-xl font-bold text-ink flex items-center gap-1.5">
+            Education Sector Pack
+            <InfoTip text="Tools built for teacher and school SACCOs: school/college registration, fee loans paid straight to the institution, a bursary fund, and device financing." label="About the Education Sector Pack" />
+          </div>
           <div className="text-xs text-ink-muted">
             School/College registry, term-aligned fee advances disbursed directly to institutions, ring-fenced bursary fund &amp; device financing.
           </div>

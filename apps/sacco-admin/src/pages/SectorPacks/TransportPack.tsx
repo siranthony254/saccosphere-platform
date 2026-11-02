@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@saccosphere/api-client'
 import { useMembers } from '../../hooks/useMembers'
+import { InfoTip } from '@saccosphere/ui'
 
 export function TransportPack() {
   const queryClient = useQueryClient()
@@ -76,7 +77,10 @@ export function TransportPack() {
     <div className="p-5 space-y-5">
       <div className="flex justify-between items-center">
         <div>
-          <div className="text-xl font-bold text-ink">Transport Sector Pack</div>
+          <div className="text-xl font-bold text-ink flex items-center gap-1.5">
+            Transport Sector Pack
+            <InfoTip text="Tools built for matatu and boda SACCOs: register vehicles, assign drivers/conductors, and collect a daily route levy straight from a paybill." label="About the Transport Sector Pack" />
+          </div>
           <div className="text-xs text-ink-muted">
             PSV &amp; Boda fleet register, grounding collateral blocks, 5-document compliance reminders, crew assignments &amp; daily plate paybill levy collection.
           </div>

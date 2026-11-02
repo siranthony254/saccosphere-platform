@@ -9,6 +9,7 @@ import {
   useCancelLoanPromise,
   useInitiateGuarantorRecovery,
 } from '../../hooks/useCollections'
+import { InfoTip } from '@saccosphere/ui'
 
 const CHANNELS: { value: 'CALL' | 'SMS' | 'VISIT' | 'OTHER'; label: string }[] = [
   { value: 'CALL', label: 'Phone call' },
@@ -248,7 +249,10 @@ export function Collections() {
   return (
     <div className="p-5 space-y-5">
       <div>
-        <div className="text-xl font-bold text-ink">Collections</div>
+        <div className="text-xl font-bold text-ink flex items-center gap-1.5">
+          Collections
+          <InfoTip text="Follow-ups and call logs for members who are behind on repayments, plus how much of the loan book is at risk." label="About Collections" />
+        </div>
         <div className="text-xs text-ink-muted">Overdue-loan worklist, contact logging, promises to pay, and portfolio-at-risk.</div>
       </div>
 

@@ -17,6 +17,7 @@ export function SaccoDetail() {
       <PageHeader
         title={sacco.name}
         subtitle={`${sacco.sasra_reg_no || 'No SASRA reg'} · ${sacco.sector || 'SACCO'} · Active since ${sacco.joined_platform_at ? new Date(sacco.joined_platform_at).getFullYear() : 'N/A'}`}
+        info="A full profile of this one SACCO — its registration details, members, and the settings only platform staff can change."
         actions={
           <div className="flex gap-2">
             <button

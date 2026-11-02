@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useMembers } from '../../hooks/useMembers'
+import { InfoTip } from '@saccosphere/ui'
 import {
   useRefundQueue,
   useMarkRefundBankPayout,
@@ -301,7 +302,10 @@ export function ExitsAndClaims() {
   return (
     <div className="p-5 space-y-5">
       <div>
-        <div className="text-xl font-bold text-ink">Exits, refunds &amp; deceased-member claims</div>
+        <div className="text-xl font-bold text-ink flex items-center gap-1.5">
+          Exits, refunds &amp; deceased-member claims
+          <InfoTip text="Members leaving the SACCO, and the savings/dividend payouts owed to them — including claims filed on behalf of a member who has passed away." label="About Exits, refunds & claims" />
+        </div>
         <div className="text-xs text-ink-muted">
           Voluntary-exit refund payouts and the deceased-member claim document/settlement workflow.
         </div>

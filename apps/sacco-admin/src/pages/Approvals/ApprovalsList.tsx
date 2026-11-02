@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api, APPROVAL_ACTION_TYPE_LABELS } from '@saccosphere/api-client'
 import { useSacco } from '../../hooks/useSacco'
+import { InfoTip } from '@saccosphere/ui'
 
 type DecisionKind = 'approve' | 'reject'
 
@@ -161,7 +162,10 @@ export function ApprovalsList() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <div className="text-xl font-bold text-ink">Maker-Checker Governance & Approvals</div>
+          <div className="text-xl font-bold text-ink flex items-center gap-1.5">
+            Maker-Checker Governance & Approvals
+            <InfoTip text="Sensitive actions (like a big withdrawal) that need a second admin to sign off before they take effect — so no single person can move money alone." label="About Maker-Checker Governance & Approvals" />
+          </div>
           <div className="text-xs text-ink-muted">
             Financial controls queue, multi-approver authorizations, step-up verifications, and support grants.
           </div>

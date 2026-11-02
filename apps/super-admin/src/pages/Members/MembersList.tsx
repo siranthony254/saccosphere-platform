@@ -31,6 +31,7 @@ export function MembersList() {
       <PageHeader
         title="All members"
         subtitle={`${data?.count ?? 0} total members`}
+        info="Every member of every SACCO on the platform, in one searchable list."
       />
 
       <p className="text-[11px] text-ink-faint mb-3">

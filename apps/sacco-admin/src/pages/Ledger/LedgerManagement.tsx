@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { toast } from 'react-hot-toast'
 import { api } from '@saccosphere/api-client'
 import { useSacco } from '../../hooks/useSacco'
+import { InfoTip } from '@saccosphere/ui'
 import {
   useLedgerEntries,
   useLedgerBalance,
@@ -132,7 +133,10 @@ export function LedgerManagement() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <div className="text-xl font-bold text-ink">General Ledger & Double-Entry Accounting</div>
+          <div className="text-xl font-bold text-ink flex items-center gap-1.5">
+            General Ledger & Double-Entry Accounting
+            <InfoTip text="This SACCO's full accounting record — every transaction, recorded twice (once as a debit, once as a credit) so the books always balance." label="About the General Ledger" />
+          </div>
           <div className="text-xs text-ink-muted">
             Inspect live journal entries, running balances, financial statements, and account postings.
           </div>

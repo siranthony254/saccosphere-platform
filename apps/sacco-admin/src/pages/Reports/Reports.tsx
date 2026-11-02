@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { toast } from 'react-hot-toast'
 import { useSaccoAdminDashboard } from '../../hooks/useSaccoAdminDashboard'
 import { useDownloadReport } from '../../hooks/useReports'
+import { InfoTip } from '@saccosphere/ui'
 
 export function Reports() {
   const { data: analytics, isLoading } = useSaccoAdminDashboard()
@@ -32,7 +33,10 @@ export function Reports() {
     <div className="p-5">
       <div className="flex justify-between items-center mb-5">
         <div>
-          <div className="text-lg font-semibold text-ink">Reports</div>
+          <div className="text-lg font-semibold text-ink flex items-center gap-1.5">
+            Reports
+            <InfoTip text="Downloadable summaries of this SACCO's performance — growth, loans, savings and more." label="About Reports" />
+          </div>
           <div className="text-xs text-ink-muted">Financial & membership analytics</div>
         </div>
         <div className="flex gap-2">

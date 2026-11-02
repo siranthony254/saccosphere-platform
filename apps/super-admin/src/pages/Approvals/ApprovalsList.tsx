@@ -146,6 +146,7 @@ export function ApprovalsList() {
       <PageHeader
         title="Governance, Approvals & Support Access"
         subtitle="Maker-checker authorization queue, support access controls, and ODPC data erasure reviews"
+        info="Decide on sensitive platform-wide actions that need a second person's sign-off, grant temporary support access to a SACCO's account, and review requests from members asking to have their data deleted."
       />
 
       {/* Tabs */}

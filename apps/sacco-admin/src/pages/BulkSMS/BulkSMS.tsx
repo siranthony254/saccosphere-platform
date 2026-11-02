@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { toast } from 'react-hot-toast'
 import { useSMSCampaigns, useCreateSMSCampaign, useSendSMSCampaign } from '../../hooks/useBulkSMS'
 import type { BulkSMSCampaign } from '@saccosphere/schemas'
+import { InfoTip } from '@saccosphere/ui'
 
 const statusStyles: Record<string, { bg: string; color: string }> = {
   DRAFT: { bg: 'bg-amber-50', color: 'text-amber-700' },
@@ -48,7 +49,10 @@ export function BulkSMS() {
     <div className="p-5">
       <div className="flex justify-between items-center mb-3">
         <div>
-          <div className="text-lg font-semibold text-ink">Bulk SMS & Member Messaging</div>
+          <div className="text-lg font-semibold text-ink flex items-center gap-1.5">
+            Bulk SMS & Member Messaging
+            <InfoTip text="Send a text message to many members at once — announcements, reminders, or alerts." label="About Bulk SMS & Member Messaging" />
+          </div>
           <div className="text-xs text-ink-muted">Send broadcasts and updates to member phones.</div>
         </div>
         <button

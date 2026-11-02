@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { toast } from 'react-hot-toast'
 import { useImportMembers, useImportJobStatus } from '../../hooks/useImport'
+import { InfoTip } from '@saccosphere/ui'
 
 export function Import() {
   const [file, setFile] = useState<File | null>(null)
@@ -31,7 +32,10 @@ export function Import() {
     <div className="p-5">
       <div className="flex justify-between items-center mb-5">
         <div>
-          <div className="text-lg font-semibold text-ink">Member Import</div>
+          <div className="text-lg font-semibold text-ink flex items-center gap-1.5">
+            Member Import
+            <InfoTip text="Bulk-upload members from a spreadsheet instead of adding them one by one — useful when onboarding a whole existing membership list." label="About Member Import" />
+          </div>
           <div className="text-xs text-ink-muted">Bulk import members from CSV file</div>
         </div>
       </div>

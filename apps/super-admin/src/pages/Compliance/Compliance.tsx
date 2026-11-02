@@ -17,7 +17,11 @@ export function Compliance() {
   return (
 
     <div className="p-5">
-      <PageHeader title="Compliance & KYC" subtitle="Platform-wide regulatory monitoring" />
+      <PageHeader
+        title="Compliance & KYC"
+        subtitle="Platform-wide regulatory monitoring"
+        info="See which SACCOs and members have outstanding identity-verification or regulatory issues, across the whole platform."
+      />
 
       <div className="grid grid-cols-2 gap-3 mb-5">
         <MetricCard

@@ -4,6 +4,7 @@ import { Icon } from '@saccosphere/ui'
 import { useKycQueue } from '../../hooks/usePlatformData'
 import { api } from '@saccosphere/api-client'
 import { Badge } from '../../components/ui/Badge'
+import { PageHeader } from '../../components/ui/PageHeader'
 
 export function KycReview() {
   const { data: kycQueue, isLoading, refetch } = useKycQueue()
@@ -21,12 +22,11 @@ export function KycReview() {
 
   return (
     <div className="p-5">
-      <div className="flex justify-between items-center mb-5">
-        <div>
-          <div className="text-lg font-semibold text-ink">KYC Verification Queue</div>
-          <div className="text-xs text-ink-muted">Platform-wide identity review (Super Admin)</div>
-        </div>
-      </div>
+      <PageHeader
+        title="KYC Verification Queue"
+        subtitle="Platform-wide identity review (Super Admin)"
+        info="Members' submitted ID documents, waiting for someone to confirm they're genuine before that member can be fully approved."
+      />
 
       <div className="bg-surface border border-mid rounded-[10px] overflow-hidden">
         <table className="w-full border-collapse text-[13px]">

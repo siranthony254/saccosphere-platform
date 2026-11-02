@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAddMember, useImportJobStatus } from '../../hooks/useImport'
+import { InfoTip } from '@saccosphere/ui'
 
 export function AddMember() {
   const navigate = useNavigate()
@@ -64,7 +65,10 @@ export function AddMember() {
     <div className="p-5">
       <div className="flex justify-between items-center mb-5">
         <div>
-          <div className="text-lg font-semibold text-ink">Add Member</div>
+          <div className="text-lg font-semibold text-ink flex items-center gap-1.5">
+            Add Member
+            <InfoTip text="Register a new member to this SACCO directly, one at a time, without them needing to apply themselves." label="About Add Member" />
+          </div>
           <div className="text-xs text-ink-muted">
             Adds the member to your SACCO immediately and issues a member number.
           </div>

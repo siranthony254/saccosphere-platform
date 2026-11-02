@@ -42,7 +42,11 @@ export function Revenue() {
 
   return (
     <div className="p-5">
-      <PageHeader title="Revenue & billing" subtitle="Platform-wide earnings, collections and arrears" />
+      <PageHeader
+        title="Revenue & billing"
+        subtitle="Platform-wide earnings, collections and arrears"
+        info="How much money this platform has earned from SACCO subscriptions, what's still outstanding, and who's behind on payment."
+      />
 
       <div className="grid grid-cols-4 gap-3 mb-5">
         <MetricCard

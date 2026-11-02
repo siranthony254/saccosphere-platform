@@ -2,6 +2,7 @@ import { useSaccoAdminDashboard, useDisbursementsDashboard, useContributionsDash
 import { useLiquidityStatus, useNPLDashboard } from '../hooks/useLiquidityNpl'
 import { useSacco } from '../hooks/useSacco'
 import { useKycQueue } from '../hooks/useKyc'
+import { InfoTip } from '@saccosphere/ui'
 
 function MetricCard({ label, value, delta, deltaColor = 'text-mint-600' }: { label: string; value: string; delta?: string; deltaColor?: string }) {
   return (
@@ -54,7 +55,10 @@ export function Dashboard() {
       {/* Top bar */}
       <div className="flex justify-between items-center mb-5">
         <div>
-          <div className="text-lg font-semibold text-ink">{sacco?.name || 'Dashboard'}</div>
+          <div className="text-lg font-semibold text-ink flex items-center gap-1.5">
+            {sacco?.name || 'Dashboard'}
+            <InfoTip text="Your home base — a quick read on how this SACCO is doing today: members, savings, loans and what needs your attention." label="About the Dashboard" />
+          </div>
           <div className="text-xs text-ink-muted">Live SACCO Admin Data · {new Date().toLocaleDateString('en-KE', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
         </div>
         <div className="flex gap-2">

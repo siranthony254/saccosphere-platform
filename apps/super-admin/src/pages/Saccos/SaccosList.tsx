@@ -35,6 +35,7 @@ export function SaccosList() {
       <PageHeader
         title="All SACCOs"
         subtitle={`${rows.length} of ${data?.count ?? 0} SACCOs on the platform`}
+        info="Every SACCO using Saccosphere. Open one to see its details, members and settings, or act on its behalf."
       />
 
       <div className="flex gap-2.5 mb-4">

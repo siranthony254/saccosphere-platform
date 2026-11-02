@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useUserRoles } from '../../hooks/useRoles'
+import { InfoTip } from '@saccosphere/ui'
 
 export function Roles() {
   const [input, setInput] = useState('')
@@ -9,7 +10,10 @@ export function Roles() {
   return (
     <div className="p-5">
       <div className="mb-5">
-        <div className="text-lg font-semibold text-ink">Roles</div>
+        <div className="text-lg font-semibold text-ink flex items-center gap-1.5">
+          Roles
+          <InfoTip text="Manage which staff members have admin access to this SACCO, and what each one is allowed to do." label="About Roles" />
+        </div>
         <div className="text-xs text-ink-muted">Look up the platform roles held by a user.</div>
       </div>
 

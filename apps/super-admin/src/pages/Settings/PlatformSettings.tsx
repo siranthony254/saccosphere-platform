@@ -237,7 +237,11 @@ export function PlatformSettings() {
 
   return (
     <div className="p-5">
-      <PageHeader title="Platform configuration" subtitle="Saccosphere global configuration — super admin only" />
+      <PageHeader
+        title="Platform configuration"
+        subtitle="Saccosphere global configuration — super admin only"
+        info="Settings that apply to the whole platform, not just one SACCO — things like maintenance/holiday mode and your own account security."
+      />
 
       <div className="grid grid-cols-2 gap-5">
         <Card title="Signed-in account">

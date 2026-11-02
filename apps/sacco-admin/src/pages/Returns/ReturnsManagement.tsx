@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@saccosphere/api-client'
+import { InfoTip } from '@saccosphere/ui'
 
 export function ReturnsManagement() {
   const queryClient = useQueryClient()
@@ -213,7 +214,10 @@ export function ReturnsManagement() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <div className="text-xl font-bold text-ink">Regulatory Returns, Complaints &amp; Agency Banking</div>
+          <div className="text-xl font-bold text-ink flex items-center gap-1.5">
+            Regulatory Returns, Complaints &amp; Agency Banking
+            <InfoTip text="The official reports this SACCO must file with the regulator (SASRA) on a schedule, member complaints that have been escalated, and agency-banking activity." label="About Regulatory Returns & Complaints" />
+          </div>
           <div className="text-xs text-ink-muted">
             SASRA, Commissioner &amp; UFAA statutory returns engine, complaints desk with SLA tracking, and agency banking setup.
           </div>

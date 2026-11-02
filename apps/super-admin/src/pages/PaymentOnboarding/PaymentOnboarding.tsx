@@ -77,6 +77,7 @@ export function PaymentOnboarding() {
       <PageHeader
         title="Payment onboarding"
         subtitle="SACCO M-Pesa payment setups awaiting verification and approval"
+        info="Before a SACCO can accept or send real money, its M-Pesa payment details need to be checked and approved by the platform. This is that review queue."
         actions={
           <select
             className="py-1.5 px-3 border border-mid rounded-lg text-[13px] outline-none bg-surface"

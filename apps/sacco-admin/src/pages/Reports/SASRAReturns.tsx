@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { toast } from 'react-hot-toast'
 import { api } from '@saccosphere/api-client'
+import { InfoTip } from '@saccosphere/ui'
 
 type ReportType = 'par' | 'financial_position' | 'membership'
 
@@ -48,7 +49,10 @@ export function SASRAReturns() {
     <div className="p-6">
       <div className="flex justify-between items-start mb-6 gap-4 flex-wrap">
         <div>
-          <h1 className="text-xl font-bold text-ink">SASRA Regulatory Returns</h1>
+          <h1 className="text-xl font-bold text-ink flex items-center gap-1.5">
+            SASRA Regulatory Returns
+            <InfoTip text="The official financial reports this SACCO must submit to its regulator, SASRA, on a set schedule." label="About SASRA Regulatory Returns" />
+          </h1>
           <p className="text-xs text-ink-muted mt-1">
             Underlying figures for PAR, financial position and membership returns. Confirm the column
             layout against the current official SASRA workbook before filing.

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { toast } from 'react-hot-toast'
 import { useKycQueue, useReviewKyc } from '../../hooks/useKyc'
+import { InfoTip } from '@saccosphere/ui'
 
 export function KycReview() {
   const [statusFilter, setStatusFilter] = useState('PENDING')
@@ -33,7 +34,10 @@ export function KycReview() {
     <div className="p-5 relative">
       <div className="flex justify-between items-center mb-5">
         <div>
-          <div className="text-lg font-semibold text-ink">KYC Review</div>
+          <div className="text-lg font-semibold text-ink flex items-center gap-1.5">
+            KYC Review
+            <InfoTip text="Review members' submitted ID documents and approve or reject their identity verification." label="About KYC Review" />
+          </div>
           <div className="text-xs text-ink-muted">{kycQueue?.length ?? 0} documents pending review</div>
         </div>
         <select

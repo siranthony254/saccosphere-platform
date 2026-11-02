@@ -5,6 +5,7 @@ import { api } from '@saccosphere/api-client'
 import { useAdminLoans, useManualDisburseLoan, useDisbursementHistory, useB2CStatus, useLoanDisbursementAudit } from '../../hooks/useLoans'
 import { useDisbursementsDashboard } from '../../hooks/useSaccoAdminDashboard'
 import { StepUpModal } from '../../components/auth/StepUpModal'
+import { InfoTip } from '@saccosphere/ui'
 
 function DisbursementAuditTrail({ loanId }: { loanId: string }) {
   const { data, isLoading } = useLoanDisbursementAudit(loanId)
@@ -106,7 +107,10 @@ export function DisbursementsList() {
     <div className="p-5">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <div className="text-xl font-bold text-ink">Loan disbursements</div>
+          <div className="text-xl font-bold text-ink flex items-center gap-1.5">
+            Loan disbursements
+            <InfoTip text="Money being paid out to members whose loans were approved — track every payout and its status." label="About Loan disbursements" />
+          </div>
           <div className="text-sm text-ink-muted mt-1">Approved loans ready to disburse via M-Pesa / bank</div>
         </div>
         <div className="flex items-center gap-4">

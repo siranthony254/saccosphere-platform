@@ -80,6 +80,7 @@ export function SectorManagement() {
       <PageHeader
         title="Sector Feature Gating &amp; Reclassification"
         subtitle="Manage tenant sector confirmation, default module packs, and individual module overrides"
+        info="Every SACCO belongs to an industry (agriculture, transport, finance, etc.) that decides which extra features it sees. Use this page to confirm or change a SACCO's industry, or turn an individual feature on/off for just one SACCO."
       />
 
       {msg && (

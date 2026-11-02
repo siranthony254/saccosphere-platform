@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { ThemePicker } from '@saccosphere/ui'
+import { ThemePicker, InfoTip } from '@saccosphere/ui'
 import { toast } from 'react-hot-toast'
 import { useSaccoSettings } from '../../hooks/useSaccoSettings'
 import { useReminderPolicy } from '../../hooks/useCollections'
@@ -1288,7 +1288,10 @@ export function Settings() {
 
   return (
     <div className="p-5">
-      <div className="text-lg font-semibold text-ink mb-1">SACCO settings</div>
+      <div className="text-lg font-semibold text-ink mb-1 flex items-center gap-1.5">
+        SACCO settings
+        <InfoTip text="This SACCO's own configuration — policies, limits, reminders and how the platform behaves for your members." label="About SACCO settings" />
+      </div>
       <div className="text-xs text-ink-muted mb-6">SACCO configuration &amp; policy</div>
 
       <div className="grid grid-cols-2 gap-5">

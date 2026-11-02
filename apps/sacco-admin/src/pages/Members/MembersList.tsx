@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-hot-toast'
-import { Icon } from '@saccosphere/ui'
+import { Icon, InfoTip } from '@saccosphere/ui'
 import { useMembers } from '../../hooks/useMembers'
 import { useSaccoAdminDashboard } from '../../hooks/useSaccoAdminDashboard'
 import type { AdminMember } from '@saccosphere/schemas'
@@ -59,7 +59,10 @@ export function MembersList() {
     <div className="p-5">
       <div className="flex justify-between items-center mb-5">
         <div>
-          <div className="text-lg font-semibold text-ink">Member directory</div>
+          <div className="text-lg font-semibold text-ink flex items-center gap-1.5">
+            Member directory
+            <InfoTip text="Search, view and manage everyone who belongs to this SACCO." label="About the Member directory" />
+          </div>
           <div className="text-xs text-ink-muted">
             {isDashboardLoading ? 'Loading...' : (dashboardData?.total_members ?? 0)} total members
           </div>

@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { api } from '@saccosphere/api-client'
+import { InfoTip } from '@saccosphere/ui'
 
 export function LiquidityNPLDashboard() {
   const { data: liquidity, isLoading: loadingLiquidity } = useQuery({
@@ -15,7 +16,10 @@ export function LiquidityNPLDashboard() {
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h1 className="text-xl font-bold text-ink">Liquidity & NPL Portfolio Analytics</h1>
+        <h1 className="text-xl font-bold text-ink flex items-center gap-1.5">
+          Liquidity & NPL Portfolio Analytics
+          <InfoTip text="An early-warning view: do you have enough cash on hand to meet withdrawals, and how many loans are at risk of not being repaid?" label="About Liquidity & NPL Portfolio Analytics" />
+        </h1>
         <p className="text-xs text-ink-muted mt-1">
           Monitor SACCO liquidity thresholds, Non-Performing Loan (NPL) ratios, and loan loss provisioning in real time.
         </p>

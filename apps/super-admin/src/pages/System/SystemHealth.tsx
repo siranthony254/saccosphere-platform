@@ -118,6 +118,7 @@ export function SystemHealth() {
       <PageHeader
         title="System & API health"
         subtitle="Platform infrastructure readiness & background job monitoring"
+        info="Is the platform itself running smoothly? Server status, response times and background jobs that process payments and reports."
         actions={
           <div
             className={`flex items-center gap-1.5 text-xs py-1.5 px-3 rounded-md ${

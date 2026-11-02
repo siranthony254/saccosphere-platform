@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { api } from '@saccosphere/api-client'
 import { useAdminLoans, useReviewLoan, useDisburseLoan, useRunCRBCheck } from '../../hooks/useLoans'
+import { InfoTip } from '@saccosphere/ui'
 
 const STATUS_COLORS: Record<string, { bg: string; color: string }> = {
   PENDING_APPROVAL: { bg: 'bg-amber-50', color: 'text-amber-700' },
@@ -119,7 +120,10 @@ export function LoansList() {
       )}
       <div className="flex justify-between items-center mb-5">
         <div>
-          <div className="text-lg font-semibold text-ink">Loan review</div>
+          <div className="text-lg font-semibold text-ink flex items-center gap-1.5">
+            Loan review
+            <InfoTip text="Loan requests waiting for your decision, plus every loan already issued and its repayment progress." label="About Loan review" />
+          </div>
           <div className="text-xs text-ink-muted">
             {data?.count ?? 0} total · {data?.results.filter((l: any) => l.status === 'PENDING_APPROVAL').length ?? 0} pending decision
           </div>

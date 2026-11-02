@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@saccosphere/api-client'
 import { useCapabilities } from '../../hooks/useCapabilities'
+import { InfoTip } from '@saccosphere/ui'
 
 export function SharedLendingPrimitives() {
   const queryClient = useQueryClient()
@@ -97,7 +98,10 @@ export function SharedLendingPrimitives() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <div className="text-xl font-bold text-ink">Shared Lending Primitives &amp; Asset Register</div>
+          <div className="text-xl font-bold text-ink flex items-center gap-1.5">
+            Shared Lending Primitives &amp; Asset Register
+            <InfoTip text="Tools for loans backed by an asset — a vehicle, device, equipment or property — or by a member's irregular income instead of a payslip." label="About Lending Primitives & Asset Register" />
+          </div>
           <div className="text-xs text-ink-muted">
             Asset register, collateral LTV row-locking, staged tranche drawdowns, variable-income affordability assessor &amp; refinancer data tapes.
           </div>

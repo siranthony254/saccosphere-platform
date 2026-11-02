@@ -3,6 +3,7 @@ import { toast } from 'react-hot-toast'
 import { api } from '@saccosphere/api-client'
 import { useInvoices, useCurrentMonthBilling, useDownloadInvoice } from '../../hooks/useBilling'
 import type { MonthlyInvoice } from '@saccosphere/schemas'
+import { InfoTip } from '@saccosphere/ui'
 
 const statusStyles: Record<string, { bg: string; color: string }> = {
   paid: { bg: 'bg-mint-50', color: 'text-mint-700' },
@@ -45,7 +46,10 @@ export function Billing() {
       {/* Header */}
       <div className="flex justify-between items-center mb-5">
         <div>
-          <div className="text-lg font-semibold text-ink">SaaS Billing & Invoices</div>
+          <div className="text-lg font-semibold text-ink flex items-center gap-1.5">
+            SaaS Billing & Invoices
+            <InfoTip text="This SACCO's own subscription invoices for using the Saccosphere platform — see what's due and download past invoices." label="About SaaS Billing & Invoices" />
+          </div>
           <div className="text-xs text-ink-muted">Monthly platform subscription invoices and payment status</div>
         </div>
       </div>

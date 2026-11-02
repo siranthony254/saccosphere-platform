@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useExternalGuarantors, useReviewExternalGuarantor } from '../hooks/useExternalGuarantors'
+import { InfoTip } from '@saccosphere/ui'
 
 const STATUS_COLORS: Record<string, { bg: string; color: string }> = {
   PENDING_SMS: { bg: 'bg-amber-50', color: 'text-amber-700' },
@@ -24,7 +25,10 @@ export function ExternalGuarantors() {
     <div className="p-5">
       <div className="flex justify-between items-center mb-5">
         <div>
-          <div className="text-lg font-semibold text-ink">External Guarantors</div>
+          <div className="text-lg font-semibold text-ink flex items-center gap-1.5">
+            External Guarantors
+            <InfoTip text="People outside this SACCO who have agreed to guarantee a member's loan — review and confirm their consent here." label="About External Guarantors" />
+          </div>
           <div className="text-xs text-ink-muted">
             {data?.count ?? 0} total · {pendingReview} awaiting admin review
           </div>

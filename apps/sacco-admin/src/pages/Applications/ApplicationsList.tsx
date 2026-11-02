@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApplications, useApplicationReview, useReviewApplication } from '../../hooks/useApplications'
+import { InfoTip } from '@saccosphere/ui'
 
 const STATUS_COLORS: Record<string, { bg: string; color: string }> = {
   applied: { bg: 'bg-amber-50', color: 'text-amber-700' },
@@ -78,7 +79,10 @@ export function ApplicationsList() {
 
       <div className="flex justify-between items-center mb-5">
         <div>
-          <div className="text-lg font-semibold text-ink">Membership applications</div>
+          <div className="text-lg font-semibold text-ink flex items-center gap-1.5">
+            Membership applications
+            <InfoTip text="People who have applied to join this SACCO and are waiting on your decision to approve or reject them." label="About Membership applications" />
+          </div>
           <div className="text-xs text-ink-muted">
             {data?.count ?? 0} total applications matching filter
           </div>

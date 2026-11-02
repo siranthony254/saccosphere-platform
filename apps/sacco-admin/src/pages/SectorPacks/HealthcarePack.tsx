@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@saccosphere/api-client'
+import { InfoTip } from '@saccosphere/ui'
 
 export function HealthcarePack() {
   const queryClient = useQueryClient()
@@ -53,7 +54,10 @@ export function HealthcarePack() {
     <div className="p-5 space-y-5">
       <div className="flex justify-between items-center">
         <div>
-          <div className="text-xl font-bold text-ink">Healthcare Sector Pack</div>
+          <div className="text-xl font-bold text-ink flex items-center gap-1.5">
+            Healthcare Sector Pack
+            <InfoTip text="Tools built for health-worker SACCOs: fast-track emergency loans, training/CPD financing paid directly to the provider, and equipment loans." label="About the Healthcare Sector Pack" />
+          </div>
           <div className="text-xs text-ink-muted">
             Hospital/Clinic registry, fast-track emergency loan SLA monitoring, CPD training provider direct disbursements &amp; Emergency BOSA release exceptions.
           </div>

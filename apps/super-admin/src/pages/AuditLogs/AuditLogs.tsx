@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useAuditLogs } from '../../hooks/useAuditLogs'
+import { PageHeader } from '../../components/ui/PageHeader'
 
 export function AuditLogs() {
   const [action, setAction] = useState('')
@@ -12,12 +13,11 @@ export function AuditLogs() {
 
   return (
     <div className="p-5">
-      <div className="flex justify-between items-center mb-5">
-        <div>
-          <div className="text-lg font-semibold text-ink">System Audit Logs</div>
-          <div className="text-xs text-ink-muted">Platform-wide audit trail (SUPER_ADMIN only)</div>
-        </div>
-      </div>
+      <PageHeader
+        title="System Audit Logs"
+        subtitle="Platform-wide audit trail (SUPER_ADMIN only)"
+        info="A permanent, unchangeable record of who did what and when across the whole platform — use it to investigate anything unusual."
+      />
 
       {/* Filters */}
       <div className="flex gap-2.5 mb-4">

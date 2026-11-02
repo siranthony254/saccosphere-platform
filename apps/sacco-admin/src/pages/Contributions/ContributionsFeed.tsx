@@ -1,4 +1,5 @@
 import { useContributionsDashboard } from '../../hooks/useSaccoAdminDashboard'
+import { InfoTip } from '@saccosphere/ui'
 
 export function ContributionsFeed() {
   const { data: dashboard, isLoading, error } = useContributionsDashboard()
@@ -23,7 +24,10 @@ export function ContributionsFeed() {
     <div className="p-5">
       <div className="flex justify-between items-center mb-5">
         <div>
-          <div className="text-lg font-semibold text-ink">Contribution dashboard</div>
+          <div className="text-lg font-semibold text-ink flex items-center gap-1.5">
+            Contribution dashboard
+            <InfoTip text="A live feed of every deposit and contribution coming in from members, as it happens." label="About the Contribution dashboard" />
+          </div>
           <div className="text-xs text-ink-muted">Monthly overview · {dashboard.contribution_rate_pct.toFixed(1)}% contribution rate</div>
         </div>
       </div>

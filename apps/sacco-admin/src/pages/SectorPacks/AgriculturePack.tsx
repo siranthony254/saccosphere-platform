@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@saccosphere/api-client'
+import { InfoTip } from '@saccosphere/ui'
 
 export function AgriculturePack() {
   const queryClient = useQueryClient()
@@ -72,7 +73,10 @@ export function AgriculturePack() {
     <div className="p-5 space-y-5">
       <div className="flex justify-between items-center">
         <div>
-          <div className="text-xl font-bold text-ink">Agriculture Sector Pack</div>
+          <div className="text-xl font-bold text-ink flex items-center gap-1.5">
+            Agriculture Sector Pack
+            <InfoTip text="Tools built for farming SACCOs: track what each buyer owes a farmer, give loans timed to the harvest, and finance farm inputs through trusted dealers." label="About the Agriculture Sector Pack" />
+          </div>
           <div className="text-xs text-ink-muted">
             Produce buyers, delivery tracking, crop advances, net payout runs, buyer arrears shielding &amp; agro-dealer input loans.
           </div>
