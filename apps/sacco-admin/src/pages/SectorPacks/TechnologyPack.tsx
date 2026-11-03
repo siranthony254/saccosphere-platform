@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@saccosphere/api-client'
+import { InfoTip } from '@saccosphere/ui'
 import { useMembers } from '../../hooks/useMembers'
+import { PageHeader } from '../../components/ui/PageHeader'
 
 function MemberPicker({ value, onChange }: { value: string; onChange: (id: string) => void }) {
   const [search, setSearch] = useState('')
@@ -69,7 +71,7 @@ export function TechnologyPack() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['technology-remote-employer-verifications', remoteMembershipId] })
       setEmployerName(''); setEmployerCountry('')
-      notify('Remote-employer verification opened. One-pending-at-a-time rule applies.')
+      notify('Verification opened.')
     },
     onError: (err: any) => notify(err?.message || 'Failed to open this verification.'),
   })
@@ -89,9 +91,9 @@ export function TechnologyPack() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['technology-remote-employer-verifications', remoteMembershipId] })
       setSelectedVerification(null)
-      notify('Verification APPROVED. Open loans will be re-appraised shortly, asynchronously.')
+      notify('Approved. Any of this member\'s open loans will be re-checked shortly.')
     },
-    onError: (err: any) => notify(err?.message || 'Failed to approve — a reviewer who submitted or uploaded evidence cannot also sign off.'),
+    onError: (err: any) => notify(err?.message || 'Failed to approve — whoever submitted this or uploaded its evidence can\'t also sign it off.'),
   })
 
   const rejectMutation = useMutation({
@@ -99,7 +101,7 @@ export function TechnologyPack() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['technology-remote-employer-verifications', remoteMembershipId] })
       setSelectedVerification(null); setRejectNotes('')
-      notify('Verification REJECTED.')
+      notify('Verification rejected.')
     },
     onError: (err: any) => notify(err?.message || 'Failed to reject this verification.'),
   })
@@ -112,12 +114,11 @@ export function TechnologyPack() {
 
   return (
     <div className="p-5 space-y-5 text-xs">
-      <div>
-        <div className="text-xl font-bold text-ink">Technology Sector Pack</div>
-        <div className="text-ink-muted">
-          The thinnest pack in this batch by design: a gig-income affordability preview, a genuinely new remote/foreign-employer verification queue, and a read-only register over existing DEVICE-class assets. There is no gig-worker self-service login path here.
-        </div>
-      </div>
+      <PageHeader
+        title="Technology Sector Pack"
+        subtitle="Verify a remote/foreign employer, preview a gig-income affordability ceiling, and see financed devices."
+        info="This is a smaller pack by design — there's no self-service login for gig workers themselves; everything here is done by an admin on a member's behalf."
+      />
 
       {msg && <div className="p-3 bg-indigo-50 border border-indigo-200 text-indigo-900 rounded-lg font-semibold">{msg}</div>}
 
@@ -178,7 +179,7 @@ export function TechnologyPack() {
                         {v.review_notes && <div className="text-ink-muted">{v.review_notes}</div>}
                       </div>
                       <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${v.status === 'APPROVED' ? 'bg-mint-50 text-mint-700 border border-mint-200' : v.status === 'REJECTED' ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-amber-50 text-amber-700 border border-amber-200'}`}>
-                        {v.status}
+                        {v.status === 'PENDING' ? 'Awaiting review' : v.status === 'APPROVED' ? 'Approved' : 'Rejected'}
                       </span>
                     </div>
                     {v.status === 'PENDING' && (
@@ -199,10 +200,10 @@ export function TechnologyPack() {
                   <div className="font-semibold text-ink">Upload evidence</div>
                   <div className="flex gap-2">
                     <select value={docKind} onChange={(e) => setDocKind(e.target.value as any)} className="p-2 border rounded bg-white flex-1">
-                      <option value="EMPLOYMENT_CONTRACT">EMPLOYMENT_CONTRACT</option>
-                      <option value="PAY_EVIDENCE">PAY_EVIDENCE</option>
-                      <option value="EMPLOYER_ID_OR_REGISTRATION">EMPLOYER_ID_OR_REGISTRATION</option>
-                      <option value="OTHER">OTHER</option>
+                      <option value="EMPLOYMENT_CONTRACT">Employment contract</option>
+                      <option value="PAY_EVIDENCE">Pay evidence</option>
+                      <option value="EMPLOYER_ID_OR_REGISTRATION">Employer ID/registration</option>
+                      <option value="OTHER">Other</option>
                     </select>
                     <input type="file" onChange={(e) => setDocFile(e.target.files?.[0] ?? null)} className="p-1.5 border rounded bg-white flex-1" />
                     <button onClick={() => uploadDocMutation.mutate()} disabled={!docFile || uploadDocMutation.isPending} className="px-3 py-1.5 bg-violet-600 text-white font-bold rounded cursor-pointer">
@@ -211,8 +212,9 @@ export function TechnologyPack() {
                   </div>
                 </div>
 
-                <div className="text-ink-muted">
-                  Whoever submitted this request or uploaded any of its documents cannot also approve or reject it (403 REVIEWER_NOT_INDEPENDENT) — and approving requires at least one document attached (400 DOCUMENT_REQUIRED).
+                <div className="text-ink-muted flex items-start gap-1.5">
+                  <span>Approving needs at least one document attached.</span>
+                  <InfoTip text="Whoever opened this request, or uploaded any of its documents, can't be the one to approve or reject it — someone else has to review it." label="Why you might be blocked" />
                 </div>
 
                 <div className="flex items-center gap-2">
@@ -245,29 +247,28 @@ export function TechnologyPack() {
 
       {activeTab === 'ceiling' && (
         <div className="bg-white border border-[#e5ede9] rounded-[10px] p-5 space-y-4 shadow-sm">
-          <div className="font-bold text-base text-ink">Gig-Income Affordability Ceiling</div>
-          <div className="text-ink-muted">
-            A read-only preview over the existing P25 variable-income assessment. There is no submit/upload/review flow here — that happens on the existing Lending Primitives income-verification screens.
-            Thresholds shown are Technology's own platform-wide defaults, not sector-specific overrides.
+          <div className="font-bold text-base text-ink flex items-center gap-1.5">
+            Gig-Income Affordability Ceiling
+            <InfoTip text="This is just a preview of what a member with irregular income could afford to repay — it doesn't submit or change anything. Submitting and reviewing income evidence happens on the Lending Primitives page." label="About this ceiling" />
           </div>
           <MemberPicker value={ceilingMembershipId} onChange={setCeilingMembershipId} />
           {ceilingMembershipId && (
             ceilingError ? (
               <div className="p-3 bg-amber-50 border border-amber-200 text-amber-800 rounded">
                 {(ceilingErrorObj as any)?.status === 404
-                  ? 'This member has no approved income verification yet — submit one on the Lending Primitives screen first.'
+                  ? 'This member has no approved income check yet — submit one on the Lending Primitives page first.'
                   : (ceilingErrorObj as any)?.message || 'Failed to load this ceiling.'}
               </div>
             ) : ceiling ? (
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 {[
-                  ['Months used', ceiling.months_used],
-                  ['Sufficient history', ceiling.sufficient_history ? 'YES' : 'NO'],
-                  ['Trailing mean', ceiling.trailing_mean ?? '—'],
-                  ['Std. deviation', ceiling.std_dev ?? '—'],
-                  ['Coefficient of variation', ceiling.coefficient_of_variation ?? '—'],
-                  ['Adjusted income', ceiling.adjusted_income ?? '—'],
-                  ['Affordable instalment', ceiling.affordable_instalment],
+                  ['Months of history used', ceiling.months_used],
+                  ['Enough history to assess?', ceiling.sufficient_history ? 'Yes' : 'No'],
+                  ['Average monthly income', ceiling.trailing_mean ?? '—'],
+                  ['How much income varies', ceiling.std_dev ?? '—'],
+                  ['Volatility (relative to income)', ceiling.coefficient_of_variation ?? '—'],
+                  ['Income after adjusting for risk', ceiling.adjusted_income ?? '—'],
+                  ['Affordable monthly instalment', ceiling.affordable_instalment],
                 ].map(([label, value]) => (
                   <div key={label as string} className="bg-surface-2 rounded p-3">
                     <div className="text-ink-muted">{label}</div>
@@ -276,7 +277,7 @@ export function TechnologyPack() {
                 ))}
                 {(ceiling.reason_codes ?? []).length > 0 && (
                   <div className="col-span-full bg-surface-2 rounded p-3">
-                    <div className="text-ink-muted mb-1">Reason codes</div>
+                    <div className="text-ink-muted mb-1">Why</div>
                     <div className="flex gap-1.5 flex-wrap">
                       {ceiling.reason_codes.map((rc: string) => (
                         <span key={rc} className="px-2 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 rounded text-[10px] font-bold">{rc}</span>
@@ -292,9 +293,10 @@ export function TechnologyPack() {
 
       {activeTab === 'devices' && (
         <div className="bg-white border border-[#e5ede9] rounded-[10px] p-5 shadow-sm">
-          <div className="font-bold text-base text-ink mb-1">Active Device Assets (capped at 500)</div>
-          <div className="text-ink-muted mb-3">
-            DEVICE_WARRANTY and DEVICE_INSURANCE document uploads for any of these assets are done through the existing Lending Primitives asset-document upload screen — there's nothing new to build here beyond this list.
+          <div className="font-bold text-base text-ink mb-1">Financed Devices</div>
+          <div className="text-ink-muted mb-3 flex items-start gap-1.5">
+            <span>Devices currently financed by this SACCO (up to 500 shown).</span>
+            <InfoTip text="To attach a warranty or insurance document to one of these, use the asset-document upload on the Lending Primitives page." label="Uploading documents for a device" />
           </div>
           <table className="w-full text-left border-collapse">
             <thead>

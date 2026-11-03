@@ -3,6 +3,22 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@saccosphere/api-client'
 import { InfoTip } from '@saccosphere/ui'
 
+const CASE_STATUS_LABELS: Record<string, string> = {
+  OPEN: 'New',
+  IN_PROGRESS: 'Being investigated',
+  PENDING_MLRO_REVIEW: "Awaiting the MLRO's review",
+  CLOSED_STR_FILED: 'Closed — reported to the regulator',
+  CLOSED_FALSE_POSITIVE: 'Closed — false alarm',
+  CLOSED_NO_ACTION: 'Closed — no action needed',
+}
+const humanizeCaseStatus = (status: string) => CASE_STATUS_LABELS[status] ?? status
+const ALERT_STATUS_LABELS: Record<string, string> = {
+  OPEN: 'New',
+  UNDER_REVIEW: 'Being reviewed',
+  ESCALATED: 'Escalated to a case',
+}
+const humanizeAlertStatus = (status: string) => ALERT_STATUS_LABELS[status] ?? status
+
 export function AmlDashboard() {
   const queryClient = useQueryClient()
   const [activeTab, setActiveTab] = useState<'alerts' | 'cases' | 'str' | 'ctr' | 'sanctions' | 'metrics'>('alerts')
@@ -127,7 +143,7 @@ export function AmlDashboard() {
     mutationFn: (caseId: string) => api.aml.generateStrFiling(caseId),
     onSuccess: () => {
       invalidateCaseDetail()
-      showMsg('success', 'goAML 5.0.2 STR draft XML generated.')
+      showMsg('success', 'Draft report generated — review it below before it goes to the MLRO.')
     },
     onError: (err: any) => showMsg('error', err?.message || 'Failed to generate the STR draft.'),
   })
@@ -145,11 +161,11 @@ export function AmlDashboard() {
       // MLRO" — surface that distinction rather than a generic failure,
       // since silently swallowing it could read as "it worked."
       if (err?.status === 403) {
-        showMsg('error', "Only this SACCO's designated MLRO may record an STR filing.")
+        showMsg('error', "Only this SACCO's designated anti-money-laundering officer (MLRO) may record this.")
       } else if (err?.status === 409) {
-        showMsg('error', err?.message || 'This filing has unresolved blocking findings, or was already filed.')
+        showMsg('error', err?.message || 'This still has unresolved problems flagged below, or was already filed.')
       } else {
-        showMsg('error', err?.message || 'Failed to record the STR filing.')
+        showMsg('error', err?.message || 'Failed to record this filing.')
       }
     },
   })
@@ -169,7 +185,7 @@ export function AmlDashboard() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['aml-sanctions-results'] })
       setDomesticFile(null)
-      showMsg('success', 'Domestic sanctions list uploaded and auto-screening executed.')
+      showMsg('success', 'List uploaded — members and transactions were automatically re-checked against it.')
     },
     onError: (err: any) => showMsg('error', err?.message || 'Failed to upload this list.'),
   })
@@ -199,8 +215,9 @@ export function AmlDashboard() {
             AML, Fraud Detection &amp; goAML Reporting
             <InfoTip text="Flags transactions and member activity that look suspicious, so they can be investigated and — if needed — reported to the regulator." label="About AML & Fraud Detection" />
           </div>
-          <div className="text-xs text-ink-muted">
-            POCAMLA compliance, 12 detection rules, case investigations, goAML Schema 5.0.2 STR/CTR, and sanctions list screening.
+          <div className="text-xs text-ink-muted flex items-start gap-1.5">
+            <span>Detection rules, case investigations, regulator filings and sanctions-list screening.</span>
+            <InfoTip text="STR = Suspicious Transaction Report, CTR = Cash Transaction Report, MLRO = this SACCO's designated Money Laundering Reporting Officer, FRC = the Financial Reporting Centre (the regulator these get filed with). This all follows Kenya's anti-money-laundering law (POCAMLA)." label="Acronyms used on this page" />
           </div>
         </div>
       </div>
@@ -216,8 +233,8 @@ export function AmlDashboard() {
         {([
           ['alerts', `Daily Alerts (${alerts.length})`],
           ['cases', 'Case Investigations'],
-          ['str', 'STR & goAML Filing'],
-          ['ctr', 'CTR Weekly Sweeps'],
+          ['str', 'STR & Regulator Filing'],
+          ['ctr', 'Weekly Cash Reports'],
           ['sanctions', 'Sanctions Screening'],
           ['metrics', 'AML Metrics'],
         ] as const).map(([key, label]) => (
@@ -282,7 +299,7 @@ export function AmlDashboard() {
                           </span>
                         </td>
                         <td className="py-2.5 px-3 text-ink">
-                          {alt.status || 'OPEN'}
+                          {humanizeAlertStatus(alt.status || 'OPEN')}
                           {alt.case && !dismissable && (
                             <button
                               onClick={() => { setActiveTab('cases'); setSelectedCaseId(alt.case) }}
@@ -343,7 +360,7 @@ export function AmlDashboard() {
                       <span className="font-mono font-bold text-violet-700">{c.case_number || c.id}</span>
                       <span className="text-[10px] uppercase font-bold text-ink-muted">{c.case_type}</span>
                     </div>
-                    <div className="text-[10px] text-ink-faint mt-1">Status: {c.status}</div>
+                    <div className="text-[10px] text-ink-faint mt-1">Status: {humanizeCaseStatus(c.status)}</div>
                   </div>
                 ))
               )}
@@ -361,7 +378,7 @@ export function AmlDashboard() {
                 <div className="bg-surface-2 p-3 rounded-lg border border-ink-faint space-y-1">
                   <div><span className="text-ink-muted">Case Ref:</span> <span className="font-mono font-bold">{caseDetail.case_number}</span></div>
                   <div><span className="text-ink-muted">Case Type:</span> <span className="font-bold uppercase">{caseDetail.case_type}</span></div>
-                  <div><span className="text-ink-muted">Status:</span> {caseDetail.status}</div>
+                  <div><span className="text-ink-muted">Status:</span> {humanizeCaseStatus(caseDetail.status)}</div>
                   <div><span className="text-ink-muted">Assigned to:</span> {caseDetail.assigned_to || 'Unassigned'}</div>
                   <div><span className="text-ink-muted">Suspicion Clock Started:</span> {caseDetail.suspicion_detected_at ? new Date(caseDetail.suspicion_detected_at).toLocaleString() : '—'}</div>
                 </div>
@@ -443,21 +460,20 @@ export function AmlDashboard() {
 
                 {/* Close Disposition */}
                 <div className="border-t border-[#e5ede9] pt-3 space-y-2">
-                  <div className="font-bold text-ink">Record Case Disposition &amp; Close</div>
+                  <div className="font-bold text-ink">Close This Case</div>
                   <p className="text-[10px] text-ink-faint">
-                    &ldquo;Closed — STR filed&rdquo; is not a choice here — that status is only ever set
-                    automatically once an STR filing is actually recorded on the STR &amp; goAML Filing tab.
+                    If this turned out to be a genuine money-laundering concern, don't close it here — go to the STR &amp; Regulator Filing tab and file the report; this case closes itself automatically once that's done.
                   </p>
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <label className="text-ink-muted block mb-1">Disposition Choice</label>
+                      <label className="text-ink-muted block mb-1">Why is it closing?</label>
                       <select
                         value={dispositionStatus}
                         onChange={(e) => setDispositionStatus(e.target.value as any)}
                         className="w-full p-2 border border-ink-faint rounded text-xs bg-white"
                       >
-                        <option value="CLOSED_FALSE_POSITIVE">CLOSED_FALSE_POSITIVE</option>
-                        <option value="CLOSED_NO_ACTION">CLOSED_NO_ACTION</option>
+                        <option value="CLOSED_FALSE_POSITIVE">False alarm</option>
+                        <option value="CLOSED_NO_ACTION">Reviewed — no action needed</option>
                       </select>
                     </div>
                     <div>
@@ -491,34 +507,33 @@ export function AmlDashboard() {
       {/* TAB 3: STR & GOAML */}
       {activeTab === 'str' && (
         <div className="bg-white border border-[#e5ede9] rounded-[10px] p-5 space-y-4 shadow-sm">
-          <div className="font-bold text-base text-ink">Suspicious Transaction Report (goAML Schema 5.0.2)</div>
+          <div className="font-bold text-base text-ink">Suspicious Transaction Report</div>
           <div className="text-xs text-ink-muted space-y-1">
-            <p>Prepares a goAML-shaped XML draft for the SACCO&rsquo;s MLRO to review.</p>
+            <p>Prepares a draft report for this SACCO's anti-money-laundering officer (MLRO) to review.</p>
             <p className="text-amber-700 font-semibold">
-              This does not submit anything to FRC. No formal goAML .xsd schema exists to validate against —
-              this is a structural check, not regulator-certified validation. The MLRO must review the XML and
-              upload it to the real goAML Client themselves; the field below only records that they did.
+              This does NOT submit anything to the regulator (FRC) itself. The MLRO still has to review the draft
+              and upload it to the regulator's own system by hand — the box below only records that they did, after the fact.
             </p>
           </div>
 
           {!selectedCaseId || !caseDetail ? (
             <div className="text-xs text-ink-muted">
-              Select an STR-type case under Case Investigations tab to generate goAML XML.
+              Select a case from the Case Investigations tab to prepare its report.
             </div>
           ) : caseDetail.case_type !== 'STR' ? (
             <div className="text-xs text-ink-muted">
-              Case {caseDetail.case_number} is not an STR-type case.
+              Case {caseDetail.case_number} isn't the kind of case this report applies to.
             </div>
           ) : (
             <div className="space-y-3">
               <div className="flex justify-between items-center bg-surface-2 p-3 rounded border">
-                <div className="font-bold text-xs text-ink">Selected STR Case: {caseDetail.case_number}</div>
+                <div className="font-bold text-xs text-ink">Selected Case: {caseDetail.case_number}</div>
                 <button
                   onClick={() => generateStrMutation.mutate(caseDetail.id)}
                   disabled={generateStrMutation.isPending}
                   className="px-3 py-1.5 bg-violet-600 hover:bg-violet-700 text-white rounded text-xs font-bold cursor-pointer"
                 >
-                  {generateStrMutation.isPending ? 'Generating XML...' : strFiling ? 'Regenerate goAML XML' : 'Generate goAML XML'}
+                  {generateStrMutation.isPending ? 'Generating...' : strFiling ? 'Regenerate Draft' : 'Generate Draft'}
                 </button>
               </div>
 
@@ -541,7 +556,10 @@ export function AmlDashboard() {
                   )}
 
                   <div>
-                    <div className="text-xs font-bold text-ink mb-1">goAML Draft XML Output (reviewable draft, not final):</div>
+                    <div className="text-xs font-bold text-ink mb-1 flex items-center gap-1.5">
+                      Draft Report
+                      <InfoTip text="This is a draft in the technical format (goAML XML) the regulator expects — it's not final until the MLRO has reviewed it and uploaded it themselves." label="About this draft" />
+                    </div>
                     <textarea
                       rows={8}
                       value={strFiling.xml_content ?? ''}
@@ -558,13 +576,13 @@ export function AmlDashboard() {
                     <div className="space-y-1">
                       {hasBlockingStrError && (
                         <div className="text-[11px] text-red-700 font-semibold">
-                          Resolve the ERROR finding above before this can be recorded as filed.
+                          There's a problem flagged above in red — fix that before this can be recorded as filed.
                         </div>
                       )}
                       <div className="flex gap-2 items-center pt-1">
                         <input
                           type="text"
-                          placeholder="Enter MLRO filing reference, once actually uploaded to goAML..."
+                          placeholder="Reference number, once the MLRO has actually uploaded it..."
                           value={strFilingRef}
                           onChange={(e) => setStrFilingRef(e.target.value)}
                           className="flex-1 p-2 border border-ink-faint rounded text-xs bg-white"
@@ -592,8 +610,8 @@ export function AmlDashboard() {
       {/* TAB 4: CTR */}
       {activeTab === 'ctr' && (
         <div className="bg-white border border-[#e5ede9] rounded-[10px] p-4 space-y-4 shadow-sm">
-          <div className="font-bold text-base text-ink">Cash Transaction Reports (CTR)</div>
-          <div className="text-xs text-ink-muted">Automated weekly sweep reporting for large cash movements — generated automatically, nothing to create here.</div>
+          <div className="font-bold text-base text-ink">Large Cash Transaction Reports</div>
+          <div className="text-xs text-ink-muted">A weekly report of large cash movements, generated automatically — you just file the reference once it's been sent to the regulator.</div>
 
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
@@ -623,7 +641,7 @@ export function AmlDashboard() {
                           : 'Weekly Sweep'}
                       </td>
                       <td className="py-2.5 px-3 font-bold text-ink">KES {Number(ctr.total_amount ?? 0).toLocaleString()}</td>
-                      <td className="py-2.5 px-3 font-bold text-violet-700">{ctr.status || 'DRAFT'}</td>
+                      <td className="py-2.5 px-3 font-bold text-violet-700">{ctr.status === 'FILED' ? 'Filed' : 'Draft'}</td>
                       <td className="py-2.5 px-3 font-mono text-ink-muted">
                         {ctr.filing_reference || (
                           <div className="flex gap-1 items-center">
@@ -661,7 +679,7 @@ export function AmlDashboard() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           <div className="bg-white border border-[#e5ede9] rounded-[10px] p-4 space-y-3 shadow-sm md:col-span-1">
             <div className="font-bold text-base text-ink">Upload Domestic Sanctions List</div>
-            <div className="text-xs text-ink-muted">Upload per-SACCO domestic watchlists (CSV/XLSX). Auto-screens existing members on upload.</div>
+            <div className="text-xs text-ink-muted">Upload a watchlist (CSV/XLSX) — every member is automatically checked against it.</div>
 
             <form
               onSubmit={(e) => {
@@ -717,7 +735,7 @@ export function AmlDashboard() {
                         <td className="py-2.5 px-3 font-semibold text-ink">{s.matched_entry_name || '—'}</td>
                         <td className="py-2.5 px-3 text-ink-muted uppercase">{s.subject_type || 'MEMBER'}</td>
                         <td className="py-2.5 px-3 font-mono font-bold text-amber-700">{(Number(s.match_score ?? 0) * 100).toFixed(0)}%</td>
-                        <td className="py-2.5 px-3 font-bold text-violet-700">{s.status}</td>
+                        <td className="py-2.5 px-3 font-bold text-violet-700">{s.status === 'POTENTIAL_MATCH' ? 'Needs review' : s.status === 'CONFIRMED' ? 'Confirmed match' : 'Cleared'}</td>
                         <td className="py-2.5 px-3 text-right space-x-1">
                           {s.status === 'POTENTIAL_MATCH' && (
                             <>

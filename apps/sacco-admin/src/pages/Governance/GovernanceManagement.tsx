@@ -125,7 +125,7 @@ export function GovernanceManagement() {
     mutationFn: (motionId: string) => api.governance.certifyMotion(motionId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['meeting-motions', selectedMeeting?.id] })
-      setStatusMsg('Motion queued for AGM resolution certification (maker-checker).')
+      setStatusMsg('Vote recorded — sent for a second admin to certify.')
     },
   })
 
@@ -163,7 +163,7 @@ export function GovernanceManagement() {
       api.governance.certifyElection(data.id, data.termEnd ? { term_end: data.termEnd } : undefined),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['governance-elections'] })
-      setStatusMsg('Election results queued for certification (maker-checker).')
+      setStatusMsg('Results submitted — sent for a second admin to certify.')
     },
   })
 
@@ -366,8 +366,11 @@ export function GovernanceManagement() {
                   </div>
                   {quorumData && (
                     <div className="text-right">
-                      <div className="font-bold text-violet-700">Attendance: {quorumData.attendee_count ?? 0} / {quorumData.eligible_voter_count ?? 0} (quorum {quorumData.quorum_fraction_required != null ? `${(quorumData.quorum_fraction_required * 100).toFixed(0)}%` : '—'})</div>
-                      <div className="text-[10px] text-ink-muted">Quorum Met: {quorumData.quorum_met ? 'YES' : 'NO'}</div>
+                      <div className="font-bold text-violet-700 flex items-center justify-end gap-1.5">
+                        Attendance: {quorumData.attendee_count ?? 0} / {quorumData.eligible_voter_count ?? 0} (needs {quorumData.quorum_fraction_required != null ? `${(quorumData.quorum_fraction_required * 100).toFixed(0)}%` : '—'})
+                        <InfoTip text="Quorum is the minimum share of eligible voters who must be present for any vote taken at this meeting to count." label="What is quorum?" />
+                      </div>
+                      <div className="text-[10px] text-ink-muted">Enough people here to vote: {quorumData.quorum_met ? 'Yes' : 'Not yet'}</div>
                     </div>
                   )}
                 </div>
@@ -576,7 +579,7 @@ export function GovernanceManagement() {
                     elections.map((el: any) => (
                       <tr key={el.id} className="hover:bg-surface-1">
                         <td className="py-2.5 px-3 font-semibold text-ink">{el.title}</td>
-                        <td className="py-2.5 px-3 uppercase text-ink-soft">{el.election_type}</td>
+                        <td className="py-2.5 px-3 uppercase text-ink-soft">{el.election_type === 'DELEGATE' ? 'Zone delegate' : el.election_type?.replace(/_/g, ' ')}</td>
                         <td className="py-2.5 px-3 font-bold text-violet-700">{el.status}</td>
                         <td className="py-2.5 px-3 text-right space-x-1">
                           <button
@@ -612,13 +615,16 @@ export function GovernanceManagement() {
             {selectedElection && (
               <div className="border-t border-[#e5ede9] pt-4 space-y-3 bg-surface-2 p-4 rounded-xl text-xs">
                 <div className="font-bold text-sm text-ink">{selectedElection.title} ({selectedElection.status})</div>
-                <div className="text-ink-muted">Note: Voter record is separated from ballot contents to guarantee 100% secret ballot privacy.</div>
+                <div className="text-ink-muted flex items-start gap-1.5">
+                  <span>Who voted and what they voted for are kept completely separate.</span>
+                  <InfoTip text="This keeps the ballot genuinely secret — there's no way to look up how a specific member voted, even for an admin." label="Why this is split" />
+                </div>
 
                 {selectedElection.status === 'TALLYING' && (
                   <div className="pt-2 border-t space-y-2">
                     {selectedElection.election_type === 'DELEGATE' && (
                       <>
-                        <label className="text-ink-muted block">Delegate term end date (required — no settings default exists)</label>
+                        <label className="text-ink-muted block">When does this delegate's term end?</label>
                         <input
                           type="text"
                           placeholder="e.g. 2028-06-30T23:59:59Z"
@@ -633,7 +639,7 @@ export function GovernanceManagement() {
                       disabled={selectedElection.election_type === 'DELEGATE' && !certifyTermEnd}
                       className="px-3 py-1.5 bg-mint-600 hover:bg-mint-700 text-white font-bold text-xs rounded cursor-pointer disabled:opacity-50"
                     >
-                      Queue Certification (Maker-Checker)
+                      Submit for Certification
                     </button>
                   </div>
                 )}

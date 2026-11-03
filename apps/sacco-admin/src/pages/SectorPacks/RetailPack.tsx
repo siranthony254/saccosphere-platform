@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@saccosphere/api-client'
+import { InfoTip } from '@saccosphere/ui'
 import { useMembers } from '../../hooks/useMembers'
+import { PageHeader } from '../../components/ui/PageHeader'
 
 function MemberPicker({ value, onChange, label }: { value: string; onChange: (id: string) => void; label?: string }) {
   const [search, setSearch] = useState('')
@@ -74,9 +76,9 @@ export function RetailPack() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['retail-collections', selectedAgentId] })
       setCollMembershipId(''); setCollAmount('')
-      notify('Collection posted immediately to the member\'s BOSA savings.')
+      notify('Collection recorded in the member\'s savings right away.')
     },
-    onError: (err: any) => notify(err?.message || 'Failed to record this collection — the member needs an open BOSA account.'),
+    onError: (err: any) => notify(err?.message || 'Failed to record this collection — the member needs an open savings account.'),
   })
 
   const recordReconciliationMutation = useMutation({
@@ -84,14 +86,14 @@ export function RetailPack() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['retail-reconciliations', selectedAgentId] })
       setRecDate(''); setRecAmountBanked(''); setRecBankRef('')
-      notify('End-of-day reconciliation recorded. A mismatch is only ever flagged (BREAK), never auto-corrected.')
+      notify('End-of-day reconciliation recorded.')
     },
     onError: (err: any) => notify(err?.message || 'Failed to record this reconciliation.'),
   })
 
   const resolveReconciliationMutation = useMutation({
     mutationFn: (data: { id: string; notes: string }) => api.retail.resolveReconciliation(data.id, data.notes),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['retail-reconciliations', selectedAgentId] }); notify('Break resolved — no money moved, only the explanation was recorded.') },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['retail-reconciliations', selectedAgentId] }); notify('Marked resolved — this only records your note, no money moved.') },
     onError: (err: any) => notify(err?.message || 'Failed to resolve this break.'),
   })
 
@@ -110,7 +112,7 @@ export function RetailPack() {
 
   const setStallMutation = useMutation({
     mutationFn: () => api.retail.setMarketStall(stallMembershipId, { market_name: stallMarketName, county: stallCounty || undefined, stall_number: stallNumber || undefined }),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['retail-market-stall', stallMembershipId] }); notify('Market/stall location saved. Reference data only — never used for collateral or agent-routing.') },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['retail-market-stall', stallMembershipId] }); notify('Location saved.') },
     onError: (err: any) => notify(err?.message || 'Failed to save this location.'),
   })
 
@@ -137,7 +139,7 @@ export function RetailPack() {
 
   const createTbGroupMutation = useMutation({
     mutationFn: () => api.retail.createTableBankingGroup({ name: tbGroupName, member_memberships: tbMemberIds }),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['retail-tb-groups'] }); setTbGroupName(''); setTbMemberIds([]); notify('Table-banking group registered — at least 2 members required.') },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['retail-tb-groups'] }); setTbGroupName(''); setTbMemberIds([]); notify('Group registered.') },
     onError: (err: any) => notify(err?.message || 'Failed to register this group.'),
   })
 
@@ -149,20 +151,20 @@ export function RetailPack() {
 
   const completeCycleMutation = useMutation({
     mutationFn: (cycleId: string) => api.retail.completeRotationCycle(selectedTbGroupId!, cycleId),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['retail-tb-rotation', selectedTbGroupId] }); notify('Cycle marked COMPLETED — schedule tracking only, no payout posting.') },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['retail-tb-rotation', selectedTbGroupId] }); notify('Marked complete.') },
     onError: (err: any) => notify(err?.message || 'Failed to complete this cycle.'),
   })
 
   const attachGroupMutation = useMutation({
     mutationFn: () => api.retail.attachGroupToLoan(attachLoanId, selectedTbGroupId!),
-    onSuccess: () => { setAttachLoanId(''); notify('Group attached to loan for joint-liability backing.') },
+    onSuccess: () => { setAttachLoanId(''); notify('Group attached to this loan.') },
     onError: (err: any) => notify(err?.message || 'Failed to attach this group.'),
   })
 
   const groupRecoveryMutation = useMutation({
     mutationFn: () => api.retail.requestGroupRecovery(recoveryLoanId, Number(recoveryAmount)),
-    onSuccess: () => { setRecoveryLoanId(''); setRecoveryAmount(''); notify('Group recovery requested — fail-closed maker-checker, equal pro-rata across other members.') },
-    onError: (err: any) => notify(err?.message || 'Failed — a documented collection-contact attempt on the borrower is required first.'),
+    onSuccess: () => { setRecoveryLoanId(''); setRecoveryAmount(''); notify('Recovery requested — needs approval, then splits equally across the group\'s other members.') },
+    onError: (err: any) => notify(err?.message || 'Failed — you need a logged attempt to contact the borrower about this loan first.'),
   })
 
   // Supplier invoices
@@ -181,14 +183,14 @@ export function RetailPack() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['retail-supplier-invoices'] })
       setInvMembership(''); setInvBuyerName(''); setInvNumber(''); setInvAmount(''); setInvDueDate('')
-      notify('Supplier invoice registered. "Verified" is a manual officer sign-off only — no real supplier/buyer integration.')
+      notify('Invoice registered.')
     },
     onError: (err: any) => notify(err?.message || 'Failed to register this invoice.'),
   })
 
   const verifyInvoiceMutation = useMutation({
     mutationFn: (id: string) => api.retail.verifySupplierInvoice(id),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['retail-supplier-invoices'] }); notify('Invoice VERIFIED.') },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['retail-supplier-invoices'] }); notify('Invoice verified.') },
     onError: (err: any) => notify(err?.message || 'Failed to verify this invoice.'),
   })
 
@@ -200,19 +202,18 @@ export function RetailPack() {
 
   return (
     <div className="p-5 space-y-5 text-xs">
-      <div>
-        <div className="text-xl font-bold text-ink">Retail Sector Pack</div>
-        <div className="text-ink-muted">
-          Field-agent daily collection with mandatory end-of-day reconciliation, an optional market/stall registry, table-banking joint-liability circles, and short advances against a manually-verified supplier invoice. There is genuinely no field-agent self-service login — every write here is admin-authenticated, on the agent's/member's behalf.
-        </div>
-      </div>
+      <PageHeader
+        title="Retail Sector Pack"
+        subtitle="Daily field-agent collections, table-banking groups, and short advances against a supplier invoice."
+        info="There's no app or login for field agents themselves — an admin records everything here on the agent's or member's behalf."
+      />
 
       {msg && <div className="p-3 bg-indigo-50 border border-indigo-200 text-indigo-900 rounded-lg font-semibold">{msg}</div>}
 
       <div className="flex border-b border-[#e5ede9] gap-4 font-medium flex-wrap">
         {([
-          ['agents', `Agent Collections & EOD (${agents.length})`],
-          ['market-stall', 'Market/Stall Registry'],
+          ['agents', `Field Agent Collections (${agents.length})`],
+          ['market-stall', 'Market/Stall Info'],
           ['table-banking', `Table Banking (${tbGroups.length})`],
           ['invoices', `Supplier Invoices (${invoices.length})`],
         ] as const).map(([key, label]) => (
@@ -274,7 +275,9 @@ export function RetailPack() {
                       <div key={r.id} className="border border-[#e5ede9] rounded p-2.5">
                         <div className="flex justify-between">
                           <span>{r.business_date}: collected KES {r.total_collected} vs banked KES {r.amount_banked} (variance {r.variance})</span>
-                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${r.status === 'BALANCED' ? 'bg-mint-50 text-mint-700' : r.status === 'BREAK' ? 'bg-red-50 text-red-700' : 'bg-gray-100 text-ink-muted'}`}>{r.status}</span>
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${r.status === 'BALANCED' ? 'bg-mint-50 text-mint-700' : r.status === 'BREAK' ? 'bg-red-50 text-red-700' : 'bg-gray-100 text-ink-muted'}`}>
+                            {r.status === 'BALANCED' ? 'Balanced' : r.status === 'BREAK' ? 'Mismatch' : 'Resolved'}
+                          </span>
                         </div>
                         {r.status === 'BREAK' && (
                           <div className="flex gap-2 mt-1.5">
@@ -306,8 +309,11 @@ export function RetailPack() {
 
       {activeTab === 'market-stall' && (
         <div className="bg-white border border-[#e5ede9] rounded-[10px] p-5 space-y-3 shadow-sm">
-          <div className="font-bold text-base text-ink">Market/Stall Registry (reference data only)</div>
-          <div className="text-ink-muted">Never used for collateral or agent-routing — there's no assignment algorithm behind it.</div>
+          <div className="font-bold text-base text-ink">Market/Stall Info</div>
+          <div className="text-ink-muted flex items-start gap-1.5">
+            <span>Just a record of where a member trades.</span>
+            <InfoTip text="This is reference information only — it's never used as collateral and doesn't automatically assign a field agent to this member." label="What this is for" />
+          </div>
           <MemberPicker value={stallMembershipId} onChange={setStallMembershipId} />
           {stallMembershipId && (
             <div className="space-y-2">
@@ -350,7 +356,10 @@ export function RetailPack() {
                 <div className="font-bold text-ink">{tbGroupDetail?.name} — {(tbGroupDetail?.members ?? []).length} members</div>
 
                 <div>
-                  <div className="font-semibold text-ink mb-1">Rotation (schedule tracking only — no pooled fund, no payout posting)</div>
+                  <div className="font-semibold text-ink mb-1 flex items-center gap-1.5">
+                    Whose Turn Rotation
+                    <InfoTip text="This only tracks the schedule of whose turn it is — there's no pooled fund here and no payout is ever posted automatically." label="About rotation" />
+                  </div>
                   <div className="flex gap-2 mb-2">
                     <input type="date" value={cycleDate} onChange={(e) => setCycleDate(e.target.value)} className="flex-1 p-2 border rounded bg-white" />
                     <button onClick={() => cycleDate && createCycleMutation.mutate()} disabled={!cycleDate} className="px-3 py-2 bg-violet-600 text-white font-bold rounded cursor-pointer">Schedule Cycle</button>
@@ -360,7 +369,7 @@ export function RetailPack() {
                       <div key={c.id} className="flex items-center justify-between px-2 py-1.5 bg-surface-2 rounded">
                         <span>Cycle {c.cycle_number} · {c.scheduled_date}</span>
                         <div className="flex items-center gap-2">
-                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${c.status === 'COMPLETED' ? 'bg-mint-50 text-mint-700' : 'bg-amber-50 text-amber-700'}`}>{c.status}</span>
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${c.status === 'COMPLETED' ? 'bg-mint-50 text-mint-700' : 'bg-amber-50 text-amber-700'}`}>{c.status === 'COMPLETED' ? 'Done' : 'Upcoming'}</span>
                           {c.status === 'PENDING' && <button onClick={() => completeCycleMutation.mutate(c.id)} className="px-2 py-1 bg-mint-600 text-white font-bold text-[10px] rounded cursor-pointer">Complete</button>}
                         </div>
                       </div>
@@ -369,7 +378,10 @@ export function RetailPack() {
                 </div>
 
                 <div className="border-t pt-3">
-                  <div className="font-semibold text-ink mb-1">Attach to Loan (joint-liability backing)</div>
+                  <div className="font-semibold text-ink mb-1 flex items-center gap-1.5">
+                    Back a Loan With This Group
+                    <InfoTip text="This makes every member of the group jointly responsible for the loan — if the borrower can't pay, the group can be asked to cover it." label="What this means" />
+                  </div>
                   <div className="flex gap-2">
                     <input type="text" placeholder="Loan ID (UUID)" value={attachLoanId} onChange={(e) => setAttachLoanId(e.target.value)} className="flex-1 p-2 border rounded bg-white font-mono" />
                     <button onClick={() => attachLoanId && attachGroupMutation.mutate()} disabled={!attachLoanId} className="px-3 py-2 bg-violet-600 text-white font-bold rounded cursor-pointer">Attach</button>
@@ -377,8 +389,11 @@ export function RetailPack() {
                 </div>
 
                 <div className="border-t pt-3">
-                  <div className="font-semibold text-ink mb-1">Group Recovery (equal pro-rata, fail-closed maker-checker)</div>
-                  <div className="text-ink-muted mb-1">Requires a documented collection-contact attempt on the borrower first.</div>
+                  <div className="font-semibold text-ink mb-1">Recover a Bad Loan From the Group</div>
+                  <div className="text-ink-muted mb-1 flex items-start gap-1.5">
+                    <span>Splits the amount equally across the group's other members, once approved.</span>
+                    <InfoTip text="You need to have already logged an attempt to contact the borrower about this loan — the system checks for that before letting you request recovery." label="Before you can do this" />
+                  </div>
                   <div className="flex gap-2">
                     <input type="text" placeholder="Loan ID (UUID)" value={recoveryLoanId} onChange={(e) => setRecoveryLoanId(e.target.value)} className="flex-1 p-2 border rounded bg-white font-mono" />
                     <input type="number" placeholder="Requested amount" value={recoveryAmount} onChange={(e) => setRecoveryAmount(e.target.value)} className="w-32 p-2 border rounded bg-white" />
@@ -410,13 +425,13 @@ export function RetailPack() {
           </div>
 
           <div className="bg-white border border-[#e5ede9] rounded-[10px] p-4 shadow-sm md:col-span-2">
-            <div className="font-bold text-base text-ink mb-2">Invoices (capped at 500)</div>
+            <div className="font-bold text-base text-ink mb-2">Invoices</div>
             <div className="space-y-2">
               {invoices.length === 0 ? <div className="text-ink-muted py-4 text-center">No invoices registered.</div> : invoices.map((inv: any) => (
                 <div key={inv.id} className="border border-[#e5ede9] rounded p-2.5 space-y-2">
                   <div className="flex items-center justify-between">
                     <div><div className="font-bold text-ink">{inv.invoice_number} · {inv.buyer_name}</div><div className="text-ink-muted">KES {Number(inv.invoice_amount ?? 0).toLocaleString()} due {inv.due_date}</div></div>
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${inv.status === 'VERIFIED' ? 'bg-mint-50 text-mint-700' : 'bg-amber-50 text-amber-700'}`}>{inv.status}</span>
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${inv.status === 'VERIFIED' ? 'bg-mint-50 text-mint-700' : 'bg-amber-50 text-amber-700'}`}>{inv.status === 'VERIFIED' ? 'Verified' : 'Needs verifying'}</span>
                   </div>
                   {inv.status === 'DRAFT' && <button onClick={() => verifyInvoiceMutation.mutate(inv.id)} className="px-2 py-1 bg-mint-600 text-white font-bold text-[10px] rounded cursor-pointer">Verify</button>}
                   {inv.status === 'VERIFIED' && (

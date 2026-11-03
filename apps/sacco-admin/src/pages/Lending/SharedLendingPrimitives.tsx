@@ -103,7 +103,7 @@ export function SharedLendingPrimitives() {
             <InfoTip text="Tools for loans backed by an asset — a vehicle, device, equipment or property — or by a member's irregular income instead of a payslip." label="About Lending Primitives & Asset Register" />
           </div>
           <div className="text-xs text-ink-muted">
-            Asset register, collateral LTV row-locking, staged tranche drawdowns, variable-income affordability assessor &amp; refinancer data tapes.
+            A register of pledged assets, staged/installment loans, and reviewing what a member with irregular income can afford.
           </div>
         </div>
       </div>
@@ -259,7 +259,7 @@ export function SharedLendingPrimitives() {
                   ) : (
                     assets.map((a: any) => (
                       <tr key={a.id} className="hover:bg-surface-1">
-                        <td className="py-2.5 px-3 uppercase font-semibold text-ink-soft text-[10px]">{a.asset_class}</td>
+                        <td className="py-2.5 px-3 font-semibold text-ink-soft text-[10px]">{a.asset_class?.charAt(0)}{a.asset_class?.slice(1).toLowerCase()}</td>
                         <td className="py-2.5 px-3 font-mono font-bold text-ink">{a.identifier}</td>
                         <td className="py-2.5 px-3 font-bold text-ink">KES {Number(a.acquisition_value ?? 0).toLocaleString()}</td>
                         <td className="py-2.5 px-3 font-semibold text-violet-700">{a.status || 'ACTIVE'}</td>
@@ -315,9 +315,9 @@ export function SharedLendingPrimitives() {
       {/* TAB 2: COLLATERAL */}
       {activeTab === 'collateral' && (
         <div className="bg-white border border-[#e5ede9] rounded-[10px] p-5 space-y-3 shadow-sm">
-          <div className="font-bold text-base text-ink">Collateral &amp; LTV Row-Locking</div>
+          <div className="font-bold text-base text-ink">Collateral</div>
           <div className="text-xs text-ink-muted">
-            Collateral links are pledged against loans. Hard LTV &amp; charge checks lock the row at disbursement — payout fails closed if unpledged or grounded.
+            Pledging an asset against a loan, and checking it's worth enough, happens automatically when a loan is disbursed — a loan can't pay out against an asset that isn't properly pledged. This screen for managing pledges directly isn't built yet.
           </div>
         </div>
       )}
@@ -325,9 +325,9 @@ export function SharedLendingPrimitives() {
       {/* TAB 3: TRANCHES */}
       {activeTab === 'tranches' && (
         <div className="bg-white border border-[#e5ede9] rounded-[10px] p-5 space-y-3 shadow-sm">
-          <div className="font-bold text-base text-ink">Staged Tranche Loans (Sequential Inspections &amp; Drawdowns)</div>
+          <div className="font-bold text-base text-ink">Staged Loans</div>
           <div className="text-xs text-ink-muted">
-            Staged loans draw down sequentially after passed inspections. Drawdown requires maker-checker approval &amp; step-up verification.
+            A staged loan pays out in installments, each one released only after an inspection passes — and each release needs a second admin's sign-off. This screen for managing those stages directly isn't built yet.
           </div>
         </div>
       )}
@@ -336,7 +336,7 @@ export function SharedLendingPrimitives() {
       {activeTab === 'income' && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           <div className="bg-white border border-[#e5ede9] rounded-[10px] p-4 space-y-3 shadow-sm md:col-span-1">
-            <div className="font-bold text-base text-ink">Variable Income Review Queue</div>
+            <div className="font-bold text-base text-ink">Irregular-Income Review Queue</div>
             <div className="overflow-y-auto max-h-[450px] space-y-2">
               {isIncomeLoading ? (
                 <div className="text-xs text-ink-muted">Loading verifications...</div>
@@ -354,7 +354,7 @@ export function SharedLendingPrimitives() {
                     }`}
                   >
                     <div className="font-bold text-ink">{v.member_name || 'Member'}</div>
-                    <div className="text-[10px] text-ink-muted">Months Transcribed: {v.months_count ?? 0}</div>
+                    <div className="text-[10px] text-ink-muted">{v.months_count ?? 0} months of income on file</div>
                     <div className="text-[10px] font-bold text-violet-700 mt-1">{v.status}</div>
                   </div>
                 ))
@@ -363,7 +363,7 @@ export function SharedLendingPrimitives() {
           </div>
 
           <div className="bg-white border border-[#e5ede9] rounded-[10px] p-4 space-y-4 shadow-sm md:col-span-2">
-            <div className="font-bold text-base text-ink">Verification Review &amp; Affordability Sign-off</div>
+            <div className="font-bold text-base text-ink">Approve How Much They Can Afford</div>
             {selectedVerification ? (
               <div className="space-y-4 text-xs">
                 <div className="bg-surface-2 p-3 rounded-lg border text-xs space-y-1">
@@ -377,7 +377,7 @@ export function SharedLendingPrimitives() {
                     disabled={approveIncomeMutation.isPending}
                     className="flex-1 py-2 bg-mint-600 hover:bg-mint-700 text-white font-bold rounded text-xs cursor-pointer"
                   >
-                    Approve &amp; Freeze Affordability Ceiling
+                    Approve This Repayment Limit
                   </button>
                   <button
                     onClick={() => {
@@ -401,8 +401,11 @@ export function SharedLendingPrimitives() {
       {/* TAB 5: DATA TAPES */}
       {activeTab === 'datatapes' && (
         <div className="bg-white border border-[#e5ede9] rounded-[10px] p-5 space-y-4 shadow-sm">
-          <div className="font-bold text-base text-ink">Refinancer Data Tapes Export</div>
-          <div className="text-xs text-ink-muted">Generate loan portfolio data tapes for refinancers (e.g. KMRC).</div>
+          <div className="font-bold text-base text-ink">Export Loan Book for a Refinancer</div>
+          <div className="text-xs text-ink-muted flex items-start gap-1.5">
+            <span>Generates a file listing this SACCO's loans, formatted for an outside funder (like KMRC) to review.</span>
+            <InfoTip text="A 'refinancer' is an outside institution — like KMRC, Kenya's affordable-housing refinancer — that lends money to this SACCO against its existing loan book." label="What is a refinancer?" />
+          </div>
 
           <div className="space-y-2">
             {dataTapes.map((dt: any) => (

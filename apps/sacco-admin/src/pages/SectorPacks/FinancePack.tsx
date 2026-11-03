@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@saccosphere/api-client'
+import { InfoTip } from '@saccosphere/ui'
 import { useMembers } from '../../hooks/useMembers'
+import { PageHeader } from '../../components/ui/PageHeader'
 
 function MemberPicker({ value, onChange, label }: { value: string; onChange: (id: string) => void; label?: string }) {
   const [search, setSearch] = useState('')
@@ -54,7 +56,7 @@ export function FinancePack() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['finance-investment-products'] })
       setProdName(''); setLockMonths(''); setPrefRate(''); setPenaltyPct('')
-      notify('Investment product configured. No products are seeded — these are this SACCO\'s own real terms.')
+      notify('Product saved.')
     },
     onError: (err: any) => notify(err?.message || 'Failed to configure this product.'),
   })
@@ -75,7 +77,7 @@ export function FinancePack() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['finance-investment-subscriptions', subMembershipId] })
       setSubPrincipal('')
-      notify('Member subscribed. locked_until is frozen at subscribe time.')
+      notify('Member subscribed.')
     },
     onError: (err: any) => notify(err?.message || 'Failed to subscribe this member.'),
   })
@@ -84,7 +86,7 @@ export function FinancePack() {
     mutationFn: (id: string) => api.finance.withdrawInvestmentSubscription(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['finance-investment-subscriptions', subMembershipId] })
-      notify('Withdrawal placed as a B2C hold — status WITHDRAWAL_PENDING. A separate Confirm step closes it out once banked.')
+      notify('Payout started — come back and confirm it once the money has gone through.')
     },
     onError: (err: any) => notify(err?.message || 'Failed to withdraw this subscription.'),
   })
@@ -93,7 +95,7 @@ export function FinancePack() {
     mutationFn: (id: string) => api.finance.confirmWithdrawInvestmentSubscription(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['finance-investment-subscriptions', subMembershipId] })
-      notify('Withdrawal confirmed. Subscription CLOSED.')
+      notify('Withdrawal confirmed and closed.')
     },
     onError: (err: any) => notify(err?.message || 'Failed to confirm this withdrawal.'),
   })
@@ -118,7 +120,7 @@ export function FinancePack() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['finance-group-subaccounts'] })
       setGroupName(''); setSignerIds([]); setRequiredSignatures('1')
-      notify('Group sub-account registered on a synthetic membership. A minimum of 2 signers is required.')
+      notify('Group account registered.')
     },
     onError: (err: any) => notify(err?.message || 'Failed to register this group.'),
   })
@@ -128,7 +130,7 @@ export function FinancePack() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['finance-group-subaccount-detail', selectedGroupId] })
       setDepositAmount('')
-      notify('Deposit recorded. No M-Pesa integration — both legs of a group account are admin-recorded.')
+      notify('Deposit recorded.')
     },
     onError: (err: any) => notify(err?.message || 'Failed to record this deposit.'),
   })
@@ -138,9 +140,9 @@ export function FinancePack() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['finance-group-subaccount-detail', selectedGroupId] })
       setWithdrawAmount('')
-      notify('Withdrawal request submitted through maker-checker (signer-only, no platform-staff bypass).')
+      notify('Withdrawal requested — needs sign-off from the group\'s other signers before it pays out.')
     },
-    onError: (err: any) => notify(err?.message || 'Failed to request this withdrawal — caller must be a registered signer.'),
+    onError: (err: any) => notify(err?.message || 'Failed to request this withdrawal — you need to be a registered signer on this group.'),
   })
 
   // Growth statement
@@ -190,9 +192,9 @@ export function FinancePack() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['finance-professional-verifications', profMembershipId] })
       setSelectedProfVerification(null)
-      notify('VERIFIED. This result is never wired into KYC or loan eligibility — supporting evidence only.')
+      notify('Verified.')
     },
-    onError: (err: any) => notify(err?.message || 'Failed to verify — a reviewer who submitted or uploaded evidence cannot also sign off.'),
+    onError: (err: any) => notify(err?.message || 'Failed to verify — whoever submitted this or uploaded its evidence can\'t also sign it off.'),
   })
 
   const rejectProfMutation = useMutation({
@@ -200,19 +202,18 @@ export function FinancePack() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['finance-professional-verifications', profMembershipId] })
       setSelectedProfVerification(null); setProfRejectReason('')
-      notify('REJECTED.')
+      notify('Rejected.')
     },
     onError: (err: any) => notify(err?.message || 'Failed to reject this verification.'),
   })
 
   return (
     <div className="p-5 space-y-5 text-xs">
-      <div>
-        <div className="text-xl font-bold text-ink">Finance Sector Pack</div>
-        <div className="text-ink-muted">
-          Voluntary investment/fixed-deposit products, chama/group joint sub-accounts, a member capital-growth statement, and an optional professional-body/employer verification. An admin always acts on the member's behalf — there is no member self-service here.
-        </div>
-      </div>
+      <PageHeader
+        title="Finance Sector Pack"
+        subtitle="Fixed-deposit investment products, chama/group joint accounts, and member growth statements."
+        info="An admin always does this on the member's behalf — there's no self-service version of these screens for members themselves."
+      />
 
       {msg && <div className="p-3 bg-indigo-50 border border-indigo-200 text-indigo-900 rounded-lg font-semibold">{msg}</div>}
 
@@ -284,7 +285,9 @@ export function FinancePack() {
                           <div className="text-ink-muted">{s.was_early_withdrawal ? `Early withdrawal — penalty KES ${s.penalty_charged}` : null}</div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${s.status === 'ACTIVE' ? 'bg-mint-50 text-mint-700 border border-mint-200' : s.status === 'CLOSED' ? 'bg-gray-100 text-ink-muted' : 'bg-amber-50 text-amber-700 border border-amber-200'}`}>{s.status}</span>
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${s.status === 'ACTIVE' ? 'bg-mint-50 text-mint-700 border border-mint-200' : s.status === 'CLOSED' ? 'bg-gray-100 text-ink-muted' : 'bg-amber-50 text-amber-700 border border-amber-200'}`}>
+                            {s.status === 'ACTIVE' ? 'Active' : s.status === 'CLOSED' ? 'Closed' : 'Withdrawal pending'}
+                          </span>
                           {s.status === 'ACTIVE' && <button onClick={() => withdrawSubMutation.mutate(s.id)} className="px-2 py-1 bg-red-600 text-white font-bold text-[10px] rounded cursor-pointer">Withdraw (full balance)</button>}
                           {s.status === 'WITHDRAWAL_PENDING' && <button onClick={() => confirmWithdrawSubMutation.mutate(s.id)} className="px-2 py-1 bg-violet-600 text-white font-bold text-[10px] rounded cursor-pointer">Confirm Withdrawal</button>}
                         </div>
@@ -330,7 +333,7 @@ export function FinancePack() {
                 {groups.length === 0 ? <tr><td colSpan={4} className="py-4 text-center text-ink-muted">No groups registered.</td></tr> : groups.map((g: any) => (
                   <tr key={g.id}>
                     <td className="py-2 px-3 font-medium text-ink">{g.name}</td>
-                    <td className="py-2 px-3">{g.status}</td>
+                    <td className="py-2 px-3">{g.status === 'ACTIVE' ? 'Active' : 'Closed'}</td>
                     <td className="py-2 px-3">{g.required_signatures}</td>
                     <td className="py-2 px-3 text-right"><button onClick={() => setSelectedGroupId(g.id)} className="px-2 py-1 bg-violet-600 text-white font-bold text-[10px] rounded cursor-pointer">Manage</button></td>
                   </tr>
@@ -347,7 +350,7 @@ export function FinancePack() {
                   <button onClick={() => depositGroupMutation.mutate()} disabled={!depositAmount} className="px-3 py-2 bg-mint-600 text-white font-bold rounded cursor-pointer">Deposit</button>
                 </div>
                 <div className="flex gap-2">
-                  <input type="number" placeholder="Withdrawal amount (signer-only, maker-checker)" value={withdrawAmount} onChange={(e) => setWithdrawAmount(e.target.value)} className="flex-1 p-2 border rounded bg-white" />
+                  <input type="number" placeholder="Withdrawal amount (needs other signers to approve)" value={withdrawAmount} onChange={(e) => setWithdrawAmount(e.target.value)} className="flex-1 p-2 border rounded bg-white" />
                   <button onClick={() => withdrawGroupMutation.mutate()} disabled={!withdrawAmount} className="px-3 py-2 bg-red-600 text-white font-bold rounded cursor-pointer">Request Withdrawal</button>
                 </div>
               </div>
@@ -358,7 +361,7 @@ export function FinancePack() {
 
       {activeTab === 'growth' && (
         <div className="bg-white border border-[#e5ede9] rounded-[10px] p-5 space-y-4 shadow-sm">
-          <div className="font-bold text-base text-ink">Capital-Growth Statement</div>
+          <div className="font-bold text-base text-ink">Member Growth Statement</div>
           <MemberPicker value={growthMembershipId} onChange={setGrowthMembershipId} />
           {growthStatement && (
             <div className="space-y-3">
@@ -376,7 +379,10 @@ export function FinancePack() {
               <div className="text-ink-muted">{growthStatement.methodology}</div>
               <div className="p-3 bg-amber-50 border border-amber-200 text-amber-800 rounded font-semibold">{growthStatement.disclaimer}</div>
               {growthStatement.sacco_treasury_context && (
-                <div className="text-ink-muted">SACCO treasury context (informational only — never blended into this figure): {JSON.stringify(growthStatement.sacco_treasury_context)}</div>
+                <div className="text-ink-muted flex items-start gap-1.5">
+                  <span>For context, here's how the SACCO's own investments are doing: {JSON.stringify(growthStatement.sacco_treasury_context)}</span>
+                  <InfoTip text="This is just background information about the SACCO as a whole — it's not part of this member's own growth figure above." label="About this context" />
+                </div>
               )}
             </div>
           )}
@@ -399,7 +405,10 @@ export function FinancePack() {
 
           <div className="bg-white border border-[#e5ede9] rounded-[10px] p-4 shadow-sm md:col-span-2">
             <div className="font-bold text-base text-ink mb-2">Verifications</div>
-            <div className="text-ink-muted mb-3">Never wired into KYC or loan eligibility — supporting evidence a reviewer may consult manually elsewhere.</div>
+            <div className="text-ink-muted mb-3 flex items-start gap-1.5">
+              <span>Supporting evidence only.</span>
+              <InfoTip text="This doesn't automatically affect a member's KYC status or loan eligibility — a reviewer may look at it separately, by hand." label="What this is used for" />
+            </div>
             {!profMembershipId ? <div className="text-ink-muted py-4 text-center">Select a member.</div> : isProfLoading ? <div className="text-ink-muted py-4 text-center">Loading...</div> : profVerifications.length === 0 ? (
               <div className="text-ink-muted py-4 text-center">No professional verifications for this member.</div>
             ) : (
@@ -408,7 +417,9 @@ export function FinancePack() {
                   <div key={v.id} className="border border-[#e5ede9] rounded p-2.5">
                     <div className="flex items-center justify-between">
                       <div className="font-bold text-ink">{v.employer_name}{v.licensed_institution_name ? ` · ${v.licensed_institution_name}` : ''}</div>
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${v.status === 'VERIFIED' ? 'bg-mint-50 text-mint-700 border border-mint-200' : v.status === 'REJECTED' ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-amber-50 text-amber-700 border border-amber-200'}`}>{v.status}</span>
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${v.status === 'VERIFIED' ? 'bg-mint-50 text-mint-700 border border-mint-200' : v.status === 'REJECTED' ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-amber-50 text-amber-700 border border-amber-200'}`}>
+                        {v.status === 'SUBMITTED' ? 'Awaiting review' : v.status === 'VERIFIED' ? 'Verified' : 'Rejected'}
+                      </span>
                     </div>
                     {v.status === 'SUBMITTED' && (
                       <button onClick={() => setSelectedProfVerification(v)} className="mt-2 px-2 py-1 bg-violet-600 text-white font-bold text-[10px] rounded cursor-pointer">Review</button>
@@ -425,7 +436,7 @@ export function FinancePack() {
                   <input type="file" onChange={(e) => setProfDocFile(e.target.files?.[0] ?? null)} className="flex-1 p-1.5 border rounded bg-white" />
                   <button onClick={() => uploadProfDocMutation.mutate()} disabled={!profDocFile} className="px-3 py-1.5 bg-violet-600 text-white font-bold rounded cursor-pointer">Upload</button>
                 </div>
-                <div className="text-ink-muted">A reviewer who submitted or uploaded this evidence cannot also sign it off; verifying with zero documents attached is blocked.</div>
+                <div className="text-ink-muted">Needs a document attached, and someone other than whoever submitted this to sign it off.</div>
                 <div className="flex items-center gap-2">
                   <button onClick={() => verifyProfMutation.mutate(selectedProfVerification.id)} className="px-3 py-1.5 bg-mint-600 text-white font-bold rounded cursor-pointer">Verify</button>
                   <input type="text" placeholder="Rejection reason (required)..." value={profRejectReason} onChange={(e) => setProfRejectReason(e.target.value)} className="flex-1 p-1.5 border rounded bg-white" />

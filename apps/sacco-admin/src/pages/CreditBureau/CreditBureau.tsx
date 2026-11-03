@@ -1,7 +1,22 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@saccosphere/api-client'
+import { InfoTip } from '@saccosphere/ui'
 import { useMembers } from '../../hooks/useMembers'
+import { PageHeader } from '../../components/ui/PageHeader'
+
+const DISPUTE_STATUS_LABELS: Record<string, string> = {
+  SUBMITTED: 'New',
+  UNDER_REVIEW: 'Being reviewed',
+  UPHELD: 'Upheld',
+  REJECTED: 'Rejected',
+}
+const BATCH_STATUS_LABELS: Record<string, string> = {
+  DRAFT: 'Ready to export',
+  SUBMITTED: 'Sent',
+  ACKNOWLEDGED: 'Confirmed by bureau',
+  FAILED: 'Failed',
+}
 
 function MemberPicker({ value, onChange }: { value: string; onChange: (id: string) => void }) {
   const [search, setSearch] = useState('')
@@ -54,14 +69,14 @@ export function CreditBureau() {
 
   const computeMutation = useMutation({
     mutationFn: () => api.creditbureau.computeCreditScore(scoreMembershipId),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['creditbureau-score', scoreMembershipId] }); notify('Score computed. Weights and A–E cutoffs are placeholders pending credit-committee sign-off.') },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['creditbureau-score', scoreMembershipId] }); notify('Score computed.') },
     onError: (err: any) => notify(err?.message || 'Failed to compute this score.'),
   })
 
   const reviewMutation = useMutation({
     mutationFn: () => api.creditbureau.reviewCreditScore(scoreData!.latest!.id, { decision: reviewDecision, override_band: reviewDecision === 'OVERRIDDEN' ? overrideBand : undefined, reason: reviewReason }),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['creditbureau-score', scoreMembershipId] }); setReviewReason(''); notify('Review recorded as a new history row.') },
-    onError: (err: any) => notify(err?.message || 'Failed to record this review — overriding needs a reason of at least 10 characters.'),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['creditbureau-score', scoreMembershipId] }); setReviewReason(''); notify('Review recorded.') },
+    onError: (err: any) => notify(err?.message || 'Failed to record this review — if you\'re overriding the score, the reason needs to be at least 10 characters.'),
   })
 
   // There is no list endpoint for explanation requests anywhere in this
@@ -84,7 +99,7 @@ export function CreditBureau() {
 
   const verifyPassportMutation = useMutation({
     mutationFn: () => api.creditbureau.verifyRepaymentPassport({ token: verifyToken, recipient_sacco_id: verifyRecipientSaccoId || undefined }),
-    onSuccess: (result) => { setVerifyResult(result); notify('Passport verified — this cross-tenant read has been logged (DataConsentLog + SystemAuditLog).') },
+    onSuccess: (result) => { setVerifyResult(result); notify('Passport verified. This was logged, since it shows you another SACCO\'s member data.') },
     onError: (err: any) => { setVerifyResult(null); notify(err?.message || 'Failed to verify this passport.') },
   })
 
@@ -94,7 +109,7 @@ export function CreditBureau() {
 
   const createBatchMutation = useMutation({
     mutationFn: () => api.creditbureau.createSubmissionBatch({ period }),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['creditbureau-submission-batches'] }); setPeriod(''); notify('Submission batch generated using the sample template — not confirmed submission-ready to a bureau.') },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['creditbureau-submission-batches'] }); setPeriod(''); notify('Batch generated — download it below and send it to the bureau yourself.') },
     onError: (err: any) => notify(err?.message || 'Failed to generate this batch.'),
   })
 
@@ -125,12 +140,11 @@ export function CreditBureau() {
 
   return (
     <div className="p-5 space-y-5 text-xs">
-      <div>
-        <div className="text-xl font-bold text-ink">Credit Score, Repayment Passport &amp; CRB Submission File</div>
-        <div className="text-ink-muted">
-          Available regardless of this SACCO's sector. Note: these admin endpoints use a plain SACCO-admin permission with no platform-superadmin bypass — a pure superadmin with no SACCO_ADMIN role anywhere gets a 403 here.
-        </div>
-      </div>
+      <PageHeader
+        title="Credit Bureau"
+        subtitle="A member's internal credit score, a shareable repayment history, and reports sent to credit reference bureaus."
+        info="Only someone with a SACCO-admin role at this specific SACCO can use this page — a pure platform-staff login with no admin role anywhere will be refused, unlike most other pages here."
+      />
 
       {msg && <div className="p-3 bg-indigo-50 border border-indigo-200 text-indigo-900 rounded-lg font-semibold">{msg}</div>}
 
@@ -159,8 +173,10 @@ export function CreditBureau() {
             )}
 
             <div className="border-t pt-3 space-y-2">
-              <div className="font-bold text-ink">Resolve Explanation Request</div>
-              <div className="text-ink-muted">No discoverable queue exists for these — resolve by the request ID a member referenced (e.g. via a support ticket).</div>
+              <div className="font-bold text-ink flex items-center gap-1.5">
+                Answer a Member's Question About Their Score
+                <InfoTip text="There's no list of these to browse — a member's request only reaches you through whatever notification or support ticket told you about it. Paste in the ID from that message." label="Why there's no list here" />
+              </div>
               <input type="text" placeholder="Explanation request ID" value={explanationRequestId} onChange={(e) => setExplanationRequestId(e.target.value)} className="w-full p-2 border rounded bg-white font-mono" />
               <input type="text" placeholder="Resolution notes (optional)" value={explanationNotes} onChange={(e) => setExplanationNotes(e.target.value)} className="w-full p-2 border rounded bg-white" />
               <div className="flex gap-2">
@@ -184,14 +200,14 @@ export function CreditBureau() {
                 <div className="flex gap-1.5 flex-wrap">
                   {(scoreData.latest.reason_codes ?? []).map((rc: string) => <span key={rc} className="px-2 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 rounded text-[10px] font-bold">{rc}</span>)}
                 </div>
-                <div className="p-2 bg-amber-50 border border-amber-200 text-amber-800 rounded font-semibold">Component weights and band cutoffs are placeholders pending credit-committee sign-off — never present this band as a settled, final judgment.</div>
+                <div className="p-2 bg-amber-50 border border-amber-200 text-amber-800 rounded font-semibold">This scoring model hasn't been signed off by the credit committee yet — treat it as a draft, not a final decision.</div>
 
                 <div className="border-t pt-3 space-y-2">
-                  <div className="font-semibold text-ink">Officer Review (creates a new history row)</div>
+                  <div className="font-semibold text-ink">Confirm or Override This Score</div>
                   <div className="flex gap-2">
                     <select value={reviewDecision} onChange={(e) => setReviewDecision(e.target.value as any)} className="p-2 border rounded bg-white">
-                      <option value="CONFIRMED">CONFIRMED</option>
-                      <option value="OVERRIDDEN">OVERRIDDEN</option>
+                      <option value="CONFIRMED">Confirm it's correct</option>
+                      <option value="OVERRIDDEN">Override it</option>
                     </select>
                     {reviewDecision === 'OVERRIDDEN' && (
                       <select value={overrideBand} onChange={(e) => setOverrideBand(e.target.value as any)} className="p-2 border rounded bg-white">
@@ -227,7 +243,7 @@ export function CreditBureau() {
         <div className="bg-white border border-[#e5ede9] rounded-[10px] p-5 space-y-3 shadow-sm max-w-xl">
           <div className="font-bold text-base text-ink">Verify a Repayment Passport</div>
           <div className="text-ink-muted">
-            The one deliberate, audited cross-tenant exception in this platform — a member issues a passport to one named other SACCO, and that SACCO's admin verifies it here. `recipient_sacco_id` is only needed for a platform-staff caller with no standing tenant context.
+            A member from another SACCO has shared their repayment history with you. Paste the code they gave you below to see it — this is the one place this platform lets you look at another SACCO's member data, and it's logged every time.
           </div>
           <textarea placeholder="Signed passport token (JWS)" value={verifyToken} onChange={(e) => setVerifyToken(e.target.value)} rows={3} className="w-full p-2 border rounded bg-white font-mono" />
           <input type="text" placeholder="Recipient SACCO ID (platform staff only)" value={verifyRecipientSaccoId} onChange={(e) => setVerifyRecipientSaccoId(e.target.value)} className="w-full p-2 border rounded bg-white font-mono" />
@@ -248,7 +264,10 @@ export function CreditBureau() {
             <div className="font-bold text-base text-ink">Generate Batch</div>
             <input type="text" placeholder="Period (YYYY-MM)" value={period} onChange={(e) => setPeriod(e.target.value)} className="w-full p-2 border rounded bg-white" />
             <button onClick={() => period && createBatchMutation.mutate()} disabled={!period} className="w-full py-2 bg-violet-600 text-white font-bold rounded cursor-pointer">Generate</button>
-            <div className="text-ink-muted">Uses the one seeded SAMPLE template — the real Metropol/CRB format is unconfirmed. This produces a file for a human to deliver, not an automatic submission.</div>
+            <div className="text-ink-muted flex items-start gap-1.5">
+              <span>This builds a file for you to send to the bureau yourself — nothing is submitted automatically.</span>
+              <InfoTip text="The exported file uses a sample layout — the real format a bureau like Metropol expects hasn't been confirmed yet, so don't treat this as submission-ready without checking first." label="About the file format" />
+            </div>
           </div>
           <div className="bg-white border border-[#e5ede9] rounded-[10px] p-4 shadow-sm md:col-span-2">
             <table className="w-full text-left border-collapse">
@@ -257,7 +276,7 @@ export function CreditBureau() {
                 {batches.length === 0 ? <tr><td colSpan={3} className="py-4 text-center text-ink-muted">No batches generated yet.</td></tr> : batches.map((b: any) => (
                   <tr key={b.id}>
                     <td className="py-2 px-3 font-medium text-ink">{b.period}</td>
-                    <td className="py-2 px-3">{b.status}</td>
+                    <td className="py-2 px-3">{BATCH_STATUS_LABELS[b.status] ?? b.status}</td>
                     <td className="py-2 px-3 text-right"><button onClick={() => exportBatchMutation.mutate(b.id)} className="px-2 py-1 bg-violet-600 text-white font-bold text-[10px] rounded cursor-pointer">Export CSV</button></td>
                   </tr>
                 ))}
@@ -275,7 +294,7 @@ export function CreditBureau() {
               <div key={d.id} className="border border-[#e5ede9] rounded p-2.5 space-y-2">
                 <div className="flex items-center justify-between">
                   <div className="text-ink">{d.member_statement}</div>
-                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${d.status === 'UPHELD' ? 'bg-mint-50 text-mint-700' : d.status === 'REJECTED' ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-amber-700'}`}>{d.status}</span>
+                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${d.status === 'UPHELD' ? 'bg-mint-50 text-mint-700' : d.status === 'REJECTED' ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-amber-700'}`}>{DISPUTE_STATUS_LABELS[d.status] ?? d.status}</span>
                 </div>
                 {d.status !== 'UPHELD' && d.status !== 'REJECTED' && (
                   selectedDisputeId === d.id ? (

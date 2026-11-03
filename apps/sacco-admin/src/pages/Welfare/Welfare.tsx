@@ -1,7 +1,18 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@saccosphere/api-client'
+import { InfoTip } from '@saccosphere/ui'
 import { useMembers } from '../../hooks/useMembers'
+import { PageHeader } from '../../components/ui/PageHeader'
+
+const CLAIM_STATUS_LABELS: Record<string, string> = {
+  DOCUMENTS_PENDING: 'Needs documents',
+  UNDER_REVIEW: 'Being reviewed',
+  PENDING_APPROVAL: 'Awaiting committee approval',
+  APPROVED: 'Approved',
+  PAID: 'Paid',
+}
+const humanizeClaimStatus = (status: string) => CLAIM_STATUS_LABELS[status] ?? status
 
 function MemberPicker({ value, onChange, label }: { value: string; onChange: (id: string) => void; label?: string }) {
   const [search, setSearch] = useState('')
@@ -75,7 +86,7 @@ export function Welfare() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['welfare-contributions'] })
       setContribMembershipId(''); setContribAmount(''); setContribReference('')
-      notify('Manual transfer recorded. C2B and check-off contributions post themselves, with no POST from this screen.')
+      notify('Transfer recorded.')
     },
     onError: (err: any) => notify(err?.message || 'Failed to record this contribution.'),
   })
@@ -114,7 +125,7 @@ export function Welfare() {
       queryClient.invalidateQueries({ queryKey: ['welfare-claims'] })
       setBeneficiaryName(''); setClaimType(''); setRequestedAmount('')
       setSelectedClaimId(claim.id)
-      notify('Claim filed. Status DOCUMENTS_PENDING — attach and verify at least one document to move it forward.')
+      notify('Claim filed. Attach and verify at least one document next to move it forward.')
     },
     onError: (err: any) => notify(err?.message || 'Failed to file this claim.'),
   })
@@ -127,7 +138,7 @@ export function Welfare() {
 
   const verifyDocMutation = useMutation({
     mutationFn: (docId: string) => api.welfare.verifyClaimDocument(selectedClaimId!, docId),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['welfare-claim-detail', selectedClaimId] }); notify('Document verified — claim moves to UNDER_REVIEW on its first verified document.') },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['welfare-claim-detail', selectedClaimId] }); notify('Document verified.') },
     onError: (err: any) => notify(err?.message || 'Failed to verify this document.'),
   })
 
@@ -136,9 +147,9 @@ export function Welfare() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['welfare-claim-detail', selectedClaimId] })
       queryClient.invalidateQueries({ queryKey: ['welfare-claims'] })
-      notify('Submitted for committee approval — hardcoded to require exactly 2 approvals (decided on the Maker-Checker screen). A rejection will NOT flip this claim\'s status; check its linked approval request there instead.')
+      notify('Sent to the committee for approval — needs sign-off from 2 admins.')
     },
-    onError: (err: any) => notify(err?.message || 'Failed to submit for approval — at least one verified document is required, and DISCRETIONARY mode only.'),
+    onError: (err: any) => notify(err?.message || 'Failed to submit for approval — at least one verified document is required first.'),
   })
 
   const setInsurerStatusMutation = useMutation({
@@ -146,7 +157,7 @@ export function Welfare() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['welfare-claim-detail', selectedClaimId] })
       setInsurerStatusText(''); setInsurerReference('')
-      notify('Insurer status recorded. This never moves money or posts to the ledger — the real insurer pays the member directly. Only "PAID" (case-insensitive) flips this claim\'s own status.')
+      notify('Status recorded.')
     },
     onError: (err: any) => notify(err?.message || 'Failed to record this status.'),
   })
@@ -175,19 +186,21 @@ export function Welfare() {
 
   const createRemittanceMutation = useMutation({
     mutationFn: () => api.welfare.createPremiumRemittance({ amount: Number(remitAmount), reference: remitReference || undefined }),
-    onSuccess: () => { setRemitAmount(''); setRemitReference(''); notify('Premium remittance recorded — a real bank transfer, never B2C/phone.') },
+    onSuccess: () => { setRemitAmount(''); setRemitReference(''); notify('Remittance recorded.') },
     onError: (err: any) => notify(err?.message || 'Failed to record this remittance.'),
   })
 
   return (
     <div className="p-5 space-y-5 text-xs">
-      <div>
-        <div className="text-xl font-bold text-ink">Welfare / Benevolent Fund</div>
-        <div className="text-ink-muted">
-          A ring-fenced per-SACCO welfare fund. Available regardless of this SACCO's sector. No member ever files their own claim — an admin always acts on their behalf.
-          {config?.mode === 'DISCRETIONARY' && ' This fund is in DISCRETIONARY mode — avoid the words "insurance," "premium" or "cover" anywhere in this screen\'s copy, by design.'}
-        </div>
-      </div>
+      <PageHeader
+        title="Welfare Fund"
+        subtitle="A fund members pay into that helps with hardship — bereavement, medical bills — decided case by case."
+        info={
+          config?.mode === 'DISCRETIONARY'
+            ? "A member never files their own claim — an admin always does it on their behalf. This fund is set to \"case-by-case\" mode, so this screen deliberately avoids words like insurance, premium or cover — a benefit here is never a guaranteed payout, only a discretionary one the committee decides."
+            : "A member never files their own claim — an admin always does it on their behalf. This fund is backed by a licensed insurer: the insurer carries the real risk and pays the member directly, and this screen only mirrors that status."
+        }
+      />
 
       {msg && <div className="p-3 bg-indigo-50 border border-indigo-200 text-indigo-900 rounded-lg font-semibold">{msg}</div>}
 
@@ -212,8 +225,8 @@ export function Welfare() {
           <div>
             <label className="text-ink-muted mb-1 block">Mode</label>
             <select value={mode} onChange={(e) => setMode(e.target.value as any)} className="w-full p-2 border rounded bg-white">
-              <option value="DISCRETIONARY">DISCRETIONARY</option>
-              <option value="INSURER_BACKED">INSURER_BACKED (requires a partner insurer)</option>
+              <option value="DISCRETIONARY">Case-by-case (no insurer)</option>
+              <option value="INSURER_BACKED">Backed by a partner insurer</option>
             </select>
           </div>
           <label className="flex items-center gap-2">
@@ -303,7 +316,7 @@ export function Welfare() {
               <div className="font-bold text-ink mb-1">Claims</div>
               {claims.map((c: any) => (
                 <button key={c.id} onClick={() => setSelectedClaimId(c.id)} className={`w-full text-left px-2 py-1.5 rounded ${selectedClaimId === c.id ? 'bg-violet-100 text-violet-700 font-bold' : 'bg-surface-2 hover:bg-surface-1'}`}>
-                  {c.beneficiary_name} · {c.claim_type} · {c.status}
+                  {c.beneficiary_name} · {c.claim_type} · {humanizeClaimStatus(c.status)}
                 </button>
               ))}
             </div>
@@ -314,12 +327,13 @@ export function Welfare() {
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="font-bold text-ink">{claimDetail.beneficiary_name} ({claimDetail.beneficiary_relationship}) — {claimDetail.claim_type}</div>
-                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">{claimDetail.status}</span>
+                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">{humanizeClaimStatus(claimDetail.status)}</span>
                 </div>
                 <div className="text-ink-muted">Requested KES {claimDetail.requested_amount} · Approved {claimDetail.approved_amount ?? '—'}</div>
                 {claimDetail.status === 'PENDING_APPROVAL' && (
-                  <div className="p-2 bg-amber-50 border border-amber-200 text-amber-800 rounded">
-                    If this stays PENDING_APPROVAL indefinitely, check the Maker-Checker screen for a REJECTED decision on this claim's approval request — this status field never flips to REJECTED on its own.
+                  <div className="p-2 bg-amber-50 border border-amber-200 text-amber-800 rounded flex items-start gap-1.5">
+                    <span>Still waiting on the committee.</span>
+                    <InfoTip text="If this never moves, check the Maker-Checker page — a rejection there won't update this claim's status on its own; you have to look at the approval request directly." label="Why this might be stuck" />
                   </div>
                 )}
 
@@ -344,8 +358,10 @@ export function Welfare() {
 
                 {!isInsurerBacked && claimDetail.status === 'UNDER_REVIEW' && (
                   <div className="border-t pt-3 space-y-2">
-                    <div className="font-semibold text-ink">Submit for Committee Approval</div>
-                    <div className="text-ink-muted">Hardcoded to require exactly 2 approvals through the Maker-Checker screen, always fail-closed.</div>
+                    <div className="font-semibold text-ink flex items-center gap-1.5">
+                      Submit for Committee Approval
+                      <InfoTip text="This always needs sign-off from 2 separate admins on the Maker-Checker page before it pays out — that can't be lowered or skipped." label="Why 2 approvals" />
+                    </div>
                     <div className="flex gap-2">
                       <input type="number" placeholder="Approved amount (optional — defaults to requested)" value={approvedAmount} onChange={(e) => setApprovedAmount(e.target.value)} className="flex-1 p-2 border rounded bg-white" />
                       <button onClick={() => submitForApprovalMutation.mutate()} className="px-3 py-2 bg-violet-600 text-white font-bold rounded cursor-pointer">Submit</button>
@@ -355,7 +371,10 @@ export function Welfare() {
 
                 {isInsurerBacked && (
                   <div className="border-t pt-3 space-y-2">
-                    <div className="font-semibold text-ink">Record Insurer Status (never moves money)</div>
+                    <div className="font-semibold text-ink flex items-center gap-1.5">
+                      Record Insurer Status
+                      <InfoTip text="The insurer pays the member directly — recording a status here is just a note for your own records, it never moves money itself. Type PAID once the insurer has paid out." label="About Insurer Status" />
+                    </div>
                     <div className="flex gap-2">
                       <input type="text" placeholder="Status (e.g. PAID)" value={insurerStatusText} onChange={(e) => setInsurerStatusText(e.target.value)} className="flex-1 p-2 border rounded bg-white" />
                       <input type="text" placeholder="Reference (optional)" value={insurerReference} onChange={(e) => setInsurerReference(e.target.value)} className="flex-1 p-2 border rounded bg-white" />
@@ -367,7 +386,12 @@ export function Welfare() {
                 {claimDetail.payout && (
                   <div className="border-t pt-3">
                     <div className="font-semibold text-ink">Payout</div>
-                    <div className="text-ink-muted">KES {claimDetail.payout.amount} · {claimDetail.payout.status}{claimDetail.payout.status === 'PAYOUT_INITIATED' ? ' — stuck here indefinitely means a Daraja timeout with no automated reconciliation sweep; treat as needs manual reconciliation.' : ''}</div>
+                    <div className="text-ink-muted flex items-center gap-1.5">
+                      KES {claimDetail.payout.amount} · {claimDetail.payout.status}
+                      {claimDetail.payout.status === 'PAYOUT_INITIATED' && (
+                        <InfoTip text="This started but hasn't been confirmed by M-Pesa yet. If it's been a while, the payment probably timed out and needs a manual check — it won't resolve itself." label="Payout stuck?" />
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
@@ -412,8 +436,10 @@ export function Welfare() {
             </div>
           </div>
           <div className="bg-white border border-[#e5ede9] rounded-[10px] p-4 space-y-3 shadow-sm">
-            <div className="font-bold text-base text-ink">Record Premium Remittance</div>
-            <div className="text-ink-muted">A real bank transfer, never B2C/phone.</div>
+            <div className="font-bold text-base text-ink flex items-center gap-1.5">
+              Record Premium Remittance
+              <InfoTip text="This is a record of a real bank transfer you made to the insurer — it doesn't send money itself, there's no M-Pesa/phone payment here." label="About Premium Remittance" />
+            </div>
             <input type="number" placeholder="Amount" value={remitAmount} onChange={(e) => setRemitAmount(e.target.value)} className="w-full p-2 border rounded bg-white" />
             <input type="text" placeholder="Reference (optional)" value={remitReference} onChange={(e) => setRemitReference(e.target.value)} className="w-full p-2 border rounded bg-white" />
             <button onClick={() => remitAmount && createRemittanceMutation.mutate()} disabled={!remitAmount} className="w-full py-2 bg-violet-600 text-white font-bold rounded cursor-pointer">Record Remittance</button>

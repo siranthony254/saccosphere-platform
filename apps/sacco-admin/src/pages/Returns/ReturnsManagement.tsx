@@ -3,6 +3,22 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@saccosphere/api-client'
 import { InfoTip } from '@saccosphere/ui'
 
+const RETURN_STATUS_LABELS: Record<string, string> = {
+  DRAFT: 'Draft',
+  VALIDATED: 'Checked — ready to submit',
+  VALIDATION_FAILED: 'Checked — has errors',
+  PENDING_APPROVAL: 'Awaiting approval',
+  APPROVED: 'Approved',
+  FROZEN: 'Filed — locked',
+  REJECTED: 'Rejected',
+}
+const humanizeReturnStatus = (status: string) => RETURN_STATUS_LABELS[status] ?? status
+const SOURCE_TYPE_LABELS: Record<string, string> = {
+  MANUAL_ENTRY: 'You enter this',
+  COMPUTED: 'Calculated automatically',
+  RATIO: 'Calculated ratio (%)',
+}
+
 export function ReturnsManagement() {
   const queryClient = useQueryClient()
   const [activeTab, setActiveTab] = useState<'returns' | 'complaints' | 'agency'>('returns')
@@ -71,7 +87,7 @@ export function ReturnsManagement() {
       queryClient.invalidateQueries({ queryKey: ['returns-instances'] })
       setSelectedInstanceId(instance.id)
       setManualLines({})
-      setReturnStatusMsg('Created new DRAFT return instance.')
+      setReturnStatusMsg('New draft return created.')
     },
     onError: (err: any) => setReturnStatusMsg(err?.message || 'Failed to create return draft.'),
   })
@@ -219,7 +235,7 @@ export function ReturnsManagement() {
             <InfoTip text="The official reports this SACCO must file with the regulator (SASRA) on a schedule, member complaints that have been escalated, and agency-banking activity." label="About Regulatory Returns & Complaints" />
           </div>
           <div className="text-xs text-ink-muted">
-            SASRA, Commissioner &amp; UFAA statutory returns engine, complaints desk with SLA tracking, and agency banking setup.
+            File returns with SASRA, the Commissioner and UFAA, track member complaints against a deadline, and manage agency banking.
           </div>
         </div>
       </div>
@@ -370,8 +386,8 @@ export function ReturnsManagement() {
                         <tr key={inst.id} className="hover:bg-surface-1">
                           <td className="py-2.5 px-3 font-semibold text-ink">{inst.template_code || inst.template_name || 'Return'}</td>
                           <td className="py-2.5 px-3 font-bold">
-                            <span className="px-2 py-0.5 rounded text-[10px] bg-violet-50 text-violet-700 border border-violet-200 uppercase">
-                              {inst.status}
+                            <span className="px-2 py-0.5 rounded text-[10px] bg-violet-50 text-violet-700 border border-violet-200">
+                              {humanizeReturnStatus(inst.status)}
                             </span>
                           </td>
                           <td className="py-2.5 px-3 font-mono">v{inst.version_number ?? 1}</td>
@@ -422,9 +438,9 @@ export function ReturnsManagement() {
                       <div className="flex justify-between items-center">
                         <div>
                           <div className="font-bold text-sm text-ink">
-                            Working Instance: {workingInstance.template_code} (Status: {workingInstance.status})
+                            {workingInstance.template_code} — {humanizeReturnStatus(workingInstance.status)}
                           </div>
-                          <div className="text-[11px] text-ink-muted">Fill manual entry lines below. Computed lines recompute automatically on save.</div>
+                          <div className="text-[11px] text-ink-muted">Fill in the editable lines below — the calculated ones update on their own when you save.</div>
                         </div>
                         <div className="flex gap-2">
                           {workingInstance.status === 'DRAFT' && (
@@ -455,7 +471,7 @@ export function ReturnsManagement() {
                               disabled={amendMutation.isPending}
                               className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded text-xs font-semibold cursor-pointer"
                             >
-                              {amendMutation.isPending ? 'Creating amendment...' : 'Amend (new linked draft)'}
+                              {amendMutation.isPending ? 'Creating amendment...' : 'Fix It (creates a new linked draft)'}
                             </button>
                           )}
                         </div>
@@ -463,8 +479,7 @@ export function ReturnsManagement() {
 
                       {workingInstance.status === 'FROZEN' && (
                         <div className="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded p-2">
-                          This return is frozen and can never be edited again. Use Amend to create a new,
-                          linked draft version instead.
+                          This return has been filed and can't be edited anymore. Need to change something? Use "Fix It" to start a new, linked draft instead.
                         </div>
                       )}
 
@@ -502,7 +517,7 @@ export function ReturnsManagement() {
                                 <tr key={line.ref_no}>
                                   <td className="py-2 px-3 font-mono font-bold text-ink-soft">{line.ref_no}</td>
                                   <td className="py-2 px-3 text-ink font-medium">{line.label}</td>
-                                  <td className="py-2 px-3 text-ink-muted uppercase text-[10px]">{line.source_type}</td>
+                                  <td className="py-2 px-3 text-ink-muted text-[10px]">{SOURCE_TYPE_LABELS[line.source_type] ?? line.source_type}</td>
                                   <td className="py-2 px-3 text-right">
                                     {isManual && workingInstance.status === 'DRAFT' ? (
                                       <input

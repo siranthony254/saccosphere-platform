@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@saccosphere/api-client'
+import { InfoTip } from '@saccosphere/ui'
 import { useMembers } from '../../hooks/useMembers'
+import { PageHeader } from '../../components/ui/PageHeader'
 
 function MemberPicker({ value, onChange }: { value: string; onChange: (id: string) => void }) {
   const [search, setSearch] = useState('')
@@ -61,7 +63,7 @@ export function GovernmentPack() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['government-employers'] })
       setEmpName(''); setEmpCode('')
-      notify('Government employer registered. Payroll import/remittance is managed from the existing Payroll Check-off screen.')
+      notify('Employer registered. Manage its payroll file and payments on the Payroll Check-off page.')
     },
     onError: (err: any) => notify(err?.message || 'Failed to register this employer.'),
   })
@@ -89,7 +91,7 @@ export function GovernmentPack() {
       queryClient.invalidateQueries({ queryKey: ['government-duty-stations', dutyMembershipId] })
       queryClient.invalidateQueries({ queryKey: ['government-kyc-refresh-due'] })
       setStation(''); setDepartment(''); setJobTitle('')
-      notify('Duty-station transfer recorded. Member silently re-screened for PEP status.')
+      notify('Transfer recorded.')
     },
     onError: (err: any) => notify(err?.message || 'Failed to record this transfer.'),
   })
@@ -111,7 +113,7 @@ export function GovernmentPack() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['government-pension-records', pensionMembershipId] })
       setRetirementDate(''); setDocument(null)
-      notify('Pension/retirement evidence submitted. Status: SUBMITTED.')
+      notify('Evidence submitted — waiting for an officer to verify it.')
     },
     onError: (err: any) => notify(err?.message || 'Failed to submit this pension record.'),
   })
@@ -120,7 +122,7 @@ export function GovernmentPack() {
     mutationFn: (id: string) => api.government.verifyPensionRecord(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['government-pension-records', pensionMembershipId] })
-      notify('Pension record VERIFIED.')
+      notify('Pension record verified.')
     },
     onError: (err: any) => notify(err?.message || 'Failed to verify this pension record.'),
   })
@@ -129,20 +131,18 @@ export function GovernmentPack() {
     mutationFn: (data: { id: string; reason: string }) => api.government.rejectPensionRecord(data.id, data.reason),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['government-pension-records', pensionMembershipId] })
-      notify('Pension record REJECTED.')
+      notify('Pension record rejected.')
     },
     onError: (err: any) => notify(err?.message || 'Failed to reject this pension record.'),
   })
 
   return (
     <div className="p-5 space-y-5 text-xs">
-      <div>
-        <div className="text-xl font-bold text-ink">Government Sector Pack</div>
-        <div className="text-ink-muted">
-          Government-employer registry, duty-station transfer tracking with a visibility-only KYC-refresh signal, and pension/retirement advance evidence review.
-          PEP screening is fully automatic and surfaces as an AML case under AML &amp; Fraud — there is nothing to configure here.
-        </div>
-      </div>
+      <PageHeader
+        title="Government Sector Pack"
+        subtitle="Government-employer registration, transfer tracking, and retirement advance review."
+        info="Checking a member against politically-exposed-persons watchlists happens automatically in the background — any hit shows up as a case on the AML & Fraud page, not here. There's nothing to turn on or configure for it."
+      />
 
       {msg && <div className="p-3 bg-indigo-50 border border-indigo-200 text-indigo-900 rounded-lg font-semibold">{msg}</div>}
 
@@ -330,7 +330,10 @@ export function GovernmentPack() {
                 <button type="submit" disabled={submitPensionMutation.isPending} className="w-full py-2 bg-violet-600 text-white font-bold rounded cursor-pointer">
                   Submit Evidence
                 </button>
-                <div className="text-ink-muted">A resubmission after rejection creates a new row — history is never lost. Verify/reject is a plain single-officer action, deliberately not maker-checker.</div>
+                <div className="text-ink-muted flex items-start gap-1.5">
+                  <span>Any admin can verify or reject this on their own — it doesn't need a second approver.</span>
+                  <InfoTip text="If a submission is rejected, the member can submit again — the old one stays in the list rather than being overwritten, so there's a full history." label="About resubmission" />
+                </div>
               </form>
             )}
           </div>
