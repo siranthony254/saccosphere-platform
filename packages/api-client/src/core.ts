@@ -53,9 +53,13 @@ export const clearTokens = (): void => {
 
 type TokenRotatedListener = (refreshToken: string) => void
 type ForcedLogoutListener = (reason: string) => void
+type SectorModuleDisabledListener = (info: { code: string; name: string }) => void
+type ActiveSaccoProblemListener = (kind: 'invalid' | 'required') => void
 
 let _tokenRotatedListener: TokenRotatedListener | null = null
 let _forcedLogoutListener: ForcedLogoutListener | null = null
+let _sectorModuleDisabledListener: SectorModuleDisabledListener | null = null
+let _activeSaccoProblemListener: ActiveSaccoProblemListener | null = null
 
 export const onTokenRotated = (cb: TokenRotatedListener | null): void => {
   _tokenRotatedListener = cb
@@ -63,6 +67,25 @@ export const onTokenRotated = (cb: TokenRotatedListener | null): void => {
 
 export const onForcedLogout = (cb: ForcedLogoutListener | null): void => {
   _forcedLogoutListener = cb
+}
+
+// P24: fired for every response carrying error_code SECTOR_MODULE_DISABLED —
+// a tenant hit a sector-pack endpoint its SACCO doesn't have enabled (e.g. a
+// cached nav link survived a module being turned off mid-session). The host
+// app should at minimum refetch capabilities so the stale nav item disappears,
+// and ideally tell the user why the action failed instead of a raw 403.
+export const onSectorModuleDisabled = (cb: SectorModuleDisabledListener | null): void => {
+  _sectorModuleDisabledListener = cb
+}
+
+// P24: fired for ACTIVE_SACCO_INVALID (the cached active-SACCO claim names a
+// SACCO the caller can no longer act in — membership ended, role revoked) or
+// ACTIVE_SACCO_REQUIRED (caller belongs to more than one SACCO and named
+// none). Both mean "the client's notion of which SACCO it's acting as is
+// wrong" — the host app should drop any cached active-SACCO state and get
+// the user to choose again (or re-authenticate if it has no switcher UI).
+export const onActiveSaccoProblem = (cb: ActiveSaccoProblemListener | null): void => {
+  _activeSaccoProblemListener = cb
 }
 
 const canDispatchWindowEvent = (): boolean =>
@@ -123,6 +146,17 @@ axiosInstance.interceptors.response.use(
   (response) => response,
   async (error) => {
     const original = error.config as AxiosRequestConfig & { _retry?: boolean }
+
+    // P24 cross-cutting error codes — checked first, on every failed request,
+    // regardless of HTTP status, so no individual screen has to know to look
+    // for these. See onSectorModuleDisabled/onActiveSaccoProblem above.
+    const errorCode = error.response?.data?.error_code
+    if (errorCode === 'SECTOR_MODULE_DISABLED') {
+      const module = error.response?.data?.errors?.module
+      _sectorModuleDisabledListener?.({ code: module?.code ?? 'unknown', name: module?.name ?? 'This feature' })
+    } else if (errorCode === 'ACTIVE_SACCO_INVALID' || errorCode === 'ACTIVE_SACCO_REQUIRED') {
+      _activeSaccoProblemListener?.(errorCode === 'ACTIVE_SACCO_INVALID' ? 'invalid' : 'required')
+    }
 
     // Handle 401 — attempt silent token refresh, then retry original request
     if (error.response?.status === 401 && !original._retry) {

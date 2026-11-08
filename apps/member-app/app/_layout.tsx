@@ -1,5 +1,6 @@
 
 import { useEffect, useRef, useState } from 'react'
+import { Alert } from 'react-native'
 import { Stack } from 'expo-router'
 import { router, usePathname } from 'expo-router'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -8,7 +9,8 @@ import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { KeyboardProvider } from 'react-native-keyboard-controller'
 import * as SplashScreen from 'expo-splash-screen'
-import { api, setAccessToken, clearTokens, onTokenRotated } from '@saccosphere/api-client'
+import { api, setAccessToken, clearTokens, onTokenRotated, onSectorModuleDisabled, onActiveSaccoProblem } from '@saccosphere/api-client'
+import { QueryKeys } from '@saccosphere/config'
 import { useAuthStore } from '../store/useAuthStore'
 import { clearStoredRefreshToken, loadRefreshToken, saveRefreshToken } from '../hooks/useAuth'
 import { useAutoRegisterDeviceToken } from '../hooks/useNotifications'
@@ -55,6 +57,29 @@ export default function RootLayout() {
       saveRefreshToken(refreshToken)
     })
 
+    // P24: a sector-pack action got refused because this member's SACCO
+    // doesn't have that feature (anymore). Refetch their memberships (the
+    // closest thing this app has to a capabilities cache) and say why.
+    onSectorModuleDisabled(({ name }) => {
+      queryClient.invalidateQueries({ queryKey: QueryKeys.memberships() })
+      Alert.alert('Not available', `${name} isn't available for this SACCO.`)
+    })
+
+    // The member's cached "which SACCO am I acting as" is wrong — either it
+    // stopped being valid, or an action needed one and none was implied.
+    // There's no single global switcher to pop open from here, so refresh
+    // the membership list and send them to pick one from the menu.
+    onActiveSaccoProblem((kind) => {
+      queryClient.invalidateQueries({ queryKey: QueryKeys.memberships() })
+      Alert.alert(
+        kind === 'invalid' ? 'SACCO no longer available' : 'Choose a SACCO',
+        kind === 'invalid'
+          ? 'Your access to that SACCO has changed. Pick another one from the menu.'
+          : 'This needs a specific SACCO — pick one from the menu.',
+        [{ text: 'OK', onPress: () => router.push('/(member)/menu') }]
+      )
+    })
+
     const initAuth = async () => {
       const startupPathname = initialPathname.current
 
@@ -98,6 +123,8 @@ export default function RootLayout() {
 
     return () => {
       onTokenRotated(null)
+      onSectorModuleDisabled(null)
+      onActiveSaccoProblem(null)
     }
   }, [clearAuth, setAuth, setAuthReady])
 

@@ -1,7 +1,8 @@
 import { useEffect } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { api, clearTokens, setAccessToken, setRefreshToken } from '@saccosphere/api-client'
+import { api, clearTokens, setAccessToken, setRefreshToken, onSectorModuleDisabled, onActiveSaccoProblem } from '@saccosphere/api-client'
 import type { StaffLoginResult } from '@saccosphere/api-client'
+import { toast } from 'react-hot-toast'
 import { useAuthStore } from '../store/useAuthStore'
 import type { LoginInput } from '@saccosphere/schemas'
 
@@ -86,9 +87,26 @@ export function useAuthBootstrap() {
     window.addEventListener('saccosphere:logout', handleLogout)
     bootstrap()
 
+    // Platform staff act across many SACCOs, usually by naming one
+    // explicitly per action — these two are rarer here than in the SACCO
+    // admin app, and don't mean this account's own access is broken, so
+    // just surface what happened rather than forcing a re-login.
+    onSectorModuleDisabled(({ name }) => {
+      toast.error(`${name} isn't enabled for that SACCO.`)
+    })
+    onActiveSaccoProblem((kind) => {
+      toast.error(
+        kind === 'invalid'
+          ? 'That SACCO is no longer valid for this action — pick another one.'
+          : 'This action needs a SACCO specified first.'
+      )
+    })
+
     return () => {
       isMounted = false
       window.removeEventListener('saccosphere:logout', handleLogout)
+      onSectorModuleDisabled(null)
+      onActiveSaccoProblem(null)
     }
   }, [setAuth, clearAuth, setAuthReady, queryClient])
 }

@@ -1,7 +1,8 @@
 import { useEffect } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { api, clearTokens, setAccessToken, setRefreshToken } from '@saccosphere/api-client'
+import { api, clearTokens, setAccessToken, setRefreshToken, onSectorModuleDisabled, onActiveSaccoProblem } from '@saccosphere/api-client'
 import type { StaffLoginResult } from '@saccosphere/api-client'
+import { toast } from 'react-hot-toast'
 
 import { useAuthStore } from '../store/useAuthStore'
 import type { LoginInput, RegisterInput } from '@saccosphere/schemas'
@@ -95,9 +96,35 @@ export function useAuthBootstrap() {
     window.addEventListener('saccosphere:logout', handleLogout)
     bootstrap()
 
+    // A sector-pack endpoint got turned off for this SACCO mid-session (e.g.
+    // a superadmin override) — the stale nav link/page is still showing it;
+    // refetch capabilities so it disappears, and say why the action failed.
+    onSectorModuleDisabled(({ name }) => {
+      queryClient.invalidateQueries({ queryKey: ['capabilities'] })
+      toast.error(`${name} isn't enabled for your SACCO anymore.`)
+    })
+
+    // This app has no SACCO-switcher UI — an admin only ever acts as the one
+    // SACCO their role is tied to. If that's no longer valid mid-session
+    // (role revoked, membership ended) there's nothing to switch to; the
+    // safe, honest response is a clean re-login rather than a confusing
+    // half-broken session.
+    onActiveSaccoProblem((kind) => {
+      toast.error(
+        kind === 'invalid'
+          ? 'Your access to this SACCO has changed — please sign in again.'
+          : 'Please sign in again to continue.'
+      )
+      clearTokens()
+      clearStoredRefreshToken()
+      clearAuth()
+    })
+
     return () => {
       isMounted = false
       window.removeEventListener('saccosphere:logout', handleLogout)
+      onSectorModuleDisabled(null)
+      onActiveSaccoProblem(null)
     }
   }, [setAuth, clearAuth, setAuthReady, queryClient])
 }
