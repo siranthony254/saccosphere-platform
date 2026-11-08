@@ -771,14 +771,19 @@ function RecentTransactions({ transactions, title }: { transactions: Transaction
   const { colors: c } = useTheme()
   return (
     <View>
-      <Text
-        style={{
-          fontSize: 10, fontWeight: '600', letterSpacing: 0.6,
-          color: c.textMuted, marginBottom: 8, textTransform: 'uppercase',
-        }}
-      >
-        {title}
-      </Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+        <Text
+          style={{
+            fontSize: 10, fontWeight: '600', letterSpacing: 0.6,
+            color: c.textMuted, textTransform: 'uppercase',
+          }}
+        >
+          {title}
+        </Text>
+        <TouchableOpacity onPress={() => router.push('/(member)/activity' as any)}>
+          <Text style={{ fontSize: 10, fontWeight: '700', color: c.accent }}>View all</Text>
+        </TouchableOpacity>
+      </View>
       <View
         style={{
           backgroundColor: c.surface,
