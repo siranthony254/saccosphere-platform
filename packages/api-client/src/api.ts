@@ -4987,35 +4987,65 @@ export const api = {
 
   education: {
     getInstitutions: () => apiCall<any[]>('GET', '/education/institutions/'),
-    registerInstitution: (data: any) => apiCall<any>('POST', '/education/institutions/', data),
+    // InstitutionListCreateView.post reads name/code straight off request.data
+    // (not through the serializer, which marks them read-only — they're
+    // used to create the underlying checkoff.Employer, which the serializer
+    // only ever reads back from) and creates both in one call.
+    registerInstitution: (data: {
+      name: string
+      code: string
+      institution_type: 'SCHOOL' | 'COLLEGE' | 'UNIVERSITY'
+      fees_bank_name?: string
+      fees_bank_account_number?: string
+      fees_paybill_number?: string
+    }) => apiCall<any>('POST', '/education/institutions/', data),
 
-    getAcademicTerms: () => apiCall<any[]>('GET', '/education/academic-terms/'),
-    createAcademicTerm: (data: { year: number; term_number: number; opens: string; closes: string }) =>
+    getAcademicTerms: (institutionId?: string) =>
+      apiCall<any[]>('GET', '/education/academic-terms/', undefined, { params: institutionId ? { institution: institutionId } : undefined }),
+    createAcademicTerm: (data: { institution?: string; year: number; term_number: number; opens: string; closes: string }) =>
       apiCall<any>('POST', '/education/academic-terms/', data),
 
     getTermFeeTerms: (loanId: string) => apiCall<any>('GET', `/education/loans/${uuid(loanId)}/term-fee-terms/`),
     setTermFeeTerms: (loanId: string, data: { institution: string; academic_terms: string[]; billed_per_term?: boolean }) =>
       apiCall<any>('POST', `/education/loans/${uuid(loanId)}/term-fee-terms/`, data),
 
-    disburseToInstitution: (loanId: string, data?: { academic_term?: string }) =>
+    disburseToInstitution: (loanId: string, data?: { academic_term?: string; reference?: string }) =>
       apiCall<any>('POST', `/education/loans/${uuid(loanId)}/disburse-to-institution/`, data),
 
     getBursaryFundConfig: () => apiCall<any>('GET', '/education/bursary-fund/config/'),
-    updateBursaryFundConfig: (data: any) => apiCall<any>('POST', '/education/bursary-fund/config/', data),
-    contributeToBursaryFund: (data: { amount: number; reference: string }) =>
+    updateBursaryFundConfig: (data: { eligibility_criteria: Record<string, string | number> }) =>
+      apiCall<any>('POST', '/education/bursary-fund/config/', data),
+    contributeToBursaryFund: (data: { amount: number; reference?: string }) =>
       apiCall<any>('POST', '/education/bursary-fund/contribute/', data),
 
-    getBursaryApplications: () => apiCall<any[]>('GET', '/education/bursary-applications/'),
-    submitBursaryApplication: (data: any) => apiCall<any>('POST', '/education/bursary-applications/', data),
-    reviewBursaryApplication: (id: string, data: { notes: string; proposed_amount: number }) =>
+    getBursaryApplications: (membershipId?: string) =>
+      apiCall<any[]>('GET', '/education/bursary-applications/', undefined, { params: membershipId ? { membership: membershipId } : undefined }),
+    submitBursaryApplication: (data: {
+      membership: string
+      dependant_name: string
+      dependant_relationship: string
+      dependant_institution_name?: string
+      household_income_monthly: number
+      dependents_in_school: number
+      requested_amount: number
+    }) => apiCall<any>('POST', '/education/bursary-applications/', data),
+    // BursaryReviewRequestSerializer's field is award_amount, not
+    // proposed_amount — both fields are optional (review can be notes-only).
+    reviewBursaryApplication: (id: string, data: { notes?: string; award_amount?: number }) =>
       apiCall<any>('POST', `/education/bursary-applications/${uuid(id)}/review/`, data),
-    awardBursaryApplication: (id: string, data: { award_amount: number; override_reason?: string }) =>
+    awardBursaryApplication: (id: string, data?: { award_amount?: number; override_reason?: string }) =>
       apiCall<any>('POST', `/education/bursary-applications/${uuid(id)}/award/`, data),
 
     getDeviceAssets: () => apiCall<any[]>('GET', '/education/device-assets/'),
     getParentsAssociationGroups: () => apiCall<any[]>('GET', '/education/parents-association/groups/'),
-    createParentsAssociationGroup: (data: any) => apiCall<any>('POST', '/education/parents-association/groups/', data),
-    addParentsAssociationMember: (groupId: string, data: { membership_id: string }) =>
+    // ParentsAssociationGroupListCreateView reads name/owner_membership/
+    // savings_type straight off request.data (the serializer only exposes
+    // `name` as writable — owner_membership/savings_type aren't model fields).
+    createParentsAssociationGroup: (data: { name: string; owner_membership: string; savings_type: string }) =>
+      apiCall<any>('POST', '/education/parents-association/groups/', data),
+    // ParentsAssociationMemberView reads request.data['membership'], matching
+    // ParentsAssociationMembershipSerializer's real field name.
+    addParentsAssociationMember: (groupId: string, data: { membership: string }) =>
       apiCall<any>('POST', `/education/parents-association/groups/${uuid(groupId)}/members/`, data),
   },
 
