@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@saccosphere/api-client'
 import { InfoTip } from '@saccosphere/ui'
 import { useMembers } from '../../hooks/useMembers'
+import { ModuleGate } from '../../components/ui/ModuleGate'
 
 type PickedMember = { id: string; memberNumber: string; label: string }
 
@@ -724,8 +725,10 @@ export function AgriculturePack() {
         </div>
       )}
 
-      {/* TAB 5: AGRO-DEALERS */}
+      {/* TAB 5: AGRO-DEALERS — a different sub-module (agriculture.seasonal_loans)
+          from the one gating this whole page (agriculture.produce_tracking). */}
       {activeTab === 'dealers' && (
+        <ModuleGate module="agriculture.seasonal_loans" moduleName="Seasonal loans">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           <div className="bg-white border border-[#e5ede9] rounded-[10px] p-4 space-y-3 shadow-sm md:col-span-1 text-xs">
             <div className="font-bold text-base text-ink flex items-center gap-1.5">
@@ -814,6 +817,7 @@ export function AgriculturePack() {
             </div>
           </div>
         </div>
+        </ModuleGate>
       )}
     </div>
   )

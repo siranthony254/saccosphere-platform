@@ -4936,7 +4936,16 @@ export const api = {
     createOperatorLicence: (data: any) => apiCall<any>('POST', '/transport/operator-licence/', data),
 
     getCrew: () => apiCall<any[]>('GET', '/transport/crew/'),
-    registerCrew: (data: any) => apiCall<any>('POST', '/transport/crew/', data),
+    registerCrew: (data: {
+      full_name: string
+      id_number: string
+      role: 'DRIVER' | 'CONDUCTOR'
+      membership?: string
+      driving_licence_number?: string
+      driving_licence_class?: string
+      driving_licence_expiry?: string
+      psv_badge_expiry?: string
+    }) => apiCall<any>('POST', '/transport/crew/', data),
     addCrewDocument: (crewId: string, documentType: string, file: File) => {
       const form = new FormData()
       form.append('document_type', documentType)
