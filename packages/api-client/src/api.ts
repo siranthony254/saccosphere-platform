@@ -5483,4 +5483,50 @@ export const api = {
     createBulkInvoices: (rows: Array<{ alias_id: string; amount: number; due_date: string }>) =>
       apiCall<any>('POST', '/payments/bill-manager/invoices/bulk/', { rows }),
   },
+
+  // ─── P40 TENANT-CONFIGURABLE ADMIN ROLES (RBAC) ────────────────────────────
+  //
+  // Every write here can come back either applied immediately (the full
+  // object) or queued for maker-checker (a submit_approval_request 202
+  // payload, same shape as every other maker-checker action in this
+  // codebase) depending on adminroles.role_ops.requires_approval — callers
+  // should treat a response with no `id`/`permissions` as "submitted for
+  // approval" rather than assuming failure.
+  //
+  // NOTE: SaccoAdminRoleAssignmentCreateSerializer.target_user_id is a raw
+  // user UUID, and there is no admin-facing endpoint anywhere that lists a
+  // SACCO's own admin staff with their user ids (the legacy
+  // saccomanagement.Role assign/revoke/list views are all IsSuperAdmin-only,
+  // platform-side) — same shape of gap as Bill Manager's PaymentAlias
+  // lookup. Assigning a role needs that id entered directly for now.
+
+  adminRoles: {
+    getPermissionCatalog: () =>
+      apiCall<{ categories: Array<{ category: string; permissions: Array<{ code: string; label: string; category: string; sensitivity: string; description: string }> }> }>(
+        'GET', '/saccoadmin/permissions/'
+      ),
+
+    getRoles: () => apiCall<any[]>('GET', '/saccoadmin/roles/'),
+
+    getRole: (id: string) => apiCall<any>('GET', `/saccoadmin/roles/${uuid(id)}/`),
+
+    createRole: (data: { name: string; description?: string; permission_codes: string[] }) =>
+      apiCall<any>('POST', '/saccoadmin/roles/', data),
+
+    updateRole: (id: string, data: { name?: string; description?: string; permission_codes: string[] }) =>
+      apiCall<any>('PATCH', `/saccoadmin/roles/${uuid(id)}/`, data),
+
+    // force=true only has any effect for a platform SUPER_ADMIN overriding
+    // the "last ADMIN_ACCESS_MANAGE holder" lockout (409 otherwise).
+    deleteRole: (id: string, force?: boolean) =>
+      apiCall<void>('DELETE', `/saccoadmin/roles/${uuid(id)}/`, undefined, { params: force ? { force: 'true' } : undefined }),
+
+    getAssignments: () => apiCall<any[]>('GET', '/saccoadmin/assignments/'),
+
+    createAssignment: (data: { target_user_id: string; role_id: string }) =>
+      apiCall<any>('POST', '/saccoadmin/assignments/', data),
+
+    revokeAssignment: (id: string, force?: boolean) =>
+      apiCall<void>('DELETE', `/saccoadmin/assignments/${uuid(id)}/`, undefined, { params: force ? { force: 'true' } : undefined }),
+  },
 }
