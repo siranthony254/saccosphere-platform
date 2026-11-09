@@ -5451,4 +5451,36 @@ export const api = {
 
     getReconciliation: (orderId: string) => apiCall<any>('GET', `/payments/standing-orders/${uuid(orderId)}/reconciliation/`),
   },
+
+  // ─── P12d BILL MANAGER (sacco-admin facing) ────────────────────────────────
+  //
+  // NOTE: creating an invoice needs a PaymentAlias id for the member's
+  // target (SingleInvoiceSerializer/BulkInvoiceRowSerializer's alias_id is
+  // a UUID), but there is no admin-facing endpoint anywhere that lists a
+  // member's PaymentAlias rows or exposes their ids — AdminMemberDetailSerializer.
+  // get_savings_breakdown/get_active_loans never includes one, and
+  // /services/savings/ (SavingListView) is self-scoped to the calling user,
+  // not usable by an admin either. Until a backend endpoint exposes this
+  // (even just adding each alias's id to the member-detail response would
+  // do it), invoice creation has no way to populate alias_id from this app.
+
+  billManager: {
+    optIn: () => apiCall<{ bill_manager_enabled: boolean }>('POST', '/payments/bill-manager/optin/'),
+
+    getInvoices: () => apiCall<Array<{
+      id: string
+      invoice_number: string
+      amount: string
+      due_date: string
+      status: string
+      failure_reason: string
+      paid_at: string | null
+    }>>('GET', '/payments/bill-manager/invoices/'),
+
+    createInvoice: (data: { alias_id: string; amount: number; due_date: string }) =>
+      apiCall<any>('POST', '/payments/bill-manager/invoices/single/', data),
+
+    createBulkInvoices: (rows: Array<{ alias_id: string; amount: number; due_date: string }>) =>
+      apiCall<any>('POST', '/payments/bill-manager/invoices/bulk/', { rows }),
+  },
 }
