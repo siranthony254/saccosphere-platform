@@ -5529,4 +5529,50 @@ export const api = {
     revokeAssignment: (id: string, force?: boolean) =>
       apiCall<void>('DELETE', `/saccoadmin/assignments/${uuid(id)}/`, undefined, { params: force ? { force: 'true' } : undefined }),
   },
+
+  // ─── P18 MIGRATION TOOLKIT (platform/super-admin facing) ───────────────────
+  //
+  // Onboards a brand-new, still-empty SACCO's historical data in bulk —
+  // not SACCO-scoped like most of this codebase, since the SACCO being
+  // onboarded has no staff of its own yet to run this themselves.
+
+  migrationToolkit: {
+    getBatches: () => apiCall<any[]>('GET', '/migration-toolkit/batches/'),
+
+    createBatch: (data: { sacco: string; cutover_date: string }) =>
+      apiCall<any>('POST', '/migration-toolkit/batches/', data),
+
+    getBatch: (id: string) => apiCall<any>('GET', `/migration-toolkit/batches/${uuid(id)}/`),
+
+    // One file per product per batch — re-uploading the same product
+    // replaces the previous file for that slot.
+    uploadFile: (batchId: string, product: string, file: File) => {
+      const form = new FormData()
+      form.append('product', product)
+      form.append('file', file)
+      return apiCall<any>('POST', `/migration-toolkit/batches/${uuid(batchId)}/files/`, form)
+    },
+
+    runDryRun: (batchId: string) => apiCall<{ status: string; validation_report: any }>('POST', `/migration-toolkit/batches/${uuid(batchId)}/dry-run/`),
+
+    // Maker-checker gated — can come back as a submit_approval_request 202
+    // payload (no `status` key) instead of applying immediately.
+    commitBatch: (batchId: string) => apiCall<any>('POST', `/migration-toolkit/batches/${uuid(batchId)}/commit/`),
+
+    rollbackBatch: (batchId: string) => apiCall<any>('POST', `/migration-toolkit/batches/${uuid(batchId)}/rollback/`),
+
+    // totals keys are member_number (not a UUID) — the one place in this
+    // migration-only workflow that's looked up by a human-readable code
+    // instead of an id, since that's what the legacy source file already has.
+    reconcile: (batchId: string, data: { product: 'SAVINGS_BALANCES' | 'LOANS' | 'DIVIDEND_HISTORY'; totals: Record<string, number> }) =>
+      apiCall<{ reconciliation_report: any }>('POST', `/migration-toolkit/batches/${uuid(batchId)}/reconcile/`, data),
+
+    downloadTemplate: async (product: string, format: 'xlsx' | 'csv' = 'xlsx') => {
+      const response = await axiosInstance.get(`/migration-toolkit/templates/${product}/`, {
+        params: { format },
+        responseType: 'blob',
+      })
+      return response.data as Blob
+    },
+  },
 }

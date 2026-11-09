@@ -14,6 +14,7 @@ const NAV_ITEMS: { path: string; label: string; icon: IconName; badge: string | 
   { path: '/payment-onboarding', label: 'Payment Onboarding', icon: 'landmark', badge: null, description: "Set up and verify a SACCO's M-Pesa/payment credentials before it can take live payments." },
   { path: '/approvals',    label: 'Maker-Checker & Grants', icon: 'shield-check', badge: null, description: 'Sensitive platform-wide actions waiting on a second approval before they take effect.' },
   { path: '/sectors',      label: 'Sector Gating',      icon: 'clipboard-list',   badge: null, description: "Decide which SACCO belongs to which industry (agriculture, transport, etc.) and which features that unlocks for it." },
+  { path: '/migration-toolkit', label: 'Migration Toolkit', icon: 'upload',       badge: null, description: "Bring a brand-new pilot SACCO's historical members, balances and loans onto the platform in bulk." },
   { path: '/disbursement-disputes', label: 'Disbursement Disputes', icon: 'alert-triangle', badge: null, description: 'Cases where a payout to a member went wrong or is being disputed.' },
   { path: '/audit-logs',   label: 'Audit Logs',         icon: 'clipboard-list',   badge: null, description: 'A permanent record of who did what, and when, across the platform.' },
   { path: '/billing',      label: 'Billing & Invoices', icon: 'receipt',          badge: null, description: "Every SACCO's subscription invoices for using this platform." },

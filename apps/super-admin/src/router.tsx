@@ -19,6 +19,7 @@ import { DisbursementDisputes } from './pages/Disputes/DisbursementDisputes'
 import { PaymentOnboarding } from './pages/PaymentOnboarding/PaymentOnboarding'
 import { ApprovalsList } from './pages/Approvals/ApprovalsList'
 import { SectorManagement } from './pages/Saccos/SectorManagement'
+import { MigrationToolkit } from './pages/MigrationToolkit/MigrationToolkit'
 
 export const router = createBrowserRouter([
   {
@@ -50,6 +51,7 @@ export const router = createBrowserRouter([
       { path: 'payment-onboarding', element: <PaymentOnboarding /> },
       { path: 'approvals', element: <ApprovalsList /> },
       { path: 'sectors', element: <SectorManagement /> },
+      { path: 'migration-toolkit', element: <MigrationToolkit /> },
       { path: 'audit-logs', element: <AuditLogs /> },
       { path: 'billing', element: <Billing /> },
       { path: '*', element: <Navigate to="/overview" replace /> },
