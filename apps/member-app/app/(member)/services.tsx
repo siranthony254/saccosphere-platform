@@ -115,7 +115,7 @@ export default function ServicesScreen() {
             <View style={{ alignItems: 'center', paddingHorizontal: 32, paddingVertical: 32, backgroundColor: c.surface, borderRadius: 12, borderWidth: 1, borderColor: c.border }}>
               <Text style={{ color: c.textMuted, fontSize: 12, marginBottom: 12, textAlign: 'center' }}>Unable to load your SACCO services.</Text>
               <TouchableOpacity onPress={() => refetch()} style={{ backgroundColor: c.accent, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 8 }}>
-                <Text style={{ color: '#fff', fontSize: 12, fontWeight: '600' }}>Try again</Text>
+                <Text style={{ color: c.onAccent, fontSize: 12, fontWeight: '600' }}>Try again</Text>
               </TouchableOpacity>
             </View>
           ) : activeMemberships.length === 0 ? (
@@ -186,7 +186,7 @@ function LockedServicesState({ hasPending }: { hasPending: boolean }) {
           : 'Join a SACCO first, then its savings, loan, payment, and statement services will appear here.'}
       </Text>
       <TouchableOpacity style={{ backgroundColor: c.accent, borderRadius: 12, width: '100%', paddingVertical: 12, alignItems: 'center' }} onPress={() => router.push('/(member)/discover')}>
-        <Text style={{ color: '#fff', fontSize: 12, fontWeight: '600' }}>Browse SACCOs</Text>
+        <Text style={{ color: c.onAccent, fontSize: 12, fontWeight: '600' }}>Browse SACCOs</Text>
       </TouchableOpacity>
     </View>
   )

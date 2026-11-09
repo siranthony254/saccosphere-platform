@@ -90,7 +90,7 @@ export default function PaymentMethodSelector({
                   justifyContent: 'center',
                 }}
               >
-                <Text style={{ color: '#fff', fontSize: 14, fontWeight: '800' }}>
+                <Text style={{ color: c.onAccent, fontSize: 14, fontWeight: '800' }}>
                   {saccoName.slice(0, 2).toUpperCase()}
                 </Text>
               </View>

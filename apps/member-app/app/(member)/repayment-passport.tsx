@@ -92,7 +92,7 @@ export default function RepaymentPassportScreen() {
             onPress={() => issueMutation.mutate()}
             style={{ backgroundColor: c.accent, borderRadius: 10, paddingVertical: 12, alignItems: 'center', opacity: !selectedMembershipId || !recipientSaccoId ? 0.5 : 1 }}
           >
-            {issueMutation.isPending ? <ActivityIndicator color="#fff" /> : <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700' }}>Issue Passport</Text>}
+            {issueMutation.isPending ? <ActivityIndicator color={c.onAccent} /> : <Text style={{ color: c.onAccent, fontSize: 12, fontWeight: '700' }}>Issue Passport</Text>}
           </TouchableOpacity>
         </View>
 

@@ -321,7 +321,7 @@ export default function LinkSaccos() {
         disabled={pending || !step1}
       >
         {pending ? (
-          <ActivityIndicator color="#fff" />
+          <ActivityIndicator color={c.onAccent} />
         ) : (
           <Text className="text-white text-xs font-semibold">Finish setup →</Text>
         )}

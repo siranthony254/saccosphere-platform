@@ -123,7 +123,7 @@ export default function ProfileScreen() {
         }}
       >
         <View style={{ width: 72, height: 72, borderRadius: 16, backgroundColor: c.accent, alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}>
-          <Text style={{ color: '#fff', fontSize: 24, fontWeight: '700' }}>{displayInitials}</Text>
+          <Text style={{ color: c.onAccent, fontSize: 24, fontWeight: '700' }}>{displayInitials}</Text>
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 2 }}>
           <Text style={{ color: profileTextColor, fontSize: 16, fontWeight: '600' }}>{displayName}</Text>

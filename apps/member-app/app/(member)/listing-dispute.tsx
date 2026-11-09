@@ -93,7 +93,7 @@ export default function ListingDisputeScreen() {
               onPress={() => raiseMutation.mutate()}
               style={{ backgroundColor: c.accent, borderRadius: 12, paddingVertical: 14, alignItems: 'center', opacity: !selectedMembershipId || !statement ? 0.5 : 1 }}
             >
-              {raiseMutation.isPending ? <ActivityIndicator color="#fff" /> : <Text style={{ color: '#fff', fontSize: 13, fontWeight: '700' }}>Submit Dispute</Text>}
+              {raiseMutation.isPending ? <ActivityIndicator color={c.onAccent} /> : <Text style={{ color: c.onAccent, fontSize: 13, fontWeight: '700' }}>Submit Dispute</Text>}
             </TouchableOpacity>
           </View>
         )}

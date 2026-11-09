@@ -85,7 +85,7 @@ export default function CreditScoreScreen() {
               onPress={() => requestMutation.mutate()}
               style={{ backgroundColor: c.accent, borderRadius: 12, paddingVertical: 14, alignItems: 'center', opacity: !scoreId ? 0.5 : 1 }}
             >
-              {requestMutation.isPending ? <ActivityIndicator color="#fff" /> : <Text style={{ color: '#fff', fontSize: 13, fontWeight: '700' }}>Submit Request</Text>}
+              {requestMutation.isPending ? <ActivityIndicator color={c.onAccent} /> : <Text style={{ color: c.onAccent, fontSize: 13, fontWeight: '700' }}>Submit Request</Text>}
             </TouchableOpacity>
           </View>
         )}

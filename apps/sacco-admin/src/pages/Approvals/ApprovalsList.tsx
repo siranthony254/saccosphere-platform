@@ -496,6 +496,7 @@ export function ApprovalsList() {
               <div className="font-bold text-lg text-ink">Review Approval Request</div>
               <button
                 onClick={closeModal}
+                aria-label="Close"
                 className="text-ink-muted hover:text-ink text-xl font-bold cursor-pointer"
               >
                 &times;

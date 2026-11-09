@@ -188,7 +188,7 @@ export default function PayScreen() {
             style={{ backgroundColor: c.accent, borderRadius: 16, paddingVertical: 14, paddingHorizontal: 32 }}
             onPress={() => router.back()}
           >
-            <Text style={{ color: '#fff', fontSize: 14, fontWeight: '700' }}>Go back</Text>
+            <Text style={{ color: c.onAccent, fontSize: 14, fontWeight: '700' }}>Go back</Text>
           </TouchableOpacity>
         </View>
       </DeepSpaceBackground>
@@ -266,7 +266,7 @@ export default function PayScreen() {
             style={{ backgroundColor: c.accent, borderRadius: 16, paddingVertical: 14, alignItems: 'center' }}
             onPress={() => setMethodStep('method')}
           >
-            <Text style={{ color: '#fff', fontSize: 14, fontWeight: '700' }}>Back to methods</Text>
+            <Text style={{ color: c.onAccent, fontSize: 14, fontWeight: '700' }}>Back to methods</Text>
           </TouchableOpacity>
         </ScrollView>
       </DeepSpaceBackground>
@@ -320,7 +320,7 @@ export default function PayScreen() {
           disabled={!numericAmount}
           onPress={() => setMethodStep('method')}
         >
-          <Text style={{ color: '#fff', fontSize: 14, fontWeight: '800' }}>CONTINUE TO PAYMENT →</Text>
+          <Text style={{ color: c.onAccent, fontSize: 14, fontWeight: '800' }}>CONTINUE TO PAYMENT →</Text>
         </TouchableOpacity>
       </KeyboardAwareScrollView>
     </DeepSpaceBackground>

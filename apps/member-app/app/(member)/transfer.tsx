@@ -142,7 +142,7 @@ export default function TransferScreen() {
             onPress={() => router.back()}
             style={{ backgroundColor: c.accent, borderRadius: 14, paddingVertical: 14, paddingHorizontal: 28, marginTop: 8 }}
           >
-            <Text style={{ color: '#fff', fontSize: 14, fontWeight: '800' }}>Done</Text>
+            <Text style={{ color: c.onAccent, fontSize: 14, fontWeight: '800' }}>Done</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -251,7 +251,7 @@ export default function TransferScreen() {
             disabled={transfer.isPending}
             style={{ backgroundColor: c.accent, borderRadius: 14, padding: 16, alignItems: 'center', opacity: transfer.isPending ? 0.6 : 1 }}
           >
-            {transfer.isPending ? <ActivityIndicator color="#fff" /> : <Text style={{ color: '#fff', fontSize: 14, fontWeight: '800' }}>Transfer</Text>}
+            {transfer.isPending ? <ActivityIndicator color={c.onAccent} /> : <Text style={{ color: c.onAccent, fontSize: 14, fontWeight: '800' }}>Transfer</Text>}
           </TouchableOpacity>
         </KeyboardAwareScrollView>
       )}

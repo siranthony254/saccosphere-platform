@@ -184,9 +184,9 @@ export default function GuarantorRequest() {
             disabled={!agreedToLien || respond.isPending}
           >
             {respond.isPending ? (
-              <ActivityIndicator color="#fff" />
+              <ActivityIndicator color={c.onAccent} />
             ) : (
-              <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700' }}>Agree & Accept Guarantee Hold</Text>
+              <Text style={{ color: c.onAccent, fontSize: 12, fontWeight: '700' }}>Agree & Accept Guarantee Hold</Text>
             )}
           </TouchableOpacity>
 

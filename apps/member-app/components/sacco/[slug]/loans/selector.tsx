@@ -53,7 +53,7 @@ export default function SaccoLoanSelectorScreen() {
               alignItems: 'center',
             }}
           >
-            <Text style={{ color: '#fff', fontSize: 12, fontWeight: '600' }}>Browse SACCOs</Text>
+            <Text style={{ color: c.onAccent, fontSize: 12, fontWeight: '600' }}>Browse SACCOs</Text>
           </TouchableOpacity>
         </EmptyState>
       </View>
@@ -144,7 +144,7 @@ export default function SaccoLoanSelectorScreen() {
                 paddingHorizontal: 12,
               }}
             >
-              <Text style={{ color: '#fff', fontSize: 11, fontWeight: '600' }}>Compare</Text>
+              <Text style={{ color: c.onAccent, fontSize: 11, fontWeight: '600' }}>Compare</Text>
             </TouchableOpacity>
           </View>
         )}

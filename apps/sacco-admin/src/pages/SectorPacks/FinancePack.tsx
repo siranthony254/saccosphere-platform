@@ -319,7 +319,7 @@ export function FinancePack() {
               {signerIds.map((id) => (
                 <span key={id} className="px-2 py-0.5 bg-surface-2 rounded text-[10px] font-mono flex items-center gap-1">
                   {id.slice(0, 8)}…
-                  <button type="button" onClick={() => setSignerIds((prev) => prev.filter((x) => x !== id))} className="text-red-600 font-bold">×</button>
+                  <button type="button" onClick={() => setSignerIds((prev) => prev.filter((x) => x !== id))} aria-label="Remove signer" className="text-red-600 font-bold">×</button>
                 </span>
               ))}
             </div>

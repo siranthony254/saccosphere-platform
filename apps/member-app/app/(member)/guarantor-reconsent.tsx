@@ -94,7 +94,7 @@ export default function GuarantorReconsentScreen() {
               : "Declining cancels the whole restructure — it won't be re-applied automatically."}
           </Text>
           <TouchableOpacity onPress={() => router.back()} style={{ backgroundColor: c.accent, borderRadius: 14, paddingVertical: 14, paddingHorizontal: 28, marginTop: 8 }}>
-            <Text style={{ color: '#fff', fontSize: 14, fontWeight: '800' }}>Done</Text>
+            <Text style={{ color: c.onAccent, fontSize: 14, fontWeight: '800' }}>Done</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -127,7 +127,7 @@ export default function GuarantorReconsentScreen() {
             disabled={requestOtp.isPending}
             style={{ borderRadius: 12, padding: 14, alignItems: 'center', backgroundColor: c.accent, opacity: requestOtp.isPending ? 0.6 : 1 }}
           >
-            {requestOtp.isPending ? <ActivityIndicator color="#fff" /> : <Text style={{ color: '#fff', fontSize: 13, fontWeight: '700' }}>Send code to approve</Text>}
+            {requestOtp.isPending ? <ActivityIndicator color={c.onAccent} /> : <Text style={{ color: c.onAccent, fontSize: 13, fontWeight: '700' }}>Send code to approve</Text>}
           </TouchableOpacity>
           <TouchableOpacity
             onPress={decline}
@@ -153,7 +153,7 @@ export default function GuarantorReconsentScreen() {
             disabled={respond.isPending || !otpCode.trim()}
             style={{ borderRadius: 12, padding: 14, alignItems: 'center', backgroundColor: c.accent, opacity: respond.isPending || !otpCode.trim() ? 0.6 : 1 }}
           >
-            {respond.isPending ? <ActivityIndicator color="#fff" /> : <Text style={{ color: '#fff', fontSize: 13, fontWeight: '700' }}>Confirm approval</Text>}
+            {respond.isPending ? <ActivityIndicator color={c.onAccent} /> : <Text style={{ color: c.onAccent, fontSize: 13, fontWeight: '700' }}>Confirm approval</Text>}
           </TouchableOpacity>
           <TouchableOpacity onPress={sendOtp} disabled={requestOtp.isPending}>
             <Text style={{ color: c.accent, fontSize: 12, textAlign: 'center' }}>Resend code</Text>

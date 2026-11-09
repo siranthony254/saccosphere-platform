@@ -311,7 +311,7 @@ export default function SettingsScreen() {
               </Text>
             </View>
             <TouchableOpacity onPress={() => setKycModalVisible(true)} style={{ backgroundColor: c.accent, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8 }}>
-              <Text style={{ color: '#fff', fontSize: 11, fontWeight: '700' }}>
+              <Text style={{ color: c.onAccent, fontSize: 11, fontWeight: '700' }}>
                 {kycStatus?.status === 'rejected' || kycStatus?.status === 'iprs_rejected' ? 'Resubmit' : 'Upload'}
               </Text>
             </TouchableOpacity>
@@ -428,7 +428,7 @@ export default function SettingsScreen() {
               onPress={handleChangePassword}
               disabled={changingPassword || !oldPassword || !newPassword || !confirmPassword}
             >
-              {changingPassword ? <ActivityIndicator color="#fff" /> : <Text style={{ color: '#fff', fontSize: 14, fontWeight: '600' }}>Save Changes</Text>}
+              {changingPassword ? <ActivityIndicator color={c.onAccent} /> : <Text style={{ color: c.onAccent, fontSize: 14, fontWeight: '600' }}>Save Changes</Text>}
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -485,7 +485,7 @@ export default function SettingsScreen() {
               onPress={handleUploadKyc}
               disabled={uploadingKyc || !kycImage}
             >
-              {uploadingKyc ? <ActivityIndicator color="#fff" /> : <Text style={{ color: '#fff', fontSize: 14, fontWeight: '600' }}>Upload Document</Text>}
+              {uploadingKyc ? <ActivityIndicator color={c.onAccent} /> : <Text style={{ color: c.onAccent, fontSize: 14, fontWeight: '600' }}>Upload Document</Text>}
             </TouchableOpacity>
 
             <TouchableOpacity

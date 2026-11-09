@@ -273,7 +273,7 @@ export default function RegisterKYC() {
         disabled={!canContinue || loading}
       >
         {loading ? (
-          <ActivityIndicator color="#fff" />
+          <ActivityIndicator color={c.onAccent} />
         ) : (
           <Text className="text-white text-xs font-semibold">Continue →</Text>
         )}

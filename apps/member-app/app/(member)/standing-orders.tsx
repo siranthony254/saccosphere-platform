@@ -107,7 +107,7 @@ export default function StandingOrdersScreen() {
           </View>
           {!showForm && (
             <TouchableOpacity onPress={() => setShowForm(true)} style={{ backgroundColor: c.accent, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8 }}>
-              <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700' }}>+ New</Text>
+              <Text style={{ color: c.onAccent, fontSize: 12, fontWeight: '700' }}>+ New</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -201,7 +201,7 @@ export default function StandingOrdersScreen() {
                 disabled={!canSubmit || createMutation.isPending}
                 style={{ backgroundColor: c.accent, borderRadius: 10, paddingVertical: 14, alignItems: 'center', opacity: canSubmit && !createMutation.isPending ? 1 : 0.4 }}
               >
-                {createMutation.isPending ? <ActivityIndicator color="#fff" /> : <Text style={{ color: '#fff', fontSize: 13, fontWeight: '700' }}>Set Up Standing Order</Text>}
+                {createMutation.isPending ? <ActivityIndicator color={c.onAccent} /> : <Text style={{ color: c.onAccent, fontSize: 13, fontWeight: '700' }}>Set Up Standing Order</Text>}
               </TouchableOpacity>
             </View>
           )}

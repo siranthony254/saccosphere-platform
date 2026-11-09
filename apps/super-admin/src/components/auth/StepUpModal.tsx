@@ -64,7 +64,7 @@ export function StepUpModal({
       <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-2xl border border-[#e5ede9] space-y-4">
         <div className="flex justify-between items-center border-b border-[#e5ede9] pb-3">
           <div className="font-bold text-base text-ink">{title}</div>
-          <button onClick={onClose} className="text-ink-muted text-lg font-bold hover:text-ink cursor-pointer">
+          <button onClick={onClose} aria-label="Close" className="text-ink-muted text-lg font-bold hover:text-ink cursor-pointer">
             &times;
           </button>
         </div>

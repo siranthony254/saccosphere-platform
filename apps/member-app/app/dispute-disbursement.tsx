@@ -59,7 +59,7 @@ export default function DisputeDisbursement() {
             onPress={handleSubmit}
             disabled={state === 'submitting'}
           >
-            {state === 'submitting' ? <ActivityIndicator color="#fff" /> : <Text style={{ color: '#fff', fontSize: 12, fontWeight: '600' }}>Submit dispute</Text>}
+            {state === 'submitting' ? <ActivityIndicator color={c.onAccent} /> : <Text style={{ color: c.onAccent, fontSize: 12, fontWeight: '600' }}>Submit dispute</Text>}
           </TouchableOpacity>
         </>
       )}

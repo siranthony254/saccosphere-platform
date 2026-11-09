@@ -97,7 +97,7 @@ export function AppLockGuard() {
         disabled={authenticating}
         style={[styles.button, { backgroundColor: c.accent, opacity: authenticating ? 0.6 : 1 }]}
       >
-        <Text style={styles.buttonText}>{authenticating ? 'Verifying…' : 'Unlock'}</Text>
+        <Text style={[styles.buttonText, { color: c.onAccent }]}>{authenticating ? 'Verifying…' : 'Unlock'}</Text>
       </TouchableOpacity>
     </View>
   )
@@ -122,5 +122,5 @@ const styles = StyleSheet.create({
   title: { fontSize: 16, fontWeight: '700', marginBottom: 6 },
   subtitle: { fontSize: 12, textAlign: 'center', marginBottom: 24, lineHeight: 18 },
   button: { paddingHorizontal: 32, paddingVertical: 12, borderRadius: 12 },
-  buttonText: { color: '#fff', fontSize: 13, fontWeight: '700' },
+  buttonText: { fontSize: 13, fontWeight: '700' },
 })

@@ -124,7 +124,7 @@ export default function AssistantScreen() {
           ) : messages.length === 0 ? (
             <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 14, paddingTop: 40 }}>
               <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: c.accent, alignItems: 'center', justifyContent: 'center' }}>
-                <Icon name="bulb" size={26} color="#fff" />
+                <Icon name="bulb" size={26} color={c.onAccent} />
               </View>
               <Text style={{ color: c.text, fontSize: 14, fontWeight: '700' }}>Ask me anything about your SACCO</Text>
               <View style={{ gap: 8, width: '100%' }}>
@@ -151,7 +151,7 @@ export default function AssistantScreen() {
                   {m.pending ? (
                     <ActivityIndicator color={c.textMuted} size="small" />
                   ) : (
-                    <Text style={{ color: m.role === 'USER' ? '#fff' : c.text, fontSize: 13, lineHeight: 19 }}>{m.content}</Text>
+                    <Text style={{ color: m.role === 'USER' ? c.onAccent : c.text, fontSize: 13, lineHeight: 19 }}>{m.content}</Text>
                   )}
                 </View>
               </View>
@@ -174,7 +174,7 @@ export default function AssistantScreen() {
               disabled={!input.trim() || send.isPending}
               style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: c.accent, alignItems: 'center', justifyContent: 'center', opacity: input.trim() && !send.isPending ? 1 : 0.5 }}
             >
-              <Icon name="send" size={16} color="#fff" />
+              <Icon name="send" size={16} color={c.onAccent} />
             </TouchableOpacity>
           </View>
         )}

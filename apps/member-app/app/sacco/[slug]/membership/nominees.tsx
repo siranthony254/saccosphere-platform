@@ -173,7 +173,7 @@ export default function NomineesScreen() {
             disabled={setNominees.isPending}
             style={{ backgroundColor: c.accent, borderRadius: 14, padding: 16, alignItems: 'center', opacity: setNominees.isPending ? 0.6 : 1 }}
           >
-            {setNominees.isPending ? <ActivityIndicator color="#fff" /> : <Text style={{ color: '#fff', fontSize: 14, fontWeight: '800' }}>Save nominees</Text>}
+            {setNominees.isPending ? <ActivityIndicator color={c.onAccent} /> : <Text style={{ color: c.onAccent, fontSize: 14, fontWeight: '800' }}>Save nominees</Text>}
           </TouchableOpacity>
         </ScrollView>
       )}

@@ -64,7 +64,7 @@ export default function LoanWhatIfScreen() {
               disabled={!selectedProduct || whatIf.isPending}
               style={{ backgroundColor: c.accent, borderRadius: 14, padding: 16, alignItems: 'center', opacity: !selectedProduct || whatIf.isPending ? 0.6 : 1, marginBottom: 20 }}
             >
-              {whatIf.isPending ? <ActivityIndicator color="#fff" /> : <Text style={{ color: '#fff', fontSize: 14, fontWeight: '800' }}>Calculate</Text>}
+              {whatIf.isPending ? <ActivityIndicator color={c.onAccent} /> : <Text style={{ color: c.onAccent, fontSize: 14, fontWeight: '800' }}>Calculate</Text>}
             </TouchableOpacity>
 
             {whatIf.isError ? (

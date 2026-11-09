@@ -52,7 +52,7 @@ export default function UfaaGuidanceScreen() {
                 {data?.steps.map((step, index) => (
                   <View key={index} style={{ flexDirection: 'row', gap: 10 }}>
                     <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: c.accent, alignItems: 'center', justifyContent: 'center' }}>
-                      <Text style={{ color: '#fff', fontSize: 11, fontWeight: '700' }}>{index + 1}</Text>
+                      <Text style={{ color: c.onAccent, fontSize: 11, fontWeight: '700' }}>{index + 1}</Text>
                     </View>
                     <Text style={{ color: c.text, fontSize: 12, lineHeight: 18, flex: 1 }}>{step}</Text>
                   </View>

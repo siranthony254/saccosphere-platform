@@ -162,7 +162,7 @@ export default function WithdrawScreen() {
             disabled={!otpCode.trim() || withdraw.isPending}
             style={{ backgroundColor: c.accent, borderRadius: 14, padding: 16, alignItems: 'center', opacity: !otpCode.trim() || withdraw.isPending ? 0.6 : 1 }}
           >
-            {withdraw.isPending ? <ActivityIndicator color="#fff" /> : <Text style={{ color: '#fff', fontSize: 14, fontWeight: '800' }}>Confirm withdrawal</Text>}
+            {withdraw.isPending ? <ActivityIndicator color={c.onAccent} /> : <Text style={{ color: c.onAccent, fontSize: 14, fontWeight: '800' }}>Confirm withdrawal</Text>}
           </TouchableOpacity>
           <TouchableOpacity onPress={() => { setStepUpCode(null); setStepUpError(null) }}>
             <Text style={{ color: c.textMuted, fontSize: 12, textAlign: 'center' }}>Cancel</Text>
@@ -209,7 +209,7 @@ export default function WithdrawScreen() {
               onPress={() => router.back()}
               style={{ backgroundColor: c.accent, borderRadius: 14, paddingVertical: 14, paddingHorizontal: 28, marginTop: 8 }}
             >
-              <Text style={{ color: '#fff', fontSize: 14, fontWeight: '800' }}>Done</Text>
+              <Text style={{ color: c.onAccent, fontSize: 14, fontWeight: '800' }}>Done</Text>
             </TouchableOpacity>
           ) : null}
         </View>
@@ -295,7 +295,7 @@ export default function WithdrawScreen() {
             disabled={withdraw.isPending}
             style={{ backgroundColor: c.accent, borderRadius: 14, padding: 16, alignItems: 'center', opacity: withdraw.isPending ? 0.6 : 1 }}
           >
-            {withdraw.isPending ? <ActivityIndicator color="#fff" /> : <Text style={{ color: '#fff', fontSize: 14, fontWeight: '800' }}>Withdraw to M-Pesa</Text>}
+            {withdraw.isPending ? <ActivityIndicator color={c.onAccent} /> : <Text style={{ color: c.onAccent, fontSize: 14, fontWeight: '800' }}>Withdraw to M-Pesa</Text>}
           </TouchableOpacity>
         </KeyboardAwareScrollView>
       )}

@@ -181,10 +181,10 @@ export default function DiscoverScreen() {
               style={{ borderRadius: 8, padding: 10, alignItems: 'center', backgroundColor: sacco.membership_type === 'open' ? c.accent : c.surfaceAlt }}
               className="flex-row items-center justify-center gap-2"
             >
-              <Text style={{ fontSize: 12, fontWeight: '600', color: sacco.membership_type === 'open' ? '#fff' : c.textMuted }}>
+              <Text style={{ fontSize: 12, fontWeight: '600', color: sacco.membership_type === 'open' ? c.onAccent : c.textMuted }}>
                 {sacco.membership_type === 'open' ? 'Apply to join' : 'Restricted membership'}
               </Text>
-              {sacco.membership_type === 'open' && <Icon name="arrow-right" size={14} color="#fff" />}
+              {sacco.membership_type === 'open' && <Icon name="arrow-right" size={14} color={c.onAccent} />}
             </View>
           </TouchableOpacity>
         ))}

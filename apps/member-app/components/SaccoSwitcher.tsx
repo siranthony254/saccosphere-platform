@@ -47,7 +47,7 @@ export default function SaccoSwitcher({ visible, onClose, currentSacco }: SaccoS
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             {unread > 0 && (
               <View style={{ minWidth: 20, height: 20, paddingHorizontal: 6, borderRadius: 10, backgroundColor: c.accent, alignItems: 'center', justifyContent: 'center' }}>
-                <Text style={{ color: '#fff', fontSize: 10, fontWeight: '700' }}>{unread > 99 ? '99+' : unread}</Text>
+                <Text style={{ color: c.onAccent, fontSize: 10, fontWeight: '700' }}>{unread > 99 ? '99+' : unread}</Text>
               </View>
             )}
             {isCurrent && <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: c.accent }} />}

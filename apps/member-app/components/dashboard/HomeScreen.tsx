@@ -135,7 +135,7 @@ export default function HomeScreen() {
             onPress={refetch}
             style={{ backgroundColor: c.accent, borderRadius: 12, paddingVertical: 12, paddingHorizontal: 24 }}
           >
-            <Text style={{ color: '#fff', fontSize: 12, fontWeight: '600' }}>Try again</Text>
+            <Text style={{ color: c.onAccent, fontSize: 12, fontWeight: '600' }}>Try again</Text>
           </TouchableOpacity>
         </SafeAreaView>
       </DeepSpaceBackground>
@@ -199,7 +199,7 @@ export default function HomeScreen() {
                 backgroundColor: c.accent, alignItems: 'center', justifyContent: 'center',
               }}
             >
-              <Text style={{ color: '#fff', fontSize: 11, fontWeight: '700' }}>{initials}</Text>
+              <Text style={{ color: c.onAccent, fontSize: 11, fontWeight: '700' }}>{initials}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -307,7 +307,7 @@ function NoSaccoDashboard({ publicStats }: { publicStats: { total_saccos?: numbe
             marginBottom: 8,
           }}
         >
-          <Text style={{ color: '#fff', fontSize: 13, fontWeight: '600' }}>
+          <Text style={{ color: c.onAccent, fontSize: 13, fontWeight: '600' }}>
             Browse & join a SACCO
           </Text>
         </TouchableOpacity>
@@ -397,7 +397,7 @@ function PendingOnlyDashboard({ pendingMemberships }: { pendingMemberships: Memb
           paddingVertical: 12, alignItems: 'center',
         }}
       >
-        <Text style={{ color: '#fff', fontSize: 12, fontWeight: '600' }}>
+        <Text style={{ color: c.onAccent, fontSize: 12, fontWeight: '600' }}>
           Browse more SACCOs
         </Text>
       </TouchableOpacity>
@@ -547,7 +547,7 @@ function SingleSaccoDashboard({
               paddingVertical: 10, alignItems: 'center',
             }}
           >
-            <Text style={{ color: '#fff', fontSize: 12, fontWeight: '600' }}>
+            <Text style={{ color: c.onAccent, fontSize: 12, fontWeight: '600' }}>
               Pay instalment via M-Pesa
             </Text>
           </TouchableOpacity>

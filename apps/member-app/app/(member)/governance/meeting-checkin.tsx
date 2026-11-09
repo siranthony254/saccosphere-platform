@@ -96,7 +96,7 @@ export default function MeetingCheckIn() {
             onPress={() => checkIn.mutate()}
             disabled={checkIn.isPending}
           >
-            {checkIn.isPending ? <ActivityIndicator color="#fff" /> : <Text style={{ color: '#fff', fontSize: 13, fontWeight: '700' }}>Check In Now</Text>}
+            {checkIn.isPending ? <ActivityIndicator color={c.onAccent} /> : <Text style={{ color: c.onAccent, fontSize: 13, fontWeight: '700' }}>Check In Now</Text>}
           </TouchableOpacity>
           {!!errorText && (
             <Text style={{ color: c.danger, fontSize: 12, textAlign: 'center', marginTop: 12 }}>{errorText}</Text>

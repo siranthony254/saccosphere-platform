@@ -146,7 +146,7 @@ export default function PaymentSuccessScreen({
             marginBottom: 12,
           }}
         >
-          <Text style={{ color: '#fff', fontSize: 14, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 1 }}>Back to Dashboard</Text>
+          <Text style={{ color: c.onAccent, fontSize: 14, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 1 }}>Back to Dashboard</Text>
         </TouchableOpacity>
 
         {onViewReceipt && (

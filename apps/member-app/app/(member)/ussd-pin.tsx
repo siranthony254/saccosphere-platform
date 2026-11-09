@@ -115,7 +115,7 @@ export default function UssdPinScreen() {
           onPress={() => setPinMutation.mutate()}
           style={{ backgroundColor: c.accent, borderRadius: 12, paddingVertical: 14, alignItems: 'center', opacity: !canSubmit || setPinMutation.isPending ? 0.5 : 1 }}
         >
-          {setPinMutation.isPending ? <ActivityIndicator color="#fff" /> : <Text style={{ color: '#fff', fontSize: 13, fontWeight: '700' }}>Save PIN</Text>}
+          {setPinMutation.isPending ? <ActivityIndicator color={c.onAccent} /> : <Text style={{ color: c.onAccent, fontSize: 13, fontWeight: '700' }}>Save PIN</Text>}
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>

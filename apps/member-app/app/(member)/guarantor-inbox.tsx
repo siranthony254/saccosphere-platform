@@ -102,7 +102,7 @@ export default function GuarantorInbox() {
                         onPress={() => openRequest(p)}
                         style={{ backgroundColor: c.accent, borderRadius: 10, paddingVertical: 10, alignItems: 'center' }}
                       >
-                        <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700' }}>Review Request</Text>
+                        <Text style={{ color: c.onAccent, fontSize: 12, fontWeight: '700' }}>Review Request</Text>
                       </TouchableOpacity>
                     </View>
                   ))}

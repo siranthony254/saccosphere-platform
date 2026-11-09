@@ -173,7 +173,7 @@ export default function ElectionHub() {
                       style={{ flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderRadius: 10, borderWidth: 1, borderColor: selected ? c.accent : c.border, backgroundColor: selected ? 'rgba(109,40,217,0.08)' : c.surface }}
                     >
                       <View style={{ width: 20, height: 20, borderRadius: seatsAvailable === 1 ? 10 : 4, borderWidth: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: selected ? c.accent : 'transparent', borderColor: selected ? c.accent : c.textFaint }}>
-                        {selected && <Icon name="check" size={12} color="#fff" />}
+                        {selected && <Icon name="check" size={12} color={c.onAccent} />}
                       </View>
                       <Text style={{ color: c.text, fontSize: 13, fontWeight: '600' }}>{cand.name}</Text>
                     </TouchableOpacity>
@@ -185,7 +185,7 @@ export default function ElectionHub() {
                 onPress={() => castVote.mutate()}
                 disabled={selectedCandidateIds.length === 0 || castVote.isPending}
               >
-                {castVote.isPending ? <ActivityIndicator color="#fff" /> : <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700' }}>Submit Vote</Text>}
+                {castVote.isPending ? <ActivityIndicator color={c.onAccent} /> : <Text style={{ color: c.onAccent, fontSize: 12, fontWeight: '700' }}>Submit Vote</Text>}
               </TouchableOpacity>
               <Text style={{ color: c.textFaint, fontSize: 10, textAlign: 'center', marginTop: 10, lineHeight: 15 }}>
                 Your ballot is anonymous — there's no record anywhere linking you to your choice.

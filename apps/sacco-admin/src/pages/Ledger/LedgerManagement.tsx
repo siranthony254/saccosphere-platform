@@ -721,6 +721,7 @@ export function LedgerManagement() {
               </div>
               <button
                 onClick={() => setSelectedGlAccount(null)}
+                aria-label="Close"
                 className="text-ink-muted hover:text-ink text-xl font-bold cursor-pointer"
               >
                 &times;

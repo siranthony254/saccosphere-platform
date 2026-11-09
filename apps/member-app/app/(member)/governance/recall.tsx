@@ -112,7 +112,7 @@ export default function DelegateRecall() {
               onPress={() => signPetition.mutate()}
               disabled={signPetition.isPending}
             >
-              {signPetition.isPending ? <ActivityIndicator color="#fff" /> : <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700' }}>Add My Signature</Text>}
+              {signPetition.isPending ? <ActivityIndicator color={c.onAccent} /> : <Text style={{ color: c.onAccent, fontSize: 12, fontWeight: '700' }}>Add My Signature</Text>}
             </TouchableOpacity>
             {!!errorText && <Text style={{ color: c.danger, fontSize: 12, textAlign: 'center', marginTop: 12 }}>{errorText}</Text>}
           </View>

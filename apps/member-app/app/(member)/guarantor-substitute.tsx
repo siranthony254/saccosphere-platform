@@ -62,7 +62,7 @@ export default function GuarantorSubstitute() {
           {found?.user.full_name ?? 'The new guarantor'} will see this in their own guarantee inbox. {oldGuarantorName ?? 'The current guarantor'} is released once they accept.
         </Text>
         <TouchableOpacity onPress={() => router.back()} style={{ backgroundColor: c.accent, borderRadius: 14, paddingVertical: 14, paddingHorizontal: 28, marginTop: 8 }}>
-          <Text style={{ color: '#fff', fontSize: 14, fontWeight: '800' }}>Done</Text>
+          <Text style={{ color: c.onAccent, fontSize: 14, fontWeight: '800' }}>Done</Text>
         </TouchableOpacity>
       </View>
     )
@@ -97,7 +97,7 @@ export default function GuarantorSubstitute() {
             disabled={!query.trim() || search.isPending}
             style={{ backgroundColor: c.accent, borderRadius: 10, paddingHorizontal: 16, alignItems: 'center', justifyContent: 'center', opacity: query.trim() ? 1 : 0.5 }}
           >
-            {search.isPending ? <ActivityIndicator color="#fff" /> : <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700' }}>Search</Text>}
+            {search.isPending ? <ActivityIndicator color={c.onAccent} /> : <Text style={{ color: c.onAccent, fontSize: 12, fontWeight: '700' }}>Search</Text>}
           </TouchableOpacity>
         </View>
 
@@ -147,7 +147,7 @@ export default function GuarantorSubstitute() {
             disabled={substitute.isPending}
             style={{ marginTop: 14, backgroundColor: c.accent, borderRadius: 10, paddingVertical: 14, alignItems: 'center', opacity: substitute.isPending ? 0.6 : 1 }}
           >
-            {substitute.isPending ? <ActivityIndicator color="#fff" /> : <Text style={{ color: '#fff', fontSize: 13, fontWeight: '700' }}>Request Substitution</Text>}
+            {substitute.isPending ? <ActivityIndicator color={c.onAccent} /> : <Text style={{ color: c.onAccent, fontSize: 13, fontWeight: '700' }}>Request Substitution</Text>}
           </TouchableOpacity>
         </View>
       )}

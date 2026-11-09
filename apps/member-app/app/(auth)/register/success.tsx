@@ -96,7 +96,7 @@ export default function RegistrationSuccessScreen() {
 
       {/* CTA Button */}
       <TouchableOpacity style={{ width: '100%', backgroundColor: c.accent, paddingVertical: 12, borderRadius: 12, alignItems: 'center' }} onPress={handleDashboard}>
-        <Text style={{ color: '#fff', fontSize: 12, fontWeight: '600' }}>Go to dashboard →</Text>
+        <Text style={{ color: c.onAccent, fontSize: 12, fontWeight: '600' }}>Go to dashboard →</Text>
       </TouchableOpacity>
 
       {/* Spacer */}

@@ -214,7 +214,7 @@ export default function PaymentProcessingScreen({
               opacity: canConfirm ? 1 : 0.5,
             }}
           >
-            <Text style={{ color: '#fff', fontSize: 13, fontWeight: '600' }}>
+            <Text style={{ color: c.onAccent, fontSize: 13, fontWeight: '600' }}>
               {feeKnown ? 'Send M-Pesa prompt' : 'Calculating fee…'}
             </Text>
           </TouchableOpacity>

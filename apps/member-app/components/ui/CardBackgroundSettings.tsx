@@ -97,7 +97,7 @@ export function CardBackgroundSettings() {
           <Icon name="close" size={16} color={c.textMuted} />
           {currentId === null && (
             <View style={{ position: 'absolute', top: -4, right: -4, backgroundColor: c.accent, borderRadius: 8, width: 16, height: 16, alignItems: 'center', justifyContent: 'center' }}>
-              <Icon name="check" size={10} color="#fff" />
+              <Icon name="check" size={10} color={c.onAccent} />
             </View>
           )}
         </TouchableOpacity>
@@ -124,7 +124,7 @@ export function CardBackgroundSettings() {
               <Image source={preset.source} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
               {selected && (
                 <View style={{ position: 'absolute', top: 4, right: 4, backgroundColor: c.accent, borderRadius: 8, width: 16, height: 16, alignItems: 'center', justifyContent: 'center' }}>
-                  <Icon name="check" size={10} color="#fff" />
+                  <Icon name="check" size={10} color={c.onAccent} />
                 </View>
               )}
             </TouchableOpacity>

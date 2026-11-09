@@ -72,7 +72,7 @@ export default function LoanOfferScreen() {
               disabled={accept.isPending}
               style={{ backgroundColor: c.accent, borderRadius: 14, padding: 16, alignItems: 'center', opacity: accept.isPending ? 0.6 : 1 }}
             >
-              {accept.isPending ? <ActivityIndicator color="#fff" /> : <Text style={{ color: '#fff', fontSize: 14, fontWeight: '800' }}>Accept this offer</Text>}
+              {accept.isPending ? <ActivityIndicator color={c.onAccent} /> : <Text style={{ color: c.onAccent, fontSize: 14, fontWeight: '800' }}>Accept this offer</Text>}
             </TouchableOpacity>
           )}
           <Text style={{ color: c.textFaint, fontSize: 10, textAlign: 'center', marginTop: 12, lineHeight: 15 }}>

@@ -99,7 +99,7 @@ export default function LoanDisbursed() {
         style={{ width: '100%', backgroundColor: c.accent, paddingVertical: 12, borderRadius: 12, alignItems: 'center' }}
         onPress={() => router.replace(`/sacco/${slug}`)}
       >
-        <Text style={{ color: '#fff', fontSize: 12, fontWeight: '600' }}>Back to dashboard</Text>
+        <Text style={{ color: c.onAccent, fontSize: 12, fontWeight: '600' }}>Back to dashboard</Text>
       </TouchableOpacity>
 
       {/* Spacer */}

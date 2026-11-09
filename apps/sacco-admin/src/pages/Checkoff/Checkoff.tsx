@@ -391,7 +391,7 @@ function SchedulesTab({ employers }: { employers: any[] }) {
               <div className="bg-white rounded-xl max-w-2xl w-full p-6 shadow-xl space-y-3 border border-[#e5ede9] max-h-[85vh] overflow-y-auto">
                 <div className="flex justify-between items-center border-b border-[#e5ede9] pb-3">
                   <div className="font-bold text-base text-ink">{viewSchedule.period} · {viewSchedule.status}</div>
-                  <button onClick={() => setViewScheduleId(null)} className="text-ink-muted text-lg font-bold">&times;</button>
+                  <button onClick={() => setViewScheduleId(null)} aria-label="Close" className="text-ink-muted text-lg font-bold">&times;</button>
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs border-collapse">

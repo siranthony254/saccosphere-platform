@@ -402,7 +402,7 @@ export function ApprovalsList() {
           <div className="bg-white rounded-xl max-w-lg w-full p-6 shadow-xl space-y-4 border border-[#e5ede9]">
             <div className="flex justify-between items-center border-b border-[#e5ede9] pb-3">
               <div className="font-bold text-base text-ink">Review Approval Request</div>
-              <button onClick={closeModal} className="text-ink-muted text-lg font-bold">
+              <button onClick={closeModal} aria-label="Close" className="text-ink-muted text-lg font-bold">
                 &times;
               </button>
             </div>

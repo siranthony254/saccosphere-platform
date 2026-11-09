@@ -187,7 +187,7 @@ export default function MenuScreen() {
                 <Icon name="bell" size={18} color={c.text} />
               </TouchableOpacity>
               <TouchableOpacity style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: c.accent, alignItems: 'center', justifyContent: 'center' }} onPress={() => router.push('/(member)/profile')}>
-                <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700' }}>{initials}</Text>
+                <Text style={{ color: c.onAccent, fontSize: 12, fontWeight: '700' }}>{initials}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -197,7 +197,7 @@ export default function MenuScreen() {
         <View style={{ backgroundColor: c.surface, marginHorizontal: 14, marginVertical: 14, borderRadius: 12, padding: 16, borderWidth: 1, borderColor: c.border }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
             <View style={{ width: 56, height: 56, borderRadius: 16, backgroundColor: c.accent, alignItems: 'center', justifyContent: 'center' }}>
-              <Text style={{ color: '#fff', fontSize: 18, fontWeight: '700' }}>{initials}</Text>
+              <Text style={{ color: c.onAccent, fontSize: 18, fontWeight: '700' }}>{initials}</Text>
             </View>
             <View style={{ flex: 1 }}>
               <Text style={{ color: c.text, fontSize: 14, fontWeight: '600' }}>{user ? `${user.first_name} ${user.last_name}` : 'Member'}</Text>
@@ -268,7 +268,7 @@ export default function MenuScreen() {
             <View style={{ paddingVertical: 8 }}>
               <Text style={{ color: c.textMuted, fontSize: 12, marginBottom: 12 }}>No active SACCOs linked yet.</Text>
               <TouchableOpacity style={{ backgroundColor: c.accent, borderRadius: 12, paddingVertical: 8, paddingHorizontal: 16, alignItems: 'flex-start' }} onPress={() => router.push('/(member)/discover')}>
-                <Text style={{ color: '#fff', fontSize: 12, fontWeight: '600' }}>Browse & join SACCOs</Text>
+                <Text style={{ color: c.onAccent, fontSize: 12, fontWeight: '600' }}>Browse & join SACCOs</Text>
               </TouchableOpacity>
             </View>
           )}
@@ -311,7 +311,7 @@ export default function MenuScreen() {
               <Text style={{ color: c.textMuted, fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>Your Referral Code</Text>
               <Text style={{ color: c.text, fontSize: 20, fontWeight: '700', fontFamily: 'monospace', marginBottom: 8 }}>{referralCode}</Text>
               <TouchableOpacity style={{ backgroundColor: c.accent, paddingHorizontal: 16, paddingVertical: 6, borderRadius: 8 }} onPress={handleCopyReferral}>
-                <Text style={{ color: '#fff', fontSize: 12, fontWeight: '600' }}>Copy Code</Text>
+                <Text style={{ color: c.onAccent, fontSize: 12, fontWeight: '600' }}>Copy Code</Text>
               </TouchableOpacity>
             </View>
 

@@ -350,7 +350,7 @@ export default function RegisterOTP() {
           onPress={handleVerify}
           disabled={loading || code.length < 6 || !otpSent || Boolean(otpError)}
         >
-          {loading ? <ActivityIndicator color="#fff" /> : <Text className="text-white text-xs font-semibold">Verify code →</Text>}
+          {loading ? <ActivityIndicator color={c.onAccent} /> : <Text className="text-white text-xs font-semibold">Verify code →</Text>}
         </TouchableOpacity>
           </>
         )}

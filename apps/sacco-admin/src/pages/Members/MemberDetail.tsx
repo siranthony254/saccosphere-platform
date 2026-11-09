@@ -492,7 +492,7 @@ export function MemberDetail() {
           <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-xl space-y-4 border border-[#e5ede9]">
             <div className="flex justify-between items-center border-b border-[#e5ede9] pb-3">
               <div className="font-bold text-base text-ink">Change Savings Account Status</div>
-              <button onClick={() => setStatusModalSaving(null)} className="text-ink-muted text-lg font-bold">&times;</button>
+              <button onClick={() => setStatusModalSaving(null)} aria-label="Close" className="text-ink-muted text-lg font-bold">&times;</button>
             </div>
             {actionError && <div className="p-2 bg-red-50 text-red-700 text-xs rounded font-semibold">{actionError}</div>}
             <div className="text-xs text-ink-muted">
@@ -541,7 +541,7 @@ export function MemberDetail() {
           <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-xl space-y-4 border border-[#e5ede9]">
             <div className="flex justify-between items-center border-b border-[#e5ede9] pb-3">
               <div className="font-bold text-base text-ink">Dividend Eligibility Toggle</div>
-              <button onClick={() => setDividendModalSaving(null)} className="text-ink-muted text-lg font-bold">&times;</button>
+              <button onClick={() => setDividendModalSaving(null)} aria-label="Close" className="text-ink-muted text-lg font-bold">&times;</button>
             </div>
             {actionError && <div className="p-2 bg-red-50 text-red-700 text-xs rounded font-semibold">{actionError}</div>}
             <div className="text-xs text-ink-muted">
@@ -578,7 +578,7 @@ export function MemberDetail() {
           <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-xl space-y-4 border border-[#e5ede9]">
             <div className="flex justify-between items-center border-b border-[#e5ede9] pb-3">
               <div className="font-bold text-base text-ink">Reverse Savings Entry</div>
-              <button onClick={() => setReversalModalSaving(null)} className="text-ink-muted text-lg font-bold">&times;</button>
+              <button onClick={() => setReversalModalSaving(null)} aria-label="Close" className="text-ink-muted text-lg font-bold">&times;</button>
             </div>
             {actionError && <div className="p-2 bg-red-50 text-red-700 text-xs rounded font-semibold">{actionError}</div>}
             <div className="text-xs text-ink-muted">
@@ -660,7 +660,7 @@ export function MemberDetail() {
           <div className="bg-white rounded-xl max-w-lg w-full p-6 shadow-xl space-y-4 border border-[#e5ede9] max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center border-b border-[#e5ede9] pb-3">
               <div className="font-bold text-base text-ink">Restructure — {restructureModalLoan.label}</div>
-              <button onClick={resetRestructureModal} className="text-ink-muted text-lg font-bold">&times;</button>
+              <button onClick={resetRestructureModal} aria-label="Close" className="text-ink-muted text-lg font-bold">&times;</button>
             </div>
 
             {restructureError && <div className="p-2 bg-red-50 text-red-700 text-xs rounded font-semibold">{restructureError}</div>}
