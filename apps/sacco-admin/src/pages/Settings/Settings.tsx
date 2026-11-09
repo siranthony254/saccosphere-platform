@@ -883,6 +883,16 @@ function MemberFieldsCard() {
   )
 }
 
+const downloadRecoveryCodes = (codes: string[]) => {
+  const blob = new Blob([codes.join('\n') + '\n'], { type: 'text/plain' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = 'saccosphere-recovery-codes.txt'
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
 function StaffMfaSetupCard() {
   const [mfaData, setMfaData] = useState<{ secret: string; otpauth_uri: string } | null>(null)
   const [code, setCode] = useState('')
@@ -957,12 +967,20 @@ function StaffMfaSetupCard() {
           <div className="grid grid-cols-2 gap-1 font-mono text-[11px] bg-white p-2 rounded border">
             {recoveryCodes.map((c) => <div key={c}>{c}</div>)}
           </div>
-          <button
-            onClick={() => { setRecoveryCodes(null); setStatus({ type: 'success', message: 'MFA is now enabled for your staff account.' }) }}
-            className="px-4 py-2 bg-mint-600 hover:bg-mint-700 text-white font-bold text-xs rounded-lg cursor-pointer"
-          >
-            I've saved these — done
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={() => downloadRecoveryCodes(recoveryCodes)}
+              className="px-4 py-2 bg-white border border-ink-faint hover:bg-surface-2 text-ink font-semibold text-xs rounded-lg cursor-pointer"
+            >
+              Download codes (.txt)
+            </button>
+            <button
+              onClick={() => { setRecoveryCodes(null); setStatus({ type: 'success', message: 'MFA is now enabled for your staff account.' }) }}
+              className="px-4 py-2 bg-mint-600 hover:bg-mint-700 text-white font-bold text-xs rounded-lg cursor-pointer"
+            >
+              I've saved these — done
+            </button>
+          </div>
         </div>
       ) : !mfaData ? (
         <div className="flex gap-3">

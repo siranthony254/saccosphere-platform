@@ -12,6 +12,16 @@ type View =
 
 const formatSecret = (secret: string) => secret.replace(/(.{4})/g, '$1 ').trim()
 
+const downloadRecoveryCodes = (codes: string[]) => {
+  const blob = new Blob([codes.join('\n') + '\n'], { type: 'text/plain' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = 'saccosphere-recovery-codes.txt'
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
 export function Login() {
   const navigate = useNavigate()
   const location = useLocation()
@@ -225,6 +235,13 @@ export function Login() {
                 <div key={c}>{c}</div>
               ))}
             </div>
+            <button
+              type="button"
+              onClick={() => downloadRecoveryCodes(view.codes)}
+              className="w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm font-semibold text-slate-200 transition hover:bg-slate-800"
+            >
+              Download codes (.txt)
+            </button>
             <button
               type="button"
               onClick={handleRecoveryCodesAcknowledged}
