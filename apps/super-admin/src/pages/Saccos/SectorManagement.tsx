@@ -33,6 +33,14 @@ export function SectorManagement() {
     enabled: Boolean(selectedSaccoId),
   })
 
+  // Changes nothing server-side — just shows which modules would appear
+  // or disappear before the admin commits to the maker-checker request.
+  const { data: reclassifyPreview, isFetching: isPreviewLoading } = useQuery({
+    queryKey: ['sacco-reclassify-preview', selectedSaccoId, newSector],
+    queryFn: () => api.superAdmin.previewSaccoReclassification(selectedSaccoId, { sector: newSector }),
+    enabled: Boolean(selectedSaccoId && newSector),
+  })
+
   // Mutations
   const overrideMutation = useMutation({
     mutationFn: (data: { saccoId: string; moduleCode: string; enabled: boolean; reason: string }) =>
@@ -126,6 +134,44 @@ export function SectorManagement() {
                     <option value="HEALTHCARE">Healthcare</option>
                     <option value="OTHER">Other (core features only)</option>
                   </select>
+                </div>
+
+                <div className="bg-surface-2 p-2.5 rounded border border-[#e5ede9] space-y-1.5">
+                  <div className="font-bold text-ink flex items-center gap-1.5">
+                    What this would change
+                    <InfoTip text="Changes nothing yet — just a preview of which features would turn on or off if you go ahead." label="About this preview" />
+                  </div>
+                  {isPreviewLoading ? (
+                    <div className="text-ink-muted">Checking...</div>
+                  ) : !reclassifyPreview ? (
+                    <div className="text-ink-muted">Select a SACCO and industry to preview.</div>
+                  ) : (
+                    <>
+                      {reclassifyPreview.modules_added.length === 0 && reclassifyPreview.modules_removed.length === 0 ? (
+                        <div className="text-ink-muted">No feature changes — only the industry label and confirmation status would update.</div>
+                      ) : (
+                        <>
+                          {reclassifyPreview.modules_added.length > 0 && (
+                            <div>
+                              <span className="font-semibold text-mint-700">Would turn on:</span>{' '}
+                              {reclassifyPreview.modules_added.map((m: any) => m.name).join(', ')}
+                            </div>
+                          )}
+                          {reclassifyPreview.modules_removed.length > 0 && (
+                            <div>
+                              <span className="font-semibold text-red-700">Would turn off:</span>{' '}
+                              {reclassifyPreview.modules_removed.map((m: any) => m.name).join(', ')}
+                            </div>
+                          )}
+                        </>
+                      )}
+                      {reclassifyPreview.overrides_retained.length > 0 && (
+                        <div className="text-ink-faint">
+                          Kept as manually overridden regardless: {reclassifyPreview.overrides_retained.map((m: any) => `${m.name} (${m.enabled ? 'on' : 'off'})`).join(', ')}
+                        </div>
+                      )}
+                    </>
+                  )}
                 </div>
 
                 <div>

@@ -357,6 +357,8 @@ export const DividendDeclarationSchema = z.object({
   created_at: z.string(),
   approved_at: z.string().nullable().optional(),
   disbursed_at: z.string().nullable().optional(),
+  agm_approved_at: z.string().nullable().optional(),
+  agm_resolution_reference: z.string().optional(),
 })
 export type DividendDeclaration = z.infer<typeof DividendDeclarationSchema>
 

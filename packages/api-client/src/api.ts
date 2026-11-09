@@ -3631,6 +3631,8 @@ export const api = {
         created_at: item.created_at ?? new Date().toISOString(),
         approved_at: item.approved_at ?? null,
         disbursed_at: item.disbursed_at ?? null,
+        agm_approved_at: item.agm_approved_at ?? null,
+        agm_resolution_reference: item.agm_resolution_reference ?? '',
       }))
     },
 
@@ -3805,6 +3807,50 @@ export const api = {
         status: String(item.status ?? 'PENDING'),
         created_at: item.created_at ?? new Date().toISOString(),
       }))
+    },
+
+    // Free-text fallback for a SACCO not using the governance module — see
+    // DividendAGMApprovalView. A certified governance DIVIDEND_RATE
+    // resolution sets the same fields automatically instead.
+    recordDividendAgmApproval: (declarationId: string, agmResolutionReference: string) =>
+      apiCall<any>('POST', `/management/dividends/declarations/${uuid(declarationId)}/agm-approval/`, {
+        agm_resolution_reference: agmResolutionReference,
+      }),
+
+    // Progress for a declaration's chunked disbursement run. 'NOT_STARTED'
+    // when disbursement hasn't been queued yet.
+    getDividendBatchStatus: (declarationId: string) =>
+      apiCall<any>('GET', `/management/dividends/declarations/${uuid(declarationId)}/batch-status/`),
+
+    exportDividendKraWithholdingCsv: async (declarationId: string) => {
+      const response = await axiosInstance.get(
+        `/management/dividends/declarations/${uuid(declarationId)}/kra-export/`,
+        { responseType: 'blob' }
+      )
+      return response.data as Blob
+    },
+
+    // Read-only what-if projection — never creates a declaration or writes
+    // to the ledger. calculation_method: AVERAGE_MONTH_END | DAY_WEIGHTED |
+    // MINIMUM_BALANCE (dividend) or WEIGHTED_MONTHLY | CLOSING_BALANCE
+    // (interest-on-deposits).
+    simulateDividend: (data: {
+      savings_type: string
+      period_start: string
+      period_end: string
+      declared_rate: number
+      calculation_method: string
+    }) => apiCall<any>('POST', '/management/dividends/simulate/', data),
+
+    exportDividendSimulationPdf: async (data: {
+      savings_type: string
+      period_start: string
+      period_end: string
+      declared_rate: number
+      calculation_method: string
+    }) => {
+      const response = await axiosInstance.post('/management/dividends/simulate/pdf/', data, { responseType: 'blob' })
+      return response.data as Blob
     },
 
     // Bulk SMS Campaigns
@@ -4440,9 +4486,21 @@ export const api = {
     getAgents: () =>
       apiCall<any[]>('GET', '/management/agency/agents/'),
 
-    createAgent: (data: { agent_name: string; location: string; bank_partner: string; phone_number: string }) =>
-      apiCall<any>('POST', '/management/agency/agents/', data),
+    // SaccoAgentSerializer writable fields: bank_name (required),
+    // projected_annual_income, services_offered (free-form string list),
+    // board_resolution_reference, proposed_start_date, notes. status
+    // defaults to DRAFT server-side and is moved on via updateAgent below.
+    createAgent: (data: {
+      bank_name: string
+      projected_annual_income?: number
+      services_offered?: string[]
+      board_resolution_reference?: string
+      proposed_start_date?: string
+      notes?: string
+    }) => apiCall<any>('POST', '/management/agency/agents/', data),
 
+    // status: DRAFT -> SUBMITTED_TO_SASRA -> APPROVED/REJECTED. SASRA makes
+    // the actual decision; this only records it.
     updateAgent: (id: string, data: Partial<{ status: string; notes: string }>) =>
       apiCall<any>('PATCH', `/management/agency/agents/${uuid(id)}/`, data),
 
@@ -4450,13 +4508,16 @@ export const api = {
       const response = await axiosInstance.get(`/management/agency/agents/${uuid(id)}/application-pdf/`, {
         responseType: 'blob',
       })
-      return response.data
+      return response.data as Blob
     },
 
     getTransactions: () =>
       apiCall<any[]>('GET', '/management/agency/transactions/'),
 
-    createTransaction: (data: { agent: string; period_start: string; period_end: string; transaction_type: string; total_amount: number; count: number }) =>
+    // AgencyTransactionLogSerializer: one row per (period, transaction_type)
+    // — no agent FK, this is a SACCO-wide quarterly manual entry for the
+    // Agency Banking Return, not per-agent.
+    createTransaction: (data: { period_start: string; period_end: string; transaction_type: string; volume_amount: number; count: number }) =>
       apiCall<any>('POST', '/management/agency/transactions/', data),
   },
 

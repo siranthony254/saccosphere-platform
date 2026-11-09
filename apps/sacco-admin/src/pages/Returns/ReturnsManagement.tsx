@@ -19,6 +19,30 @@ const SOURCE_TYPE_LABELS: Record<string, string> = {
   RATIO: 'Calculated ratio (%)',
 }
 
+const AGENCY_SERVICE_OPTIONS = [
+  { value: 'CASH_DEPOSIT_WITHDRAWAL', label: 'Cash deposit & withdrawal' },
+  { value: 'LOAN_DISBURSEMENT_REPAYMENT', label: 'Loan disbursement & repayment' },
+  { value: 'BALANCE_INQUIRY', label: 'Balance inquiry' },
+  { value: 'MINI_STATEMENT', label: 'Mini statement' },
+  { value: 'BILL_PAYMENT', label: 'Bill payment' },
+]
+
+const AGENCY_TRANSACTION_TYPES = [
+  { value: 'CASH_DEPOSIT', label: 'Cash Deposit' },
+  { value: 'CASH_WITHDRAWAL', label: 'Cash Withdrawal' },
+  { value: 'LOAN_DISBURSEMENT', label: 'Cash Disbursement of Loans' },
+  { value: 'LOAN_REPAYMENT', label: 'Cash Repayment of Loans' },
+  { value: 'BILL_PAYMENT', label: 'Payment of Bills/School Fees' },
+  { value: 'FUND_TRANSFER', label: 'Transfer of Funds' },
+  { value: 'BALANCE_ENQUIRY', label: 'Account Balance Enquiry' },
+  { value: 'MINI_STATEMENT', label: 'Mini Statement Requests' },
+  { value: 'LOAN_FORMS_COLLECTION', label: 'Loan Forms Collection' },
+  { value: 'NEW_ACCOUNTS_OPENED', label: 'New Accounts Opened' },
+  { value: 'NUMBER_OF_AGENTS', label: 'Number of Agents' },
+  { value: 'AGENCY_INCOME_EARNED', label: 'Agency Income Earned by the SACCO' },
+  { value: 'OTHER', label: 'Others' },
+]
+
 export function ReturnsManagement() {
   const queryClient = useQueryClient()
   const [activeTab, setActiveTab] = useState<'returns' | 'complaints' | 'agency'>('returns')
@@ -40,11 +64,24 @@ export function ReturnsManagement() {
   const [complaintMsg, setComplaintMsg] = useState<string | null>(null)
 
   // Agency state
-  const [agentName, setAgentName] = useState('')
-  const [agentLocation, setAgentLocation] = useState('')
-  const [agentBank, setAgentBank] = useState('')
-  const [agentPhone, setAgentPhone] = useState('')
+  const [agentBankName, setAgentBankName] = useState('')
+  const [agentProjectedIncome, setAgentProjectedIncome] = useState('')
+  const [agentServices, setAgentServices] = useState<string[]>([])
+  const [agentResolutionRef, setAgentResolutionRef] = useState('')
+  const [agentStartDate, setAgentStartDate] = useState('')
   const [agentMsg, setAgentMsg] = useState<string | null>(null)
+
+  // Agency transactions state
+  const [txnPeriodStart, setTxnPeriodStart] = useState('2026-01-01')
+  const [txnPeriodEnd, setTxnPeriodEnd] = useState('2026-03-31')
+  const [txnType, setTxnType] = useState('CASH_DEPOSIT')
+  const [txnCount, setTxnCount] = useState(0)
+  const [txnVolume, setTxnVolume] = useState(0)
+  const [txnMsg, setTxnMsg] = useState<string | null>(null)
+
+  // Complaints statistics export state
+  const [statsPeriodStart, setStatsPeriodStart] = useState('2026-01-01')
+  const [statsPeriodEnd, setStatsPeriodEnd] = useState('2026-12-31')
 
   // Queries
   const { data: templates = [], isLoading: isTemplatesLoading } = useQuery({
@@ -65,6 +102,11 @@ export function ReturnsManagement() {
   const { data: agents = [], isLoading: isAgentsLoading } = useQuery({
     queryKey: ['agency-agents'],
     queryFn: () => api.agency.getAgents(),
+  })
+
+  const { data: agencyTransactions = [], isLoading: isTxnsLoading } = useQuery({
+    queryKey: ['agency-transactions'],
+    queryFn: () => api.agency.getTransactions(),
   })
 
   // The instances LIST (above) is the summary shape — it carries no
@@ -172,19 +214,73 @@ export function ReturnsManagement() {
   })
 
   const createAgentMutation = useMutation({
-    mutationFn: (data: { agent_name: string; location: string; bank_partner: string; phone_number: string }) =>
-      api.agency.createAgent(data),
+    mutationFn: (data: {
+      bank_name: string
+      projected_annual_income?: number
+      services_offered?: string[]
+      board_resolution_reference?: string
+      proposed_start_date?: string
+    }) => api.agency.createAgent(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['agency-agents'] })
-      setAgentName('')
-      setAgentLocation('')
-      setAgentBank('')
-      setAgentPhone('')
-      setAgentMsg('Agent registered in DRAFT status.')
+      setAgentBankName('')
+      setAgentProjectedIncome('')
+      setAgentServices([])
+      setAgentResolutionRef('')
+      setAgentStartDate('')
+      setAgentMsg('Agency arrangement registered in DRAFT status.')
       setTimeout(() => setAgentMsg(null), 4000)
     },
-    onError: (err: any) => setAgentMsg(err?.message || 'Failed to register agent.'),
+    onError: (err: any) => setAgentMsg(err?.message || 'Failed to register agency arrangement.'),
   })
+
+  const updateAgentMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Partial<{ status: string; notes: string }> }) =>
+      api.agency.updateAgent(id, data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['agency-agents'] }),
+    onError: (err: any) => setAgentMsg(err?.message || 'Failed to update agency arrangement.'),
+  })
+
+  const createTransactionMutation = useMutation({
+    mutationFn: (data: { period_start: string; period_end: string; transaction_type: string; volume_amount: number; count: number }) =>
+      api.agency.createTransaction(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['agency-transactions'] })
+      setTxnCount(0)
+      setTxnVolume(0)
+      setTxnMsg('Transaction volume logged.')
+      setTimeout(() => setTxnMsg(null), 4000)
+    },
+    onError: (err: any) => setTxnMsg(err?.message || 'Failed to log transaction volume — a row for this period and type may already exist.'),
+  })
+
+  const handleDownloadAgentPdf = async (id: string) => {
+    try {
+      const blob = await api.agency.getApplicationPdf(id)
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `agency-application-${id}.pdf`
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch (err: any) {
+      setAgentMsg(err?.message || 'Failed to download application PDF.')
+    }
+  }
+
+  const handleExportComplaintsStats = async () => {
+    try {
+      const blob = await api.complaints.exportStatistics({ period_start: statsPeriodStart, period_end: statsPeriodEnd })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `complaints-statistics-${statsPeriodStart}_${statsPeriodEnd}.csv`
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch (err: any) {
+      setComplaintMsg(err?.message || 'Failed to export complaints statistics.')
+    }
+  }
 
   const handleExport = async (instanceId: string, format: 'json' | 'xlsx' | 'pdf') => {
     try {
@@ -638,7 +734,25 @@ export function ReturnsManagement() {
           </div>
 
           <div className="bg-white border border-[#e5ede9] rounded-[10px] p-4 space-y-4 shadow-sm md:col-span-2">
-            <div className="font-bold text-base text-ink">Active Complaints &amp; Escalations</div>
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div className="font-bold text-base text-ink">Active Complaints &amp; Escalations</div>
+              <div className="flex items-end gap-2">
+                <div>
+                  <label className="text-[10px] text-ink-muted block">From</label>
+                  <input type="date" value={statsPeriodStart} onChange={(e) => setStatsPeriodStart(e.target.value)} className="p-1.5 border border-ink-faint rounded text-xs bg-white" />
+                </div>
+                <div>
+                  <label className="text-[10px] text-ink-muted block">To</label>
+                  <input type="date" value={statsPeriodEnd} onChange={(e) => setStatsPeriodEnd(e.target.value)} className="p-1.5 border border-ink-faint rounded text-xs bg-white" />
+                </div>
+                <button
+                  onClick={handleExportComplaintsStats}
+                  className="px-2.5 py-1.5 bg-mint-600 hover:bg-mint-700 text-white rounded text-[11px] font-semibold cursor-pointer whitespace-nowrap"
+                >
+                  Export Statistics CSV
+                </button>
+              </div>
+            </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
@@ -703,8 +817,8 @@ export function ReturnsManagement() {
       {activeTab === 'agency' && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           <div className="bg-white border border-[#e5ede9] rounded-[10px] p-4 space-y-3 shadow-sm md:col-span-1">
-            <div className="font-bold text-base text-ink">Register Agency Banking Partner</div>
-            <div className="text-xs text-ink-muted">Register agency locations for wet-ink application &amp; SASRA approval tracking.</div>
+            <div className="font-bold text-base text-ink">Register Agency Banking Arrangement</div>
+            <div className="text-xs text-ink-muted">SASRA's "Application Form for Approval of a Specific Agent" — track it from draft through SASRA's decision.</div>
 
             {agentMsg && (
               <div className="p-2.5 bg-mint-50 border border-mint-200 text-mint-800 text-xs rounded font-semibold">
@@ -715,58 +829,77 @@ export function ReturnsManagement() {
             <form
               onSubmit={(e) => {
                 e.preventDefault()
-                if (!agentName || !agentLocation) return
+                if (!agentBankName) return
                 createAgentMutation.mutate({
-                  agent_name: agentName,
-                  location: agentLocation,
-                  bank_partner: agentBank || 'Co-op Bank',
-                  phone_number: agentPhone,
+                  bank_name: agentBankName,
+                  projected_annual_income: agentProjectedIncome ? Number(agentProjectedIncome) : undefined,
+                  services_offered: agentServices,
+                  board_resolution_reference: agentResolutionRef || undefined,
+                  proposed_start_date: agentStartDate || undefined,
                 })
               }}
               className="space-y-3"
             >
               <div>
-                <label className="text-xs text-ink-muted mb-1 block">Agent Location / Outlet Name</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Kasarani Central Agency"
-                  value={agentName}
-                  onChange={(e) => setAgentName(e.target.value)}
-                  className="w-full p-2 border border-ink-faint rounded text-xs bg-white"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="text-xs text-ink-muted mb-1 block">Town / Location</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Nairobi"
-                  value={agentLocation}
-                  onChange={(e) => setAgentLocation(e.target.value)}
-                  className="w-full p-2 border border-ink-faint rounded text-xs bg-white"
-                  required
-                />
-              </div>
-
-              <div>
                 <label className="text-xs text-ink-muted mb-1 block">Partner Bank</label>
                 <input
                   type="text"
                   placeholder="e.g. Co-op Bank / KCB"
-                  value={agentBank}
-                  onChange={(e) => setAgentBank(e.target.value)}
+                  value={agentBankName}
+                  onChange={(e) => setAgentBankName(e.target.value)}
+                  className="w-full p-2 border border-ink-faint rounded text-xs bg-white"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="text-xs text-ink-muted mb-1 block">Services to Offer</label>
+                <div className="space-y-1">
+                  {AGENCY_SERVICE_OPTIONS.map((opt) => (
+                    <label key={opt.value} className="flex items-center gap-1.5 text-ink">
+                      <input
+                        type="checkbox"
+                        checked={agentServices.includes(opt.value)}
+                        onChange={(e) =>
+                          setAgentServices((prev) =>
+                            e.target.checked ? [...prev, opt.value] : prev.filter((s) => s !== opt.value)
+                          )
+                        }
+                      />
+                      {opt.label}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs text-ink-muted mb-1 block">Projected Annual Income (Optional)</label>
+                <input
+                  type="number"
+                  placeholder="e.g. 500000"
+                  value={agentProjectedIncome}
+                  onChange={(e) => setAgentProjectedIncome(e.target.value)}
                   className="w-full p-2 border border-ink-faint rounded text-xs bg-white"
                 />
               </div>
 
               <div>
-                <label className="text-xs text-ink-muted mb-1 block">Contact Phone Number</label>
+                <label className="text-xs text-ink-muted mb-1 block">Board Resolution Reference (Optional)</label>
                 <input
                   type="text"
-                  placeholder="e.g. 254712345678"
-                  value={agentPhone}
-                  onChange={(e) => setAgentPhone(e.target.value)}
+                  placeholder="e.g. BR-2026-04"
+                  value={agentResolutionRef}
+                  onChange={(e) => setAgentResolutionRef(e.target.value)}
+                  className="w-full p-2 border border-ink-faint rounded text-xs bg-white"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs text-ink-muted mb-1 block">Proposed Start Date (Optional)</label>
+                <input
+                  type="date"
+                  value={agentStartDate}
+                  onChange={(e) => setAgentStartDate(e.target.value)}
                   className="w-full p-2 border border-ink-faint rounded text-xs bg-white"
                 />
               </div>
@@ -776,43 +909,176 @@ export function ReturnsManagement() {
                 disabled={createAgentMutation.isPending}
                 className="w-full py-2 bg-violet-600 hover:bg-violet-700 text-white font-semibold text-xs rounded cursor-pointer"
               >
-                Register Agent Location
+                Register Arrangement
               </button>
             </form>
           </div>
 
           <div className="bg-white border border-[#e5ede9] rounded-[10px] p-4 space-y-4 shadow-sm md:col-span-2">
-            <div className="font-bold text-base text-ink">Registered Agents &amp; Application Status</div>
+            <div className="font-bold text-base text-ink">Registered Arrangements &amp; Application Status</div>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
                   <tr className="border-b border-[#e5ede9] text-ink-muted font-semibold bg-surface-2">
-                    <th className="py-2 px-3">Agent Outlet</th>
-                    <th className="py-2 px-3">Location</th>
-                    <th className="py-2 px-3">Bank Partner</th>
+                    <th className="py-2 px-3">Partner Bank</th>
+                    <th className="py-2 px-3">Services</th>
                     <th className="py-2 px-3">Status</th>
+                    <th className="py-2 px-3 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#e5ede9]">
                   {isAgentsLoading ? (
                     <tr>
-                      <td colSpan={4} className="py-6 text-center text-ink-muted">Loading agency partners...</td>
+                      <td colSpan={4} className="py-6 text-center text-ink-muted">Loading agency arrangements...</td>
                     </tr>
                   ) : agents.length === 0 ? (
                     <tr>
-                      <td colSpan={4} className="py-6 text-center text-ink-muted">No agency partners registered yet.</td>
+                      <td colSpan={4} className="py-6 text-center text-ink-muted">No agency arrangements registered yet.</td>
                     </tr>
                   ) : (
                     agents.map((ag: any) => (
                       <tr key={ag.id} className="hover:bg-surface-1">
-                        <td className="py-2.5 px-3 font-semibold text-ink">{ag.agent_name}</td>
-                        <td className="py-2.5 px-3 text-ink-muted">{ag.location}</td>
-                        <td className="py-2.5 px-3 text-ink">{ag.bank_partner || 'Co-op Bank'}</td>
+                        <td className="py-2.5 px-3 font-semibold text-ink">{ag.bank_name}</td>
+                        <td className="py-2.5 px-3 text-ink-muted">
+                          {(ag.services_offered ?? []).map((s: string) => AGENCY_SERVICE_OPTIONS.find((o) => o.value === s)?.label ?? s).join(', ') || '—'}
+                        </td>
                         <td className="py-2.5 px-3 font-bold">
                           <span className="px-2 py-0.5 rounded text-[10px] bg-violet-50 text-violet-700 border border-violet-200 uppercase">
                             {ag.status || 'DRAFT'}
                           </span>
                         </td>
+                        <td className="py-2.5 px-3 text-right space-x-1 whitespace-nowrap">
+                          {ag.status === 'DRAFT' && (
+                            <button
+                              onClick={() => updateAgentMutation.mutate({ id: ag.id, data: { status: 'SUBMITTED_TO_SASRA' } })}
+                              disabled={updateAgentMutation.isPending}
+                              className="px-2 py-1 bg-blue-600 text-white rounded text-[10px] font-bold cursor-pointer"
+                            >
+                              Submit to SASRA
+                            </button>
+                          )}
+                          {ag.status === 'SUBMITTED_TO_SASRA' && (
+                            <>
+                              <button
+                                onClick={() => updateAgentMutation.mutate({ id: ag.id, data: { status: 'APPROVED' } })}
+                                disabled={updateAgentMutation.isPending}
+                                className="px-2 py-1 bg-mint-600 text-white rounded text-[10px] font-bold cursor-pointer"
+                              >
+                                Mark Approved
+                              </button>
+                              <button
+                                onClick={() => updateAgentMutation.mutate({ id: ag.id, data: { status: 'REJECTED' } })}
+                                disabled={updateAgentMutation.isPending}
+                                className="px-2 py-1 bg-red-600 text-white rounded text-[10px] font-bold cursor-pointer"
+                              >
+                                Mark Rejected
+                              </button>
+                            </>
+                          )}
+                          <button
+                            onClick={() => handleDownloadAgentPdf(ag.id)}
+                            className="px-2 py-1 border border-ink-faint text-ink rounded text-[10px] font-bold cursor-pointer hover:bg-surface-2"
+                          >
+                            Application PDF
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div className="bg-white border border-[#e5ede9] rounded-[10px] p-4 space-y-3 shadow-sm md:col-span-1">
+            <div className="font-bold text-base text-ink">Log Quarterly Transaction Volume</div>
+            <div className="text-xs text-ink-muted">Manual entry — agency-channel transactions happen at the partner bank's own terminals, so there's no ledger trail to derive this from. Feeds the Agency Banking Return.</div>
+
+            {txnMsg && (
+              <div className="p-2.5 bg-mint-50 border border-mint-200 text-mint-800 text-xs rounded font-semibold">
+                {txnMsg}
+              </div>
+            )}
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault()
+                createTransactionMutation.mutate({
+                  period_start: txnPeriodStart,
+                  period_end: txnPeriodEnd,
+                  transaction_type: txnType,
+                  count: txnCount,
+                  volume_amount: txnVolume,
+                })
+              }}
+              className="space-y-3"
+            >
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-xs text-ink-muted mb-1 block">Period start</label>
+                  <input type="date" value={txnPeriodStart} onChange={(e) => setTxnPeriodStart(e.target.value)} className="w-full p-2 border border-ink-faint rounded text-xs bg-white" required />
+                </div>
+                <div>
+                  <label className="text-xs text-ink-muted mb-1 block">Period end</label>
+                  <input type="date" value={txnPeriodEnd} onChange={(e) => setTxnPeriodEnd(e.target.value)} className="w-full p-2 border border-ink-faint rounded text-xs bg-white" required />
+                </div>
+              </div>
+              <div>
+                <label className="text-xs text-ink-muted mb-1 block">Transaction Type</label>
+                <select value={txnType} onChange={(e) => setTxnType(e.target.value)} className="w-full p-2 border border-ink-faint rounded text-xs bg-white">
+                  {AGENCY_TRANSACTION_TYPES.map((t) => (
+                    <option key={t.value} value={t.value}>{t.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-xs text-ink-muted mb-1 block">Count</label>
+                  <input type="number" value={txnCount} onChange={(e) => setTxnCount(Number(e.target.value))} className="w-full p-2 border border-ink-faint rounded text-xs bg-white" required />
+                </div>
+                <div>
+                  <label className="text-xs text-ink-muted mb-1 block">Volume (KES)</label>
+                  <input type="number" step="0.01" value={txnVolume} onChange={(e) => setTxnVolume(Number(e.target.value))} className="w-full p-2 border border-ink-faint rounded text-xs bg-white" required />
+                </div>
+              </div>
+              <button
+                type="submit"
+                disabled={createTransactionMutation.isPending}
+                className="w-full py-2 bg-violet-600 hover:bg-violet-700 text-white font-semibold text-xs rounded cursor-pointer"
+              >
+                Log Volume
+              </button>
+            </form>
+          </div>
+
+          <div className="bg-white border border-[#e5ede9] rounded-[10px] p-4 space-y-4 shadow-sm md:col-span-2">
+            <div className="font-bold text-base text-ink">Logged Transaction Volumes</div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="border-b border-[#e5ede9] text-ink-muted font-semibold bg-surface-2">
+                    <th className="py-2 px-3">Period</th>
+                    <th className="py-2 px-3">Type</th>
+                    <th className="py-2 px-3 text-right">Count</th>
+                    <th className="py-2 px-3 text-right">Volume</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#e5ede9]">
+                  {isTxnsLoading ? (
+                    <tr>
+                      <td colSpan={4} className="py-6 text-center text-ink-muted">Loading transaction logs...</td>
+                    </tr>
+                  ) : agencyTransactions.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="py-6 text-center text-ink-muted">No transaction volumes logged yet.</td>
+                    </tr>
+                  ) : (
+                    agencyTransactions.map((t: any) => (
+                      <tr key={t.id} className="hover:bg-surface-1">
+                        <td className="py-2.5 px-3 text-ink-muted">{t.period_start} – {t.period_end}</td>
+                        <td className="py-2.5 px-3 text-ink">{AGENCY_TRANSACTION_TYPES.find((o) => o.value === t.transaction_type)?.label ?? t.transaction_type}</td>
+                        <td className="py-2.5 px-3 text-right font-mono">{Number(t.count ?? 0).toLocaleString()}</td>
+                        <td className="py-2.5 px-3 text-right font-mono font-bold">KES {Number(t.volume_amount ?? 0).toLocaleString()}</td>
                       </tr>
                     ))
                   )}

@@ -79,3 +79,36 @@ export function useDividendPayouts() {
     queryFn: api.saccoAdmin.getDividendPayouts,
   })
 }
+
+export function useRecordDividendAgmApproval() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, agmResolutionReference }: { id: string; agmResolutionReference: string }) =>
+      api.saccoAdmin.recordDividendAgmApproval(id, agmResolutionReference),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['dividend-declarations'] }),
+  })
+}
+
+export function useDividendBatchStatus(declarationId: string | null, enabled: boolean) {
+  return useQuery({
+    queryKey: ['dividend-batch-status', declarationId],
+    queryFn: () => api.saccoAdmin.getDividendBatchStatus(declarationId as string),
+    enabled: !!declarationId && enabled,
+    refetchInterval: (query) => {
+      const data = query.state.data as { status?: string } | undefined
+      return data && !['COMPLETED', 'FAILED', 'NOT_STARTED'].includes(data.status ?? '') ? 2000 : false
+    },
+  })
+}
+
+export function useSimulateDividend() {
+  return useMutation({
+    mutationFn: (data: {
+      savings_type: string
+      period_start: string
+      period_end: string
+      declared_rate: number
+      calculation_method: string
+    }) => api.saccoAdmin.simulateDividend(data),
+  })
+}
