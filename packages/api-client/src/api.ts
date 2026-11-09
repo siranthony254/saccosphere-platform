@@ -5703,4 +5703,26 @@ export const api = {
 
     getJob: (jobId: string) => apiCall<any>('GET', `/management/statement-import/${uuid(jobId)}/`),
   },
+
+  // ─── GO-LIVE CHECKLIST & B2C VERIFICATION (super-admin facing) ─────────────
+
+  goLive: {
+    // Readable by a super admin for any SACCO, or a SACCO admin for their
+    // own — compliance-profile completeness plus payment readiness
+    // (M-Pesa Daraja onboarding, B2C, C2B URLs), all computed live from
+    // existing records, nothing new to fill in just for this.
+    getChecklist: (saccoId: string) =>
+      apiCall<{
+        sacco_id: string
+        ready: boolean
+        checklist: Array<{ key: string; label: string; satisfied: boolean; detail: string }>
+      }>('GET', `/management/superadmin/saccos/${uuid(saccoId)}/go-live-checklist/`),
+
+    // Runs a live Daraja OAuth test call against the SACCO's own B2C
+    // initiator/security credential (proves the credentials are valid,
+    // not that a real payout would succeed — Daraja has no safe way to
+    // test B2C more directly than that). Super-admin only.
+    verifyB2cCredentials: (saccoId: string) =>
+      apiCall<any>('POST', `/management/superadmin/saccos/${uuid(saccoId)}/verify-b2c/`),
+  },
 }

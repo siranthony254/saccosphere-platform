@@ -35,3 +35,19 @@ export function useRejectPaymentConfig() {
     onSuccess: () => qc.invalidateQueries({ queryKey: KEY }),
   })
 }
+
+export function useGoLiveChecklist(saccoId: string | null) {
+  return useQuery({
+    queryKey: ['go-live-checklist', saccoId],
+    queryFn: () => api.goLive.getChecklist(saccoId as string),
+    enabled: !!saccoId,
+  })
+}
+
+export function useVerifyB2cCredentials() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (saccoId: string) => api.goLive.verifyB2cCredentials(saccoId),
+    onSuccess: (_data, saccoId) => qc.invalidateQueries({ queryKey: ['go-live-checklist', saccoId] }),
+  })
+}

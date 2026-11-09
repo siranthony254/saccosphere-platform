@@ -6,6 +6,8 @@ import {
   useVerifyPaymentConfig,
   useApprovePaymentConfig,
   useRejectPaymentConfig,
+  useGoLiveChecklist,
+  useVerifyB2cCredentials,
 } from '../../hooks/usePaymentOnboarding'
 
 const STATUS_TONE: Record<string, string> = {
@@ -31,12 +33,16 @@ export function PaymentOnboarding() {
   const [rejectingId, setRejectingId] = useState<string | null>(null)
   const [rejectReason, setRejectReason] = useState('')
   const [notice, setNotice] = useState<{ ok: boolean; text: string } | null>(null)
+  const [checklistSaccoId, setChecklistSaccoId] = useState('')
+  const [b2cNotice, setB2cNotice] = useState<{ ok: boolean; text: string } | null>(null)
 
   const { data: submissions, isLoading } = usePaymentOnboardingQueue()
   const { data: saccos } = useAllSaccos()
   const verify = useVerifyPaymentConfig()
   const approve = useApprovePaymentConfig()
   const reject = useRejectPaymentConfig()
+  const { data: checklist, isLoading: isChecklistLoading } = useGoLiveChecklist(checklistSaccoId || null)
+  const verifyB2c = useVerifyB2cCredentials()
 
   const saccoNames = useMemo(() => {
     const map = new Map<string, string>()
@@ -101,6 +107,64 @@ export function PaymentOnboarding() {
           {notice.text}
         </div>
       )}
+
+      <div className="bg-surface border border-mid rounded-[10px] p-4 mb-5">
+        <div className="font-semibold text-sm text-ink mb-1">Go-Live Checklist</div>
+        <div className="text-[11px] text-ink-faint mb-3">
+          Compliance profile completeness plus payment readiness for one SACCO — everything that still needs to be true before it can go live.
+        </div>
+        <select
+          className="py-1.5 px-3 border border-mid rounded-lg text-[13px] outline-none bg-surface mb-3"
+          value={checklistSaccoId}
+          onChange={(e) => { setChecklistSaccoId(e.target.value); setB2cNotice(null) }}
+        >
+          <option value="">Select a SACCO...</option>
+          {(saccos?.results ?? []).map((s: any) => <option key={s.id} value={s.id}>{s.name}</option>)}
+        </select>
+
+        {checklistSaccoId && (
+          isChecklistLoading ? (
+            <div className="text-sm text-ink-muted py-3">Loading checklist...</div>
+          ) : checklist ? (
+            <div className="space-y-2">
+              <div className={`text-xs font-semibold px-2.5 py-1 rounded-full inline-block ${checklist.ready ? 'bg-mint-50 text-mint-700' : 'bg-amber-50 text-amber-700'}`}>
+                {checklist.ready ? 'Ready to go live' : 'Not yet ready'}
+              </div>
+              <div className="divide-y divide-surface-2 border border-surface-2 rounded-lg overflow-hidden">
+                {checklist.checklist.map((item) => (
+                  <div key={item.key} className="flex items-center justify-between px-3 py-2 text-xs">
+                    <span className="text-ink">{item.label}{item.detail ? ` (${item.detail})` : ''}</span>
+                    <span className={item.satisfied ? 'text-mint-700 font-semibold' : 'text-red-600 font-semibold'}>
+                      {item.satisfied ? 'Done' : 'Missing'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              <button
+                onClick={async () => {
+                  setB2cNotice(null)
+                  try {
+                    await verifyB2c.mutateAsync(checklistSaccoId)
+                    setB2cNotice({ ok: true, text: 'B2C credentials verified with Safaricom.' })
+                  } catch (err: any) {
+                    setB2cNotice({ ok: false, text: err?.message || 'B2C verification failed.' })
+                  }
+                }}
+                disabled={verifyB2c.isPending}
+                className="mt-2 px-4 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-xs font-semibold disabled:opacity-50"
+              >
+                {verifyB2c.isPending ? 'Verifying…' : 'Run B2C Credentials Test'}
+              </button>
+              {b2cNotice && (
+                <div className={`text-[12px] rounded-lg px-3 py-2 ${b2cNotice.ok ? 'bg-mint-50 text-mint-700' : 'bg-red-50 text-red-700'}`}>
+                  {b2cNotice.text}
+                </div>
+              )}
+            </div>
+          ) : null
+        )}
+      </div>
 
       {isLoading ? (
         <div className="text-sm text-ink-muted py-6">Loading submissions…</div>
