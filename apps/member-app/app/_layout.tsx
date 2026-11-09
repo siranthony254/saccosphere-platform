@@ -15,8 +15,6 @@ import { useAuthStore } from '../store/useAuthStore'
 import { clearStoredRefreshToken, loadRefreshToken, saveRefreshToken } from '../hooks/useAuth'
 import { useAutoRegisterDeviceToken } from '../hooks/useNotifications'
 import { AnimatedSplash } from '../components/AnimatedSplash'
-// Temporarily disabled for the Expo preview recording build. Restore this
-// component and its root mount before production or sensitive-demo builds.
 import { ThemeProvider, useTheme } from '../theme/ThemeProvider'
 import { AppBackground } from '../theme/AppBackground'
 // @ts-ignore: Allow side-effect CSS import without type declarations

@@ -116,11 +116,11 @@ export function Login() {
   const isBusy = loginMutation.isPending || enrollMutation.isPending || confirmMutation.isPending || verifyMutation.isPending
 
   return (
-    <div className="min-h-screen bg-[#071014] text-white flex items-center justify-center px-4">
-      <div className="w-full max-w-md rounded-[22px] border border-white/10 bg-slate-950/95 p-8 shadow-2xl backdrop-blur">
+    <div className="min-h-screen bg-surface-2 text-ink flex items-center justify-center px-4">
+      <div className="w-full max-w-md rounded-[22px] border border-mid bg-surface p-8 shadow-xl">
         <div className="mb-6 text-center">
-          <div className="text-3xl font-semibold">Welcome to Saccosphere</div>
-          <p className="mt-2 text-sm text-slate-400">
+          <div className="text-3xl font-semibold text-ink">Welcome to Saccosphere</div>
+          <p className="mt-2 text-sm text-ink-muted">
             {view.step === 'credentials' && 'Sign in to your SACCO admin portal.'}
             {view.step === 'mfa_verify' && 'Enter your authenticator code to finish signing in.'}
             {view.step === 'mfa_enroll' && 'Set up two-factor authentication before you can continue.'}
@@ -129,24 +129,26 @@ export function Login() {
         </div>
 
         {formError && (
-          <div className="mb-4 rounded-xl bg-red-500/10 px-3 py-2 text-sm text-red-400">{formError}</div>
+          <div className="mb-4 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-600">{formError}</div>
         )}
 
         {view.step === 'credentials' && (
           <form onSubmit={handleCredentialsSubmit} className="space-y-4">
-            <label className="block text-xs uppercase tracking-[0.24em] text-slate-400">Email</label>
+            <label className="block text-xs uppercase tracking-[0.24em] text-ink-muted">Email</label>
             <input
-              className="w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm text-white outline-none transition focus:border-mint-500 focus:ring-2 focus:ring-mint-500/20"
+              className="w-full rounded-xl border border-mid bg-surface px-4 py-3 text-sm text-ink outline-none transition focus:border-mint-500 focus:ring-2 focus:ring-mint-500/20"
               type="email"
+              aria-label="Email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               required
             />
 
-            <label className="block text-xs uppercase tracking-[0.24em] text-slate-400">Password</label>
+            <label className="block text-xs uppercase tracking-[0.24em] text-ink-muted">Password</label>
             <input
-              className="w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm text-white outline-none transition focus:border-mint-500 focus:ring-2 focus:ring-mint-500/20"
+              className="w-full rounded-xl border border-mid bg-surface px-4 py-3 text-sm text-ink outline-none transition focus:border-mint-500 focus:ring-2 focus:ring-mint-500/20"
               type="password"
+              aria-label="Password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               required
@@ -155,7 +157,7 @@ export function Login() {
             <button
               type="submit"
               disabled={isBusy}
-              className="w-full rounded-xl bg-mint-600 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-mint-700 disabled:cursor-not-allowed disabled:opacity-60"
+              className="w-full rounded-xl bg-mint-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-mint-700 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {loginMutation.isPending ? 'Signing in...' : 'Sign in'}
             </button>
@@ -164,11 +166,11 @@ export function Login() {
 
         {view.step === 'mfa_verify' && (
           <form onSubmit={handleVerifySubmit} className="space-y-4">
-            <label className="block text-xs uppercase tracking-[0.24em] text-slate-400">
+            <label className="block text-xs uppercase tracking-[0.24em] text-ink-muted">
               Authenticator code (or a recovery code)
             </label>
             <input
-              className="w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm text-white outline-none transition focus:border-mint-500 focus:ring-2 focus:ring-mint-500/20"
+              className="w-full rounded-xl border border-mid bg-surface px-4 py-3 text-sm text-ink outline-none transition focus:border-mint-500 focus:ring-2 focus:ring-mint-500/20"
               type="text"
               inputMode="numeric"
               autoFocus
@@ -179,14 +181,14 @@ export function Login() {
             <button
               type="submit"
               disabled={isBusy}
-              className="w-full rounded-xl bg-mint-600 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-mint-700 disabled:cursor-not-allowed disabled:opacity-60"
+              className="w-full rounded-xl bg-mint-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-mint-700 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {verifyMutation.isPending ? 'Verifying...' : 'Verify and sign in'}
             </button>
             <button
               type="button"
               onClick={() => { setView({ step: 'credentials' }); setCode(''); setFormError(null) }}
-              className="w-full text-xs text-slate-400 hover:text-slate-200"
+              className="w-full text-xs text-ink-muted hover:text-ink"
             >
               Back to sign in
             </button>
@@ -195,24 +197,24 @@ export function Login() {
 
         {view.step === 'mfa_enroll' && (
           <form onSubmit={handleEnrollConfirmSubmit} className="space-y-4">
-            <div className="rounded-xl border border-slate-700 bg-slate-900 p-4 space-y-3">
-              <p className="text-xs text-slate-400">
+            <div className="rounded-xl border border-mid bg-surface-2 p-4 space-y-3">
+              <p className="text-xs text-ink-muted">
                 Scan this into an authenticator app (Google Authenticator, Authy, 1Password, etc.) — or add it
                 manually using the key below.
               </p>
               <div className="flex justify-center rounded-lg bg-white p-3">
                 <QRCodeSVG value={view.otpauthUri} size={180} />
               </div>
-              <div className="text-[10px] text-slate-500 uppercase tracking-wider">Manual entry key</div>
-              <div className="font-mono text-sm text-mint-400 tracking-wider break-all">
+              <div className="text-[10px] text-ink-faint uppercase tracking-wider">Manual entry key</div>
+              <div className="font-mono text-sm text-mint-600 tracking-wider break-all">
                 {formatSecret(view.secret)}
               </div>
             </div>
-            <label className="block text-xs uppercase tracking-[0.24em] text-slate-400">
+            <label className="block text-xs uppercase tracking-[0.24em] text-ink-muted">
               Enter the 6-digit code from your app
             </label>
             <input
-              className="w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm text-white outline-none transition focus:border-mint-500 focus:ring-2 focus:ring-mint-500/20"
+              className="w-full rounded-xl border border-mid bg-surface px-4 py-3 text-sm text-ink outline-none transition focus:border-mint-500 focus:ring-2 focus:ring-mint-500/20"
               type="text"
               inputMode="numeric"
               autoFocus
@@ -223,7 +225,7 @@ export function Login() {
             <button
               type="submit"
               disabled={isBusy}
-              className="w-full rounded-xl bg-mint-600 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-mint-700 disabled:cursor-not-allowed disabled:opacity-60"
+              className="w-full rounded-xl bg-mint-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-mint-700 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {confirmMutation.isPending ? 'Confirming...' : 'Confirm and enable'}
             </button>
@@ -232,11 +234,11 @@ export function Login() {
 
         {view.step === 'mfa_recovery_codes' && (
           <div className="space-y-4">
-            <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-300">
+            <div className="rounded-xl border border-amber-500/30 bg-amber-50 p-3 text-xs text-amber-800">
               Store these somewhere safe. If you lose your authenticator device, these are the only way back in —
               they will never be shown again.
             </div>
-            <div className="grid grid-cols-2 gap-2 rounded-xl border border-slate-700 bg-slate-900 p-4 font-mono text-sm text-mint-400">
+            <div className="grid grid-cols-2 gap-2 rounded-xl border border-mid bg-surface-2 p-4 font-mono text-sm text-mint-600">
               {view.codes.map((c) => (
                 <div key={c}>{c}</div>
               ))}
@@ -244,14 +246,14 @@ export function Login() {
             <button
               type="button"
               onClick={() => downloadRecoveryCodes(view.codes)}
-              className="w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm font-semibold text-slate-200 transition hover:bg-slate-800"
+              className="w-full rounded-xl border border-mid bg-surface px-4 py-3 text-sm font-semibold text-ink transition hover:bg-surface-2"
             >
               Download codes (.txt)
             </button>
             <button
               type="button"
               onClick={handleRecoveryCodesAcknowledged}
-              className="w-full rounded-xl bg-mint-600 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-mint-700"
+              className="w-full rounded-xl bg-mint-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-mint-700"
             >
               I've saved these — continue
             </button>
