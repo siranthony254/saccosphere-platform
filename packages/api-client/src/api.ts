@@ -5575,4 +5575,22 @@ export const api = {
       return response.data as Blob
     },
   },
+
+  // ─── P09 SUSPENSE ACCOUNT TOOLING (sacco-admin facing) ─────────────────────
+
+  suspense: {
+    getItems: (params?: { status?: 'UNMATCHED' | 'CLEARED' | 'REFUNDED'; min_age_days?: number }) =>
+      apiCall<any[]>('GET', '/services/suspense/', undefined, { params }),
+
+    // Maker-checker gated (SUSPENSE_CLEARING). payment_alias_id is optional —
+    // omitted, it runs the member's normal allocation waterfall instead of
+    // targeting one specific account.
+    clearItem: (id: string, data: { membership_id: string; payment_alias_id?: string; verification_code?: string }) =>
+      apiCall<any>('POST', `/services/suspense/${uuid(id)}/clear/`, data),
+
+    // Maker-checker gated (SUSPENSE_REFUND) — a B2C payout back to the
+    // payer's own phone number.
+    refundItem: (id: string, data: { phone_number: string; verification_code?: string }) =>
+      apiCall<any>('POST', `/services/suspense/${uuid(id)}/refund/`, data),
+  },
 }
