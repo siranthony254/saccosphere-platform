@@ -4,6 +4,45 @@ import { api } from '@saccosphere/api-client'
 import { InfoTip } from '@saccosphere/ui'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { Card } from '../../components/ui/Card'
+import { useMembers } from '../../hooks/useMembers'
+
+type PickedMember = { id: string; label: string }
+
+function MemberPicker({ selected, setSelected }: { selected: PickedMember | null; setSelected: (v: PickedMember | null) => void }) {
+  const [search, setSearch] = useState('')
+  const { data: results } = useMembers({ search: search || undefined })
+  return (
+    <div>
+      <input
+        type="text"
+        placeholder="Search by name or member number"
+        value={selected ? '' : search}
+        onChange={(e) => { setSearch(e.target.value); setSelected(null) }}
+        className="w-full p-2 border border-[#e5ede9] rounded text-xs bg-white"
+        disabled={!!selected}
+      />
+      {selected ? (
+        <div className="mt-1 flex items-center justify-between bg-surface-2 rounded px-2 py-1 text-xs">
+          <span className="text-ink font-medium">{selected.label}</span>
+          <button type="button" onClick={() => setSelected(null)} className="text-violet-700 font-semibold">Change</button>
+        </div>
+      ) : search && (results?.results ?? []).length > 0 ? (
+        <div className="mt-1 space-y-1 max-h-28 overflow-y-auto">
+          {(results?.results ?? []).map((m: any) => (
+            <button
+              type="button"
+              key={m.id}
+              onClick={() => setSelected({ id: m.id, label: `${m.first_name} ${m.last_name} · ${m.member_number}` })}
+              className="w-full text-left px-2 py-1 bg-surface-2 hover:bg-surface-1 rounded text-xs"
+            >
+              {m.first_name} {m.last_name} · {m.member_number}
+            </button>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  )
+}
 
 const OUTREACH_CHANNELS = [
   { value: 'SMS', label: 'SMS' },
@@ -49,28 +88,30 @@ export function DormancyManagement() {
 }
 
 function DormantAccountsTab() {
+  // There is no bulk "list dormant savings for this SACCO" endpoint on the
+  // backend — /services/savings/ is self-scoped to the calling user, not
+  // tenant-wide, so an admin's own request there returns nothing useful.
+  // The only admin-facing dormancy data is per-saving, by id
+  // (SavingsDormancyView) — so this searches a specific member first,
+  // the same way a real dormancy follow-up usually starts (a member or
+  // their family gets in touch), rather than a SACCO-wide browse list.
+  const [member, setMember] = useState<PickedMember | null>(null)
   const [selectedSavingId, setSelectedSavingId] = useState<string | null>(null)
   const [channel, setChannel] = useState('SMS')
   const [outcome, setOutcome] = useState('REACHED')
   const [notes, setNotes] = useState('')
   const queryClient = useQueryClient()
 
-  const { data: dormantSavings = [], isLoading } = useQuery({
-    queryKey: ['savings-dormant'],
-    queryFn: () => api.savings.list({ status: 'dormant' }),
+  const { data: memberDetail, isLoading } = useQuery({
+    queryKey: ['dormancy-member', member?.id],
+    queryFn: () => api.saccoAdmin.getMember(member!.id),
+    enabled: !!member,
   })
-
-  const selectedSaving = dormantSavings.find((s: any) => s.id === selectedSavingId) ?? null
+  const dormantSavings = (memberDetail?.savings_breakdown ?? []).filter((s: any) => s.status === 'dormant')
 
   const { data: detail, isLoading: isDetailLoading } = useQuery({
     queryKey: ['dormancy-detail', selectedSavingId],
-    queryFn: async () => {
-      const [dormancy, member] = await Promise.all([
-        api.dormancy.getDormancyStatus(selectedSavingId as string),
-        selectedSaving ? api.saccoAdmin.getMember(selectedSaving.membership_id).catch(() => null) : Promise.resolve(null),
-      ])
-      return { dormancy, member }
-    },
+    queryFn: () => api.dormancy.getDormancyStatus(selectedSavingId as string),
     enabled: !!selectedSavingId,
   })
 
@@ -84,26 +125,33 @@ function DormantAccountsTab() {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-      <Card title="Dormant Savings Accounts" className="md:col-span-2">
+      <Card title="Find a Member's Dormant Accounts" className="md:col-span-2">
+        <div className="text-xs text-ink-muted mb-3 flex items-start gap-1.5">
+          <span>Search for the member, then pick one of their dormant accounts below to view outreach history and log a new attempt.</span>
+          <InfoTip text="There's no SACCO-wide list of every dormant account yet — this looks up one member's accounts at a time, same as how a dormancy follow-up usually starts (the member or their family gets in touch)." label="Why search by member" />
+        </div>
+        <div className="mb-3 max-w-sm">
+          <MemberPicker selected={member} setSelected={(v) => { setMember(v); setSelectedSavingId(null) }} />
+        </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
               <tr className="border-b border-[#e5ede9] text-ink-muted font-semibold bg-surface-2">
-                <th className="py-2 px-3">SACCO</th>
                 <th className="py-2 px-3">Account Type</th>
                 <th className="py-2 px-3 text-right">Balance</th>
                 <th className="py-2 px-3 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#e5ede9]">
-              {isLoading ? (
-                <tr><td colSpan={4} className="py-6 text-center text-ink-muted">Loading dormant accounts...</td></tr>
+              {!member ? (
+                <tr><td colSpan={3} className="py-6 text-center text-ink-muted">Search for a member to see their dormant accounts.</td></tr>
+              ) : isLoading ? (
+                <tr><td colSpan={3} className="py-6 text-center text-ink-muted">Loading accounts...</td></tr>
               ) : dormantSavings.length === 0 ? (
-                <tr><td colSpan={4} className="py-6 text-center text-ink-muted">No dormant accounts right now.</td></tr>
+                <tr><td colSpan={3} className="py-6 text-center text-ink-muted">This member has no dormant accounts.</td></tr>
               ) : (
                 dormantSavings.map((s: any) => (
                   <tr key={s.id} className="hover:bg-surface-1">
-                    <td className="py-2.5 px-3 font-semibold text-ink">{s.sacco_name}</td>
                     <td className="py-2.5 px-3 text-ink-soft">{s.savings_type}</td>
                     <td className="py-2.5 px-3 text-right font-mono">KES {Number(s.amount ?? 0).toLocaleString()}</td>
                     <td className="py-2.5 px-3 text-right">
@@ -131,21 +179,21 @@ function DormantAccountsTab() {
           <div className="space-y-4 text-xs">
             <div className="bg-surface-2 p-3 rounded border">
               <div className="font-bold text-ink">
-                {detail?.member ? `${detail.member.first_name} ${detail.member.last_name}` : 'Member'}
+                {member?.label ?? 'Member'}
               </div>
               <div className="text-ink-muted">
-                Dormant since {detail?.dormancy?.dormant_since ? new Date(detail.dormancy.dormant_since).toLocaleDateString() : '—'}
+                Dormant since {detail?.dormant_since ? new Date(detail.dormant_since).toLocaleDateString() : '—'}
               </div>
               <div className="text-ink-muted">
-                Last activity: {detail?.dormancy?.last_transaction_date ? new Date(detail.dormancy.last_transaction_date).toLocaleDateString() : 'Never'}
+                Last activity: {detail?.last_transaction_date ? new Date(detail.last_transaction_date).toLocaleDateString() : 'Never'}
               </div>
             </div>
 
             <div>
               <div className="font-bold text-ink mb-2">Past attempts</div>
-              {detail?.dormancy?.outreach_attempts?.length ? (
+              {detail?.outreach_attempts?.length ? (
                 <div className="space-y-1.5 max-h-40 overflow-y-auto">
-                  {detail.dormancy.outreach_attempts.map((a: any) => (
+                  {detail.outreach_attempts.map((a: any) => (
                     <div key={a.id} className="border-b border-[#e5ede9] pb-1.5">
                       <div className="font-semibold text-ink">{a.channel} — {a.outcome.replace(/_/g, ' ')}</div>
                       <div className="text-ink-faint">{new Date(a.created_at ?? a.attempted_at).toLocaleString()}</div>
