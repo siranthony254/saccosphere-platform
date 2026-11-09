@@ -2047,8 +2047,17 @@ export const api = {
       })
     },
 
+    // Exact match only (phone or member number), and returns at most one
+    // result object — not a list, despite the plural name. 404s with no
+    // match.
     searchGuarantors: (loanId: string, query: string) =>
-      apiCall<any[]>('GET', `/services/loans/${uuid(loanId)}/guarantors/search/`, undefined, {
+      apiCall<{
+        user: { id: string; email: string; full_name: string; phone_number: string }
+        member_number: string
+        savings_total: number
+        available_capacity: number
+        can_guarantee: boolean
+      }>('GET', `/services/loans/${uuid(loanId)}/guarantors/search/`, undefined, {
         // Backend matches on phone first, then member number — send the raw
         // query as both so either identifier the member types resolves.
         params: { phone: query, member_number: query },
@@ -2103,6 +2112,42 @@ export const api = {
     // step of approving a pledge. Caller must be the guarantor themself.
     requestGuarantorConsentOtp: (loanId: string, guarantorId: string) =>
       apiCall<{ detail: string }>('POST', `/services/loans/${uuid(loanId)}/guarantors/${uuid(guarantorId)}/consent/request-otp/`),
+
+    // P15: borrower-initiated substitution of an existing APPROVED
+    // guarantor on a disbursed/active/defaulted loan. new_guarantor_user_id
+    // comes from searchGuarantors below, same as a fresh request — the new
+    // guarantor then goes through the ordinary PENDING -> OTP-consent ->
+    // APPROVE flow (they'll see it in their own guarantor statement) before
+    // the old one is released.
+    //
+    // NOTE: there is no endpoint anywhere that lists a loan's current
+    // guarantors back to the borrower (LoanDetailSerializer has no
+    // guarantors field, and GuarantorRequestView is POST-only) — the
+    // caller must already know the old guarantor's own row id
+    // (`guarantorId` below, not their user id), which today only a
+    // backend addition (or a support channel) can supply.
+    requestGuarantorSubstitution: (loanId: string, guarantorId: string, data: { new_guarantor_user_id: string; guarantee_amount: number }) =>
+      apiCall<any>('POST', `/services/loans/${uuid(loanId)}/guarantors/${uuid(guarantorId)}/substitute/`, data),
+
+    // P17: a guarantor re-consenting to a loan restructure that increases
+    // their exposure. Mirrors requestGuarantorConsentOtp/
+    // respondToGuarantorRequest exactly, but scoped to a restructure+
+    // guarantor pair instead of the original request.
+    //
+    // NOTE: creating a GuarantorReconsentRequest sends no notification at
+    // all (no SMS, no push, no in-app row) and there is no list endpoint
+    // for "my pending re-consents" — same shape of gap as the
+    // governance screens earlier this session. Reachable only by a link
+    // carrying restructureId/guarantorId from elsewhere (support, or a
+    // future backend notification).
+    requestGuarantorReconsentOtp: (restructureId: string, guarantorId: string) =>
+      apiCall<{ detail: string }>('POST', `/services/restructures/${uuid(restructureId)}/guarantor-reconsent/${uuid(guarantorId)}/request-otp/`),
+
+    respondToGuarantorReconsent: (restructureId: string, guarantorId: string, action: 'approve' | 'decline', otpCode?: string) =>
+      apiCall<any>('POST', `/services/restructures/${uuid(restructureId)}/guarantor-reconsent/${uuid(guarantorId)}/respond/`, {
+        action: action === 'approve' ? 'APPROVE' : 'DECLINE',
+        ...(otpCode ? { otp_code: otpCode } : {}),
+      }),
 
     // Self-scoped: every pledge the caller has ever made, across every
     // SACCO they've guaranteed in, plus their own guarantee capacity.

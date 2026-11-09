@@ -40,3 +40,36 @@ export function useRespondToGuarantorRequest() {
     },
   })
 }
+
+// Exact-match only and 404s on no match — a search-on-submit mutation
+// fits better than a live query that would refetch into a 404 on every
+// keystroke.
+export function useSearchGuarantor(loanId: string) {
+  return useMutation({
+    mutationFn: (query: string) => api.loans.searchGuarantors(loanId, query),
+  })
+}
+
+export function useRequestGuarantorSubstitution(loanId: string) {
+  return useMutation({
+    mutationFn: ({ guarantorId, newGuarantorUserId, guaranteeAmount }: { guarantorId: string; newGuarantorUserId: string; guaranteeAmount: number }) =>
+      api.loans.requestGuarantorSubstitution(loanId, guarantorId, {
+        new_guarantor_user_id: newGuarantorUserId,
+        guarantee_amount: guaranteeAmount,
+      }),
+  })
+}
+
+export function useRequestReconsentOtp() {
+  return useMutation({
+    mutationFn: ({ restructureId, guarantorId }: { restructureId: string; guarantorId: string }) =>
+      api.loans.requestGuarantorReconsentOtp(restructureId, guarantorId),
+  })
+}
+
+export function useRespondToReconsent() {
+  return useMutation({
+    mutationFn: ({ restructureId, guarantorId, action, otpCode }: { restructureId: string; guarantorId: string; action: 'approve' | 'decline'; otpCode?: string }) =>
+      api.loans.respondToGuarantorReconsent(restructureId, guarantorId, action, otpCode),
+  })
+}
