@@ -150,17 +150,23 @@ function DormantAccountsTab() {
               ) : dormantSavings.length === 0 ? (
                 <tr><td colSpan={3} className="py-6 text-center text-ink-muted">This member has no dormant accounts.</td></tr>
               ) : (
-                dormantSavings.map((s: any) => (
-                  <tr key={s.id} className="hover:bg-surface-1">
+                dormantSavings.map((s: any, i: number) => (
+                  <tr key={s.id ?? `${s.savings_type}-${i}`} className="hover:bg-surface-1">
                     <td className="py-2.5 px-3 text-ink-soft">{s.savings_type}</td>
                     <td className="py-2.5 px-3 text-right font-mono">KES {Number(s.amount ?? 0).toLocaleString()}</td>
                     <td className="py-2.5 px-3 text-right">
-                      <button
-                        onClick={() => setSelectedSavingId(s.id)}
-                        className="px-2 py-1 bg-violet-600 hover:bg-violet-700 text-white rounded text-[10px] font-bold cursor-pointer"
-                      >
-                        View &amp; Log Outreach
-                      </button>
+                      {s.id ? (
+                        <button
+                          onClick={() => setSelectedSavingId(s.id)}
+                          className="px-2 py-1 bg-violet-600 hover:bg-violet-700 text-white rounded text-[10px] font-bold cursor-pointer"
+                        >
+                          View &amp; Log Outreach
+                        </button>
+                      ) : (
+                        <span className="text-ink-faint" title="The member-lookup response doesn't include this account's id yet — a backend fix (AdminMemberDetailSerializer.get_savings_breakdown) is needed before this specific account can be opened.">
+                          Unavailable
+                        </span>
+                      )}
                     </td>
                   </tr>
                 ))
