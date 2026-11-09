@@ -1,12 +1,13 @@
 import { useState, FormEvent } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
+import { QRCodeSVG } from 'qrcode.react'
 import { useLogin, useMfaEnroll, useMfaConfirm, useMfaLoginVerify, useCompleteStaffLogin } from '../../hooks/useAuth'
 import type { StaffLoginResult } from '@saccosphere/api-client'
 
 type View =
   | { step: 'credentials' }
   | { step: 'mfa_verify'; challengeToken: string }
-  | { step: 'mfa_enroll'; enrollmentToken: string; secret: string }
+  | { step: 'mfa_enroll'; enrollmentToken: string; secret: string; otpauthUri: string }
   | { step: 'mfa_recovery_codes'; codes: string[] }
 
 const formatSecret = (secret: string) => secret.replace(/(.{4})/g, '$1 ').trim()
@@ -54,7 +55,12 @@ export function Login() {
         return
       }
       const enrolled = await enrollMutation.mutateAsync(result.enrollment_token)
-      setView({ step: 'mfa_enroll', enrollmentToken: result.enrollment_token, secret: enrolled.secret })
+      setView({
+        step: 'mfa_enroll',
+        enrollmentToken: result.enrollment_token,
+        secret: enrolled.secret,
+        otpauthUri: enrolled.otpauth_uri,
+      })
     } catch (error: any) {
       setFormError(error?.message || 'Unable to sign in. Check your credentials.')
     }
@@ -178,6 +184,9 @@ export function Login() {
                 Scan this into an authenticator app (Google Authenticator, Authy, 1Password, etc.) — or add it
                 manually using the key below.
               </p>
+              <div className="flex justify-center rounded-lg bg-white p-3">
+                <QRCodeSVG value={view.otpauthUri} size={180} />
+              </div>
               <div className="text-[10px] text-slate-500 uppercase tracking-wider">Manual entry key</div>
               <div className="font-mono text-sm text-indigo-400 tracking-wider break-all">
                 {formatSecret(view.secret)}

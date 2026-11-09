@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { QRCodeSVG } from 'qrcode.react'
 import { api } from '@saccosphere/api-client'
 import { ThemePicker } from '@saccosphere/ui'
 import { useAuthStore } from '../../store/useAuthStore'
@@ -203,7 +204,11 @@ function StaffMfaSetupCard() {
         </div>
       ) : (
         <div className="space-y-4 bg-surface-2 p-4 rounded-xl border border-ink-faint">
-          <div className="text-xs font-bold text-ink">Add this key into your Authenticator app:</div>
+          <div className="text-xs font-bold text-ink">Scan this with your Authenticator app, or add the key below manually:</div>
+
+          <div className="flex justify-center bg-white p-3 rounded border">
+            <QRCodeSVG value={mfaData.otpauth_uri} size={160} />
+          </div>
 
           <div className="p-2 bg-white rounded font-mono text-xs text-indigo-700 font-bold border tracking-wider break-all">
             {mfaData.secret.replace(/(.{4})/g, '$1 ').trim()}

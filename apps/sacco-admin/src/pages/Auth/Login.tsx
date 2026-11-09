@@ -1,5 +1,6 @@
 import { useState, FormEvent, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
+import { QRCodeSVG } from 'qrcode.react'
 import { useLogin, useMfaEnroll, useMfaConfirm, useMfaLoginVerify, useCompleteStaffLogin } from '../../hooks/useAuth'
 import { useAuthStore } from '../../store/useAuthStore'
 import type { StaffLoginResult } from '@saccosphere/api-client'
@@ -189,6 +190,9 @@ export function Login() {
                 Scan this into an authenticator app (Google Authenticator, Authy, 1Password, etc.) — or add it
                 manually using the key below.
               </p>
+              <div className="flex justify-center rounded-lg bg-white p-3">
+                <QRCodeSVG value={view.otpauthUri} size={180} />
+              </div>
               <div className="text-[10px] text-slate-500 uppercase tracking-wider">Manual entry key</div>
               <div className="font-mono text-sm text-mint-400 tracking-wider break-all">
                 {formatSecret(view.secret)}
