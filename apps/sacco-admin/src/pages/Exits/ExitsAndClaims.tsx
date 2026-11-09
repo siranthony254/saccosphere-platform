@@ -279,7 +279,16 @@ function DeceasedClaimsTab() {
                     setSettleError(null)
                     settleClaim.mutate(
                       { claimId: activeClaim.id, data: { loan_clearance_method: settleMethod, loan_clearance_reference: settleReference.trim() || undefined } },
-                      { onError: (err: any) => setSettleError(err?.message || 'Failed to settle claim.') }
+                      {
+                        // Backend gap: services/deceased_claims.py::submit_claim_settlement
+                        // never accepts/forwards a verification_code to submit_approval_request,
+                        // so a 428 here can't be cleared by entering a code on this screen.
+                        onError: (err: any) => setSettleError(
+                          err?.status === 428
+                            ? 'This action needs a very recent step-up verification. Approve or confirm another sensitive action first (e.g. in the Approvals queue), then retry within a few minutes.'
+                            : err?.message || 'Failed to settle claim.'
+                        ),
+                      }
                     )
                   }}
                   disabled={!canSettle || settleClaim.isPending}

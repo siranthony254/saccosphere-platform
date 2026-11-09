@@ -592,7 +592,15 @@ function VariancesTab() {
                         setResolveModal(null)
                         setResolveStatus({ type: 'success', message: 'Variance resolved.' })
                       },
-                      onError: (err: any) => setResolveStatus({ type: 'error', message: err?.message || 'Failed to resolve.' }),
+                      // Backend gap: checkoff/variances.py::resolve_variance never
+                      // accepts/forwards a verification_code to submit_approval_request,
+                      // so a 428 here can't be cleared by entering a code on this screen.
+                      onError: (err: any) => setResolveStatus({
+                        type: 'error',
+                        message: err?.status === 428
+                          ? 'This action needs a very recent step-up verification. Approve or confirm another sensitive action first (e.g. in the Approvals queue), then retry within a few minutes.'
+                          : err?.message || 'Failed to resolve.',
+                      }),
                     }
                   )
                 }}

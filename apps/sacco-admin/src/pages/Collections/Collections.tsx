@@ -85,7 +85,16 @@ function LoanDetailModal({ loanId, borrowerName, onClose }: { loanId: string; bo
         setRecoveryStatus({ type: 'success', message: 'Submitted to the maker-checker queue for approval.' })
         setRecoveryAmount('')
       },
-      onError: (err: any) => setRecoveryStatus({ type: 'error', message: err?.message || 'Failed to initiate guarantor recovery.' }),
+      onError: (err: any) => {
+        // Backend gap: services/guarantor_recovery.py::initiate_guarantor_recovery
+        // never accepts/forwards a verification_code to submit_approval_request,
+        // so a 428 here can't be cleared by entering a code on this screen —
+        // only by already having a fresh step-up from another gated action.
+        const message = err?.status === 428
+          ? 'This action needs a very recent step-up verification. Approve or confirm another sensitive action first (e.g. in the Approvals queue), then retry within a few minutes.'
+          : err?.message || 'Failed to initiate guarantor recovery.'
+        setRecoveryStatus({ type: 'error', message })
+      },
     })
   }
 
@@ -97,7 +106,7 @@ function LoanDetailModal({ loanId, borrowerName, onClose }: { loanId: string; bo
             <div className="font-bold text-lg text-ink">{borrowerName}</div>
             <div className="text-[11px] text-ink-faint font-mono">{loanId}</div>
           </div>
-          <button onClick={onClose} className="text-ink-muted hover:text-ink text-xl font-bold cursor-pointer">&times;</button>
+          <button onClick={onClose} aria-label="Close" className="text-ink-muted hover:text-ink text-xl font-bold cursor-pointer">&times;</button>
         </div>
 
         {/* Contact history + log form */}

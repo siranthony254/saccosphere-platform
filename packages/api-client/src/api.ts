@@ -5612,9 +5612,21 @@ export const api = {
 
     // Maker-checker gated — can come back as a submit_approval_request 202
     // payload (no `status` key) instead of applying immediately.
-    commitBatch: (batchId: string) => apiCall<any>('POST', `/migration-toolkit/batches/${uuid(batchId)}/commit/`),
+    //
+    // Backend gap: migration_toolkit/commit.py::submit_onboarding_commit and
+    // rollback.py::submit_onboarding_rollback never read `verification_code`
+    // off the request or forward it to submit_approval_request, so a 428
+    // here cannot actually be cleared by retrying with a code yet — this
+    // param is wired for forward-compatibility the moment that's fixed.
+    commitBatch: (batchId: string, verificationCode?: string) =>
+      apiCall<any>('POST', `/migration-toolkit/batches/${uuid(batchId)}/commit/`, {
+        ...(verificationCode ? { verification_code: verificationCode } : {}),
+      }),
 
-    rollbackBatch: (batchId: string) => apiCall<any>('POST', `/migration-toolkit/batches/${uuid(batchId)}/rollback/`),
+    rollbackBatch: (batchId: string, verificationCode?: string) =>
+      apiCall<any>('POST', `/migration-toolkit/batches/${uuid(batchId)}/rollback/`, {
+        ...(verificationCode ? { verification_code: verificationCode } : {}),
+      }),
 
     // totals keys are member_number (not a UUID) — the one place in this
     // migration-only workflow that's looked up by a human-readable code

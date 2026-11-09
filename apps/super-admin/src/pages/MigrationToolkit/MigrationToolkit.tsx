@@ -101,7 +101,13 @@ export function MigrationToolkit() {
       setMsg(result?.status ? 'Commit complete.' : 'Submitted for a second super admin to approve.')
       setTimeout(() => setMsg(null), 5000)
     },
-    onError: (err: any) => setMsg(err?.message || 'Commit failed.'),
+    // Backend gap: see api.migrationToolkit.commitBatch's comment — a 428
+    // here can't yet be cleared by retrying with a code on this screen.
+    onError: (err: any) => setMsg(
+      err?.status === 428
+        ? 'This action needs a very recent step-up verification. Approve or confirm another sensitive action first (e.g. the Approvals queue), then retry within a few minutes.'
+        : err?.message || 'Commit failed.'
+    ),
   })
 
   const rollbackMutation = useMutation({
@@ -111,7 +117,11 @@ export function MigrationToolkit() {
       setMsg(result?.status ? 'Rolled back.' : 'Rollback submitted for a second super admin to approve.')
       setTimeout(() => setMsg(null), 5000)
     },
-    onError: (err: any) => setMsg(err?.message || 'Rollback failed — a live transaction may already have touched what was committed.'),
+    onError: (err: any) => setMsg(
+      err?.status === 428
+        ? 'This action needs a very recent step-up verification. Approve or confirm another sensitive action first (e.g. the Approvals queue), then retry within a few minutes.'
+        : err?.message || 'Rollback failed — a live transaction may already have touched what was committed.'
+    ),
   })
 
   const reconcileMutation = useMutation({

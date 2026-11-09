@@ -266,6 +266,13 @@ function AssignmentsTab() {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-5 text-xs">
+      <div className="md:col-span-3 p-3 bg-amber-50 border border-amber-200 text-amber-800 rounded-lg font-semibold">
+        Known backend limitation: a staff member assigned ONLY a role here (and who does not also hold the
+        legacy SACCO_ADMIN role) cannot currently log into this portal — the login endpoint doesn't yet check
+        this permission system when deciding who counts as an admin. Until that's fixed backend-side, only
+        assign roles to staff who already have SACCO_ADMIN access some other way.
+      </div>
+
       {msg && (
         <div className="md:col-span-3 p-3 bg-indigo-50 border border-indigo-200 text-indigo-900 rounded-lg font-semibold">{msg}</div>
       )}

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { QRCodeSVG } from 'qrcode.react'
 import { ThemePicker, InfoTip } from '@saccosphere/ui'
+import { StepUpModal } from '../../components/auth/StepUpModal'
 import { toast } from 'react-hot-toast'
 import { useSaccoSettings } from '../../hooks/useSaccoSettings'
 import { useReminderPolicy } from '../../hooks/useCollections'
@@ -1236,6 +1237,8 @@ function ReminderPolicyCard() {
 
 export function Settings() {
   const { data, isLoading, error, isPending, save } = useSaccoSettings()
+  const [showStepUp, setShowStepUp] = useState(false)
+  const [stepUpError, setStepUpError] = useState<string | null>(null)
 
   // Mirrors the fields SaccoSettingsSerializer actually exposes.
   const [formData, setFormData] = useState({
@@ -1262,7 +1265,7 @@ export function Settings() {
     })
   }, [settings])
 
-  const handleSave = () => {
+  const handleSave = (verificationCode?: string) => {
     const values: Record<string, number | string> = {
       guarantor_type_allowed: formData.guarantor_type_allowed,
       min_loan_amount: Number(formData.min_loan_amount),
@@ -1284,11 +1287,27 @@ export function Settings() {
       return
     }
 
-    save(values, {
-      onSuccess: () => toast.success('SACCO settings saved.'),
-      onError: (error: any) =>
-        toast.error(error?.response?.data?.detail || error?.message || 'Failed to save SACCO settings.'),
-    })
+    // Some of these fields (registration_fee, loan_multiplier,
+    // min/max_loan_amount) are PRODUCT_RATE_CHANGE-gated on the backend and
+    // can 428 for a step-up — the rest apply immediately either way.
+    save(
+      { ...values, ...(verificationCode ? { verification_code: verificationCode } : {}) },
+      {
+        onSuccess: () => {
+          setShowStepUp(false)
+          setStepUpError(null)
+          toast.success('SACCO settings saved.')
+        },
+        onError: (error: any) => {
+          if (error?.status === 428) {
+            setShowStepUp(true)
+            setStepUpError(error?.message || null)
+            return
+          }
+          toast.error(error?.response?.data?.detail || error?.message || 'Failed to save SACCO settings.')
+        },
+      }
+    )
   }
 
   const field = (
@@ -1425,13 +1444,21 @@ export function Settings() {
       <div className="mt-6 flex justify-between items-center">
         <p className="text-xs text-ink-faint">Last updated: {data?.settings?.updated_at ? new Date(data.settings.updated_at as any).toLocaleString() : 'Never'}</p>
         <button
-          onClick={handleSave}
+          onClick={() => handleSave()}
           disabled={isPending}
           className="px-8 py-2.5 rounded-lg border-none bg-mint-600 text-white text-sm font-bold cursor-pointer hover:bg-mint-700 transition-all shadow-md active:scale-95 disabled:opacity-60"
         >
           {isPending ? 'Updating settings...' : 'Save Configuration'}
         </button>
       </div>
+
+      <StepUpModal
+        isOpen={showStepUp}
+        description="Changing registration fee, loan multiplier, or min/max loan amount requires second-factor staff authorization."
+        error={stepUpError}
+        onClose={() => { setShowStepUp(false); setStepUpError(null) }}
+        onSubmitCode={(code) => handleSave(code)}
+      />
     </div>
   )
 }
