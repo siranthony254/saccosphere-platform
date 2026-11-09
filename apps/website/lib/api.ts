@@ -3,7 +3,7 @@
 // authenticated client, so it deliberately skips @saccosphere/api-client
 // (built for token-bearing apps) in favor of plain fetch.
 
-const API_BASE = (process.env.NEXT_PUBLIC_API_URL ?? 'https://saccosphere-production-a4cb.up.railway.app').replace(/\/+$/, '')
+const API_BASE = (process.env.NEXT_PUBLIC_API_URL ?? 'https://saccosphere-production-9835.up.railway.app').replace(/\/+$/, '')
 const API_V1 = `${API_BASE}/api/v1`
 
 export type PublicStats = {
