@@ -5053,20 +5053,26 @@ export const api = {
 
   healthcare: {
     getFacilities: () => apiCall<any[]>('GET', '/healthcare/facilities/'),
-    registerFacility: (data: any) => apiCall<any>('POST', '/healthcare/facilities/', data),
+    // HealthFacilityListCreateView.post reads name/code straight off
+    // request.data to create the underlying checkoff.Employer (same shape
+    // as education.registerInstitution) — facility_type is the one field
+    // the serializer itself validates, and is required (no default).
+    registerFacility: (data: { name: string; code: string; facility_type: 'HOSPITAL' | 'CLINIC' | 'PHARMACY' }) =>
+      apiCall<any>('POST', '/healthcare/facilities/', data),
 
     getFastTrackDisbursements: (params?: { met_sla?: boolean }) =>
       apiCall<any[]>('GET', '/healthcare/fast-track-disbursements/', undefined, { params }),
 
     getTrainingProviders: () => apiCall<any[]>('GET', '/healthcare/training-providers/'),
-    registerTrainingProvider: (data: any) => apiCall<any>('POST', '/healthcare/training-providers/', data),
+    registerTrainingProvider: (data: { name: string; bank_name?: string; bank_account_number?: string; is_active?: boolean }) =>
+      apiCall<any>('POST', '/healthcare/training-providers/', data),
 
     getCpdTerms: (loanId: string) => apiCall<any>('GET', `/healthcare/loans/${uuid(loanId)}/cpd-terms/`),
     setCpdTerms: (loanId: string, data: { training_provider: string; course_name?: string }) =>
       apiCall<any>('POST', `/healthcare/loans/${uuid(loanId)}/cpd-terms/`, data),
 
-    disburseToTrainingProvider: (loanId: string) =>
-      apiCall<any>('POST', `/healthcare/loans/${uuid(loanId)}/disburse-to-training-provider/`),
+    disburseToTrainingProvider: (loanId: string, data?: { reference?: string }) =>
+      apiCall<any>('POST', `/healthcare/loans/${uuid(loanId)}/disburse-to-training-provider/`, data),
 
     getEquipmentAssets: () => apiCall<any[]>('GET', '/healthcare/equipment-assets/'),
     getLocumIncomeCeiling: (membershipId: string) =>
@@ -5088,8 +5094,8 @@ export const api = {
       return apiCall<any>('POST', '/healthcare/emergency-bosa-releases/', form)
     },
 
-    requestApprovalEmergencyBosaRelease: (id: string) =>
-      apiCall<any>('POST', `/healthcare/emergency-bosa-releases/${uuid(id)}/request-approval/`),
+    requestApprovalEmergencyBosaRelease: (id: string, verificationCode?: string) =>
+      apiCall<any>('POST', `/healthcare/emergency-bosa-releases/${uuid(id)}/request-approval/`, verificationCode ? { verification_code: verificationCode } : undefined),
 
     reportToBoardEmergencyBosaRelease: (id: string) =>
       apiCall<any>('POST', `/healthcare/emergency-bosa-releases/${uuid(id)}/report-to-board/`),
