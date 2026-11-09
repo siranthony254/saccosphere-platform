@@ -137,6 +137,13 @@ export default function MenuScreen() {
       disabled: activeMemberships.length === 0,
     },
     {
+      label: 'Standing orders',
+      helper: 'Automatic M-Pesa payments into savings or a loan, on a schedule',
+      icon: 'calendar',
+      action: () => router.push('/(member)/standing-orders' as any),
+      disabled: activeMemberships.length === 0,
+    },
+    {
       label: 'Unclaimed funds (UFAA)',
       helper: 'How to claim money surrendered to the Unclaimed Financial Assets Authority',
       icon: 'file',

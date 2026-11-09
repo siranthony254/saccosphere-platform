@@ -5417,4 +5417,38 @@ export const api = {
     resolveListingDispute: (id: string, data: { status: 'UNDER_REVIEW' | 'UPHELD' | 'REJECTED'; officer_notes?: string }) =>
       apiCall<any>('PATCH', `/creditbureau/listing-disputes/${uuid(id)}/`, data),
   },
+
+  // ─── P12c RATIBA STANDING ORDERS (member-facing, self-scoped) ──────────────
+
+  standingOrders: {
+    // Which of the member's own payment targets (loan/savings aliases) can
+    // take a standing order right now, and whether STANDING_ORDER consent is
+    // on file for each — check consent_status before letting them submit;
+    // creating one without consent 400s with error_code NO_CONSENT.
+    getEligibleTargets: () =>
+      apiCall<Array<{
+        alias_id: string
+        alias: string
+        target_type: string
+        sacco: string
+        consent_status: 'active' | 'outdated' | 'withdrawn' | 'never_given'
+      }>>('GET', '/payments/standing-orders/eligible-targets/'),
+
+    getOrders: () => apiCall<any[]>('GET', '/payments/standing-orders/'),
+
+    getOrder: (orderId: string) => apiCall<any>('GET', `/payments/standing-orders/${uuid(orderId)}/`),
+
+    // Idempotency-Key is required by StandingOrderListCreateView — generate
+    // it once per real submission with generateIdempotencyKey() and reuse
+    // that same value across retries of the same attempt, so a network
+    // retry replays the original order instead of creating a duplicate.
+    createOrder: (
+      data: { target_alias_id: string; name: string; frequency: 'WEEKLY' | 'MONTHLY'; amount: number; start_date: string; end_date: string },
+      idempotencyKey: string
+    ) => apiCall<any>('POST', '/payments/standing-orders/', data, { idempotencyKey }),
+
+    cancelOrder: (orderId: string) => apiCall<any>('POST', `/payments/standing-orders/${uuid(orderId)}/cancel/`),
+
+    getReconciliation: (orderId: string) => apiCall<any>('GET', `/payments/standing-orders/${uuid(orderId)}/reconciliation/`),
+  },
 }
