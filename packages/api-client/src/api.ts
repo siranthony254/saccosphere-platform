@@ -4608,15 +4608,25 @@ export const api = {
     fileCtr: (id: string, filingReference: string) =>
       apiCall<any>('POST', `/aml/ctr-reports/${uuid(id)}/file/`, { filing_reference: filingReference }),
 
-    uploadDomesticSanctions: (file: File) => {
+    // name is required — DomesticSanctionsListUploadView 400s immediately
+    // without it. source defaults to DOMESTIC server-side; PEP is the only
+    // other allowed value (screened identically, routed to a
+    // PEP_ENHANCED_DUE_DILIGENCE case on a match instead).
+    uploadDomesticSanctions: (file: File, name: string, data?: { source?: 'DOMESTIC' | 'PEP'; version_label?: string }) => {
       const form = new FormData()
       form.append('file', file)
+      form.append('name', name)
+      if (data?.source) form.append('source', data.source)
+      if (data?.version_label) form.append('version_label', data.version_label)
       return apiCall<any>('POST', '/aml/sanctions-lists/domestic-upload/', form)
     },
 
-    uploadUnSanctions: (file: File) => {
+    // Platform-wide (IsSuperAdmin), not SACCO-scoped at all — unlike every
+    // other aml.* call here, this one belongs in the super-admin app.
+    uploadUnSanctions: (file: File, versionLabel?: string) => {
       const form = new FormData()
       form.append('file', file)
+      if (versionLabel) form.append('version_label', versionLabel)
       return apiCall<any>('POST', '/aml/sanctions-lists/un-consolidated-upload/', form)
     },
 

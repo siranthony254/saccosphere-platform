@@ -1,3 +1,6 @@
+import { useState } from 'react'
+import { useMutation } from '@tanstack/react-query'
+import { api } from '@saccosphere/api-client'
 import { usePlatformAlerts, useKycQueue, useAllSaccos } from '../../hooks/usePlatformData'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { MetricCard } from '../../components/ui/MetricCard'
@@ -11,6 +14,19 @@ export function Compliance() {
   const { data: flags, isLoading: flagsLoading } = usePlatformAlerts()
   const { data: kycQueue } = useKycQueue()
   const { data: saccosData, isLoading: saccosLoading } = useAllSaccos()
+  const [unFile, setUnFile] = useState<File | null>(null)
+  const [unVersionLabel, setUnVersionLabel] = useState('')
+  const [unNotice, setUnNotice] = useState<{ ok: boolean; text: string } | null>(null)
+
+  const uploadUnSanctions = useMutation({
+    mutationFn: () => api.aml.uploadUnSanctions(unFile as File, unVersionLabel || undefined),
+    onSuccess: () => {
+      setUnFile(null)
+      setUnVersionLabel('')
+      setUnNotice({ ok: true, text: 'UN Consolidated List uploaded — every SACCO\'s members and transactions were automatically re-checked against it.' })
+    },
+    onError: (err: any) => setUnNotice({ ok: false, text: err?.message || 'Failed to upload this list.' }),
+  })
 
   const pendingKycCount = kycQueue?.length ?? 0
 
@@ -118,6 +134,47 @@ export function Compliance() {
               keyExtractor={(row: PlatformAlert) => row.id}
             />
           )}
+        </Card>
+
+        <Card title="UN Consolidated Sanctions List">
+          <p className="text-[11px] text-ink-faint mb-3">
+            Platform-wide — not scoped to one SACCO. Every member across every SACCO is automatically re-checked against it once uploaded. A SACCO's own domestic/PEP watchlist is uploaded from that SACCO's own AML dashboard instead.
+          </p>
+          {unNotice && (
+            <div className={`text-[12px] rounded-lg px-3 py-2 mb-3 ${unNotice.ok ? 'bg-mint-50 text-mint-700' : 'bg-red-50 text-red-700'}`}>
+              {unNotice.text}
+            </div>
+          )}
+          <form
+            onSubmit={(e) => {
+              e.preventDefault()
+              if (!unFile) return
+              uploadUnSanctions.mutate()
+            }}
+            className="space-y-2"
+          >
+            <input
+              type="text"
+              placeholder="Version label (optional, e.g. 2026-Q1)"
+              value={unVersionLabel}
+              onChange={(e) => setUnVersionLabel(e.target.value)}
+              className="w-full py-1.5 px-3 border border-mid rounded-lg text-[13px] outline-none bg-surface"
+            />
+            <input
+              type="file"
+              accept=".csv,.xlsx"
+              onChange={(e) => setUnFile(e.target.files?.[0] ?? null)}
+              className="w-full text-xs"
+              required
+            />
+            <button
+              type="submit"
+              disabled={!unFile || uploadUnSanctions.isPending}
+              className="px-4 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-xs font-semibold disabled:opacity-50"
+            >
+              {uploadUnSanctions.isPending ? 'Uploading…' : 'Upload & Re-Screen Platform-Wide'}
+            </button>
+          </form>
         </Card>
       </div>
     </div>

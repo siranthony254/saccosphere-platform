@@ -42,6 +42,8 @@ export function AmlDashboard() {
 
   // Sanctions upload state
   const [domesticFile, setDomesticFile] = useState<File | null>(null)
+  const [domesticListName, setDomesticListName] = useState('')
+  const [domesticSource, setDomesticSource] = useState<'DOMESTIC' | 'PEP'>('DOMESTIC')
 
   const showMsg = (type: 'success' | 'error', text: string) => {
     setAmlMsg({ type, text })
@@ -181,10 +183,11 @@ export function AmlDashboard() {
   })
 
   const uploadDomesticSanctionsMutation = useMutation({
-    mutationFn: (file: File) => api.aml.uploadDomesticSanctions(file),
+    mutationFn: () => api.aml.uploadDomesticSanctions(domesticFile as File, domesticListName, { source: domesticSource }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['aml-sanctions-results'] })
       setDomesticFile(null)
+      setDomesticListName('')
       showMsg('success', 'List uploaded — members and transactions were automatically re-checked against it.')
     },
     onError: (err: any) => showMsg('error', err?.message || 'Failed to upload this list.'),
@@ -684,11 +687,29 @@ export function AmlDashboard() {
             <form
               onSubmit={(e) => {
                 e.preventDefault()
-                if (!domesticFile) return
-                uploadDomesticSanctionsMutation.mutate(domesticFile)
+                if (!domesticFile || !domesticListName.trim()) return
+                uploadDomesticSanctionsMutation.mutate()
               }}
               className="space-y-3"
             >
+              <input
+                type="text"
+                placeholder="List name (e.g. Internal Watchlist Jan 2026)"
+                value={domesticListName}
+                onChange={(e) => setDomesticListName(e.target.value)}
+                className="w-full p-2 border border-[#e5ede9] rounded text-xs bg-white"
+                required
+              />
+
+              <select
+                value={domesticSource}
+                onChange={(e) => setDomesticSource(e.target.value as 'DOMESTIC' | 'PEP')}
+                className="w-full p-2 border border-[#e5ede9] rounded text-xs bg-white"
+              >
+                <option value="DOMESTIC">Domestic watchlist</option>
+                <option value="PEP">Politically-exposed persons (PEP)</option>
+              </select>
+
               <input
                 type="file"
                 accept=".csv,.xlsx"
@@ -699,7 +720,7 @@ export function AmlDashboard() {
 
               <button
                 type="submit"
-                disabled={!domesticFile || uploadDomesticSanctionsMutation.isPending}
+                disabled={!domesticFile || !domesticListName.trim() || uploadDomesticSanctionsMutation.isPending}
                 className="w-full py-2 bg-violet-600 hover:bg-violet-700 text-white font-semibold text-xs rounded cursor-pointer"
               >
                 Upload &amp; Auto-Screen
