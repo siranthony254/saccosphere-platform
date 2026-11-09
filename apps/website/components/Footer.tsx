@@ -3,6 +3,7 @@ import Link from 'next/link'
 const PRODUCT_LINKS = [
   { href: '/platform', label: 'Platform' },
   { href: '/network', label: 'Network' },
+  { href: '/pricing', label: 'Pricing' },
   { href: '/security', label: 'Security & compliance' },
 ]
 
@@ -23,6 +24,7 @@ const LEGAL_LINKS = [
   { href: '/privacy', label: 'Privacy policy' },
   { href: '/terms', label: 'Terms of service' },
   { href: '/data-protection', label: 'Data protection' },
+  { href: '/delete-account', label: 'Delete account' },
 ]
 
 function FooterColumn({ title, links }: { title: string; links: { href: string; label: string }[] }) {

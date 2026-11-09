@@ -22,60 +22,62 @@ export const SECTORS = [
   { value: 'OTHER', label: 'Other' },
 ] as const
 
-// Pricing tiers — same figures as the investor blueprint's revenue-model
-// section, restated as public pricing rather than internal unit economics.
+// Pricing tiers — the agreed money-model figures (see /pricing for the
+// full breakdown: setup fees, usage costs, and what's confirmed vs still
+// open). Keep this in sync with that page if these numbers ever change.
 export const PRICING_TIERS = [
   {
-    name: 'Community',
-    range: 'Up to 2,000 members',
-    price: 'KES 10,000',
+    name: 'Micro',
+    range: 'Up to 500 members',
+    price: 'KES 15,000',
     period: '/month',
-    description: 'For a single-branch SACCO getting off desktop software.',
+    description: 'For small and community SACCOs getting off desktop software.',
     featured: false,
     features: [
       'Member app, admin portal, both included',
       'M-Pesa deposits & disbursements',
       'Loan underwriting & guarantor management',
-      'SASRA Form 1–3 generation',
+      'SASRA return drafts',
       'Standard support',
     ],
   },
   {
     name: 'Growth',
-    range: '2,000–15,000 members',
+    range: '501–5,000 members',
     price: 'KES 45,000',
     period: '/month',
-    description: 'For a SACCO running real loan volume and a collections desk.',
+    description: 'For an established SACCO growing its loan book.',
     featured: true,
     features: [
-      'Everything in Community',
-      'Collections workbench & PAR reporting',
-      'Loan restructuring workflows',
-      'Dividend declaration with four-eyes control',
-      'Priority support',
+      'Everything in Micro',
+      'Dividends workflow with approval steps',
+      'Bulk SMS tools',
+      'Audit trail, roles & permissions',
+      'Standard support',
     ],
   },
   {
-    name: 'Scale',
-    range: '15,000+ members',
-    price: 'KES 150,000',
+    name: 'Enterprise',
+    range: '5,001+ members',
+    price: 'KES 120,000',
     period: '/month',
-    description: 'For a multi-branch SACCO with its own payroll partners.',
+    description: 'For large SACCOs and multi-branch operations.',
     featured: false,
     features: [
       'Everything in Growth',
-      'Employer payroll check-off',
-      'Dedicated onboarding & migration support',
-      'A named account manager',
+      'Multi-branch reporting',
+      'Deeper integration with your current systems',
+      'Priority support',
     ],
   },
 ] as const
 
+// Planned, not yet available — see /pricing's "Optional modules" section.
+// Never present these as live features anywhere else on the site.
 export const PRICING_ADDONS = [
-  { name: 'Fleet management', price: 'from KES 3,000/mo' },
-  { name: 'Payroll check-off module', price: 'from KES 6,000/mo' },
-  { name: 'Produce advances (agri)', price: 'from KES 5,000/mo' },
-  { name: 'Housing project management', price: 'from KES 10,000/mo' },
+  { name: 'Sector modules (transport, agricultural, welfare)', price: 'KES 5,000/mo per module · planned' },
+  { name: 'Governance module (remote AGM voting)', price: 'KES 5,000/mo · planned' },
+  { name: 'AI risk bundle (early warning & fraud signals)', price: 'KES 10,000/mo · planned' },
 ] as const
 
 export const ONBOARDING_STEPS = [

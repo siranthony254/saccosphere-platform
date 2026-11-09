@@ -9,6 +9,7 @@ const LINKS = [
   { href: '/for-saccos', label: 'For SACCOs' },
   { href: '/for-members', label: 'For Members' },
   { href: '/network', label: 'Network' },
+  { href: '/pricing', label: 'Pricing' },
   { href: '/security', label: 'Security' },
   { href: '/company', label: 'Company' },
 ]

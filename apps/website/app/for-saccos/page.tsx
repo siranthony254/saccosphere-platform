@@ -71,8 +71,9 @@ export default function ForSaccosPage() {
             Priced by member count, not by negotiation
           </h2>
           <p className="mt-4 max-w-2xl text-[14px] leading-relaxed text-ink-soft">
-            A platform subscription plus a small percentage on money that actually moves through
-            it — no setup fee, no seat licensing per admin user.
+            One monthly subscription, set by how many members your SACCO has. We don&rsquo;t charge
+            a fee on member M-Pesa payments at launch — Safaricom&rsquo;s own charges still apply,
+            paid directly to Safaricom. Pilot SACCOs pay no subscription for their first 90 days.
           </p>
 
           <div className="mt-10 grid gap-5 sm:grid-cols-3">
@@ -109,7 +110,7 @@ export default function ForSaccosPage() {
 
           <div className="mt-6 rounded-card border border-rule bg-surface p-6">
             <div className="mb-3 text-[12px] font-semibold uppercase tracking-[0.08em] text-ink-soft/70">
-              Vertical add-ons, any tier
+              Planned modules, not available yet
             </div>
             <div className="flex flex-wrap gap-4">
               {PRICING_ADDONS.map((a) => (
@@ -119,6 +120,13 @@ export default function ForSaccosPage() {
               ))}
             </div>
           </div>
+
+          <a
+            href="/pricing"
+            className="mt-6 inline-flex items-center gap-2 text-[13px] font-semibold text-violet hover:underline"
+          >
+            See the full pricing breakdown, setup fees and usage costs →
+          </a>
         </div>
       </section>
 

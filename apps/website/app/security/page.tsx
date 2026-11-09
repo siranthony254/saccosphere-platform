@@ -11,6 +11,7 @@ import {
   IconShield,
   IconScale,
   IconMail,
+  IconFlag,
 } from '@/components/icons'
 
 export const metadata: Metadata = {
@@ -23,6 +24,14 @@ const NAV_ITEMS = [
   { id: 'architecture', label: 'Security architecture' },
   { id: 'data-protection', label: 'Data protection' },
   { id: 'licences', label: 'Licences' },
+  { id: 'not-claimed', label: "What we don't claim" },
+]
+
+const NOT_CLAIMED = [
+  'We hold no security certifications yet, such as ISO 27001 or SOC 2.',
+  'We do not yet have an independent audit or penetration test report.',
+  'Our contract sets a 99.5% monthly uptime target. We will publish measured uptime once we have a track record.',
+  'We do not claim endorsement from SASRA, the Central Bank of Kenya, or the Data Protection Commissioner.',
 ]
 
 const BADGES = [
@@ -152,6 +161,27 @@ export default function SecurityPage() {
                 ))}
               </tbody>
             </table>
+          </div>
+        </div>
+      </section>
+
+      <section id="not-claimed" className="scroll-mt-28 border-b border-rule py-20">
+        <div className="mx-auto max-w-page px-6 sm:px-10">
+          <SectionLabel>What we don&rsquo;t claim</SectionLabel>
+          <h2 className="max-w-xl font-serif text-[2rem] leading-tight text-ink sm:text-[2.2rem]">
+            We&rsquo;re a young company — so instead of big promises
+          </h2>
+          <p className="mt-4 max-w-2xl text-[14px] leading-relaxed text-ink-soft">
+            This page tells you what we&rsquo;ve built, what we&rsquo;re doing before we go live, and what
+            we don&rsquo;t claim yet.
+          </p>
+          <div className="mt-8 max-w-2xl space-y-3 rounded-card border border-gold/30 bg-gold/5 p-7">
+            {NOT_CLAIMED.map((item) => (
+              <div key={item} className="flex gap-2.5 text-[13.5px] leading-relaxed text-ink-soft">
+                <IconFlag className="mt-0.5 h-4 w-4 flex-shrink-0 text-gold" />
+                <span>{item}</span>
+              </div>
+            ))}
           </div>
         </div>
       </section>
