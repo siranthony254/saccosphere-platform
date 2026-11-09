@@ -33,6 +33,7 @@ import { DormancyManagement } from './pages/Savings/DormancyManagement'
 import { BillManager } from './pages/BillManager/BillManager'
 import { SuspenseAccount } from './pages/Suspense/SuspenseAccount'
 import { InsiderLending } from './pages/InsiderLending/InsiderLending'
+import { StatementImport } from './pages/StatementImport/StatementImport'
 import { AmlDashboard } from './pages/Aml/AmlDashboard'
 import { GovernanceManagement } from './pages/Governance/GovernanceManagement'
 import { SharedLendingPrimitives } from './pages/Lending/SharedLendingPrimitives'
@@ -91,6 +92,7 @@ export const router = createBrowserRouter([
       { path: 'bill-manager', element: <BillManager /> },
       { path: 'suspense', element: <SuspenseAccount /> },
       { path: 'insider-lending', element: <InsiderLending /> },
+      { path: 'statement-import', element: <StatementImport /> },
       { path: 'aml', element: <AmlDashboard /> },
       { path: 'governance', element: <GovernanceManagement /> },
       { path: 'lending', element: <RequireSectorModule module="lending.assets"><SharedLendingPrimitives /></RequireSectorModule> },

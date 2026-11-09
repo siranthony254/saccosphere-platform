@@ -5685,4 +5685,22 @@ export const api = {
       }>
     },
   },
+
+  // ─── P09 C2B BANK/PAYBILL STATEMENT IMPORT (sacco-admin facing) ────────────
+
+  statementImport: {
+    // Parses synchronously (400s immediately on a bad file) then enqueues
+    // the three-way match (statement vs ProviderEvent vs the
+    // MPESA_PAYBILL_CLEARING GL total) as a background job — poll
+    // getJob for progress.
+    uploadStatement: (file: File) => {
+      const form = new FormData()
+      form.append('file', file)
+      return apiCall<any>('POST', '/management/statement-import/', form)
+    },
+
+    getJobs: () => apiCall<any[]>('GET', '/management/statement-import/list/'),
+
+    getJob: (jobId: string) => apiCall<any>('GET', `/management/statement-import/${uuid(jobId)}/`),
+  },
 }
