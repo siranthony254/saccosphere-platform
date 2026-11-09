@@ -49,7 +49,7 @@ export default function RegistrationSuccessScreen() {
 
       {/* Description */}
       <Text style={{ color: c.textMuted, fontSize: 12, textAlign: 'center', lineHeight: 20, marginBottom: 24 }}>
-        Your Saccosphere account is live. {saccoCount} SACCO{saccoCount !== 1 ? 's' : ''} linked. You can now manage everything in one place.
+        Your SaccoSphere account is live. {saccoCount} SACCO{saccoCount !== 1 ? 's' : ''} linked. You can now manage everything in one place.
       </Text>
 
       {/* Linked SACCOs Summary */}

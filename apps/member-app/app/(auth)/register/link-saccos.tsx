@@ -230,7 +230,7 @@ export default function LinkSaccos() {
         className="text-sm font-bold mb-4"
         style={{ color: c.accent, fontFamily: 'Fraunces_700Bold' }}
       >
-        Saccosphere
+        SaccoSphere
       </Text>
 
       {/* Heading */}

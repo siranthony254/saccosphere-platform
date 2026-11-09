@@ -73,7 +73,7 @@ export const QueryKeys = {
   revenue: (period?: string) => ['revenue', period] as const,
 } as const
 
-export const PLATFORM_NAME = 'Saccosphere'
+export const PLATFORM_NAME = 'SaccoSphere'
 export const SUPPORT_EMAIL = 'support@saccosphere.co.ke'
 
 // Stale times (ms), how long React Query considers data fresh.

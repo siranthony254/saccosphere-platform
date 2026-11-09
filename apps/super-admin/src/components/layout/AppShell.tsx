@@ -40,14 +40,14 @@ export function AppShell() {
       <aside className="w-[220px] bg-navy-950 flex min-h-0 flex-col shrink-0 border-r border-white/5">
         {/* Logo */}
         <div className="pt-[18px] pb-[14px] px-4 border-b border-white/5">
-          <div className="font-bold text-base text-white font-serif">Saccosphere</div>
+          <div className="font-bold text-base text-white font-serif">SaccoSphere</div>
           <div className="text-[10px] text-white/25 mt-0.5">Super Admin · Platform control</div>
         </div>
 
         {/* Super admin chip — indigo accent (different from SACCO admin's green) */}
         <div className="mx-2.5 my-3 bg-gradient-to-br from-indigo-500/25 to-violet-500/25 border border-indigo-500/35 rounded-lg py-2 px-2.5">
           <div className="text-[13px] font-semibold text-indigo-300">{user?.first_name} {user?.last_name}</div>
-          <div className="text-[10px] text-indigo-300/50">CEO · Saccosphere</div>
+          <div className="text-[10px] text-indigo-300/50">CEO · SaccoSphere</div>
         </div>
 
         {/* Nav */}

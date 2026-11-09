@@ -73,7 +73,7 @@ export function AppShell() {
     { path: '/welfare', label: 'Welfare Fund', icon: 'handshake', badge: null, description: 'A fund members pay into that helps with hardship — bereavement, medical bills — on a case-by-case basis.' },
     { path: '/credit-bureau', label: 'Credit Bureau', icon: 'id-card', badge: null, description: "A member's internal credit score, a shareable repayment history, and reports sent to credit reference bureaus." },
     { path: '/analytics/liquidity-npl', label: 'Liquidity & NPL', icon: 'trending-down', badge: null, description: 'Early-warning view of cash on hand and loans at risk of default.' },
-    { path: '/billing', label: 'SaaS Billing', icon: 'receipt', badge: null, description: "This SACCO's own subscription invoices for using the Saccosphere platform." },
+    { path: '/billing', label: 'SaaS Billing', icon: 'receipt', badge: null, description: "This SACCO's own subscription invoices for using the SaccoSphere platform." },
     { path: '/kyc', label: 'KYC Review', icon: 'scan-face', badge: pendingKycCount > 0 ? String(pendingKycCount) : null, description: "Review members' submitted ID documents and approve or reject their identity verification." },
     { path: '/roles', label: 'Roles', icon: 'user-check', badge: null, description: 'Manage which staff members have admin access, and what each one is allowed to do.' },
     { path: '/import', label: 'Import', icon: 'upload', badge: null, description: 'Bulk-upload members or records from a spreadsheet instead of entering them one by one.' },
@@ -90,7 +90,7 @@ export function AppShell() {
         <div className="pt-[18px] pb-[14px] px-4 border-b border-white/5">
           {!sidebarCollapsed && (
             <>
-              <div className="font-bold text-[15px] text-white font-serif">Saccosphere</div>
+              <div className="font-bold text-[15px] text-white font-serif">SaccoSphere</div>
               <div className="text-[10px] text-white/30 mt-0.5">SACCO Admin Portal</div>
             </>
           )}

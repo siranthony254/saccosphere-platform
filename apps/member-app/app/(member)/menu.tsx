@@ -180,7 +180,7 @@ export default function MenuScreen() {
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
             <View>
               <Text style={{ color: c.text, fontSize: 20, fontWeight: '700' }}>Menu</Text>
-              <Text style={{ color: c.textMuted, fontSize: 12, marginTop: 2 }}>Saccosphere features and SACCO utilities</Text>
+              <Text style={{ color: c.textMuted, fontSize: 12, marginTop: 2 }}>SaccoSphere features and SACCO utilities</Text>
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
               <TouchableOpacity style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: c.surface, alignItems: 'center', justifyContent: 'center' }} onPress={() => router.push('/(member)/notifications')}>
@@ -279,7 +279,7 @@ export default function MenuScreen() {
           <Text style={{ color: '#F87171', fontSize: 12, fontWeight: '600' }}>Sign out</Text>
         </TouchableOpacity>
 
-        <Text style={{ textAlign: 'center', color: c.textMuted, fontSize: 12, marginBottom: 40 }}>Saccosphere v1.0 • SASRA Regulated</Text>
+        <Text style={{ textAlign: 'center', color: c.textMuted, fontSize: 12, marginBottom: 40 }}>SaccoSphere v1.0 • SASRA Regulated</Text>
       </ScrollView>
       </SafeAreaView>
 
@@ -304,7 +304,7 @@ export default function MenuScreen() {
           <View style={{ backgroundColor: c.surface, width: '100%', maxWidth: 400, borderRadius: 16, padding: 20, borderWidth: 1, borderColor: c.border }}>
             <Text style={{ color: c.text, fontSize: 18, fontWeight: '700', marginBottom: 6, textAlign: 'center' }}>Refer & Earn</Text>
             <Text style={{ color: c.textMuted, fontSize: 12, textAlign: 'center', lineHeight: 18, marginBottom: 20 }}>
-              Invite your friends to Saccosphere. When they link their first SACCO and make a contribution, you both earn KES 200.
+              Invite your friends to SaccoSphere. When they link their first SACCO and make a contribution, you both earn KES 200.
             </Text>
 
             <View style={{ backgroundColor: c.surfaceAlt, borderRadius: 12, padding: 12, borderWidth: 1, borderColor: c.border, alignItems: 'center', marginBottom: 20 }}>

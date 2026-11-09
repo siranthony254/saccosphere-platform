@@ -1,7 +1,7 @@
 {
-  "name": "Saccosphere — Super Admin",
+  "name": "SaccoSphere — Super Admin",
   "short_name": "Super Admin",
-  "description": "Saccosphere platform control.",
+  "description": "SaccoSphere platform control.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

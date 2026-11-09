@@ -74,7 +74,7 @@ export default function LandingScreen() {
               className="font-bold text-lg"
               style={{ color: c.text, fontFamily: 'Fraunces_700Bold' }}
             >
-              Saccosphere
+              SaccoSphere
             </Text>
           </View>
         </View>

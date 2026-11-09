@@ -42,7 +42,7 @@ export function CategoryTabs({ activeId, onSelect }: Props) {
             activeOpacity={0.8}
             onPress={() => {
               if (!category.enabled) {
-                Alert.alert(`${category.label} — coming soon`, "We're working on bringing this to Saccosphere. Stay tuned!")
+                Alert.alert(`${category.label} — coming soon`, "We're working on bringing this to SaccoSphere. Stay tuned!")
                 return
               }
               onSelect(category.id)

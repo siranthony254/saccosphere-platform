@@ -262,7 +262,7 @@ export function PlatformSettings() {
     <div className="p-5">
       <PageHeader
         title="Platform configuration"
-        subtitle="Saccosphere global configuration — super admin only"
+        subtitle="SaccoSphere global configuration — super admin only"
         info="Settings that apply to the whole platform, not just one SACCO — things like maintenance/holiday mode and your own account security."
       />
 
@@ -296,7 +296,7 @@ export function PlatformSettings() {
 
         <Card title="Platform Controls">
           <div className="text-sm text-ink-muted leading-relaxed">
-            Platform-wide risk policies, holiday mode controls, and MFA step-up security are configured below. Saccosphere infrastructure settings are managed securely through environment variables and backend governance policies.
+            Platform-wide risk policies, holiday mode controls, and MFA step-up security are configured below. SaccoSphere infrastructure settings are managed securely through environment variables and backend governance policies.
           </div>
         </Card>
       </div>

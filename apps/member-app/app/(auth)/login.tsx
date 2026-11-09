@@ -83,7 +83,7 @@ export default function LoginScreen() {
     if (!biometricToken) return
     try {
       const result = await LocalAuthentication.authenticateAsync({
-        promptMessage: 'Log in to Saccosphere',
+        promptMessage: 'Log in to SaccoSphere',
       })
       if (result.success) {
         setIsBiometricPending(true)
@@ -176,7 +176,7 @@ export default function LoginScreen() {
     >
       {/* Brand */}
       <Text style={{ color: c.accent, fontWeight: '700', fontSize: 40, marginBottom: 24, fontFamily: 'Fraunces_700Bold' }}>
-        Saccosphere
+        SaccoSphere
       </Text>
 
       {/* Heading */}

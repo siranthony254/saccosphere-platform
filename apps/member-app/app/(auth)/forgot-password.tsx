@@ -36,7 +36,7 @@ export default function ForgotPassword() {
     <KeyboardAwareScreen
       contentContainerStyle={{ paddingHorizontal: PADDING_H, paddingBottom: insets.bottom + 20, paddingTop: insets.top + 20 }}
     >
-      <Text style={{ color: c.accent, fontWeight: '700', fontSize: 20, marginBottom: 32 }}>Saccosphere</Text>
+      <Text style={{ color: c.accent, fontWeight: '700', fontSize: 20, marginBottom: 32 }}>SaccoSphere</Text>
 
       <Text style={{ color: c.textMuted, fontSize: 12, fontWeight: '500', marginBottom: 6 }}>Email or phone number</Text>
       <TextInput

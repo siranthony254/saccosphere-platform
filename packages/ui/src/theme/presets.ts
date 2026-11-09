@@ -73,7 +73,7 @@ export const ADMIN_THEME_PRESETS: AdminThemePreset[] = [
   {
     id: 'violet',
     label: 'Violet',
-    description: 'Saccosphere brand accent',
+    description: 'SaccoSphere brand accent',
     glow: { primary: 'rgba(139,92,246,0.16)', secondary: 'rgba(109,40,217,0.10)' },
     swatch: '#8B5CF6',
     accent: {

@@ -109,7 +109,7 @@ export default function PaymentSuccessScreen({
         >
           <SuccessRow label="Amount Paid" value={`KES ${amount.toLocaleString()}`} valueColor={c.success} />
           <SuccessRow label="M-Pesa Reference" value={mpesaRef} monospace />
-          <SuccessRow label="Saccosphere Ref" value={saccosphereRef} monospace />
+          <SuccessRow label="SaccoSphere Ref" value={saccosphereRef} monospace />
           <SuccessRow label="Transaction Time" value={new Date().toLocaleTimeString('en-KE', { hour: '2-digit', minute: '2-digit' })} />
           {newBalance !== undefined && (
             <SuccessRow label={`New ${saccoName} Balance`} value={`KES ${newBalance.toLocaleString()}`} valueColor={c.success} />

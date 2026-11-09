@@ -59,7 +59,7 @@ export function Overview() {
         <>
           <PageHeader
             title="System overview"
-            subtitle={`Saccosphere platform · All SACCOs · ${new Date().toLocaleDateString('en-KE', { day: 'numeric', month: 'long', year: 'numeric' })}`}
+            subtitle={`SaccoSphere platform · All SACCOs · ${new Date().toLocaleDateString('en-KE', { day: 'numeric', month: 'long', year: 'numeric' })}`}
             info="Your home base — a quick read on how the whole platform is doing today: SACCOs, members, money moving, and anything that needs your attention."
             actions={
               <div

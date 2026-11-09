@@ -1,7 +1,7 @@
 {
-  "name": "Saccosphere — SACCO Admin",
+  "name": "SaccoSphere — SACCO Admin",
   "short_name": "SACCO Admin",
-  "description": "Saccosphere SACCO Admin portal.",
+  "description": "SaccoSphere SACCO Admin portal.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Saccosphere",
+    "name": "SaccoSphere",
     "slug": "saccosphere-member",
     "sdkVersion": "54.0.0",
     "version": "1.0.0",
@@ -20,7 +20,7 @@
       "bundleIdentifier": "co.ke.saccosphere.member",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
-        "NSFaceIDUsageDescription": "Saccosphere needs Face ID to securely authenticate you."
+        "NSFaceIDUsageDescription": "SaccoSphere needs Face ID to securely authenticate you."
       }
     },
     "android": {
@@ -46,8 +46,8 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Saccosphere needs access to your photos for KYC document upload.",
-          "cameraPermission": "Saccosphere needs your camera to capture KYC documents."
+          "photosPermission": "SaccoSphere needs access to your photos for KYC document upload.",
+          "cameraPermission": "SaccoSphere needs your camera to capture KYC documents."
         }
       ],
       [

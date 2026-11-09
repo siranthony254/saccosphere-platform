@@ -43,7 +43,7 @@ module.exports = {
           100: '#D1FAE5',
           50:  '#ECFDF5',
         },
-        // Saccosphere green — use as bg-brand, text-brand-dark etc.
+        // SaccoSphere green — use as bg-brand, text-brand-dark etc.
         brand: {
           DEFAULT: '#0d7a4e',
           light:   '#e6f7f1',

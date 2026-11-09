@@ -80,7 +80,7 @@ export default function ActivityScreen() {
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={{ fontSize: 12, fontWeight: '500', color: c.text }}>{item.description}</Text>
-                  <Text style={{ fontSize: 10, color: c.textMuted }}>{item.sacco_name ?? 'Saccosphere'} · {formatDate(item.date)}</Text>
+                  <Text style={{ fontSize: 10, color: c.textMuted }}>{item.sacco_name ?? 'SaccoSphere'} · {formatDate(item.date)}</Text>
                 </View>
                 <Text style={{ fontSize: 12, fontWeight: '600', color: c.text }}>{money(item.amount)}</Text>
               </View>

@@ -1,5 +1,5 @@
 // @saccosphere/schemas — single export point
-// All Zod schemas and derived TypeScript types for the Saccosphere platform.
+// All Zod schemas and derived TypeScript types for the SaccoSphere platform.
 // This is the contract between frontend and backend.
 // Django serializers must produce JSON that satisfies these schemas.
 

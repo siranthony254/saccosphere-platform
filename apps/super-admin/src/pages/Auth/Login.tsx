@@ -111,7 +111,7 @@ export function Login() {
     <div className="min-h-screen bg-surface-2 text-ink flex items-center justify-center px-4">
       <div className="w-full max-w-md rounded-[22px] border border-mid bg-surface p-8 shadow-xl">
         <div className="mb-6 text-center">
-          <div className="text-3xl font-semibold text-ink">Welcome to Saccosphere</div>
+          <div className="text-3xl font-semibold text-ink">Welcome to SaccoSphere</div>
           <p className="mt-2 text-sm text-ink-muted">
             {view.step === 'credentials' && 'Sign in to the platform admin portal.'}
             {view.step === 'mfa_verify' && 'Enter your authenticator code to finish signing in.'}

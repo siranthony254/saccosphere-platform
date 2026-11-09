@@ -136,7 +136,7 @@ export default function RegisterStep1() {
     >
         {/* Brand */}
       <Text style={{ color: c.accent, fontWeight: '700', fontSize: 40, marginBottom: 14, fontFamily: 'Fraunces_700Bold' }}>
-        Saccosphere
+        SaccoSphere
       </Text>
       
       {/* Step progress bar */}

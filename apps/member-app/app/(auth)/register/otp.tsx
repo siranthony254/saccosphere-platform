@@ -169,7 +169,7 @@ export default function RegisterOTP() {
         </Text>
 
         <Text style={{ color: c.accent, fontWeight: '700', fontSize: 14, marginBottom: 14, fontFamily: 'Fraunces_700Bold' }}>
-          Saccosphere
+          SaccoSphere
         </Text>
 
         {/* ── PHASE: choose delivery channel (nothing sent yet) ────────────── */}

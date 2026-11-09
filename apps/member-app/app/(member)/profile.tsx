@@ -179,7 +179,7 @@ export default function ProfileScreen() {
         <Text style={{ color: '#F87171', fontSize: 12, fontWeight: '600' }}>Sign out</Text>
       </TouchableOpacity>
 
-      <Text style={{ textAlign: 'center', color: c.textMuted, fontSize: 12, marginBottom: 40 }}>Saccosphere v1.0 · SASRA regulated · CBK licensed</Text>
+      <Text style={{ textAlign: 'center', color: c.textMuted, fontSize: 12, marginBottom: 40 }}>SaccoSphere v1.0 · SASRA regulated · CBK licensed</Text>
     </ScrollView>
     </SafeAreaView>
   )

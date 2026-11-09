@@ -297,7 +297,7 @@ function NoSaccoDashboard({ publicStats }: { publicStats: { total_saccos?: numbe
             textAlign: 'center', marginBottom: 20, paddingHorizontal: 8,
           }}
         >
-          Join a SACCO to start saving, get loans, and grow your money. Saccosphere connects you to {saccoCount > 0 ? saccoCount.toLocaleString() : 'registered'} SACCOs.
+          Join a SACCO to start saving, get loans, and grow your money. SaccoSphere connects you to {saccoCount > 0 ? saccoCount.toLocaleString() : 'registered'} SACCOs.
         </Text>
         <TouchableOpacity
           onPress={() => router.push('/(member)/discover')}
