@@ -5593,4 +5593,51 @@ export const api = {
     refundItem: (id: string, data: { phone_number: string; verification_code?: string }) =>
       apiCall<any>('POST', `/services/suspense/${uuid(id)}/refund/`, data),
   },
+
+  // ─── P13 INSIDER LENDING (sacco-admin facing) ──────────────────────────────
+
+  insiderLending: {
+    // List/create only — there is no detail/update endpoint, so a
+    // declaration can be made but not revoked from here once filed
+    // (is_active is a model field with no API path to flip it).
+    getDeclarations: () => apiCall<any[]>('GET', '/services/insider-declarations/'),
+
+    createDeclaration: (data: { membership: string; category: 'BOARD' | 'STAFF' | 'RELATIVE'; related_membership?: string; notes?: string }) =>
+      apiCall<any>('POST', '/services/insider-declarations/', data),
+
+    getPayslipInputs: () => apiCall<any[]>('GET', '/services/payslip-inputs/'),
+
+    createPayslipInput: (data: {
+      membership: string
+      basic_salary: number
+      gross_pay: number
+      paye?: number
+      nssf?: number
+      shif?: number
+      housing_levy?: number
+      existing_loan_deductions?: number
+      fosa_sweeps?: number
+      other_deductions?: number
+    }) => apiCall<any>('POST', '/services/payslip-inputs/', data),
+
+    // Read-only report: every loan whose member has an active insider
+    // declaration, with its latest appraisal recommendation and
+    // insider-approval routing status. Paginated like any other
+    // ListAPIView — unwrap .results rather than assuming a bare array.
+    getLoanReport: async () => {
+      const response = await apiCall<any>('GET', '/management/reports/insider-loans/')
+      return unwrapResults(response) as Array<{
+        loan_id: string
+        member_name: string
+        member_number: string
+        loan_type_name: string | null
+        amount: string
+        status: string
+        insider_categories: string[]
+        appraisal_recommendation: string | null
+        appraisal_reason_codes: string[]
+        insider_approval_status: string | null
+      }>
+    },
+  },
 }

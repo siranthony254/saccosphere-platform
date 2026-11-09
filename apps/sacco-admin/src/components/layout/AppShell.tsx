@@ -50,6 +50,7 @@ export function AppShell() {
     { path: '/dormancy', label: 'Dormant Accounts & UFAA', icon: 'alert-triangle', badge: null, description: 'Savings that have gone quiet, outreach to reactivate them, and surrendering unclaimed funds to UFAA when required.' },
     { path: '/bill-manager', label: 'Bill Manager', icon: 'receipt', badge: null, description: "Send M-Pesa invoices for a member's loan repayment or savings target, with automatic payment notifications." },
     { path: '/suspense', label: 'Suspense Account', icon: 'alert-triangle', badge: null, description: "M-Pesa payments that arrived but couldn't be matched to a member automatically — clear them to the right person or refund them." },
+    { path: '/insider-lending', label: 'Insider Lending', icon: 'user-check', badge: null, description: "Board/staff/relative loan declarations, payslip-based affordability inputs, and the insider loan report." },
     { path: '/aml', label: 'AML & Fraud', icon: 'shield-check', badge: null, description: 'Flags suspicious transactions and member activity that may need to be reported to authorities.' },
     { path: '/governance', label: 'AGM & Governance', icon: 'landmark', badge: null, description: "Run annual general meetings, elections and committee votes, and keep a record of what was decided." },
     // P24: sector-pack nav items are gated on the tenant's resolved
