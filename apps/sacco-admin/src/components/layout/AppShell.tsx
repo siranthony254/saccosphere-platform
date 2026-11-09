@@ -47,6 +47,7 @@ export function AppShell() {
     { path: '/sms', label: 'Bulk SMS', icon: 'message', badge: null, description: 'Send a text message to many members at once — announcements, reminders, or alerts.' },
     { path: '/reports', label: 'Reports', icon: 'bar-chart', badge: null, description: "Summaries of this SACCO's performance — growth, loans, savings and more." },
     { path: '/returns', label: 'Statutory Returns', icon: 'landmark', badge: null, description: 'The official reports this SACCO must file with the regulator (SASRA) on a schedule.' },
+    { path: '/dormancy', label: 'Dormant Accounts & UFAA', icon: 'alert-triangle', badge: null, description: 'Savings that have gone quiet, outreach to reactivate them, and surrendering unclaimed funds to UFAA when required.' },
     { path: '/aml', label: 'AML & Fraud', icon: 'shield-check', badge: null, description: 'Flags suspicious transactions and member activity that may need to be reported to authorities.' },
     { path: '/governance', label: 'AGM & Governance', icon: 'landmark', badge: null, description: "Run annual general meetings, elections and committee votes, and keep a record of what was decided." },
     // P24: sector-pack nav items are gated on the tenant's resolved

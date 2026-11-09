@@ -130,6 +130,19 @@ export default function MenuScreen() {
       action: () => router.push('/(member)/listing-dispute' as any),
     },
     {
+      label: 'Deposit protection',
+      helper: 'See how much of your savings is covered per SACCO',
+      icon: 'security',
+      action: () => router.push('/(member)/deposit-protection' as any),
+      disabled: activeMemberships.length === 0,
+    },
+    {
+      label: 'Unclaimed funds (UFAA)',
+      helper: 'How to claim money surrendered to the Unclaimed Financial Assets Authority',
+      icon: 'file',
+      action: () => router.push('/(member)/ufaa-guidance' as any),
+    },
+    {
       label: "Security & Settings",
       helper: 'Manage biometrics and account security',
       icon: 'settings',

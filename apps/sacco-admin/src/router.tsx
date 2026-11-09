@@ -29,6 +29,7 @@ import { Collections } from './pages/Collections/Collections'
 import { ExitsAndClaims } from './pages/Exits/ExitsAndClaims'
 import { Checkoff } from './pages/Checkoff/Checkoff'
 import { ReturnsManagement } from './pages/Returns/ReturnsManagement'
+import { DormancyManagement } from './pages/Savings/DormancyManagement'
 import { AmlDashboard } from './pages/Aml/AmlDashboard'
 import { GovernanceManagement } from './pages/Governance/GovernanceManagement'
 import { SharedLendingPrimitives } from './pages/Lending/SharedLendingPrimitives'
@@ -83,6 +84,7 @@ export const router = createBrowserRouter([
       { path: 'exits', element: <ExitsAndClaims /> },
       { path: 'checkoff', element: <Checkoff /> },
       { path: 'returns', element: <ReturnsManagement /> },
+      { path: 'dormancy', element: <DormancyManagement /> },
       { path: 'aml', element: <AmlDashboard /> },
       { path: 'governance', element: <GovernanceManagement /> },
       { path: 'lending', element: <RequireSectorModule module="lending.assets"><SharedLendingPrimitives /></RequireSectorModule> },
