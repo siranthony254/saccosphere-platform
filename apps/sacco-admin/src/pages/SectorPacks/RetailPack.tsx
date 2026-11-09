@@ -4,6 +4,14 @@ import { api } from '@saccosphere/api-client'
 import { InfoTip } from '@saccosphere/ui'
 import { useMembers } from '../../hooks/useMembers'
 import { PageHeader } from '../../components/ui/PageHeader'
+import { ModuleGate } from '../../components/ui/ModuleGate'
+
+// The page itself is route-gated on retail.agent_collection (see
+// router.tsx) - these three tabs are independently overridable P24
+// sub-modules (retail/views.py), so they need their own gate.
+const STOCK_FINANCING_MODULE = 'retail.stock_financing'
+const TABLE_BANKING_GROUPS_MODULE = 'retail.table_banking_groups'
+const INVOICE_FINANCING_MODULE = 'retail.invoice_financing'
 
 function MemberPicker({ value, onChange, label }: { value: string; onChange: (id: string) => void; label?: string }) {
   const [search, setSearch] = useState('')
@@ -308,6 +316,7 @@ export function RetailPack() {
       )}
 
       {activeTab === 'market-stall' && (
+        <ModuleGate module={STOCK_FINANCING_MODULE} moduleName="Market/stall info & stock financing">
         <div className="bg-white border border-[#e5ede9] rounded-[10px] p-5 space-y-3 shadow-sm">
           <div className="font-bold text-base text-ink">Market/Stall Info</div>
           <div className="text-ink-muted flex items-start gap-1.5">
@@ -325,9 +334,11 @@ export function RetailPack() {
             </div>
           )}
         </div>
+        </ModuleGate>
       )}
 
       {activeTab === 'table-banking' && (
+        <ModuleGate module={TABLE_BANKING_GROUPS_MODULE} moduleName="Table banking groups">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           <div className="bg-white border border-[#e5ede9] rounded-[10px] p-4 space-y-3 shadow-sm">
             <div className="font-bold text-base text-ink">Register Group</div>
@@ -404,9 +415,11 @@ export function RetailPack() {
             )}
           </div>
         </div>
+        </ModuleGate>
       )}
 
       {activeTab === 'invoices' && (
+        <ModuleGate module={INVOICE_FINANCING_MODULE} moduleName="Invoice financing">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           <div className="bg-white border border-[#e5ede9] rounded-[10px] p-4 space-y-3 shadow-sm">
             <div className="font-bold text-base text-ink">Register Supplier Invoice</div>
@@ -460,6 +473,7 @@ export function RetailPack() {
             </div>
           </div>
         </div>
+        </ModuleGate>
       )}
     </div>
   )

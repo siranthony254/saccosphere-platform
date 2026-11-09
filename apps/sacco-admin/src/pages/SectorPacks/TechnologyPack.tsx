@@ -4,6 +4,13 @@ import { api } from '@saccosphere/api-client'
 import { InfoTip } from '@saccosphere/ui'
 import { useMembers } from '../../hooks/useMembers'
 import { PageHeader } from '../../components/ui/PageHeader'
+import { ModuleGate } from '../../components/ui/ModuleGate'
+
+// The page itself is route-gated on technology.remote_employer_verification
+// (see router.tsx) - these two tabs are independently overridable P24
+// sub-modules (technology/views.py), so they need their own gate.
+const VARIABLE_INCOME_TECH_MODULE = 'technology.variable_income_tech'
+const DEVICE_FINANCING_TECH_MODULE = 'technology.device_financing_tech'
 
 function MemberPicker({ value, onChange }: { value: string; onChange: (id: string) => void }) {
   const [search, setSearch] = useState('')
@@ -246,6 +253,7 @@ export function TechnologyPack() {
       )}
 
       {activeTab === 'ceiling' && (
+        <ModuleGate module={VARIABLE_INCOME_TECH_MODULE} moduleName="Gig-income affordability ceiling">
         <div className="bg-white border border-[#e5ede9] rounded-[10px] p-5 space-y-4 shadow-sm">
           <div className="font-bold text-base text-ink flex items-center gap-1.5">
             Gig-Income Affordability Ceiling
@@ -289,9 +297,11 @@ export function TechnologyPack() {
             ) : null
           )}
         </div>
+        </ModuleGate>
       )}
 
       {activeTab === 'devices' && (
+        <ModuleGate module={DEVICE_FINANCING_TECH_MODULE} moduleName="Device financing">
         <div className="bg-white border border-[#e5ede9] rounded-[10px] p-5 shadow-sm">
           <div className="font-bold text-base text-ink mb-1">Financed Devices</div>
           <div className="text-ink-muted mb-3 flex items-start gap-1.5">
@@ -323,6 +333,7 @@ export function TechnologyPack() {
             </tbody>
           </table>
         </div>
+        </ModuleGate>
       )}
     </div>
   )

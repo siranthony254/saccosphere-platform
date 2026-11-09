@@ -4,6 +4,13 @@ import { api } from '@saccosphere/api-client'
 import { InfoTip } from '@saccosphere/ui'
 import { useMembers } from '../../hooks/useMembers'
 import { PageHeader } from '../../components/ui/PageHeader'
+import { ModuleGate } from '../../components/ui/ModuleGate'
+
+// The page itself is route-gated on government.gov_payroll_checkoff (see
+// router.tsx) - these two tabs are independently overridable P24
+// sub-modules (government/views.py), so they need their own gate.
+const DUTY_STATION_TRACKING_MODULE = 'government.duty_station_tracking'
+const PENSION_ADVANCE_MODULE = 'government.pension_advance'
 
 function MemberPicker({ value, onChange }: { value: string; onChange: (id: string) => void }) {
   const [search, setSearch] = useState('')
@@ -231,6 +238,7 @@ export function GovernmentPack() {
       )}
 
       {activeTab === 'duty-stations' && (
+        <ModuleGate module={DUTY_STATION_TRACKING_MODULE} moduleName="Duty-station tracking">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           <div className="bg-white border border-[#e5ede9] rounded-[10px] p-4 space-y-3 shadow-sm md:col-span-1">
             <div className="font-bold text-base text-ink">Record Duty-Station Transfer</div>
@@ -310,9 +318,11 @@ export function GovernmentPack() {
             </div>
           </div>
         </div>
+        </ModuleGate>
       )}
 
       {activeTab === 'pensions' && (
+        <ModuleGate module={PENSION_ADVANCE_MODULE} moduleName="Pension advance">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           <div className="bg-white border border-[#e5ede9] rounded-[10px] p-4 space-y-3 shadow-sm md:col-span-1">
             <div className="font-bold text-base text-ink">Submit Pension/Retirement Evidence</div>
@@ -387,6 +397,7 @@ export function GovernmentPack() {
             )}
           </div>
         </div>
+        </ModuleGate>
       )}
     </div>
   )

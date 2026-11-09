@@ -4,6 +4,13 @@ import { api } from '@saccosphere/api-client'
 import { InfoTip } from '@saccosphere/ui'
 import { useMembers } from '../../hooks/useMembers'
 import { PageHeader } from '../../components/ui/PageHeader'
+import { ModuleGate } from '../../components/ui/ModuleGate'
+
+// The page itself is route-gated on finance.voluntary_investment_products
+// (see router.tsx) - these two tabs are independently overridable P24
+// sub-modules (finance/views.py), so they need their own gate.
+const GROUP_SUBACCOUNTS_MODULE = 'finance.group_subaccounts'
+const GROWTH_STATEMENT_MODULE = 'finance.growth_statement'
 
 function MemberPicker({ value, onChange, label }: { value: string; onChange: (id: string) => void; label?: string }) {
   const [search, setSearch] = useState('')
@@ -302,6 +309,7 @@ export function FinancePack() {
       )}
 
       {activeTab === 'groups' && (
+        <ModuleGate module={GROUP_SUBACCOUNTS_MODULE} moduleName="Group sub-accounts">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           <div className="bg-white border border-[#e5ede9] rounded-[10px] p-4 space-y-3 shadow-sm">
             <div className="font-bold text-base text-ink">Register Group Sub-account</div>
@@ -357,9 +365,11 @@ export function FinancePack() {
             )}
           </div>
         </div>
+        </ModuleGate>
       )}
 
       {activeTab === 'growth' && (
+        <ModuleGate module={GROWTH_STATEMENT_MODULE} moduleName="Member growth statement">
         <div className="bg-white border border-[#e5ede9] rounded-[10px] p-5 space-y-4 shadow-sm">
           <div className="font-bold text-base text-ink">Member Growth Statement</div>
           <MemberPicker value={growthMembershipId} onChange={setGrowthMembershipId} />
@@ -387,6 +397,7 @@ export function FinancePack() {
             </div>
           )}
         </div>
+        </ModuleGate>
       )}
 
       {activeTab === 'professional' && (
