@@ -5735,4 +5735,25 @@ export const api = {
     verifyB2cCredentials: (saccoId: string) =>
       apiCall<any>('POST', `/management/superadmin/saccos/${uuid(saccoId)}/verify-b2c/`),
   },
+
+  // ─── AI MEMBER ASSISTANT (member-facing) ───────────────────────────────────
+
+  assistant: {
+    // Omit conversationId to start a new thread — the backend creates one
+    // from the member's own approved membership/sacco. 403s with
+    // error_code NO_APPROVED_MEMBERSHIP or ASSISTANT_DISABLED
+    // (sacco_settings.ai_assistant_enabled), 503 ASSISTANT_UNAVAILABLE on
+    // an upstream failure, 429 on the per-user chat rate limit.
+    sendMessage: (message: string, conversationId?: string) =>
+      apiCall<{ conversation_id: string; reply: string; created_at: string }>(
+        'POST', '/assistant/chat/', { message, ...(conversationId ? { conversation_id: conversationId } : {}) }
+      ),
+
+    getConversations: () => apiCall<Array<{ id: string; created_at: string; last_active_at: string }>>('GET', '/assistant/conversations/'),
+
+    getMessages: (conversationId: string) =>
+      apiCall<Array<{ id: string; role: 'USER' | 'ASSISTANT'; content: string; created_at: string }>>(
+        'GET', `/assistant/conversations/${uuid(conversationId)}/messages/`
+      ),
+  },
 }

@@ -144,6 +144,13 @@ export default function MenuScreen() {
       disabled: activeMemberships.length === 0,
     },
     {
+      label: 'SACCO Assistant',
+      helper: 'Ask questions about your account and how things work',
+      icon: 'bulb',
+      action: () => router.push('/(member)/assistant' as any),
+      disabled: activeMemberships.length === 0,
+    },
+    {
       label: 'Unclaimed funds (UFAA)',
       helper: 'How to claim money surrendered to the Unclaimed Financial Assets Authority',
       icon: 'file',
