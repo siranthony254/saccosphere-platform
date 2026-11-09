@@ -4771,28 +4771,33 @@ export const api = {
     getCollateral: (loanId: string) =>
       apiCall<any[]>('GET', `/lending/loans/${uuid(loanId)}/collateral/`),
 
-    pledgeCollateral: (loanId: string, data: { asset_id: string; pledged_amount: number }) =>
+    pledgeCollateral: (loanId: string, data: { asset_id: string; pledged_value: number }) =>
       apiCall<any>('POST', `/lending/loans/${uuid(loanId)}/collateral/`, data),
 
     registerCharge: (collateralId: string, data: { charge_reference: string }) =>
       apiCall<any>('POST', `/lending/collateral/${uuid(collateralId)}/register-charge/`, data),
 
-    releaseCollateral: (collateralId: string) =>
-      apiCall<any>('POST', `/lending/collateral/${uuid(collateralId)}/release/`),
+    releaseCollateral: (collateralId: string, data: { reason: string }) =>
+      apiCall<any>('POST', `/lending/collateral/${uuid(collateralId)}/release/`, data),
 
     getTranches: (loanId: string) =>
       apiCall<any[]>('GET', `/lending/loans/${uuid(loanId)}/tranches/`),
 
-    createTranches: (loanId: string, tranches: Array<{ sequence_number: number; amount: number; description?: string }>) =>
-      apiCall<any>('POST', `/lending/loans/${uuid(loanId)}/tranches/`, { tranches }),
+    // LoanTranchePlanView is GET/PUT, not POST — and TranchePlanItemSerializer's
+    // fields are amount/planned_date/milestone/payout_method; `sequence` is
+    // assigned by the engine from array order, never client-supplied.
+    setTranchePlan: (
+      loanId: string,
+      tranches: Array<{ amount: number; planned_date: string; milestone: string; payout_method: 'B2C' | 'BANK' }>
+    ) => apiCall<any>('PUT', `/lending/loans/${uuid(loanId)}/tranches/`, { tranches }),
 
-    inspectTranche: (trancheId: string, data: { outcome: 'PASS' | 'FAIL'; notes?: string }) =>
+    inspectTranche: (trancheId: string, data: { inspected_on: string; outcome: 'PASS' | 'FAIL'; findings: string }) =>
       apiCall<any>('POST', `/lending/tranches/${uuid(trancheId)}/inspections/`, data),
 
-    drawdownTranche: (trancheId: string) =>
-      apiCall<any>('POST', `/lending/tranches/${uuid(trancheId)}/drawdown/`),
+    drawdownTranche: (trancheId: string, verificationCode?: string) =>
+      apiCall<any>('POST', `/lending/tranches/${uuid(trancheId)}/drawdown/`, verificationCode ? { verification_code: verificationCode } : undefined),
 
-    markTranchePaid: (trancheId: string, data: { payment_reference: string }) =>
+    markTranchePaid: (trancheId: string, data: { bank_reference: string }) =>
       apiCall<any>('POST', `/lending/tranches/${uuid(trancheId)}/mark-paid/`, data),
 
     retryTranchePayout: (trancheId: string) =>

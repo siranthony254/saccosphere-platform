@@ -2,7 +2,62 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@saccosphere/api-client'
 import { useCapabilities } from '../../hooks/useCapabilities'
+import { ModuleGate } from '../../components/ui/ModuleGate'
+import { StepUpModal } from '../../components/auth/StepUpModal'
 import { InfoTip } from '@saccosphere/ui'
+
+const STAGED_TRANCHES_MODULE = 'lending.staged_tranches'
+const VARIABLE_INCOME_MODULE = 'lending.variable_income'
+const DATA_TAPE_MODULE = 'lending.data_tape'
+
+type PickedLoan = { id: string; label: string }
+
+function LoanPicker({ selected, setSelected }: { selected: PickedLoan | null; setSelected: (v: PickedLoan | null) => void }) {
+  const [search, setSearch] = useState('')
+  // Collateral/tranche management applies to loans already approved (staged
+  // tranches are an alternative to a single lump-sum disbursement), so this
+  // picker only searches that pool rather than every loan ever filed.
+  const { data: loans } = useQuery({
+    queryKey: ['lending-loan-picker'],
+    queryFn: () => api.saccoAdmin.getLoans({ status: 'approved' }),
+  })
+  const matches = search
+    ? (loans?.results ?? []).filter((l: any) =>
+        `${l.ref} ${l.loan_product_label} ${l.member_name}`.toLowerCase().includes(search.toLowerCase())
+      )
+    : []
+  return (
+    <div>
+      <input
+        type="text"
+        placeholder="Search by loan reference, product or member"
+        value={selected ? '' : search}
+        onChange={(e) => { setSearch(e.target.value); setSelected(null) }}
+        className="w-full p-2 border border-ink-faint rounded text-xs bg-white"
+        disabled={!!selected}
+      />
+      {selected ? (
+        <div className="mt-1 flex items-center justify-between bg-surface-2 rounded px-2 py-1 text-xs">
+          <span className="text-ink font-medium">{selected.label}</span>
+          <button type="button" onClick={() => setSelected(null)} className="text-violet-700 font-semibold">Change</button>
+        </div>
+      ) : search && matches.length > 0 ? (
+        <div className="mt-1 space-y-1 max-h-32 overflow-y-auto">
+          {matches.slice(0, 20).map((l: any) => (
+            <button
+              type="button"
+              key={l.id}
+              onClick={() => setSelected({ id: l.id, label: `${l.ref} — ${l.member_name} (KES ${Number(l.amount_requested ?? 0).toLocaleString()})` })}
+              className="w-full text-left px-2 py-1 bg-surface-2 hover:bg-surface-1 rounded text-xs"
+            >
+              {l.ref} — {l.member_name} · KES {Number(l.amount_requested ?? 0).toLocaleString()}
+            </button>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  )
+}
 
 export function SharedLendingPrimitives() {
   const queryClient = useQueryClient()
@@ -17,10 +72,22 @@ export function SharedLendingPrimitives() {
   const [valuationAmount, setValuationAmount] = useState('')
   const [valuerName, setValuerName] = useState('')
 
-  // NOTE: the Collateral and Tranches tabs are registered below but have
-  // no body yet (asset registration and the income-verification review
-  // queue are the only parts of this pack actually built) — a dedicated
-  // follow-up pass, not part of this correctness fix.
+  // Collateral tab state
+  const [collateralLoan, setCollateralLoan] = useState<PickedLoan | null>(null)
+  const [pledgeAssetId, setPledgeAssetId] = useState('')
+  const [pledgeValue, setPledgeValue] = useState('')
+  const [chargeRefByLink, setChargeRefByLink] = useState<Record<string, string>>({})
+  const [releaseReasonByLink, setReleaseReasonByLink] = useState<Record<string, string>>({})
+
+  // Tranches tab state
+  const [trancheLoan, setTrancheLoan] = useState<PickedLoan | null>(null)
+  const [trancheRows, setTrancheRows] = useState<Array<{ amount: string; planned_date: string; milestone: string; payout_method: 'B2C' | 'BANK' }>>([
+    { amount: '', planned_date: '', milestone: '', payout_method: 'BANK' },
+  ])
+  const [inspectionByTranche, setInspectionByTranche] = useState<Record<string, { outcome: 'PASS' | 'FAIL'; inspected_on: string; findings: string }>>({})
+  const [bankRefByTranche, setBankRefByTranche] = useState<Record<string, string>>({})
+  const [stepUpTrancheId, setStepUpTrancheId] = useState<string | null>(null)
+  const [stepUpError, setStepUpError] = useState<string | null>(null)
 
   // Income verification review state
   const [selectedVerification, setSelectedVerification] = useState<any | null>(null)
@@ -43,7 +110,117 @@ export function SharedLendingPrimitives() {
     queryFn: () => api.lending.getDataTapes(),
   })
 
+  const { data: collateralLinks = [], isLoading: isCollateralLoading } = useQuery({
+    queryKey: ['loan-collateral', collateralLoan?.id],
+    queryFn: () => api.lending.getCollateral(collateralLoan!.id),
+    enabled: activeTab === 'collateral' && !!collateralLoan,
+  })
+
+  const { data: tranches = [], isLoading: isTranchesLoading } = useQuery({
+    queryKey: ['loan-tranches', trancheLoan?.id],
+    queryFn: () => api.lending.getTranches(trancheLoan!.id),
+    enabled: activeTab === 'tranches' && !!trancheLoan,
+  })
+
   // Mutations
+  const pledgeCollateralMutation = useMutation({
+    mutationFn: () => api.lending.pledgeCollateral(collateralLoan!.id, { asset_id: pledgeAssetId, pledged_value: Number(pledgeValue) }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['loan-collateral', collateralLoan?.id] })
+      setPledgeAssetId('')
+      setPledgeValue('')
+      setLendingMsg('Asset pledged against this loan.')
+      setTimeout(() => setLendingMsg(null), 4000)
+    },
+    onError: (err: any) => setLendingMsg(err?.message || 'Failed to pledge this asset — it may not be worth enough, or is already fully committed elsewhere.'),
+  })
+
+  const registerChargeMutation = useMutation({
+    mutationFn: (data: { linkId: string; charge_reference: string }) => api.lending.registerCharge(data.linkId, { charge_reference: data.charge_reference }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['loan-collateral', collateralLoan?.id] })
+      setLendingMsg('Charge registered for this pledge.')
+      setTimeout(() => setLendingMsg(null), 4000)
+    },
+    onError: (err: any) => setLendingMsg(err?.message || 'Failed to register this charge.'),
+  })
+
+  const releaseCollateralMutation = useMutation({
+    mutationFn: (data: { linkId: string; reason: string }) => api.lending.releaseCollateral(data.linkId, { reason: data.reason }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['loan-collateral', collateralLoan?.id] })
+      setLendingMsg('Collateral pledge released.')
+      setTimeout(() => setLendingMsg(null), 4000)
+    },
+    onError: (err: any) => setLendingMsg(err?.message || 'Failed to release this pledge.'),
+  })
+
+  const setTranchePlanMutation = useMutation({
+    mutationFn: () =>
+      api.lending.setTranchePlan(
+        trancheLoan!.id,
+        trancheRows
+          .filter((r) => r.amount && r.planned_date && r.milestone)
+          .map((r) => ({ amount: Number(r.amount), planned_date: r.planned_date, milestone: r.milestone, payout_method: r.payout_method }))
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['loan-tranches', trancheLoan?.id] })
+      setLendingMsg('Tranche plan set.')
+      setTimeout(() => setLendingMsg(null), 4000)
+    },
+    onError: (err: any) => setLendingMsg(err?.message || 'Failed to set the tranche plan — it can only be replaced before any tranche is inspected.'),
+  })
+
+  const inspectTrancheMutation = useMutation({
+    mutationFn: (trancheId: string) => api.lending.inspectTranche(trancheId, inspectionByTranche[trancheId]),
+    onSuccess: (_data, trancheId) => {
+      queryClient.invalidateQueries({ queryKey: ['loan-tranches', trancheLoan?.id] })
+      setInspectionByTranche((prev) => { const next = { ...prev }; delete next[trancheId]; return next })
+      setLendingMsg('Inspection recorded.')
+      setTimeout(() => setLendingMsg(null), 4000)
+    },
+    onError: (err: any) => setLendingMsg(err?.message || 'Failed to record this inspection.'),
+  })
+
+  const drawdownTrancheMutation = useMutation({
+    mutationFn: (data: { trancheId: string; code?: string }) => api.lending.drawdownTranche(data.trancheId, data.code),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['loan-tranches', trancheLoan?.id] })
+      setStepUpTrancheId(null)
+      setStepUpError(null)
+      setLendingMsg('Drawdown requested — awaiting a second admin\'s approval.')
+      setTimeout(() => setLendingMsg(null), 4000)
+    },
+    onError: (err: any, vars) => {
+      if (err?.status === 428) {
+        setStepUpTrancheId(vars.trancheId)
+        setStepUpError(err?.message || null)
+        return
+      }
+      setLendingMsg(err?.message || 'Failed to request this drawdown.')
+    },
+  })
+
+  const markTranchePaidMutation = useMutation({
+    mutationFn: (data: { trancheId: string; bank_reference: string }) => api.lending.markTranchePaid(data.trancheId, { bank_reference: data.bank_reference }),
+    onSuccess: (_data, vars) => {
+      queryClient.invalidateQueries({ queryKey: ['loan-tranches', trancheLoan?.id] })
+      setBankRefByTranche((prev) => { const next = { ...prev }; delete next[vars.trancheId]; return next })
+      setLendingMsg('Bank payment recorded for this tranche.')
+      setTimeout(() => setLendingMsg(null), 4000)
+    },
+    onError: (err: any) => setLendingMsg(err?.message || 'Failed to record this bank payment.'),
+  })
+
+  const retryTranchePayoutMutation = useMutation({
+    mutationFn: (trancheId: string) => api.lending.retryTranchePayout(trancheId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['loan-tranches', trancheLoan?.id] })
+      setLendingMsg('Payout retried.')
+      setTimeout(() => setLendingMsg(null), 4000)
+    },
+    onError: (err: any) => setLendingMsg(err?.message || 'Failed to retry this payout.'),
+  })
   const createAssetMutation = useMutation({
     mutationFn: (data: { asset_class: 'VEHICLE' | 'DEVICE' | 'EQUIPMENT' | 'PROPERTY' | 'OTHER'; identifier: string; acquisition_value: number }) =>
       api.lending.createAsset(data),
@@ -312,28 +489,299 @@ export function SharedLendingPrimitives() {
         </div>
       )}
 
-      {/* TAB 2: COLLATERAL */}
+      {/* TAB 2: COLLATERAL — same lending.assets module as the page's own gate. */}
       {activeTab === 'collateral' && (
-        <div className="bg-white border border-[#e5ede9] rounded-[10px] p-5 space-y-3 shadow-sm">
-          <div className="font-bold text-base text-ink">Collateral</div>
-          <div className="text-xs text-ink-muted">
-            Pledging an asset against a loan, and checking it's worth enough, happens automatically when a loan is disbursed — a loan can't pay out against an asset that isn't properly pledged. This screen for managing pledges directly isn't built yet.
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 text-xs">
+          <div className="bg-white border border-[#e5ede9] rounded-[10px] p-4 space-y-3 shadow-sm md:col-span-1">
+            <div className="font-bold text-base text-ink flex items-center gap-1.5">
+              Pledge an Asset
+              <InfoTip text="Commits a registered asset's value as security for a loan. A loan's total pledged value is checked against its LTV cap, and an asset can't be pledged for more than its own current valuation." label="What pledging does" />
+            </div>
+            <div>
+              <label className="text-ink-muted mb-1 block">Loan</label>
+              <LoanPicker selected={collateralLoan} setSelected={setCollateralLoan} />
+            </div>
+            {collateralLoan && (
+              <>
+                <div>
+                  <label className="text-ink-muted mb-1 block">Asset</label>
+                  <select value={pledgeAssetId} onChange={(e) => setPledgeAssetId(e.target.value)} className="w-full p-2 border rounded bg-white">
+                    <option value="">Select a registered asset...</option>
+                    {assets.map((a: any) => <option key={a.id} value={a.id}>{a.identifier} ({a.asset_class})</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-ink-muted mb-1 block">Pledged Value (KES)</label>
+                  <input type="number" value={pledgeValue} onChange={(e) => setPledgeValue(e.target.value)} className="w-full p-2 border rounded bg-white" />
+                </div>
+                <button
+                  onClick={() => pledgeAssetId && pledgeValue && pledgeCollateralMutation.mutate()}
+                  disabled={!pledgeAssetId || !pledgeValue || pledgeCollateralMutation.isPending}
+                  className="w-full py-2 bg-violet-600 text-white font-bold rounded cursor-pointer"
+                >
+                  Pledge Asset
+                </button>
+              </>
+            )}
+          </div>
+
+          <div className="bg-white border border-[#e5ede9] rounded-[10px] p-4 shadow-sm md:col-span-2">
+            <div className="font-bold text-base text-ink mb-3">Pledges on This Loan</div>
+            {!collateralLoan ? (
+              <div className="text-ink-muted">Select a loan to view and manage its collateral pledges.</div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b text-ink-muted bg-surface-2">
+                      <th className="py-2 px-3">Asset</th>
+                      <th className="py-2 px-3">Pledged Value</th>
+                      <th className="py-2 px-3">Charge Status</th>
+                      <th className="py-2 px-3 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    {isCollateralLoading ? (
+                      <tr><td colSpan={4} className="py-4 text-center text-ink-muted">Loading pledges...</td></tr>
+                    ) : collateralLinks.length === 0 ? (
+                      <tr><td colSpan={4} className="py-4 text-center text-ink-muted">No assets pledged against this loan yet.</td></tr>
+                    ) : (
+                      collateralLinks.map((link: any) => (
+                        <tr key={link.id}>
+                          <td className="py-2 px-3 font-mono font-bold text-ink">{link.asset?.identifier}</td>
+                          <td className="py-2 px-3 font-bold">KES {Number(link.pledged_value ?? 0).toLocaleString()}</td>
+                          <td className="py-2 px-3">
+                            <span className={`px-2 py-0.5 rounded text-[10px] border ${
+                              link.charge_status === 'REGISTERED' ? 'bg-mint-50 text-mint-700 border-mint-200' :
+                              link.charge_status === 'RELEASED' ? 'bg-surface-2 text-ink-muted border-ink-faint' :
+                              link.charge_status === 'ENFORCED' ? 'bg-red-50 text-red-700 border-red-200' :
+                              'bg-amber-50 text-amber-700 border-amber-200'
+                            }`}>{link.charge_status}</span>
+                          </td>
+                          <td className="py-2 px-3 text-right">
+                            {link.charge_status === 'PENDING' && (
+                              <div className="flex items-center gap-1 justify-end">
+                                <input
+                                  type="text"
+                                  placeholder="Charge reference"
+                                  value={chargeRefByLink[link.id] ?? ''}
+                                  onChange={(e) => setChargeRefByLink((prev) => ({ ...prev, [link.id]: e.target.value }))}
+                                  className="p-1 border rounded text-[11px] w-32"
+                                />
+                                <button
+                                  onClick={() => chargeRefByLink[link.id] && registerChargeMutation.mutate({ linkId: link.id, charge_reference: chargeRefByLink[link.id] })}
+                                  disabled={!chargeRefByLink[link.id] || registerChargeMutation.isPending}
+                                  className="px-2 py-1 bg-violet-600 text-white rounded text-[10px] font-bold"
+                                >
+                                  Register
+                                </button>
+                              </div>
+                            )}
+                            {(link.charge_status === 'PENDING' || link.charge_status === 'REGISTERED') && (
+                              <div className="flex items-center gap-1 justify-end mt-1">
+                                <input
+                                  type="text"
+                                  placeholder="Release reason"
+                                  value={releaseReasonByLink[link.id] ?? ''}
+                                  onChange={(e) => setReleaseReasonByLink((prev) => ({ ...prev, [link.id]: e.target.value }))}
+                                  className="p-1 border rounded text-[11px] w-32"
+                                />
+                                <button
+                                  onClick={() => releaseReasonByLink[link.id] && releaseCollateralMutation.mutate({ linkId: link.id, reason: releaseReasonByLink[link.id] })}
+                                  disabled={!releaseReasonByLink[link.id] || releaseCollateralMutation.isPending}
+                                  className="px-2 py-1 bg-red-600 text-white rounded text-[10px] font-bold"
+                                >
+                                  Release
+                                </button>
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </div>
       )}
 
-      {/* TAB 3: TRANCHES */}
+      {/* TAB 3: TRANCHES — a different sub-module (lending.staged_tranches)
+          from the one gating this whole page (lending.assets). */}
       {activeTab === 'tranches' && (
-        <div className="bg-white border border-[#e5ede9] rounded-[10px] p-5 space-y-3 shadow-sm">
-          <div className="font-bold text-base text-ink">Staged Loans</div>
-          <div className="text-xs text-ink-muted">
-            A staged loan pays out in installments, each one released only after an inspection passes — and each release needs a second admin's sign-off. This screen for managing those stages directly isn't built yet.
+        <ModuleGate module={STAGED_TRANCHES_MODULE} moduleName="Staged tranches">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 text-xs">
+            <div className="bg-white border border-[#e5ede9] rounded-[10px] p-4 space-y-3 shadow-sm md:col-span-1">
+              <div className="font-bold text-base text-ink flex items-center gap-1.5">
+                Staged Disbursement Plan
+                <InfoTip text="Instead of one lump sum, the loan pays out in planned instalments — each one released only after a site/delivery inspection passes, and each drawdown needs a second admin's sign-off." label="How staged tranches work" />
+              </div>
+              <div>
+                <label className="text-ink-muted mb-1 block">Loan</label>
+                <LoanPicker selected={trancheLoan} setSelected={setTrancheLoan} />
+              </div>
+
+              {trancheLoan && (
+                <div className="space-y-2 border-t pt-2">
+                  <div className="font-bold text-ink">Set Tranche Plan</div>
+                  <div className="text-ink-faint">Only possible before any tranche has been inspected.</div>
+                  {trancheRows.map((row, i) => (
+                    <div key={i} className="bg-surface-2 rounded p-2 space-y-1.5 border border-ink-faint">
+                      <input type="number" placeholder="Amount (KES)" value={row.amount} onChange={(e) => setTrancheRows((prev) => prev.map((r, idx) => idx === i ? { ...r, amount: e.target.value } : r))} className="w-full p-1.5 border rounded bg-white" />
+                      <input type="date" value={row.planned_date} onChange={(e) => setTrancheRows((prev) => prev.map((r, idx) => idx === i ? { ...r, planned_date: e.target.value } : r))} className="w-full p-1.5 border rounded bg-white" />
+                      <input type="text" placeholder="Milestone (e.g. Foundation complete)" value={row.milestone} onChange={(e) => setTrancheRows((prev) => prev.map((r, idx) => idx === i ? { ...r, milestone: e.target.value } : r))} className="w-full p-1.5 border rounded bg-white" />
+                      <div className="flex items-center gap-1.5">
+                        <select value={row.payout_method} onChange={(e) => setTrancheRows((prev) => prev.map((r, idx) => idx === i ? { ...r, payout_method: e.target.value as any } : r))} className="flex-1 p-1.5 border rounded bg-white">
+                          <option value="BANK">Bank transfer (manual)</option>
+                          <option value="B2C">M-Pesa B2C</option>
+                        </select>
+                        {trancheRows.length > 1 && (
+                          <button type="button" onClick={() => setTrancheRows((prev) => prev.filter((_, idx) => idx !== i))} className="px-2 py-1.5 border border-ink-faint rounded text-ink-muted">✕</button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => setTrancheRows((prev) => [...prev, { amount: '', planned_date: '', milestone: '', payout_method: 'BANK' }])}
+                    className="w-full py-1.5 border border-dashed border-ink-faint rounded text-ink-muted"
+                  >
+                    + Add Tranche
+                  </button>
+                  <button
+                    onClick={() => setTranchePlanMutation.mutate()}
+                    disabled={setTranchePlanMutation.isPending}
+                    className="w-full py-2 bg-violet-600 text-white font-bold rounded cursor-pointer"
+                  >
+                    Set Tranche Plan
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <div className="bg-white border border-[#e5ede9] rounded-[10px] p-4 shadow-sm md:col-span-2 space-y-3">
+              <div className="font-bold text-base text-ink">Tranches on This Loan</div>
+              {!trancheLoan ? (
+                <div className="text-ink-muted">Select a loan to view and manage its tranche plan.</div>
+              ) : isTranchesLoading ? (
+                <div className="text-ink-muted">Loading tranches...</div>
+              ) : tranches.length === 0 ? (
+                <div className="text-ink-muted">No tranche plan set for this loan yet.</div>
+              ) : (
+                <div className="space-y-3">
+                  {tranches.map((t: any) => (
+                    <div key={t.id} className="border border-ink-faint rounded-lg p-3 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="font-bold text-ink">Tranche {t.sequence} — {t.milestone}</div>
+                        <span className="px-2 py-0.5 rounded text-[10px] bg-violet-50 text-violet-700 border border-violet-200">{t.status}</span>
+                      </div>
+                      <div className="text-ink-muted">KES {Number(t.amount ?? 0).toLocaleString()} · planned {t.planned_date} · {t.payout_method === 'BANK' ? 'Bank transfer' : 'M-Pesa B2C'}</div>
+
+                      {t.status === 'PLANNED' && (
+                        <div className="bg-surface-2 rounded p-2 space-y-1.5">
+                          <div className="font-semibold text-ink">Record Inspection</div>
+                          <div className="flex gap-1.5">
+                            <select
+                              value={inspectionByTranche[t.id]?.outcome ?? 'PASS'}
+                              onChange={(e) => setInspectionByTranche((prev) => ({ ...prev, [t.id]: { ...(prev[t.id] ?? { inspected_on: '', findings: '' }), outcome: e.target.value as any } }))}
+                              className="p-1.5 border rounded bg-white"
+                            >
+                              <option value="PASS">Pass</option>
+                              <option value="FAIL">Fail</option>
+                            </select>
+                            <input
+                              type="date"
+                              value={inspectionByTranche[t.id]?.inspected_on ?? ''}
+                              onChange={(e) => setInspectionByTranche((prev) => ({ ...prev, [t.id]: { ...(prev[t.id] ?? { outcome: 'PASS', findings: '' }), inspected_on: e.target.value } }))}
+                              className="p-1.5 border rounded bg-white flex-1"
+                            />
+                          </div>
+                          <input
+                            type="text"
+                            placeholder="Findings"
+                            value={inspectionByTranche[t.id]?.findings ?? ''}
+                            onChange={(e) => setInspectionByTranche((prev) => ({ ...prev, [t.id]: { ...(prev[t.id] ?? { outcome: 'PASS', inspected_on: '' }), findings: e.target.value } }))}
+                            className="w-full p-1.5 border rounded bg-white"
+                          />
+                          <button
+                            onClick={() => inspectTrancheMutation.mutate(t.id)}
+                            disabled={!inspectionByTranche[t.id]?.inspected_on || !inspectionByTranche[t.id]?.findings || inspectTrancheMutation.isPending}
+                            className="w-full py-1.5 bg-mint-600 text-white font-bold rounded"
+                          >
+                            Record Inspection
+                          </button>
+                        </div>
+                      )}
+
+                      {t.status === 'INSPECTED' && (
+                        <button
+                          onClick={() => drawdownTrancheMutation.mutate({ trancheId: t.id })}
+                          disabled={drawdownTrancheMutation.isPending}
+                          className="w-full py-1.5 bg-violet-600 text-white font-bold rounded"
+                        >
+                          Request Drawdown
+                        </button>
+                      )}
+
+                      {t.status === 'APPROVED' && t.payout_method === 'BANK' && (
+                        <div className="flex items-center gap-1.5">
+                          <input
+                            type="text"
+                            placeholder="Bank reference"
+                            value={bankRefByTranche[t.id] ?? ''}
+                            onChange={(e) => setBankRefByTranche((prev) => ({ ...prev, [t.id]: e.target.value }))}
+                            className="flex-1 p-1.5 border rounded bg-white"
+                          />
+                          <button
+                            onClick={() => bankRefByTranche[t.id] && markTranchePaidMutation.mutate({ trancheId: t.id, bank_reference: bankRefByTranche[t.id] })}
+                            disabled={!bankRefByTranche[t.id] || markTranchePaidMutation.isPending}
+                            className="px-3 py-1.5 bg-mint-600 text-white font-bold rounded"
+                          >
+                            Record Payment
+                          </button>
+                        </div>
+                      )}
+
+                      {t.status === 'FAILED' && (
+                        <button
+                          onClick={() => retryTranchePayoutMutation.mutate(t.id)}
+                          disabled={retryTranchePayoutMutation.isPending}
+                          className="w-full py-1.5 bg-amber-600 text-white font-bold rounded"
+                        >
+                          Retry Payout
+                        </button>
+                      )}
+
+                      {t.inspections?.length > 0 && (
+                        <div className="text-ink-faint">
+                          {t.inspections.map((insp: any) => (
+                            <div key={insp.id}>{insp.inspected_on}: {insp.outcome} — {insp.findings}</div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+
+          <StepUpModal
+            isOpen={!!stepUpTrancheId}
+            title="Authorize Tranche Drawdown"
+            description="Releasing a tranche drawdown requires second-factor staff authorization."
+            error={stepUpError}
+            onClose={() => { setStepUpTrancheId(null); setStepUpError(null) }}
+            onSubmitCode={(code) => stepUpTrancheId && drawdownTrancheMutation.mutate({ trancheId: stepUpTrancheId, code })}
+          />
+        </ModuleGate>
       )}
 
-      {/* TAB 4: VARIABLE INCOME */}
+      {/* TAB 4: VARIABLE INCOME — a different sub-module (lending.variable_income)
+          from the one gating this whole page (lending.assets). */}
       {activeTab === 'income' && (
+        <ModuleGate module={VARIABLE_INCOME_MODULE} moduleName="Variable income verification">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           <div className="bg-white border border-[#e5ede9] rounded-[10px] p-4 space-y-3 shadow-sm md:col-span-1">
             <div className="font-bold text-base text-ink">Irregular-Income Review Queue</div>
@@ -396,10 +844,13 @@ export function SharedLendingPrimitives() {
             )}
           </div>
         </div>
+        </ModuleGate>
       )}
 
-      {/* TAB 5: DATA TAPES */}
+      {/* TAB 5: DATA TAPES — off-by-default lending.data_tape module
+          (mortgage refinancing pilots only), separate from lending.assets. */}
       {activeTab === 'datatapes' && (
+        <ModuleGate module={DATA_TAPE_MODULE} moduleName="Refinancer data tapes">
         <div className="bg-white border border-[#e5ede9] rounded-[10px] p-5 space-y-4 shadow-sm">
           <div className="font-bold text-base text-ink">Export Loan Book for a Refinancer</div>
           <div className="text-xs text-ink-muted flex items-start gap-1.5">
@@ -432,6 +883,7 @@ export function SharedLendingPrimitives() {
             ))}
           </div>
         </div>
+        </ModuleGate>
       )}
     </div>
   )
