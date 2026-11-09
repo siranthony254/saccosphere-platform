@@ -4841,19 +4841,36 @@ export const api = {
     createBuyer: (data: { name: string; buyer_type: 'COOPERATIVE' | 'PROCESSOR'; contact_name?: string; contact_phone?: string }) =>
       apiCall<any>('POST', '/agriculture/buyers/', data),
     getProduceTypes: () => apiCall<any[]>('GET', '/agriculture/produce-types/'),
-    createProduceType: (data: any) => apiCall<any>('POST', '/agriculture/produce-types/', data),
+    createProduceType: (data: { name: string; unit: string; is_active?: boolean }) =>
+      apiCall<any>('POST', '/agriculture/produce-types/', data),
 
+    // ProduceDeliveryImportView reads request.data['buyer'], not 'buyer_id'.
     importDeliveriesCsv: (file: File, buyerId: string) => {
       const form = new FormData()
       form.append('file', file)
-      form.append('buyer_id', uuid(buyerId))
+      form.append('buyer', uuid(buyerId))
       return apiCall<any>('POST', '/agriculture/deliveries/import/', form)
     },
 
-    importDeliveriesJson: (deliveries: any[]) =>
-      apiCall<any>('POST', '/agriculture/deliveries/', { deliveries }),
+    // ProduceDeliveryListCreateView.post reads {buyer, rows}, where each
+    // row names the member/produce type by human-readable string
+    // (member_number / produce type name), not a UUID — same canonical
+    // row shape import_csv's own column-mapping translates into.
+    importDeliveriesJson: (
+      buyerId: string,
+      rows: Array<{
+        member_number: string
+        date: string
+        produce_type: string
+        quantity: number
+        grade?: string
+        unit_price: number
+        external_reference?: string
+      }>
+    ) => apiCall<any>('POST', '/agriculture/deliveries/', { buyer: buyerId, rows }),
 
-    getDeliveries: () => apiCall<any[]>('GET', '/agriculture/deliveries/'),
+    getDeliveries: (params?: { membership?: string; buyer?: string; period?: string }) =>
+      apiCall<any[]>('GET', '/agriculture/deliveries/', undefined, { params }),
 
     getAdvanceLimit: (membershipId: string) =>
       apiCall<any>('GET', `/agriculture/members/${uuid(membershipId)}/advance-limit/`),
@@ -4883,7 +4900,13 @@ export const api = {
     getSeasonalWatchlist: () => apiCall<any[]>('GET', '/agriculture/seasonal-loans/watchlist/'),
 
     getAgroDealers: () => apiCall<any[]>('GET', '/agriculture/agro-dealers/'),
-    createAgroDealer: (data: any) => apiCall<any>('POST', '/agriculture/agro-dealers/', data),
+    createAgroDealer: (data: {
+      name: string
+      default_rail: 'BANK' | 'B2C'
+      bank_name?: string
+      bank_account_number?: string
+      phone_number?: string
+    }) => apiCall<any>('POST', '/agriculture/agro-dealers/', data),
     disburseToAgroDealer: (loanId: string, data: { agro_dealer: string; rail: 'BANK' | 'B2C' }) =>
       apiCall<any>('POST', `/agriculture/loans/${uuid(loanId)}/disburse-to-agro-dealer/`, data),
   },
