@@ -20,8 +20,12 @@ export function useMembers(filters: MemberFilters = {}) {
   return useQuery({
     queryKey: QueryKeys.adminMembers(params),
     queryFn: () => api.saccoAdmin.getMembers(params),
-    staleTime: 0,          // always consider stale; refetch on focus
-    refetchInterval: 30_000, // poll every 30 s for real-time member count / status
+    // Was staleTime: 0 + a 30s refetchInterval - polled the full member
+    // list every 30s for as long as this page sat open, focused or not.
+    // Membership status doesn't change second-to-second; the global
+    // refetchOnWindowFocus default (see main.tsx) already covers "this
+    // might be stale" when an admin actually comes back to the tab.
+    staleTime: 30_000,
   })
 }
 
@@ -29,8 +33,7 @@ export function useMemberDetail(id: string) {
   return useQuery({
     queryKey: QueryKeys.adminMember(id),
     queryFn: () => api.saccoAdmin.getMember(id),
-    staleTime: 0,
-    refetchInterval: 60_000, // refresh detail every 60 s
+    staleTime: 30_000,
     enabled: !!id,
   })
 }
