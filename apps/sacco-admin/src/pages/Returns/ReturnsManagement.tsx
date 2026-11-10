@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@saccosphere/api-client'
 import { InfoTip } from '@saccosphere/ui'
+import { Badge } from '../../components/ui/Badge'
 
 const RETURN_STATUS_LABELS: Record<string, string> = {
   DRAFT: 'Draft',
@@ -482,9 +483,7 @@ export function ReturnsManagement() {
                         <tr key={inst.id} className="hover:bg-surface-1">
                           <td className="py-2.5 px-3 font-semibold text-ink">{inst.template_code || inst.template_name || 'Return'}</td>
                           <td className="py-2.5 px-3 font-bold">
-                            <span className="px-2 py-0.5 rounded text-[10px] bg-violet-50 text-violet-700 border border-violet-200">
-                              {humanizeReturnStatus(inst.status)}
-                            </span>
+                            <Badge variant="violet">{humanizeReturnStatus(inst.status)}</Badge>
                           </td>
                           <td className="py-2.5 px-3 font-mono">v{inst.version_number ?? 1}</td>
                           <td className="py-2.5 px-3 text-ink-muted">{inst.created_at ? new Date(inst.created_at).toLocaleDateString() : '—'}</td>
@@ -783,13 +782,9 @@ export function ReturnsManagement() {
                         </td>
                         <td className="py-2.5 px-3 font-bold">
                           {c.is_escalated ? (
-                            <span className="px-2 py-0.5 rounded text-[10px] bg-red-50 text-red-700 border border-red-200">
-                              ESCALATED
-                            </span>
+                            <Badge variant="error">ESCALATED</Badge>
                           ) : (
-                            <span className="px-2 py-0.5 rounded text-[10px] bg-blue-50 text-blue-700 border border-blue-200">
-                              {c.status || 'OPEN'}
-                            </span>
+                            <Badge variant="violet">{c.status || 'OPEN'}</Badge>
                           )}
                         </td>
                         <td className="py-2.5 px-3 text-right">
@@ -943,9 +938,7 @@ export function ReturnsManagement() {
                           {(ag.services_offered ?? []).map((s: string) => AGENCY_SERVICE_OPTIONS.find((o) => o.value === s)?.label ?? s).join(', ') || '—'}
                         </td>
                         <td className="py-2.5 px-3 font-bold">
-                          <span className="px-2 py-0.5 rounded text-[10px] bg-violet-50 text-violet-700 border border-violet-200 uppercase">
-                            {ag.status || 'DRAFT'}
-                          </span>
+                          <Badge variant="violet">{ag.status || 'DRAFT'}</Badge>
                         </td>
                         <td className="py-2.5 px-3 text-right space-x-1 whitespace-nowrap">
                           {ag.status === 'DRAFT' && (

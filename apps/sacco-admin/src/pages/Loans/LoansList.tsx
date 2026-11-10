@@ -3,14 +3,22 @@ import { useQuery } from '@tanstack/react-query'
 import { api } from '@saccosphere/api-client'
 import { useAdminLoans, useReviewLoan, useDisburseLoan, useRunCRBCheck } from '../../hooks/useLoans'
 import { InfoTip } from '@saccosphere/ui'
+import { Badge } from '../../components/ui/Badge'
 
-const STATUS_COLORS: Record<string, { bg: string; color: string }> = {
-  PENDING_APPROVAL: { bg: 'bg-amber-50', color: 'text-amber-700' },
-  UNDER_REVIEW: { bg: 'bg-blue-50', color: 'text-blue-700' },
-  APPROVED: { bg: 'bg-mint-50', color: 'text-mint-700' },
-  REJECTED: { bg: 'bg-red-50', color: 'text-red-700' },
-  DISBURSED: { bg: 'bg-mint-50', color: 'text-mint-700' },
-  BOARD_REVIEW: { bg: 'bg-violet-50', color: 'text-violet-700' },
+const STATUS_VARIANT: Record<string, 'success' | 'warning' | 'error' | 'violet'> = {
+  PENDING_APPROVAL: 'warning',
+  UNDER_REVIEW: 'violet',
+  APPROVED: 'success',
+  REJECTED: 'error',
+  DISBURSED: 'success',
+  BOARD_REVIEW: 'violet',
+}
+
+const INSTALMENT_STATUS_VARIANT: Record<string, 'success' | 'warning' | 'error' | 'violet'> = {
+  paid: 'success',
+  pending: 'warning',
+  overdue: 'error',
+  partial: 'violet',
 }
 
 // Strict backend status transition rules:
@@ -153,7 +161,7 @@ export function LoansList() {
         [1, 2, 3].map((i) => <div key={i} className="h-[100px] bg-ink-faint rounded-[10px] mb-2.5" />)
       ) : (
         (data?.results ?? []).map((loan: any) => {
-          const sc = STATUS_COLORS[loan.status] ?? STATUS_COLORS.PENDING_APPROVAL
+          const statusVariant = STATUS_VARIANT[loan.status] ?? STATUS_VARIANT.PENDING_APPROVAL
           const isExpanded = activeId === loan.loan_id
           const rules = VALID_TRANSITIONS[loan.status] ?? { canMoveToReview: false, canApprove: false, canReject: false, canDisburse: false }
 
@@ -179,7 +187,7 @@ export function LoansList() {
                   </span>
                 </div>
                 <div>
-                  <span className={`${sc.bg} ${sc.color} px-2 py-0.5 rounded-full text-[11px] font-semibold`}>{loan.status}</span>
+                  <Badge variant={statusVariant}>{loan.status}</Badge>
                 </div>
                 <div className="flex gap-1.5">
                   <button
@@ -404,12 +412,6 @@ export function LoansList() {
                       </tr>
                     ) : (
                       (scheduleItems ?? []).map((inst: any) => {
-                        const statusColors: Record<string, string> = {
-                          paid: 'bg-mint-50 text-mint-700',
-                          pending: 'bg-amber-50 text-amber-700',
-                          overdue: 'bg-red-50 text-red-700',
-                          partial: 'bg-blue-50 text-blue-700',
-                        }
                         const st = String(inst.status || 'pending').toLowerCase()
                         return (
                           <tr key={inst.instalment_number} className="hover:bg-surface-1">
@@ -430,9 +432,9 @@ export function LoansList() {
                               KES {Number(inst.balance_after ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                             </td>
                             <td className="py-2.5 px-3 text-center">
-                              <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${statusColors[st] || 'bg-gray-100 text-gray-700'}`}>
+                              <Badge variant={INSTALMENT_STATUS_VARIANT[st] ?? 'neutral'}>
                                 {inst.status}
-                              </span>
+                              </Badge>
                             </td>
                           </tr>
                         )

@@ -4,12 +4,13 @@ import { api } from '@saccosphere/api-client'
 import { InfoTip } from '@saccosphere/ui'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { Card } from '../../components/ui/Card'
+import { Badge } from '../../components/ui/Badge'
 
-const STATUS_STYLES: Record<string, string> = {
-  PENDING: 'bg-amber-50 text-amber-700 border-amber-200',
-  SENT: 'bg-blue-50 text-blue-700 border-blue-200',
-  PAID: 'bg-mint-50 text-mint-700 border-mint-200',
-  FAILED: 'bg-red-50 text-red-700 border-red-200',
+const STATUS_VARIANT: Record<string, 'success' | 'warning' | 'error' | 'violet'> = {
+  PENDING: 'warning',
+  SENT: 'violet',
+  PAID: 'success',
+  FAILED: 'error',
 }
 
 export function BillManager() {
@@ -203,7 +204,7 @@ export function BillManager() {
                     <td className="py-2.5 px-3 text-right font-mono">KES {Number(inv.amount ?? 0).toLocaleString()}</td>
                     <td className="py-2.5 px-3 text-ink-muted">{inv.due_date}</td>
                     <td className="py-2.5 px-3">
-                      <span className={`px-2 py-0.5 rounded text-[10px] border ${STATUS_STYLES[inv.status] ?? 'bg-surface-2 text-ink-muted border-ink-faint'}`}>{inv.status}</span>
+                      <Badge variant={STATUS_VARIANT[inv.status] ?? 'neutral'}>{inv.status}</Badge>
                       {!!inv.failure_reason && <div className="text-red-600 text-[10px] mt-0.5">{inv.failure_reason}</div>}
                     </td>
                     <td className="py-2.5 px-3 text-ink-muted">{inv.paid_at ? new Date(inv.paid_at).toLocaleString() : '—'}</td>

@@ -4,12 +4,13 @@ import { api } from '@saccosphere/api-client'
 import { InfoTip } from '@saccosphere/ui'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { Card } from '../../components/ui/Card'
+import { Badge } from '../../components/ui/Badge'
 
-const STATUS_STYLES: Record<string, string> = {
-  PENDING: 'bg-amber-50 text-amber-700 border-amber-200',
-  PROCESSING: 'bg-blue-50 text-blue-700 border-blue-200',
-  COMPLETED: 'bg-mint-50 text-mint-700 border-mint-200',
-  FAILED: 'bg-red-50 text-red-700 border-red-200',
+const STATUS_VARIANT: Record<string, 'success' | 'warning' | 'error' | 'violet'> = {
+  PENDING: 'warning',
+  PROCESSING: 'violet',
+  COMPLETED: 'success',
+  FAILED: 'error',
 }
 
 const IN_PROGRESS = ['PENDING', 'PROCESSING']
@@ -100,7 +101,7 @@ export function StatementImport() {
                     <tr key={j.id}>
                       <td className="py-2 px-3 font-semibold text-ink">{j.file_name}</td>
                       <td className="py-2 px-3">
-                        <span className={`px-2 py-0.5 rounded text-[10px] border ${STATUS_STYLES[j.status] ?? ''}`}>{j.status}</span>
+                        <Badge variant={STATUS_VARIANT[j.status] ?? 'neutral'}>{j.status}</Badge>
                         {IN_PROGRESS.includes(j.status) && <span className="text-ink-faint ml-1">{j.progress_pct}%</span>}
                       </td>
                       <td className="py-2 px-3 text-right">{j.processed_rows}/{j.total_rows}</td>

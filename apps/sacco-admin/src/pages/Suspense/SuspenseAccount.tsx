@@ -6,11 +6,12 @@ import { useMembers } from '../../hooks/useMembers'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { Card } from '../../components/ui/Card'
 import { StepUpModal } from '../../components/auth/StepUpModal'
+import { Badge } from '../../components/ui/Badge'
 
-const STATUS_STYLES: Record<string, string> = {
-  UNMATCHED: 'bg-amber-50 text-amber-700 border-amber-200',
-  CLEARED: 'bg-mint-50 text-mint-700 border-mint-200',
-  REFUNDED: 'bg-blue-50 text-blue-700 border-blue-200',
+const STATUS_VARIANT: Record<string, 'success' | 'warning' | 'violet'> = {
+  UNMATCHED: 'warning',
+  CLEARED: 'success',
+  REFUNDED: 'violet',
 }
 
 type PickedMember = { id: string; label: string }
@@ -168,7 +169,7 @@ export function SuspenseAccount() {
                       <td className="py-2.5 px-3 font-mono text-ink">{item.bill_ref_number || '—'}</td>
                       <td className="py-2.5 px-3 text-right font-mono font-bold">KES {Number(item.amount ?? 0).toLocaleString()}</td>
                       <td className="py-2.5 px-3 text-ink-muted">{item.age_days}d</td>
-                      <td className="py-2.5 px-3"><span className={`px-2 py-0.5 rounded text-[10px] border ${STATUS_STYLES[item.status] ?? ''}`}>{item.status}</span></td>
+                      <td className="py-2.5 px-3"><Badge variant={STATUS_VARIANT[item.status] ?? 'warning'}>{item.status}</Badge></td>
                       <td className="py-2.5 px-3 text-right space-x-1">
                         {item.status === 'UNMATCHED' && (
                           <>

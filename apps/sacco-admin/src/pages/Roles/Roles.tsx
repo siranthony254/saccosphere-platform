@@ -3,11 +3,12 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@saccosphere/api-client'
 import { useUserRoles } from '../../hooks/useRoles'
 import { InfoTip } from '@saccosphere/ui'
+import { Badge } from '../../components/ui/Badge'
 
-const SENSITIVITY_STYLES: Record<string, string> = {
-  MONEY_MOVING: 'bg-red-50 text-red-700 border-red-200',
-  PRIVILEGE_MANAGEMENT: 'bg-amber-50 text-amber-700 border-amber-200',
-  OPERATIONAL: 'bg-surface-2 text-ink-muted border-ink-faint',
+const SENSITIVITY_VARIANT: Record<string, 'error' | 'warning' | 'neutral'> = {
+  MONEY_MOVING: 'error',
+  PRIVILEGE_MANAGEMENT: 'warning',
+  OPERATIONAL: 'neutral',
 }
 
 const SENSITIVITY_LABELS: Record<string, string> = {
@@ -159,7 +160,7 @@ function CustomRolesTab() {
                         <div className="flex-1">
                           <div className="flex items-center gap-1.5 flex-wrap">
                             <span className="font-medium text-ink">{perm.label}</span>
-                            <span className={`px-1.5 py-0.5 rounded text-[9px] border ${SENSITIVITY_STYLES[perm.sensitivity] ?? ''}`}>{SENSITIVITY_LABELS[perm.sensitivity] ?? perm.sensitivity}</span>
+                            <Badge variant={SENSITIVITY_VARIANT[perm.sensitivity] ?? 'neutral'}>{SENSITIVITY_LABELS[perm.sensitivity] ?? perm.sensitivity}</Badge>
                           </div>
                           {!!perm.description && <div className="text-ink-faint text-[10px]">{perm.description}</div>}
                         </div>
@@ -197,9 +198,9 @@ function CustomRolesTab() {
                     <td className="py-2.5 px-3 text-ink-muted">{(role.permissions ?? []).length} permission{(role.permissions ?? []).length === 1 ? '' : 's'}</td>
                     <td className="py-2.5 px-3">
                       {role.is_system ? (
-                        <span className="px-2 py-0.5 rounded text-[10px] bg-surface-2 text-ink-muted border border-ink-faint">System</span>
+                        <Badge variant="neutral">System</Badge>
                       ) : (
-                        <span className="px-2 py-0.5 rounded text-[10px] bg-violet-50 text-violet-700 border border-violet-200">Custom</span>
+                        <Badge variant="violet">Custom</Badge>
                       )}
                     </td>
                     <td className="py-2.5 px-3 text-right space-x-1">

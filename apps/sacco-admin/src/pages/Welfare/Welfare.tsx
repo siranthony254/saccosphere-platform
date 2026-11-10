@@ -4,6 +4,7 @@ import { api } from '@saccosphere/api-client'
 import { InfoTip } from '@saccosphere/ui'
 import { useMembers } from '../../hooks/useMembers'
 import { PageHeader } from '../../components/ui/PageHeader'
+import { Badge } from '../../components/ui/Badge'
 
 const CLAIM_STATUS_LABELS: Record<string, string> = {
   DOCUMENTS_PENDING: 'Needs documents',
@@ -13,6 +14,13 @@ const CLAIM_STATUS_LABELS: Record<string, string> = {
   PAID: 'Paid',
 }
 const humanizeClaimStatus = (status: string) => CLAIM_STATUS_LABELS[status] ?? status
+const CLAIM_STATUS_VARIANT: Record<string, 'success' | 'warning' | 'violet'> = {
+  DOCUMENTS_PENDING: 'warning',
+  UNDER_REVIEW: 'violet',
+  PENDING_APPROVAL: 'warning',
+  APPROVED: 'success',
+  PAID: 'success',
+}
 
 function MemberPicker({ value, onChange, label }: { value: string; onChange: (id: string) => void; label?: string }) {
   const [search, setSearch] = useState('')
@@ -327,7 +335,7 @@ export function Welfare() {
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="font-bold text-ink">{claimDetail.beneficiary_name} ({claimDetail.beneficiary_relationship}) — {claimDetail.claim_type}</div>
-                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">{humanizeClaimStatus(claimDetail.status)}</span>
+                  <Badge variant={CLAIM_STATUS_VARIANT[claimDetail.status] ?? 'warning'}>{humanizeClaimStatus(claimDetail.status)}</Badge>
                 </div>
                 <div className="text-ink-muted">Requested KES {claimDetail.requested_amount} · Approved {claimDetail.approved_amount ?? '—'}</div>
                 {claimDetail.status === 'PENDING_APPROVAL' && (

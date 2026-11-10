@@ -2,17 +2,18 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApplications, useApplicationReview, useReviewApplication } from '../../hooks/useApplications'
 import { InfoTip } from '@saccosphere/ui'
+import { Badge } from '../../components/ui/Badge'
 
-const STATUS_COLORS: Record<string, { bg: string; color: string }> = {
-  applied: { bg: 'bg-amber-50', color: 'text-amber-700' },
-  PENDING: { bg: 'bg-amber-50', color: 'text-amber-700' },
-  SUBMITTED: { bg: 'bg-amber-50', color: 'text-amber-700' },
-  under_review: { bg: 'bg-blue-50', color: 'text-blue-700' },
-  UNDER_REVIEW: { bg: 'bg-blue-50', color: 'text-blue-700' },
-  active: { bg: 'bg-mint-50', color: 'text-mint-700' },
-  APPROVED: { bg: 'bg-mint-50', color: 'text-mint-700' },
-  withdrawn: { bg: 'bg-red-50', color: 'text-red-700' },
-  REJECTED: { bg: 'bg-red-50', color: 'text-red-700' },
+const STATUS_VARIANT: Record<string, 'success' | 'warning' | 'error' | 'violet'> = {
+  applied: 'warning',
+  PENDING: 'warning',
+  SUBMITTED: 'warning',
+  under_review: 'violet',
+  UNDER_REVIEW: 'violet',
+  active: 'success',
+  APPROVED: 'success',
+  withdrawn: 'error',
+  REJECTED: 'error',
 }
 
 export function ApplicationsList() {
@@ -109,7 +110,7 @@ export function ApplicationsList() {
         [1, 2, 3].map(i => <div key={i} className="h-[80px] bg-ink-faint/10 animate-pulse rounded-[10px] mb-2.5" />)
       ) : (
         (data?.results ?? []).map((app: any) => {
-          const sc = STATUS_COLORS[app.status] ?? STATUS_COLORS.applied
+          const statusVariant = STATUS_VARIANT[app.status] ?? STATUS_VARIANT.applied
           const isReviewingThis = reviewingId === app.application_id
           const canReview = app.status === 'PENDING' || app.status === 'SUBMITTED' || app.status === 'UNDER_REVIEW'
 
@@ -129,9 +130,7 @@ export function ApplicationsList() {
                   Applied {new Date(app.submitted_at).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}
                 </div>
                 <div className="flex justify-center">
-                  <span className={`${sc.bg} ${sc.color} px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-tighter border border-current/10 shadow-sm`}>
-                    {app.status}
-                  </span>
+                  <Badge variant={statusVariant}>{app.status}</Badge>
                 </div>
                 <div className="flex gap-2">
                   {canReview && (

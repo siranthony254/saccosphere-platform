@@ -4,7 +4,14 @@ import { api } from '@saccosphere/api-client'
 import { InfoTip } from '@saccosphere/ui'
 import { useMembers } from '../../hooks/useMembers'
 import { PageHeader } from '../../components/ui/PageHeader'
+import { Badge } from '../../components/ui/Badge'
 
+const DISPUTE_STATUS_VARIANT: Record<string, 'success' | 'warning' | 'error'> = {
+  UPHELD: 'success',
+  REJECTED: 'error',
+  SUBMITTED: 'warning',
+  UNDER_REVIEW: 'warning',
+}
 const DISPUTE_STATUS_LABELS: Record<string, string> = {
   SUBMITTED: 'New',
   UNDER_REVIEW: 'Being reviewed',
@@ -294,7 +301,7 @@ export function CreditBureau() {
               <div key={d.id} className="border border-[#e5ede9] rounded p-2.5 space-y-2">
                 <div className="flex items-center justify-between">
                   <div className="text-ink">{d.member_statement}</div>
-                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${d.status === 'UPHELD' ? 'bg-mint-50 text-mint-700' : d.status === 'REJECTED' ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-amber-700'}`}>{DISPUTE_STATUS_LABELS[d.status] ?? d.status}</span>
+                  <Badge variant={DISPUTE_STATUS_VARIANT[d.status] ?? 'warning'}>{DISPUTE_STATUS_LABELS[d.status] ?? d.status}</Badge>
                 </div>
                 {d.status !== 'UPHELD' && d.status !== 'REJECTED' && (
                   selectedDisputeId === d.id ? (

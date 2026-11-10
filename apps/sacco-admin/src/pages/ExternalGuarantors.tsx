@@ -1,15 +1,16 @@
 import { useState } from 'react'
 import { useExternalGuarantors, useReviewExternalGuarantor } from '../hooks/useExternalGuarantors'
 import { InfoTip } from '@saccosphere/ui'
+import { Badge } from '../components/ui/Badge'
 
-const STATUS_COLORS: Record<string, { bg: string; color: string }> = {
-  PENDING_SMS: { bg: 'bg-amber-50', color: 'text-amber-700' },
-  SMS_SENT: { bg: 'bg-amber-50', color: 'text-amber-700' },
-  ACCEPTED: { bg: 'bg-blue-50', color: 'text-blue-700' },
-  UNDER_ADMIN_REVIEW: { bg: 'bg-blue-50', color: 'text-blue-700' },
-  DECLINED: { bg: 'bg-red-50', color: 'text-red-700' },
-  APPROVED_BY_ADMIN: { bg: 'bg-mint-50', color: 'text-mint-700' },
-  REJECTED_BY_ADMIN: { bg: 'bg-red-50', color: 'text-red-700' },
+const STATUS_VARIANT: Record<string, 'success' | 'warning' | 'error' | 'violet' | 'neutral'> = {
+  PENDING_SMS: 'warning',
+  SMS_SENT: 'warning',
+  ACCEPTED: 'violet',
+  UNDER_ADMIN_REVIEW: 'violet',
+  DECLINED: 'error',
+  APPROVED_BY_ADMIN: 'success',
+  REJECTED_BY_ADMIN: 'error',
 }
 
 export function ExternalGuarantors() {
@@ -45,7 +46,7 @@ export function ExternalGuarantors() {
         [1, 2, 3].map((i) => <div key={i} className="h-[100px] bg-ink-faint rounded-[10px] mb-2.5" />)
       ) : (
         rows.map((guarantor: any) => {
-          const sc = STATUS_COLORS[guarantor.status] ?? { bg: 'bg-surface-2', color: 'text-ink' }
+          const statusVariant = STATUS_VARIANT[guarantor.status] ?? 'neutral'
           const isExpanded = activeId === guarantor.id
 
           return (
@@ -64,9 +65,7 @@ export function ExternalGuarantors() {
                 <div className="text-sm font-semibold">KES {guarantor.amount.toLocaleString()}</div>
                 <div className="text-xs text-ink-muted">{guarantor.guarantor_national_id}</div>
                 <div>
-                  <span className={`${sc.bg} ${sc.color} px-2 py-0.5 rounded-full text-[11px] font-semibold`}>
-                    {guarantor.status_label}
-                  </span>
+                  <Badge variant={statusVariant}>{guarantor.status_label}</Badge>
                 </div>
                 <div className="flex gap-1.5">
                   {!guarantor.is_final ? (

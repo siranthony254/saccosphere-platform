@@ -7,6 +7,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, generateIdempotencyKey } from '@saccosphere/api-client'
 import { Icon } from '../../components/ui/Icon'
 import { Skeleton } from '../../components/ui/Skeleton'
+import { Badge, type BadgeVariant } from '../../components/ui/Badge'
 import { useMoney } from '../../lib/money'
 import { useTheme } from '../../theme/ThemeProvider'
 
@@ -17,6 +18,15 @@ const STATUS_LABELS: Record<string, string> = {
   FAILED: 'Failed',
   CANCEL_REQUESTED: 'Cancelling',
   CANCELLED: 'Cancelled',
+}
+
+const STATUS_VARIANT: Record<string, BadgeVariant> = {
+  DRAFT: 'neutral',
+  PENDING_CONFIRMATION: 'warning',
+  ACTIVE: 'success',
+  FAILED: 'error',
+  CANCEL_REQUESTED: 'warning',
+  CANCELLED: 'neutral',
 }
 
 const LIVE_STATUSES = ['DRAFT', 'PENDING_CONFIRMATION', 'ACTIVE', 'CANCEL_REQUESTED']
@@ -225,9 +235,7 @@ export default function StandingOrdersScreen() {
                     <Text style={{ color: c.text, fontSize: 13, fontWeight: '700' }}>{o.name}</Text>
                     <Text style={{ color: c.textMuted, fontSize: 11, marginTop: 2 }}>{o.frequency === 'WEEKLY' ? 'Weekly' : 'Monthly'} · {money(o.amount)}</Text>
                   </View>
-                  <View style={{ paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999, backgroundColor: c.surfaceAlt }}>
-                    <Text style={{ color: c.textMuted, fontSize: 10, fontWeight: '600' }}>{STATUS_LABELS[o.status] ?? o.status}</Text>
-                  </View>
+                  <Badge label={STATUS_LABELS[o.status] ?? o.status} variant={STATUS_VARIANT[o.status] ?? 'neutral'} />
                 </View>
                 {!!o.failure_reason && (
                   <Text style={{ color: c.danger, fontSize: 11, marginTop: 8 }}>{o.failure_reason}</Text>

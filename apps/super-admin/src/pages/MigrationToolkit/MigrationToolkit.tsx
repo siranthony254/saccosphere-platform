@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@saccosphere/api-client'
 import { InfoTip } from '@saccosphere/ui'
+import { Badge } from '../../components/ui/Badge'
 
 const PRODUCTS: Array<{ value: string; label: string }> = [
   { value: 'MEMBERS', label: 'Members and KYC fields' },
@@ -16,14 +17,14 @@ const PRODUCTS: Array<{ value: string; label: string }> = [
 
 const RECONCILABLE_PRODUCTS = ['SAVINGS_BALANCES', 'LOANS', 'DIVIDEND_HISTORY']
 
-const STATUS_STYLES: Record<string, string> = {
-  DRAFT: 'bg-surface-2 text-ink-muted border-ink-faint',
-  VALIDATED: 'bg-blue-50 text-blue-700 border-blue-200',
-  VALIDATION_FAILED: 'bg-red-50 text-red-700 border-red-200',
-  PENDING_APPROVAL: 'bg-amber-50 text-amber-700 border-amber-200',
-  COMMITTED: 'bg-mint-50 text-mint-700 border-mint-200',
-  COMMIT_FAILED: 'bg-red-50 text-red-700 border-red-200',
-  ROLLED_BACK: 'bg-surface-2 text-ink-muted border-ink-faint',
+const STATUS_VARIANT: Record<string, 'success' | 'warning' | 'error' | 'info' | 'neutral'> = {
+  DRAFT: 'neutral',
+  VALIDATED: 'info',
+  VALIDATION_FAILED: 'error',
+  PENDING_APPROVAL: 'warning',
+  COMMITTED: 'success',
+  COMMIT_FAILED: 'error',
+  ROLLED_BACK: 'neutral',
 }
 
 function downloadBlob(blob: Blob, filename: string) {
@@ -217,7 +218,7 @@ export function MigrationToolkit() {
                     <tr key={b.id}>
                       <td className="py-2 px-3 font-semibold text-ink">{b.sacco_name}</td>
                       <td className="py-2 px-3 text-ink-muted">{b.cutover_date}</td>
-                      <td className="py-2 px-3"><span className={`px-2 py-0.5 rounded text-[10px] border ${STATUS_STYLES[b.status] ?? ''}`}>{b.status}</span></td>
+                      <td className="py-2 px-3"><Badge variant={STATUS_VARIANT[b.status] ?? 'neutral'}>{b.status}</Badge></td>
                       <td className="py-2 px-3 text-ink-muted">{(b.files ?? []).length}/{PRODUCTS.length}</td>
                       <td className="py-2 px-3 text-right">
                         <button onClick={() => setSelectedBatchId(b.id)} className="px-2 py-1 bg-violet-600 text-white rounded text-[10px] font-bold">Open</button>
@@ -236,7 +237,7 @@ export function MigrationToolkit() {
               ) : batch ? (
                 <>
                   <div className="flex items-center justify-between flex-wrap gap-2">
-                    <div className="font-bold text-ink">{batch.sacco_name} — <span className={`px-2 py-0.5 rounded text-[10px] border ${STATUS_STYLES[batch.status] ?? ''}`}>{batch.status}</span></div>
+                    <div className="font-bold text-ink">{batch.sacco_name} — <Badge variant={STATUS_VARIANT[batch.status] ?? 'neutral'}>{batch.status}</Badge></div>
                     <div className="flex gap-1.5">
                       <button onClick={() => dryRunMutation.mutate()} disabled={dryRunMutation.isPending} className="px-2.5 py-1.5 bg-blue-600 text-white rounded font-bold text-[10px]">Run Dry Run</button>
                       {batch.status === 'VALIDATED' && (

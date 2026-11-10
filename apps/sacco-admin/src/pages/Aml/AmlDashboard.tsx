@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@saccosphere/api-client'
 import { InfoTip } from '@saccosphere/ui'
+import { Badge } from '../../components/ui/Badge'
 
 const CASE_STATUS_LABELS: Record<string, string> = {
   OPEN: 'New',
@@ -291,15 +292,9 @@ export function AmlDashboard() {
                         <td className="py-2.5 px-3 font-semibold text-ink">{alt.rule_code || 'Rule Violation'}</td>
                         <td className="py-2.5 px-3 text-ink-muted uppercase">{alt.subject_type || 'MEMBER'}</td>
                         <td className="py-2.5 px-3 font-bold">
-                          <span
-                            className={`px-2 py-0.5 rounded text-[10px] ${
-                              alt.severity === 'CRITICAL' || alt.severity === 'HIGH'
-                                ? 'bg-red-50 text-red-700 border border-red-200'
-                                : 'bg-amber-50 text-amber-800 border border-amber-200'
-                            }`}
-                          >
+                          <Badge variant={alt.severity === 'CRITICAL' || alt.severity === 'HIGH' ? 'error' : 'warning'}>
                             {alt.severity}
-                          </span>
+                          </Badge>
                         </td>
                         <td className="py-2.5 px-3 text-ink">
                           {humanizeAlertStatus(alt.status || 'OPEN')}
