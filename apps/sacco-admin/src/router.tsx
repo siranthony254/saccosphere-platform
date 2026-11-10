@@ -1,3 +1,4 @@
+import { lazy, Suspense, type ReactNode } from 'react'
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 import { AppShell } from './components/layout/AppShell'
 import { RequireAuth } from './components/auth/RequireAuth'
@@ -35,19 +36,33 @@ import { SuspenseAccount } from './pages/Suspense/SuspenseAccount'
 import { InsiderLending } from './pages/InsiderLending/InsiderLending'
 import { StatementImport } from './pages/StatementImport/StatementImport'
 import { AmlDashboard } from './pages/Aml/AmlDashboard'
-import { GovernanceManagement } from './pages/Governance/GovernanceManagement'
-import { SharedLendingPrimitives } from './pages/Lending/SharedLendingPrimitives'
-import { AgriculturePack } from './pages/SectorPacks/AgriculturePack'
-import { TransportPack } from './pages/SectorPacks/TransportPack'
-import { EducationPack } from './pages/SectorPacks/EducationPack'
-import { HealthcarePack } from './pages/SectorPacks/HealthcarePack'
-import { GovernmentPack } from './pages/SectorPacks/GovernmentPack'
-import { TechnologyPack } from './pages/SectorPacks/TechnologyPack'
-import { FinancePack } from './pages/SectorPacks/FinancePack'
-import { RetailPack } from './pages/SectorPacks/RetailPack'
 import { Treasury } from './pages/Treasury/Treasury'
 import { Welfare } from './pages/Welfare/Welfare'
 import { CreditBureau } from './pages/CreditBureau/CreditBureau'
+
+// Lazy-loaded: each SACCO is only ever entitled to one sector pack at a
+// time (gated at runtime by RequireSectorModule below), so there's no
+// reason to ship all eight packs' code - plus governance and the shared
+// lending primitives page, both large - to every user on first load. This
+// was the direct driver of this app's 1.24MB main chunk.
+const GovernanceManagement = lazy(() => import('./pages/Governance/GovernanceManagement').then((m) => ({ default: m.GovernanceManagement })))
+const SharedLendingPrimitives = lazy(() => import('./pages/Lending/SharedLendingPrimitives').then((m) => ({ default: m.SharedLendingPrimitives })))
+const AgriculturePack = lazy(() => import('./pages/SectorPacks/AgriculturePack').then((m) => ({ default: m.AgriculturePack })))
+const TransportPack = lazy(() => import('./pages/SectorPacks/TransportPack').then((m) => ({ default: m.TransportPack })))
+const EducationPack = lazy(() => import('./pages/SectorPacks/EducationPack').then((m) => ({ default: m.EducationPack })))
+const HealthcarePack = lazy(() => import('./pages/SectorPacks/HealthcarePack').then((m) => ({ default: m.HealthcarePack })))
+const GovernmentPack = lazy(() => import('./pages/SectorPacks/GovernmentPack').then((m) => ({ default: m.GovernmentPack })))
+const TechnologyPack = lazy(() => import('./pages/SectorPacks/TechnologyPack').then((m) => ({ default: m.TechnologyPack })))
+const FinancePack = lazy(() => import('./pages/SectorPacks/FinancePack').then((m) => ({ default: m.FinancePack })))
+const RetailPack = lazy(() => import('./pages/SectorPacks/RetailPack').then((m) => ({ default: m.RetailPack })))
+
+function LazyRoute({ children }: { children: ReactNode }) {
+  return (
+    <Suspense fallback={<div className="p-8 text-sm text-ink-muted">Loading…</div>}>
+      {children}
+    </Suspense>
+  )
+}
 
 export const router = createBrowserRouter([
   {
@@ -94,16 +109,16 @@ export const router = createBrowserRouter([
       { path: 'insider-lending', element: <InsiderLending /> },
       { path: 'statement-import', element: <StatementImport /> },
       { path: 'aml', element: <AmlDashboard /> },
-      { path: 'governance', element: <GovernanceManagement /> },
-      { path: 'lending', element: <RequireSectorModule module="lending.assets"><SharedLendingPrimitives /></RequireSectorModule> },
-      { path: 'agriculture', element: <RequireSectorModule module="agriculture.produce_tracking"><AgriculturePack /></RequireSectorModule> },
-      { path: 'transport', element: <RequireSectorModule module="transport.vehicle_compliance"><TransportPack /></RequireSectorModule> },
-      { path: 'education', element: <RequireSectorModule module="education.institution_registry"><EducationPack /></RequireSectorModule> },
-      { path: 'healthcare', element: <RequireSectorModule module="healthcare.health_facility_registry"><HealthcarePack /></RequireSectorModule> },
-      { path: 'government', element: <RequireSectorModule module="government.gov_payroll_checkoff"><GovernmentPack /></RequireSectorModule> },
-      { path: 'technology', element: <RequireSectorModule module="technology.remote_employer_verification"><TechnologyPack /></RequireSectorModule> },
-      { path: 'finance', element: <RequireSectorModule module="finance.voluntary_investment_products"><FinancePack /></RequireSectorModule> },
-      { path: 'retail', element: <RequireSectorModule module="retail.agent_collection"><RetailPack /></RequireSectorModule> },
+      { path: 'governance', element: <LazyRoute><GovernanceManagement /></LazyRoute> },
+      { path: 'lending', element: <RequireSectorModule module="lending.assets"><LazyRoute><SharedLendingPrimitives /></LazyRoute></RequireSectorModule> },
+      { path: 'agriculture', element: <RequireSectorModule module="agriculture.produce_tracking"><LazyRoute><AgriculturePack /></LazyRoute></RequireSectorModule> },
+      { path: 'transport', element: <RequireSectorModule module="transport.vehicle_compliance"><LazyRoute><TransportPack /></LazyRoute></RequireSectorModule> },
+      { path: 'education', element: <RequireSectorModule module="education.institution_registry"><LazyRoute><EducationPack /></LazyRoute></RequireSectorModule> },
+      { path: 'healthcare', element: <RequireSectorModule module="healthcare.health_facility_registry"><LazyRoute><HealthcarePack /></LazyRoute></RequireSectorModule> },
+      { path: 'government', element: <RequireSectorModule module="government.gov_payroll_checkoff"><LazyRoute><GovernmentPack /></LazyRoute></RequireSectorModule> },
+      { path: 'technology', element: <RequireSectorModule module="technology.remote_employer_verification"><LazyRoute><TechnologyPack /></LazyRoute></RequireSectorModule> },
+      { path: 'finance', element: <RequireSectorModule module="finance.voluntary_investment_products"><LazyRoute><FinancePack /></LazyRoute></RequireSectorModule> },
+      { path: 'retail', element: <RequireSectorModule module="retail.agent_collection"><LazyRoute><RetailPack /></LazyRoute></RequireSectorModule> },
       // P34/P35/P36: cross-sector, not module-gated — available to every tenant regardless of sector.
       { path: 'treasury', element: <Treasury /> },
       { path: 'welfare', element: <Welfare /> },
