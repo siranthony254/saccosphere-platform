@@ -38,129 +38,150 @@ export default function MenuScreen() {
     [user?.id]
   )
 
-  const menuItems: Array<{ label: string, helper: string, icon: IconName, action: () => void, disabled?: boolean }> = [
+  type MenuItem = { label: string, helper: string, icon: IconName, action: () => void }
+
+  // Every destination below already shows its own clear "no active SACCO"
+  // message when activeMemberships is empty (deposit-protection.tsx,
+  // how-to-pay.tsx, standing-orders.tsx, assistant.tsx, SaccoSwitcher all
+  // do) - so these items stay tappable rather than silently greyed out
+  // with no explanation. Grouped into sections instead of one long flat
+  // list, which is what made this screen feel congested.
+  const menuSections: Array<{ title: string, items: MenuItem[] }> = [
     {
-      label: 'My guarantees',
-      helper: 'Review requests and see your guarantee capacity',
-      icon: 'guarantor',
-      action: () => router.push('/(member)/guarantor-inbox'),
+      title: 'This SACCO',
+      items: [
+        {
+          label: 'SACCO switcher',
+          helper: 'Jump to a specific SACCO dashboard',
+          icon: 'transfer',
+          action: () => setSwitcherVisible(true),
+        },
+        {
+          label: 'Nominees',
+          helper: 'Who your savings and share capital go to',
+          icon: 'file',
+          action: () => {
+            if (!activeSlug) {
+              Alert.alert('No SACCOs linked', 'Join a SACCO first to register nominees.')
+              return
+            }
+            router.push({ pathname: '/sacco/[slug]/membership/nominees', params: { slug: activeSlug } } as any)
+          },
+        },
+        {
+          label: 'Leave this SACCO',
+          helper: 'Start or track your membership exit',
+          icon: 'logout',
+          action: () => {
+            if (!activeSlug) {
+              Alert.alert('No SACCOs linked', "You're not an active member of a SACCO yet.")
+              return
+            }
+            router.push({ pathname: '/sacco/[slug]/membership/exit', params: { slug: activeSlug } } as any)
+          },
+        },
+        {
+          label: 'Deposit protection',
+          helper: 'See how much of your savings is covered per SACCO',
+          icon: 'security',
+          action: () => router.push('/(member)/deposit-protection' as any),
+        },
+      ],
     },
     {
-      label: 'Referrals',
-      helper: 'Invite friends and earn rewards',
-      icon: 'dividend',
-      action: () => setReferralsVisible(true),
+      title: 'Payments',
+      items: [
+        {
+          label: 'How to pay via paybill',
+          helper: 'Pay directly from the M-Pesa menu, without opening the app',
+          icon: 'receive',
+          action: () => router.push('/(member)/how-to-pay' as any),
+        },
+        {
+          label: 'Standing orders',
+          helper: 'Automatic M-Pesa payments into savings or a loan, on a schedule',
+          icon: 'calendar',
+          action: () => router.push('/(member)/standing-orders' as any),
+        },
+      ],
     },
     {
-      label: 'SACCO switcher',
-      helper: 'Jump to a specific SACCO dashboard',
-      icon: 'transfer',
-      action: () => setSwitcherVisible(true),
-      disabled: activeMemberships.length === 0,
+      title: 'Loans & credit',
+      items: [
+        {
+          label: 'Compare loans',
+          helper: 'Compare loan interest rates across SACCOs',
+          icon: 'loan',
+          action: () => {
+            if (activeMemberships.length === 0) {
+              Alert.alert('No SACCOs linked', 'Link a SACCO first to compare loans.')
+            } else if (activeMemberships.length === 1) {
+              router.push({ pathname: '/sacco/[slug]/compare', params: { slug: activeMemberships[0].sacco_slug } })
+            } else {
+              setComparePickerVisible(true)
+            }
+          },
+        },
+        {
+          label: 'Credit score explanation',
+          helper: 'Ask your SACCO to explain or review a credit score',
+          icon: 'file',
+          action: () => router.push('/(member)/credit-score' as any),
+        },
+        {
+          label: 'Repayment passport',
+          helper: 'Share your repayment history with another SACCO, or revoke it',
+          icon: 'file',
+          action: () => router.push('/(member)/repayment-passport' as any),
+        },
+        {
+          label: 'Dispute a CRB listing',
+          helper: 'Raise a dispute about a credit reference bureau report',
+          icon: 'warning',
+          action: () => router.push('/(member)/listing-dispute' as any),
+        },
+      ],
     },
     {
-      label: 'How to pay via paybill',
-      helper: 'Pay directly from the M-Pesa menu, without opening the app',
-      icon: 'receive',
-      action: () => router.push('/(member)/how-to-pay' as any),
-      disabled: activeMemberships.length === 0,
-    },
-    {
-      label: 'Compare loans',
-      helper: 'Compare loan interest rates across SACCOs',
-      icon: 'loan',
-      action: () => {
-        if (activeMemberships.length === 0) {
-          Alert.alert('No SACCOs linked', 'Link a SACCO first to compare loans.')
-        } else if (activeMemberships.length === 1) {
-          router.push({ pathname: '/sacco/[slug]/compare', params: { slug: activeMemberships[0].sacco_slug } })
-        } else {
-          setComparePickerVisible(true)
-        }
-      },
-    },
-    {
-      label: 'Nominees',
-      helper: 'Who your savings and share capital go to',
-      icon: 'file',
-      action: () => {
-        if (!activeSlug) {
-          Alert.alert('No SACCOs linked', 'Join a SACCO first to register nominees.')
-          return
-        }
-        router.push({ pathname: '/sacco/[slug]/membership/nominees', params: { slug: activeSlug } } as any)
-      },
-      disabled: activeMemberships.length === 0,
-    },
-    {
-      label: 'Leave this SACCO',
-      helper: 'Start or track your membership exit',
-      icon: 'logout',
-      action: () => {
-        if (!activeSlug) {
-          Alert.alert('No SACCOs linked', "You're not an active member of a SACCO yet.")
-          return
-        }
-        router.push({ pathname: '/sacco/[slug]/membership/exit', params: { slug: activeSlug } } as any)
-      },
-      disabled: activeMemberships.length === 0,
-    },
-    {
-      label: 'USSD PIN',
-      helper: 'Set or change the PIN you use to dial in from a feature phone',
-      icon: 'settings',
-      action: () => router.push('/(member)/ussd-pin' as any),
-    },
-    {
-      label: 'Credit score explanation',
-      helper: 'Ask your SACCO to explain or review a credit score',
-      icon: 'file',
-      action: () => router.push('/(member)/credit-score' as any),
-    },
-    {
-      label: 'Repayment passport',
-      helper: 'Share your repayment history with another SACCO, or revoke it',
-      icon: 'file',
-      action: () => router.push('/(member)/repayment-passport' as any),
-    },
-    {
-      label: 'Dispute a CRB listing',
-      helper: 'Raise a dispute about a credit reference bureau report',
-      icon: 'warning',
-      action: () => router.push('/(member)/listing-dispute' as any),
-    },
-    {
-      label: 'Deposit protection',
-      helper: 'See how much of your savings is covered per SACCO',
-      icon: 'security',
-      action: () => router.push('/(member)/deposit-protection' as any),
-      disabled: activeMemberships.length === 0,
-    },
-    {
-      label: 'Standing orders',
-      helper: 'Automatic M-Pesa payments into savings or a loan, on a schedule',
-      icon: 'calendar',
-      action: () => router.push('/(member)/standing-orders' as any),
-      disabled: activeMemberships.length === 0,
-    },
-    {
-      label: 'SACCO Assistant',
-      helper: 'Ask questions about your account and how things work',
-      icon: 'bulb',
-      action: () => router.push('/(member)/assistant' as any),
-      disabled: activeMemberships.length === 0,
-    },
-    {
-      label: 'Unclaimed funds (UFAA)',
-      helper: 'How to claim money surrendered to the Unclaimed Financial Assets Authority',
-      icon: 'file',
-      action: () => router.push('/(member)/ufaa-guidance' as any),
-    },
-    {
-      label: "Security & Settings",
-      helper: 'Manage biometrics and account security',
-      icon: 'settings',
-      action: () => router.push('/(member)/settings'),
+      title: 'Account & support',
+      items: [
+        {
+          label: 'My guarantees',
+          helper: 'Review requests and see your guarantee capacity',
+          icon: 'guarantor',
+          action: () => router.push('/(member)/guarantor-inbox'),
+        },
+        {
+          label: 'SACCO Assistant',
+          helper: 'Ask questions about your account and how things work',
+          icon: 'bulb',
+          action: () => router.push('/(member)/assistant' as any),
+        },
+        {
+          label: 'Referrals',
+          helper: 'Invite friends and earn rewards',
+          icon: 'dividend',
+          action: () => setReferralsVisible(true),
+        },
+        {
+          label: 'Unclaimed funds (UFAA)',
+          helper: 'How to claim money surrendered to the Unclaimed Financial Assets Authority',
+          icon: 'file',
+          action: () => router.push('/(member)/ufaa-guidance' as any),
+        },
+        {
+          label: 'USSD PIN',
+          helper: 'Set or change the PIN you use to dial in from a feature phone',
+          icon: 'settings',
+          action: () => router.push('/(member)/ussd-pin' as any),
+        },
+        {
+          label: "Security & Settings",
+          helper: 'Manage biometrics and account security',
+          icon: 'settings',
+          action: () => router.push('/(member)/settings'),
+        },
+      ],
     },
   ]
 
@@ -210,27 +231,28 @@ export default function MenuScreen() {
           </View>
         </View>
 
-        {/* Features Menu */}
-        <View style={{ backgroundColor: c.surface, marginHorizontal: 14, marginVertical: 14, borderRadius: 12, padding: 16, borderWidth: 1, borderColor: c.border }}>
-          <Text style={{ color: c.textMuted, fontSize: 12, fontWeight: '600', letterSpacing: 1, marginBottom: 12 }}>ACTIONS & UTILITIES</Text>
-          {menuItems.map((item, index) => (
-            <TouchableOpacity
-              key={item.label}
-              style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 14, borderBottomWidth: 0.5, borderBottomColor: index === menuItems.length - 1 ? 'transparent' : c.border, opacity: item.disabled ? 0.4 : 1 }}
-              onPress={item.action}
-              disabled={item.disabled}
-            >
-              <View style={{ width: 36, height: 36, borderRadius: 12, backgroundColor: c.surfaceAlt, alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
-                <Icon name={item.icon} size={20} color={c.text} />
-              </View>
-              <View style={{ flex: 1, paddingRight: 12 }}>
-                <Text style={{ color: c.text, fontSize: 12, fontWeight: '600' }}>{item.label}</Text>
-                <Text style={{ color: c.textMuted, fontSize: 12, marginTop: 2 }}>{item.helper}</Text>
-              </View>
-              <Icon name="arrow-right" size={16} color={c.textMuted} />
-            </TouchableOpacity>
-          ))}
-        </View>
+        {/* Features Menu, grouped into sections instead of one long list */}
+        {menuSections.map((section) => (
+          <View key={section.title} style={{ backgroundColor: c.surface, marginHorizontal: 14, marginVertical: 7, borderRadius: 12, padding: 16, borderWidth: 1, borderColor: c.border }}>
+            <Text style={{ color: c.textMuted, fontSize: 12, fontWeight: '600', letterSpacing: 1, marginBottom: 12 }}>{section.title.toUpperCase()}</Text>
+            {section.items.map((item, index) => (
+              <TouchableOpacity
+                key={item.label}
+                style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 14, borderBottomWidth: 0.5, borderBottomColor: index === section.items.length - 1 ? 'transparent' : c.border }}
+                onPress={item.action}
+              >
+                <View style={{ width: 36, height: 36, borderRadius: 12, backgroundColor: c.surfaceAlt, alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
+                  <Icon name={item.icon} size={20} color={c.text} />
+                </View>
+                <View style={{ flex: 1, paddingRight: 12 }}>
+                  <Text style={{ color: c.text, fontSize: 12, fontWeight: '600' }}>{item.label}</Text>
+                  <Text style={{ color: c.textMuted, fontSize: 12, marginTop: 2 }}>{item.helper}</Text>
+                </View>
+                <Icon name="arrow-right" size={16} color={c.textMuted} />
+              </TouchableOpacity>
+            ))}
+          </View>
+        ))}
 
         {/* Linked Saccos Quick Access */}
         <View style={{ backgroundColor: c.surface, marginHorizontal: 14, marginVertical: 14, borderRadius: 12, padding: 16, borderWidth: 1, borderColor: c.border }}>
