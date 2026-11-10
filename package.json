@@ -2,9 +2,10 @@
   "name": "saccosphere-platform",
   "version": "0.0.1",
   "private": true,
-   "workspaces": [
+  "workspaces": [
     "apps/*",
-    "packages/*"
+    "packages/*",
+    "!apps/website"
   ],
   "scripts": {
     "dev": "turbo dev",
