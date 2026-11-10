@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api, APPROVAL_ACTION_TYPE_LABELS } from '@saccosphere/api-client'
+import { formatKES } from '@saccosphere/config'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { Card } from '../../components/ui/Card'
 import { Badge } from '../../components/ui/Badge'
@@ -124,8 +125,7 @@ export function ApprovalsList() {
     })
   }
 
-  const formatCurrency = (val: number | null) =>
-    val != null ? `KES ${Number(val).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : '—'
+  const formatCurrency = formatKES
 
   const renderPayload = (payload: Record<string, unknown>) => {
     const entries = Object.entries(payload || {})

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { formatKES } from '@saccosphere/config'
 import { useMembers } from '../../hooks/useMembers'
 import { InfoTip } from '@saccosphere/ui'
 import {
@@ -11,7 +12,7 @@ import {
   useSettleDeceasedClaim,
 } from '../../hooks/useExits'
 
-const formatCurrency = (val: number) => `KES ${Number(val).toLocaleString(undefined, { minimumFractionDigits: 2 })}`
+const formatCurrency = formatKES
 
 const DOCUMENT_TYPES = [
   { value: 'DEATH_CERTIFICATE', label: 'Death certificate' },

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { toast } from 'react-hot-toast'
 import { api } from '@saccosphere/api-client'
+import { formatKES } from '@saccosphere/config'
 import { useSacco } from '../../hooks/useSacco'
 import { InfoTip } from '@saccosphere/ui'
 import {
@@ -123,10 +124,7 @@ export function LedgerManagement() {
     })
   }
 
-  const formatCurrency = (val: number | undefined) =>
-    val != null
-      ? `KES ${Number(val).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-      : 'KES 0.00'
+  const formatCurrency = (val: number | undefined) => formatKES(val, 'KES 0.00')
 
   return (
     <div className="p-5 space-y-5">

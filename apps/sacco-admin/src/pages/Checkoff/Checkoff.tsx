@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { toast } from 'react-hot-toast'
 import { api } from '@saccosphere/api-client'
+import { formatKES } from '@saccosphere/config'
 import { useMembers } from '../../hooks/useMembers'
 import { InfoTip } from '@saccosphere/ui'
 import {
@@ -26,7 +27,7 @@ import {
   useArrearsAgeingDashboard,
 } from '../../hooks/useCheckoff'
 
-const formatCurrency = (val: number) => `KES ${Number(val).toLocaleString(undefined, { minimumFractionDigits: 2 })}`
+const formatCurrency = formatKES
 
 function downloadBlob(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob)

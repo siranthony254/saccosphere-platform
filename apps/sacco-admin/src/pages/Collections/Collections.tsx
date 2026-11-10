@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { formatKES } from '@saccosphere/config'
 import {
   useCollectionsQueue,
   usePAR,
@@ -20,8 +21,7 @@ const CHANNELS: { value: 'CALL' | 'SMS' | 'VISIT' | 'OTHER'; label: string }[] =
 
 const OUTCOMES = ['REACHED', 'NO_ANSWER', 'PROMISED', 'REFUSED', 'WRONG_NUMBER', 'OTHER']
 
-const formatCurrency = (val: number | null | undefined) =>
-  val != null ? `KES ${Number(val).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : '—'
+const formatCurrency = formatKES
 
 function LoanDetailModal({ loanId, borrowerName, onClose }: { loanId: string; borrowerName: string; onClose: () => void }) {
   const { data: contacts = [], isLoading: contactsLoading } = useLoanContacts(loanId)

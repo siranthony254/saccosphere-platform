@@ -2,6 +2,16 @@
  * Shared config constants that do not depend on a runtime environment API.
  */
 
+// Was reimplemented independently 6 times across sacco-admin/super-admin
+// (ApprovalsList x2, Checkoff, Collections, ExitsAndClaims, LedgerManagement),
+// each slightly different - some missing maximumFractionDigits (so a value
+// with floating-point residue could render 3 decimal places instead of 2),
+// each with its own null-placeholder text. One implementation for money
+// display, since a rounding fix here now only needs to land once.
+export function formatKES(value: number | null | undefined, placeholder = '—'): string {
+  if (value == null) return placeholder
+  return `KES ${Number(value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+}
 
 export const ErrorCode = {
   // Auth
