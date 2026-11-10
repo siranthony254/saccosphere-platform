@@ -24,6 +24,7 @@ import { Icon, type IconName } from '../ui/Icon'
 import { BalanceToggle } from '../ui/BalanceToggle'
 import { CardBackdrop } from '../ui/CardBackdrop'
 import { Skeleton } from '../ui/Skeleton'
+import { InfoTip } from '../ui/InfoTip'
 import { hapticSelect } from '../../lib/haptics'
 import { useMoney, getLoanProgress } from '../../lib/money'
 import { useTheme } from '../../theme/ThemeProvider'
@@ -475,8 +476,16 @@ function SingleSaccoDashboard({
         <Text style={{ fontSize: 12, fontWeight: '600', color: c.text, marginBottom: 8 }}>
           Account breakdown
         </Text>
-        <InfoRow label="BOSA savings" value={money(membership.bosa_balance)} />
-        <InfoRow label="FOSA savings" value={money(membership.fosa_balance)} />
+        <InfoRow
+          label="BOSA savings"
+          value={money(membership.bosa_balance)}
+          hint={{ title: 'BOSA savings', text: 'Back-Office Service Activity — your core, locked-in SACCO savings. These build toward your dividends and loan limit, but you can’t withdraw them on demand like a bank account.' }}
+        />
+        <InfoRow
+          label="FOSA savings"
+          value={money(membership.fosa_balance)}
+          hint={{ title: 'FOSA savings', text: 'Front-Office Service Activity — a withdrawable savings account, like a current account. You can deposit and withdraw this one anytime, unlike your BOSA savings.' }}
+        />
         <InfoRow label="Share capital" value={money(membership.share_capital)} />
 
         <InfoRow
@@ -963,7 +972,7 @@ function StatLight({ label, value, color, mutedColor }: { label: string; value: 
   )
 }
 
-function InfoRow({ label, value, valueColor }: { label: string; value: string; valueColor?: string }) {
+function InfoRow({ label, value, valueColor, hint }: { label: string; value: string; valueColor?: string; hint?: { title: string; text: string } }) {
   const { colors: c } = useTheme()
   return (
     <View
@@ -975,7 +984,10 @@ function InfoRow({ label, value, valueColor }: { label: string; value: string; v
         borderBottomColor: c.border,
       }}
     >
-      <Text style={{ fontSize: 11, color: c.textMuted }}>{label}</Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+        <Text style={{ fontSize: 11, color: c.textMuted }}>{label}</Text>
+        {hint && <InfoTip title={hint.title} text={hint.text} />}
+      </View>
       <Text
         style={{
           fontSize: 11, fontWeight: '600', color: valueColor ?? c.text,

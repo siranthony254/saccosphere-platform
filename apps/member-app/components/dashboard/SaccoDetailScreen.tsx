@@ -7,6 +7,7 @@ import { DeepSpaceBackground } from '../DeepSpaceBackground'
 import { useMoney, getLoanProgress } from '../../lib/money'
 import { BalanceToggle } from '../ui/BalanceToggle'
 import { CardBackdrop } from '../ui/CardBackdrop'
+import { InfoTip } from '../ui/InfoTip'
 import { usePreferencesStore } from '../../store/usePreferencesStore'
 import { useTheme } from '../../theme/ThemeProvider'
 
@@ -96,16 +97,19 @@ export default function SaccoDetailScreen() {
         <View className="mx-4 mb-3 rounded-2xl p-4" style={{ backgroundColor: c.surface, borderWidth: 1, borderColor: c.border }}>
           <Text className="text-xs font-semibold mb-3" style={{ color: c.text }}>Account breakdown</Text>
           {[
-            { label: 'BOSA savings', value: membership.bosa_balance || 0 },
-            { label: 'FOSA savings', value: membership.fosa_balance || 0 },
-            { label: 'Share capital', value: membership.share_capital || 0 },
+            { label: 'BOSA savings', value: membership.bosa_balance || 0, hint: { title: 'BOSA savings', text: 'Back-Office Service Activity — your core, locked-in SACCO savings. These build toward your dividends and loan limit, but you can’t withdraw them on demand like a bank account.' } },
+            { label: 'FOSA savings', value: membership.fosa_balance || 0, hint: { title: 'FOSA savings', text: 'Front-Office Service Activity — a withdrawable savings account, like a current account. You can deposit and withdraw this one anytime, unlike your BOSA savings.' } },
+            { label: 'Share capital', value: membership.share_capital || 0, hint: undefined },
           ].map((row, i, arr) => (
             <View
               key={row.label}
               className="flex-row justify-between py-2.5"
               style={i !== arr.length - 1 ? { borderBottomWidth: 1, borderBottomColor: c.border } : undefined}
             >
-              <Text className="text-xs" style={{ color: c.textMuted }}>{row.label}</Text>
+              <View className="flex-row items-center" style={{ gap: 5 }}>
+                <Text className="text-xs" style={{ color: c.textMuted }}>{row.label}</Text>
+                {row.hint && <InfoTip title={row.hint.title} text={row.hint.text} />}
+              </View>
               <Text className="text-xs font-semibold" style={{ color: c.text }}>{money(row.value)}</Text>
             </View>
           ))}
