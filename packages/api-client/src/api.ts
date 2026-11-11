@@ -376,6 +376,12 @@ const normalizeSuperAdminSacco = (sacco: any): SuperAdminSacco => {
     joined_platform_at: (base as Sacco & { created_at?: string }).created_at ?? new Date().toISOString(),
     created_at: (base as Sacco & { created_at?: string }).created_at ?? new Date().toISOString(),
     last_transaction_at: sacco.last_transaction_at ?? null,
+    // SaccoDetailSerializer-only fields - SuperAdminSaccoSchema already
+    // declared these, but base's real values (now carried by
+    // normalizeSacco/SaccoSchema) were never actually passed through here.
+    email: (base as Sacco & { email?: string }).email ?? null,
+    phone: (base as Sacco & { phone?: string }).phone ?? null,
+    website: (base as Sacco & { website?: string }).website ?? null,
   })
 }
 

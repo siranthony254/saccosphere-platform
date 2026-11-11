@@ -115,5 +115,11 @@ export const SaccoSchema = z.object({
   min_share_capital: z.number().optional(),
   membership_open: z.boolean().optional(),
   application_review_days: z.string().optional(),
+  // SaccoDetailSerializer-only fields (real model fields, backend confirmed) -
+  // Zod's default .parse() silently drops any key not declared here, which
+  // is exactly what was happening to these three before they were added.
+  email: z.string().optional(),
+  phone: z.string().optional(),
+  website: z.string().optional(),
 })
 export type Sacco = z.infer<typeof SaccoSchema>
