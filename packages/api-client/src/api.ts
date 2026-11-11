@@ -639,6 +639,12 @@ const normalizeTransaction = (item: any): Transaction => {
     payment_ref: item.payment_ref ?? item.external_reference ?? null,
     platform_fee: Number(item.platform_fee ?? item.fee_amount ?? 0),
     balance_after: Number(item.balance_after ?? 0),
+    // TransactionSerializer's `sacco` field is a bare FK (no source=/nested
+    // serializer), so it's always just the SACCO's UUID - never an object
+    // with a .name, and there's no sacco_name key anywhere in the real
+    // response. sacco_name/sacco_slug below are therefore blank for most
+    // transactions; sacco_id is the one field actually safe to filter on.
+    sacco_id: item.sacco_id ?? (typeof item.sacco === 'string' ? item.sacco : item.sacco?.id) ?? undefined,
     sacco_name: item.sacco_name ?? item.sacco?.name ?? '',
     sacco_slug:
       item.sacco_slug ??
@@ -1235,16 +1241,30 @@ export const api = {
       const memberships = unwrapResults(membershipsResp)
       const portfolioSaccos = portfolio.saccos ?? []
 
-      return memberships.map((m: any) => {
+      // Backend gap this fixes: /dashboard/portfolio/'s per-SACCO summary
+      // (dashboard/engines/portfolio_builder.py's get_per_sacco_summary)
+      // has no loan_limit field at all - it was always reading undefined
+      // here. The real figure only exists on /services/loans/eligibility/
+      // (max_amount), same endpoint getMembership() already uses for a
+      // single membership - fetched here per approved membership too, so
+      // the Home dashboard's loan limit stops being a permanent 0.
+      return Promise.all(memberships.map(async (m: any) => {
         const saccoInfo = portfolioSaccos.find((s: any) => s.sacco_id === String(m.sacco?.id ?? m.sacco))
+        const saccoId = m.sacco?.id ?? (typeof m.sacco === 'string' ? m.sacco : null)
+        const isApproved = String(m.status ?? '').toUpperCase() === 'APPROVED'
+
+        const eligibility = saccoId && isApproved
+          ? await apiCall<any>('GET', '/services/loans/eligibility/', undefined, { params: { sacco_id: String(saccoId) } }).catch(() => null)
+          : null
+
         return normalizeMembership({
           ...m,
           bosa_balance: saccoInfo?.bosa_total ?? 0,
           fosa_balance: saccoInfo?.fosa_total ?? 0,
           share_capital: saccoInfo?.share_capital_total ?? 0,
-          loan_limit: saccoInfo?.loan_limit ?? 0, 
+          loan_limit: eligibility?.max_amount ?? 0,
         })
-      })
+      }))
     },
 
 
@@ -1379,8 +1399,18 @@ export const api = {
 
       if (params?.sacco) {
         const key = params.sacco.toLowerCase()
+        // Transactions almost never carry a real sacco_name/sacco_slug (see
+        // normalizeTransaction) - resolve the caller's slug to a real SACCO
+        // id via the membership list first, and match on that instead.
+        // Keeps the old name/slug match as a fallback in case a future
+        // backend change ever does populate those fields directly.
+        const memberships = await api.member.getMemberships().catch(() => [])
+        const resolvedId = memberships.find((m) => m.sacco_slug === key)?.sacco_id
         results = results.filter(
-          (t) => t.sacco_slug === key || t.sacco_name.toLowerCase() === key
+          (t) =>
+            (resolvedId && t.sacco_id === resolvedId) ||
+            t.sacco_slug === key ||
+            t.sacco_name.toLowerCase() === key
         )
       }
       if (params?.type) {

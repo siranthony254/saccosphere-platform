@@ -168,6 +168,10 @@ export const TransactionSchema = z.object({
   payment_ref: z.string().nullable(), // M-Pesa confirmation code
   platform_fee: z.number(),
   balance_after: z.number(),
+  // The real, reliable identifier - TransactionSerializer only ever
+  // returns the SACCO's bare UUID (no name), so sacco_name/sacco_slug
+  // below are frequently blank; filter/match by this field instead.
+  sacco_id: z.string().optional(),
   sacco_name: z.string(),
   sacco_slug: z.string(),
   date: z.string().datetime({ offset: true }),
