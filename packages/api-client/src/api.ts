@@ -66,8 +66,14 @@ const parseInput = <T>(schema: z.ZodType<T>, data: unknown): T => schema.parse(d
 const uuid = (value: string) => z.string().uuid().parse(value)
 const isUuid = (value: string) => z.string().uuid().safeParse(value).success
 const requiredString = (value: string) => z.string().min(1).parse(value)
-const unwrapResults = <T>(value: T[] | PaginatedResponse<T>): T[] =>
-  Array.isArray(value) ? value : value.results
+// Defensive: a malformed/unexpected response shape (not literally an
+// array, and no array under .results either) returns [] instead of
+// undefined - every caller then does items.map(...) unconditionally,
+// so returning anything other than a real array here crashes the
+// whole page via the nearest error boundary instead of just showing
+// an empty list.
+const unwrapResults = <T>(value: T[] | PaginatedResponse<T> | null | undefined): T[] =>
+  Array.isArray(value) ? value : Array.isArray((value as PaginatedResponse<T> | null | undefined)?.results) ? (value as PaginatedResponse<T>).results : []
 
 // Shared invoice shape for both consoles. No invoice endpoint returns a SACCO
 // name, so callers can only attribute rows by filtering on ?sacco_id=.

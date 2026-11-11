@@ -1,15 +1,10 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { toast } from 'react-hot-toast'
 import { api } from '@saccosphere/api-client'
 import { formatKES } from '@saccosphere/config'
 import { useSacco } from '../../hooks/useSacco'
 import { InfoTip } from '@saccosphere/ui'
 import {
-  useLedgerEntries,
-  useLedgerBalance,
-  useLedgerStatement,
-  useDownloadLedgerPDF,
   useGLTrialBalance,
   useGLReconciliation,
 } from '../../hooks/useLedger'
@@ -26,47 +21,19 @@ const CATEGORY_LABELS: Record<string, string> = {
   ADJUSTMENT: 'Manual Adjustment',
 }
 
-const CATEGORY_COLORS: Record<string, { bg: string; text: string }> = {
-  SAVING_DEPOSIT: { bg: 'bg-mint-50', text: 'text-mint-700' },
-  SAVING_WITHDRAWAL: { bg: 'bg-amber-50', text: 'text-amber-700' },
-  LOAN_DISBURSEMENT: { bg: 'bg-purple-50', text: 'text-purple-700' },
-  LOAN_REPAYMENT: { bg: 'bg-blue-50', text: 'text-blue-700' },
-  FEE: { bg: 'bg-emerald-50', text: 'text-emerald-700' },
-  PENALTY: { bg: 'bg-red-50', text: 'text-red-700' },
-  DIVIDEND: { bg: 'bg-indigo-50', text: 'text-indigo-700' },
-  DIVIDEND_PAYOUT: { bg: 'bg-cyan-50', text: 'text-cyan-700' },
-  ADJUSTMENT: { bg: 'bg-slate-100', text: 'text-slate-700' },
-}
-
 export function LedgerManagement() {
   const { data: sacco } = useSacco()
-  const saccoId = sacco?.id || ''
 
-  const [activeTab, setActiveTab] = useState<'entries' | 'statement' | 'trial_balance' | 'adjustment'>('entries')
+  const [activeTab, setActiveTab] = useState<'entries' | 'statement' | 'trial_balance' | 'adjustment'>('trial_balance')
 
-  // Filters for entries
+  // Filters (still used by the GL Account Statement drill-down below)
   const [fromDate, setFromDate] = useState(() => {
     const d = new Date()
     d.setDate(d.getDate() - 30)
     return d.toISOString().split('T')[0]
   })
   const [toDate, setToDate] = useState(() => new Date().toISOString().split('T')[0])
-  const [categoryFilter, setCategoryFilter] = useState('')
 
-  // Queries
-  const { data: balanceData, isLoading: isBalanceLoading } = useLedgerBalance(saccoId)
-  const { data: entriesData, isLoading: isEntriesLoading } = useLedgerEntries({
-    sacco_id: saccoId,
-    from_date: fromDate,
-    to_date: toDate,
-    category: categoryFilter || undefined,
-  })
-  const { data: statementData, isLoading: isStatementLoading } = useLedgerStatement({
-    sacco_id: saccoId,
-    from_date: fromDate,
-    to_date: toDate,
-  })
-  const downloadPDF = useDownloadLedgerPDF()
   const { data: trialBalance, isLoading: isTrialBalanceLoading } = useGLTrialBalance()
   const { data: reconciliation, isLoading: isReconciliationLoading } = useGLReconciliation()
 
@@ -89,21 +56,6 @@ export function LedgerManagement() {
   const [adjReference, setAdjReference] = useState('')
   const [adjDescription, setAdjDescription] = useState('')
   const [adjStatus, setAdjStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
-
-  const handleDownloadPDF = async () => {
-    if (!saccoId || !fromDate || !toDate) return
-    try {
-      const res = await downloadPDF.mutateAsync({ sacco_id: saccoId, from_date: fromDate, to_date: toDate })
-      const url = window.URL.createObjectURL(res.blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = res.filename
-      a.click()
-      window.URL.revokeObjectURL(url)
-    } catch (err: any) {
-      toast.error('Failed to download PDF statement: ' + (err?.message || 'Error occurred.'))
-    }
-  }
 
   const handlePostAdjustment = (e: React.FormEvent) => {
     e.preventDefault()
@@ -143,52 +95,6 @@ export function LedgerManagement() {
           <span className="px-3 py-1 rounded-full text-xs font-semibold bg-violet-50 text-violet-700 border border-violet-200">
             {sacco?.name || 'SACCO General Ledger'}
           </span>
-        </div>
-      </div>
-
-      {/* Primary Metrics Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white border border-[#e5ede9] rounded-[10px] p-4 shadow-sm">
-          <div className="text-[10px] font-bold text-ink-muted uppercase tracking-wider mb-1">
-            Running SACCO Balance
-          </div>
-          <div className="text-2xl font-bold text-ink">
-            {isBalanceLoading ? '...' : formatCurrency(balanceData?.current_balance)}
-          </div>
-          <div className="text-[11px] text-mint-600 mt-1 flex items-center gap-1 font-medium">
-            <span className="w-1.5 h-1.5 rounded-full bg-mint-600 inline-block" />
-            Live Ledger Verified
-          </div>
-        </div>
-
-        <div className="bg-white border border-[#e5ede9] rounded-[10px] p-4 shadow-sm">
-          <div className="text-[10px] font-bold text-ink-muted uppercase tracking-wider mb-1">
-            Period Debits (Outflow)
-          </div>
-          <div className="text-2xl font-bold text-amber-700">
-            {formatCurrency(statementData?.total_debits)}
-          </div>
-          <div className="text-[11px] text-ink-muted mt-1">From {fromDate} to {toDate}</div>
-        </div>
-
-        <div className="bg-white border border-[#e5ede9] rounded-[10px] p-4 shadow-sm">
-          <div className="text-[10px] font-bold text-ink-muted uppercase tracking-wider mb-1">
-            Period Credits (Inflow)
-          </div>
-          <div className="text-2xl font-bold text-mint-700">
-            {formatCurrency(statementData?.total_credits)}
-          </div>
-          <div className="text-[11px] text-ink-muted mt-1">From {fromDate} to {toDate}</div>
-        </div>
-
-        <div className="bg-white border border-[#e5ede9] rounded-[10px] p-4 shadow-sm">
-          <div className="text-[10px] font-bold text-ink-muted uppercase tracking-wider mb-1">
-            Net Ledger Flow
-          </div>
-          <div className="text-2xl font-bold text-violet-700">
-            {formatCurrency((statementData?.total_credits ?? 0) - (statementData?.total_debits ?? 0))}
-          </div>
-          <div className="text-[11px] text-ink-muted mt-1">Opening: {formatCurrency(statementData?.opening_balance)}</div>
         </div>
       </div>
 
@@ -236,214 +142,49 @@ export function LedgerManagement() {
         </button>
       </div>
 
-      {/* TAB 1: JOURNAL ENTRIES TABLE */}
+      {/* TAB 1: JOURNAL ENTRIES - the backend endpoint this called
+          (/ledger/entries/) is member-facing only: it looks up
+          Membership.objects.get(user=request.user, sacco_id=..., status=APPROVED)
+          - i.e. the caller's OWN membership in the SACCO. A SACCO admin
+          is staff, not a member, so this 400s every time
+          ("No approved membership found for this SACCO") and always
+          will, for any admin account. No SACCO-scoped admin equivalent
+          exists in the backend - disclosed rather than silently left to
+          fail (it previously crashed the whole page on render when the
+          error response reached a .map() expecting an array). Use Trial
+          Balance / Reconciliation below for the real, working
+          admin-scoped view of the same data. */}
       {activeTab === 'entries' && (
-        <div className="bg-white border border-[#e5ede9] rounded-[10px] p-4 space-y-4 shadow-sm">
-          {/* Controls / Filter Bar */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
-            <div>
-              <label className="text-xs text-ink-muted mb-1 block">From Date</label>
-              <input
-                type="date"
-                value={fromDate}
-                onChange={(e) => setFromDate(e.target.value)}
-                className="w-full py-1.5 px-3 border border-ink-faint rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-violet-500"
-              />
-            </div>
-            <div>
-              <label className="text-xs text-ink-muted mb-1 block">To Date</label>
-              <input
-                type="date"
-                value={toDate}
-                onChange={(e) => setToDate(e.target.value)}
-                className="w-full py-1.5 px-3 border border-ink-faint rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-violet-500"
-              />
-            </div>
-            <div>
-              <label className="text-xs text-ink-muted mb-1 block">Category Filter</label>
-              <select
-                value={categoryFilter}
-                onChange={(e) => setCategoryFilter(e.target.value)}
-                className="w-full py-1.5 px-3 border border-ink-faint rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-violet-500"
-              >
-                <option value="">All Categories</option>
-                {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
-                  <option key={key} value={key}>
-                    {label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <button
-                onClick={() => {
-                  setCategoryFilter('')
-                  setFromDate(new Date(Date.now() - 30 * 86400000).toISOString().split('T')[0])
-                  setToDate(new Date().toISOString().split('T')[0])
-                }}
-                className="w-full py-1.5 px-3 rounded-lg border border-ink-faint hover:bg-surface-2 text-sm text-ink-muted font-medium transition-colors"
-              >
-                Reset Filters
-              </button>
-            </div>
-          </div>
-
-          {/* Table */}
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm border-collapse">
-              <thead>
-                <tr className="border-b border-[#e5ede9] text-xs font-semibold text-ink-muted uppercase tracking-wider bg-surface-2">
-                  <th className="py-2.5 px-3">Date</th>
-                  <th className="py-2.5 px-3">Reference</th>
-                  <th className="py-2.5 px-3">Category</th>
-                  <th className="py-2.5 px-3">Description</th>
-                  <th className="py-2.5 px-3 text-right">Debit</th>
-                  <th className="py-2.5 px-3 text-right">Credit</th>
-                  <th className="py-2.5 px-3 text-right">Balance After</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#e5ede9]">
-                {isEntriesLoading ? (
-                  <tr>
-                    <td colSpan={7} className="py-8 text-center text-ink-muted text-sm">
-                      Loading General Ledger entries...
-                    </td>
-                  </tr>
-                ) : (entriesData?.results ?? []).length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="py-8 text-center text-ink-muted text-sm">
-                      No ledger entries found for the selected criteria.
-                    </td>
-                  </tr>
-                ) : (
-                  (entriesData?.results ?? []).map((item) => {
-                    const isDebit = item.entry_type === 'DEBIT'
-                    const catStyle = CATEGORY_COLORS[item.category] || { bg: 'bg-gray-100', text: 'text-gray-700' }
-                    return (
-                      <tr key={item.id} className="hover:bg-surface-1 transition-colors">
-                        <td className="py-2.5 px-3 text-xs text-ink-muted whitespace-nowrap">
-                          {new Date(item.created_at).toLocaleDateString(undefined, {
-                            day: 'numeric',
-                            month: 'short',
-                            year: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          })}
-                        </td>
-                        <td className="py-2.5 px-3 font-mono text-xs text-ink-soft">{item.reference}</td>
-                        <td className="py-2.5 px-3">
-                          <span
-                            className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${catStyle.bg} ${catStyle.text}`}
-                          >
-                            {CATEGORY_LABELS[item.category] || item.category}
-                          </span>
-                        </td>
-                        <td className="py-2.5 px-3 text-ink text-xs max-w-xs truncate">{item.description}</td>
-                        <td className="py-2.5 px-3 text-right font-semibold text-amber-700 text-xs">
-                          {isDebit ? formatCurrency(item.amount) : '—'}
-                        </td>
-                        <td className="py-2.5 px-3 text-right font-semibold text-mint-700 text-xs">
-                          {!isDebit ? formatCurrency(item.amount) : '—'}
-                        </td>
-                        <td className="py-2.5 px-3 text-right font-semibold text-ink text-xs">
-                          {formatCurrency(item.balance_after)}
-                        </td>
-                      </tr>
-                    )
-                  })
-                )}
-              </tbody>
-            </table>
+        <div className="bg-white border border-[#e5ede9] rounded-[10px] p-5 shadow-sm">
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+            <div className="font-semibold mb-1">Not available for admin accounts yet</div>
+            <p className="text-xs leading-relaxed">
+              This would list every ledger entry for the SACCO, but the backend's{' '}
+              <code className="font-mono">/ledger/entries/</code> endpoint only returns the
+              calling user's own membership entries — it has no SACCO-wide admin view. Since a
+              SACCO admin isn't a member of their own SACCO, this always returns an error rather
+              than real data. Use the <span className="font-semibold">Trial Balance &amp;
+              Reconciliation</span> tab for the real, working double-entry view of this SACCO's
+              books.
+            </p>
           </div>
         </div>
       )}
 
-      {/* TAB 2: FINANCIAL STATEMENT GENERATOR */}
+      {/* TAB 2: FINANCIAL STATEMENT - same backend gap as TAB 1
+          (/ledger/statement/ and /ledger/statement/pdf/ are both
+          member-facing only; see note above). */}
       {activeTab === 'statement' && (
-        <div className="bg-white border border-[#e5ede9] rounded-[10px] p-5 space-y-5 shadow-sm">
-          <div className="flex justify-between items-center border-b border-[#e5ede9] pb-4">
-            <div>
-              <div className="font-semibold text-base text-ink">Official SACCO Ledger Statement</div>
-              <div className="text-xs text-ink-muted">
-                Generate and download compliance-ready financial statements.
-              </div>
-            </div>
-            <button
-              onClick={handleDownloadPDF}
-              disabled={downloadPDF.isPending}
-              className="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-sm font-semibold flex items-center gap-2 cursor-pointer transition-colors disabled:opacity-50"
-            >
-              {downloadPDF.isPending ? 'Generating PDF...' : 'Download Statement (PDF)'}
-            </button>
-          </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-surface-2 p-4 rounded-lg">
-            <div>
-              <div className="text-xs text-ink-muted">Opening Balance</div>
-              <div className="text-lg font-bold text-ink">
-                {isStatementLoading ? '...' : formatCurrency(statementData?.opening_balance)}
-              </div>
-            </div>
-            <div>
-              <div className="text-xs text-ink-muted">Total Period Debits</div>
-              <div className="text-lg font-bold text-amber-700">
-                {isStatementLoading ? '...' : formatCurrency(statementData?.total_debits)}
-              </div>
-            </div>
-            <div>
-              <div className="text-xs text-ink-muted">Total Period Credits</div>
-              <div className="text-lg font-bold text-mint-700">
-                {isStatementLoading ? '...' : formatCurrency(statementData?.total_credits)}
-              </div>
-            </div>
-            <div>
-              <div className="text-xs text-ink-muted">Closing Balance</div>
-              <div className="text-lg font-bold text-violet-700">
-                {isStatementLoading ? '...' : formatCurrency(statementData?.closing_balance)}
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            <div className="text-sm font-semibold text-ink">Statement Journal Rows</div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs border-collapse">
-                <thead>
-                  <tr className="border-b border-[#e5ede9] text-ink-muted font-semibold bg-surface-2">
-                    <th className="py-2 px-3">Date</th>
-                    <th className="py-2 px-3">Reference</th>
-                    <th className="py-2 px-3">Description</th>
-                    <th className="py-2 px-3 text-right">Amount</th>
-                    <th className="py-2 px-3 text-right">Running Balance</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#e5ede9]">
-                  {(statementData?.entries ?? []).length === 0 ? (
-                    <tr>
-                      <td colSpan={5} className="py-6 text-center text-ink-muted">
-                        No entries recorded in this statement period.
-                      </td>
-                    </tr>
-                  ) : (
-                    (statementData?.entries ?? []).map((entry: any, i: number) => (
-                      <tr key={i} className="hover:bg-surface-1">
-                        <td className="py-2 px-3 text-ink-muted">{new Date(entry.created_at).toLocaleDateString()}</td>
-                        <td className="py-2 px-3 font-mono">{entry.reference}</td>
-                        <td className="py-2 px-3">{entry.description}</td>
-                        <td
-                          className={`py-2 px-3 text-right font-semibold ${
-                            entry.entry_type === 'DEBIT' ? 'text-amber-700' : 'text-mint-700'
-                          }`}
-                        >
-                          {entry.entry_type === 'DEBIT' ? '-' : '+'}{formatCurrency(entry.amount)}
-                        </td>
-                        <td className="py-2 px-3 text-right font-semibold">{formatCurrency(entry.balance_after)}</td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
+        <div className="bg-white border border-[#e5ede9] rounded-[10px] p-5 shadow-sm">
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+            <div className="font-semibold mb-1">Not available for admin accounts yet</div>
+            <p className="text-xs leading-relaxed">
+              Statement generation and the PDF export use the same member-only{' '}
+              <code className="font-mono">/ledger/statement/</code> endpoint as above, so they
+              have the same gap — there's no SACCO-scoped admin equivalent yet. Use{' '}
+              <span className="font-semibold">Trial Balance &amp; Reconciliation</span> or the
+              GL account statement drill-down there for a working admin-facing statement.
+            </p>
           </div>
         </div>
       )}
@@ -724,6 +465,27 @@ export function LedgerManagement() {
               >
                 &times;
               </button>
+            </div>
+
+            <div className="flex gap-3 items-end shrink-0">
+              <div>
+                <label className="text-[10px] text-ink-muted mb-1 block">From</label>
+                <input
+                  type="date"
+                  value={fromDate}
+                  onChange={(e) => setFromDate(e.target.value)}
+                  className="py-1 px-2 border border-ink-faint rounded-lg text-xs bg-white focus:outline-none focus:ring-2 focus:ring-violet-500"
+                />
+              </div>
+              <div>
+                <label className="text-[10px] text-ink-muted mb-1 block">To</label>
+                <input
+                  type="date"
+                  value={toDate}
+                  onChange={(e) => setToDate(e.target.value)}
+                  className="py-1 px-2 border border-ink-faint rounded-lg text-xs bg-white focus:outline-none focus:ring-2 focus:ring-violet-500"
+                />
+              </div>
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 bg-surface-2 p-3 rounded-lg shrink-0 text-xs">
