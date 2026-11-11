@@ -3659,11 +3659,69 @@ export const api = {
     },
 
     // Liquidity & NPL Analytics
-    getLiquidityStatus: () =>
-      apiCall<any>('GET', '/management/liquidity/'),
+    //
+    // Backend gap this fixes: both endpoints wrap their payload in
+    // {success, data: {...}}, and the frontend was reading field names
+    // (`status`, `liquid_assets`, `watch_count`, ...) that don't exist
+    // anywhere in the real response (services/views.py's
+    // LiquidityStatusView/NPLDashboardView actually return `current.
+    // {available_reserves, pending_disbursements, utilisation_pct,
+    // at_risk}` and `par_classification.{PERFORMING,WATCH,SUBSTANDARD,
+    // DOUBTFUL,LOSS}.{loan_count, outstanding_balance,
+    // provision_required}`) - every read was silently undefined despite
+    // a real 200 response. Normalized here so callers get real numbers.
+    getLiquidityStatus: async () => {
+      const response = await apiCall<any>('GET', '/management/liquidity/')
+      const data = response.data ?? response
+      const current = data.current ?? {}
+      return {
+        sacco_id: data.sacco_id,
+        sacco_name: data.sacco_name,
+        available_reserves: Number(current.available_reserves ?? 0),
+        pending_disbursements: Number(current.pending_disbursements ?? 0),
+        // Already 0-100, not a 0-1 fraction - see _calculate_utilisation_pct.
+        utilisation_pct: Number(current.utilisation_pct ?? 0),
+        at_risk: Boolean(current.at_risk),
+        recent_alerts: (data.recent_alerts ?? []).map((a: any) => ({
+          id: a.id,
+          available_reserves: Number(a.available_reserves ?? 0),
+          pending_disbursements: Number(a.pending_disbursements ?? 0),
+          utilisation_pct: Number(a.utilisation_pct ?? 0),
+          resolved: Boolean(a.resolved),
+          resolved_at: a.resolved_at ?? null,
+          created_at: a.created_at,
+        })),
+      }
+    },
 
-    getNPLDashboard: () =>
-      apiCall<any>('GET', '/management/npl/'),
+    getNPLDashboard: async () => {
+      const response = await apiCall<any>('GET', '/management/npl/')
+      const data = response.data ?? response
+      const par = data.par_classification ?? {}
+      const band = (label: string) => ({
+        loan_count: Number(par[label]?.loan_count ?? 0),
+        outstanding_balance: Number(par[label]?.outstanding_balance ?? 0),
+        provision_required: Number(par[label]?.provision_required ?? 0),
+      })
+      return {
+        sacco_id: data.sacco_id,
+        sacco_name: data.sacco_name,
+        npl_outstanding_balance: Number(data.npl_outstanding_balance ?? 0),
+        active_outstanding_balance: Number(data.active_outstanding_balance ?? 0),
+        // Backend's _calculate_ratio returns a plain 0-1 fraction, not a percentage.
+        npl_ratio_pct: Number(data.npl_ratio ?? 0) * 100,
+        unresolved_counts: {
+          '30': Number(data.unresolved_counts?.['30'] ?? 0),
+          '60': Number(data.unresolved_counts?.['60'] ?? 0),
+          '90': Number(data.unresolved_counts?.['90'] ?? 0),
+        },
+        performing: band('PERFORMING'),
+        watch: band('WATCH'),
+        substandard: band('SUBSTANDARD'),
+        doubtful: band('DOUBTFUL'),
+        loss: band('LOSS'),
+      }
+    },
 
     // Dividends Management
     getDividendDeclarations: async () => {

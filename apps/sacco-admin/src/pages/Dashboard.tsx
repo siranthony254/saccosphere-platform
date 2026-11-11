@@ -85,25 +85,25 @@ export function Dashboard() {
             <div className="font-semibold text-sm text-ink">Liquidity Status & Reserves</div>
             {liquidity && (
               <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                liquidity.status === 'HEALTHY' ? 'bg-mint-50 text-mint-700' : 'bg-amber-50 text-amber-700'
+                liquidity.at_risk ? 'bg-amber-50 text-amber-700' : 'bg-mint-50 text-mint-700'
               }`}>
-                {liquidity.status || 'HEALTHY'}
+                {liquidity.at_risk ? 'AT RISK' : 'HEALTHY'}
               </span>
             )}
           </div>
           <div className="space-y-2">
             <div className="flex justify-between py-1 border-b border-surface-3">
-              <span className="text-xs text-ink-muted">Liquid Assets</span>
-              <span className="text-xs font-semibold text-ink">{fmt(liquidity?.liquid_assets ?? 0)}</span>
+              <span className="text-xs text-ink-muted">Available Reserves</span>
+              <span className="text-xs font-semibold text-ink">{fmt(liquidity?.available_reserves ?? 0)}</span>
             </div>
             <div className="flex justify-between py-1 border-b border-surface-3">
-              <span className="text-xs text-ink-muted">Short-Term Liabilities</span>
-              <span className="text-xs font-semibold text-ink-muted">{fmt(liquidity?.short_term_liabilities ?? 0)}</span>
+              <span className="text-xs text-ink-muted">Pending Disbursements</span>
+              <span className="text-xs font-semibold text-ink-muted">{fmt(liquidity?.pending_disbursements ?? 0)}</span>
             </div>
             <div className="flex justify-between py-1">
-              <span className="text-xs text-ink-muted">Liquidity Ratio</span>
+              <span className="text-xs text-ink-muted">Reserve Utilisation</span>
               <span className="text-xs font-bold text-mint-700">
-                {liquidity?.liquidity_ratio_pct ? `${liquidity.liquidity_ratio_pct}%` : '—'}
+                {liquidity ? `${liquidity.utilisation_pct}%` : '—'}
               </span>
             </div>
           </div>
@@ -114,25 +114,25 @@ export function Dashboard() {
           <div className="flex justify-between items-center mb-3">
             <div className="font-semibold text-sm text-ink">Non-Performing Loans (NPL)</div>
             <span className="text-xs font-bold text-red-700">
-              NPL Ratio: {npl?.npl_ratio_pct ? `${npl.npl_ratio_pct}%` : '0%'}
+              NPL Ratio: {npl ? `${npl.npl_ratio_pct.toFixed(2)}%` : '0%'}
             </span>
           </div>
           <div className="grid grid-cols-4 gap-2 text-center">
             <div className="bg-amber-50 p-2 rounded-lg">
               <div className="text-[10px] text-amber-800 font-medium uppercase">Watch</div>
-              <div className="text-sm font-bold text-amber-900">{npl?.watch_count ?? 0}</div>
+              <div className="text-sm font-bold text-amber-900">{npl?.watch.loan_count ?? 0}</div>
             </div>
             <div className="bg-orange-50 p-2 rounded-lg">
               <div className="text-[10px] text-orange-800 font-medium uppercase">Substandard</div>
-              <div className="text-sm font-bold text-orange-900">{npl?.substandard_count ?? 0}</div>
+              <div className="text-sm font-bold text-orange-900">{npl?.substandard.loan_count ?? 0}</div>
             </div>
             <div className="bg-red-50 p-2 rounded-lg">
               <div className="text-[10px] text-red-800 font-medium uppercase">Doubtful</div>
-              <div className="text-sm font-bold text-red-900">{npl?.doubtful_count ?? 0}</div>
+              <div className="text-sm font-bold text-red-900">{npl?.doubtful.loan_count ?? 0}</div>
             </div>
             <div className="bg-red-100 p-2 rounded-lg">
               <div className="text-[10px] text-red-900 font-medium uppercase">Loss</div>
-              <div className="text-sm font-bold text-red-950">{npl?.loss_count ?? 0}</div>
+              <div className="text-sm font-bold text-red-950">{npl?.loss.loan_count ?? 0}</div>
             </div>
           </div>
         </div>

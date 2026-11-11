@@ -36,32 +36,32 @@ export function LiquidityNPLDashboard() {
         ) : liquidity ? (
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="p-4 bg-surface2 rounded-lg border border-border">
-              <div className="text-xs text-ink-muted">Current Liquidity Ratio</div>
-              <div className={`text-lg font-bold mt-1 ${(liquidity.liquidity_ratio_pct ?? 15) >= (liquidity.threshold_pct ?? 15) ? 'text-mint-600' : 'text-red-600'}`}>
-                {(liquidity.liquidity_ratio_pct ?? 18.4).toFixed(1)}%
+              <div className="text-xs text-ink-muted">Reserve Utilisation</div>
+              <div className={`text-lg font-bold mt-1 ${liquidity.at_risk ? 'text-red-600' : 'text-mint-600'}`}>
+                {liquidity.utilisation_pct.toFixed(1)}%
               </div>
-              <div className="text-[10px] text-ink-muted mt-1">Min Threshold: {liquidity.threshold_pct ?? 15}%</div>
+              <div className="text-[10px] text-ink-muted mt-1">Pending disbursements as a share of available reserves</div>
             </div>
 
             <div className="p-4 bg-surface2 rounded-lg border border-border">
-              <div className="text-xs text-ink-muted">Liquid Cash Assets</div>
+              <div className="text-xs text-ink-muted">Available Reserves</div>
               <div className="text-lg font-bold text-ink mt-1">
-                KES {(liquidity.liquid_assets ?? 0).toLocaleString()}
+                KES {liquidity.available_reserves.toLocaleString()}
               </div>
             </div>
 
             <div className="p-4 bg-surface2 rounded-lg border border-border">
-              <div className="text-xs text-ink-muted">Short-term Liabilities</div>
+              <div className="text-xs text-ink-muted">Pending Disbursements</div>
               <div className="text-lg font-bold text-ink mt-1">
-                KES {(liquidity.short_term_liabilities ?? 0).toLocaleString()}
+                KES {liquidity.pending_disbursements.toLocaleString()}
               </div>
             </div>
 
             <div className="p-4 bg-surface2 rounded-lg border border-border">
               <div className="text-xs text-ink-muted">Liquidity Health</div>
-              <div className="text-sm font-semibold text-mint-600 mt-2 flex items-center gap-1.5">
-                <span className="w-2 height-2 rounded-full bg-mint-500"></span>
-                <span>{liquidity.status || 'OPTIMAL'}</span>
+              <div className={`text-sm font-semibold mt-2 flex items-center gap-1.5 ${liquidity.at_risk ? 'text-red-600' : 'text-mint-600'}`}>
+                <span className={`w-2 h-2 rounded-full ${liquidity.at_risk ? 'bg-red-500' : 'bg-mint-500'}`}></span>
+                <span>{liquidity.at_risk ? 'AT RISK' : 'HEALTHY'}</span>
               </div>
             </div>
           </div>
@@ -82,7 +82,7 @@ export function LiquidityNPLDashboard() {
               <div className="p-4 bg-amber-50/50 border border-amber-200 rounded-lg">
                 <div className="text-xs text-amber-800 font-medium">NPL Ratio %</div>
                 <div className="text-xl font-bold text-amber-900 mt-1">
-                  {(npl.npl_ratio_pct ?? 4.2).toFixed(1)}%
+                  {npl.npl_ratio_pct.toFixed(2)}%
                 </div>
                 <div className="text-[10px] text-amber-700 mt-1">SASRA Benchmark: &lt; 5.0%</div>
               </div>
@@ -90,14 +90,14 @@ export function LiquidityNPLDashboard() {
               <div className="p-4 bg-surface2 rounded-lg border border-border">
                 <div className="text-xs text-ink-muted">Total Non-Performing Amount</div>
                 <div className="text-xl font-bold text-red-600 mt-1">
-                  KES {(npl.total_npl_amount ?? 0).toLocaleString()}
+                  KES {npl.npl_outstanding_balance.toLocaleString()}
                 </div>
               </div>
 
               <div className="p-4 bg-surface2 rounded-lg border border-border">
-                <div className="text-xs text-ink-muted">Required Loss Provision</div>
+                <div className="text-xs text-ink-muted">Total Active Outstanding</div>
                 <div className="text-xl font-bold text-ink mt-1">
-                  KES {(npl.required_provision ?? 0).toLocaleString()}
+                  KES {npl.active_outstanding_balance.toLocaleString()}
                 </div>
               </div>
             </div>
@@ -109,41 +109,41 @@ export function LiquidityNPLDashboard() {
                 <thead className="bg-surface2 text-ink-muted uppercase">
                   <tr>
                     <th className="px-3 py-2">Category</th>
-                    <th className="px-3 py-2">Days Past Due</th>
-                    <th className="px-3 py-2 text-right">Portfolio Amount</th>
-                    <th className="px-3 py-2 text-right">Provision Rate</th>
+                    <th className="px-3 py-2 text-right">Loans</th>
+                    <th className="px-3 py-2 text-right">Outstanding Balance</th>
+                    <th className="px-3 py-2 text-right">Provision Required</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
                   <tr>
                     <td className="px-3 py-2 font-semibold text-mint-600">Performing / Normal</td>
-                    <td className="px-3 py-2">0 - 30 days</td>
-                    <td className="px-3 py-2 text-right font-medium">KES {(npl.performing_amount ?? 0).toLocaleString()}</td>
-                    <td className="px-3 py-2 text-right">1%</td>
+                    <td className="px-3 py-2 text-right">{npl.performing.loan_count}</td>
+                    <td className="px-3 py-2 text-right font-medium">KES {npl.performing.outstanding_balance.toLocaleString()}</td>
+                    <td className="px-3 py-2 text-right">KES {npl.performing.provision_required.toLocaleString()}</td>
                   </tr>
                   <tr>
                     <td className="px-3 py-2 font-semibold text-blue-600">Watch / Special Mention</td>
-                    <td className="px-3 py-2">31 - 90 days</td>
-                    <td className="px-3 py-2 text-right font-medium">KES {(npl.watch_amount ?? 0).toLocaleString()}</td>
-                    <td className="px-3 py-2 text-right">5%</td>
+                    <td className="px-3 py-2 text-right">{npl.watch.loan_count}</td>
+                    <td className="px-3 py-2 text-right font-medium">KES {npl.watch.outstanding_balance.toLocaleString()}</td>
+                    <td className="px-3 py-2 text-right">KES {npl.watch.provision_required.toLocaleString()}</td>
                   </tr>
                   <tr>
                     <td className="px-3 py-2 font-semibold text-amber-600">Substandard</td>
-                    <td className="px-3 py-2">91 - 180 days</td>
-                    <td className="px-3 py-2 text-right font-medium">KES {(npl.substandard_amount ?? 0).toLocaleString()}</td>
-                    <td className="px-3 py-2 text-right">25%</td>
+                    <td className="px-3 py-2 text-right">{npl.substandard.loan_count}</td>
+                    <td className="px-3 py-2 text-right font-medium">KES {npl.substandard.outstanding_balance.toLocaleString()}</td>
+                    <td className="px-3 py-2 text-right">KES {npl.substandard.provision_required.toLocaleString()}</td>
                   </tr>
                   <tr>
                     <td className="px-3 py-2 font-semibold text-red-600">Doubtful</td>
-                    <td className="px-3 py-2">181 - 360 days</td>
-                    <td className="px-3 py-2 text-right font-medium">KES {(npl.doubtful_amount ?? 0).toLocaleString()}</td>
-                    <td className="px-3 py-2 text-right">50%</td>
+                    <td className="px-3 py-2 text-right">{npl.doubtful.loan_count}</td>
+                    <td className="px-3 py-2 text-right font-medium">KES {npl.doubtful.outstanding_balance.toLocaleString()}</td>
+                    <td className="px-3 py-2 text-right">KES {npl.doubtful.provision_required.toLocaleString()}</td>
                   </tr>
                   <tr>
                     <td className="px-3 py-2 font-semibold text-red-800">Loss / Bad Debt</td>
-                    <td className="px-3 py-2">&gt; 360 days</td>
-                    <td className="px-3 py-2 text-right font-medium">KES {(npl.loss_amount ?? 0).toLocaleString()}</td>
-                    <td className="px-3 py-2 text-right">100%</td>
+                    <td className="px-3 py-2 text-right">{npl.loss.loan_count}</td>
+                    <td className="px-3 py-2 text-right font-medium">KES {npl.loss.outstanding_balance.toLocaleString()}</td>
+                    <td className="px-3 py-2 text-right">KES {npl.loss.provision_required.toLocaleString()}</td>
                   </tr>
                 </tbody>
               </table>
