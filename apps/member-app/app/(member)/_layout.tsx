@@ -97,6 +97,30 @@ export default function MemberTabLayout() {
         <Tabs.Screen name="settings" options={{ href: null }} />
         <Tabs.Screen name="discover/[slug]" options={{ href: null }} />
         <Tabs.Screen name="discover/[slug]/apply" options={{ href: null }} />
+        {/* These 19 were never given a Tabs.Screen entry at all. Expo Router's
+            Tabs navigator auto-registers every file in this directory as a
+            tab unless told otherwise, so each one was rendering as a real,
+            unlabeled, icon-less tab button - the row of "dots" below the
+            4 real tabs. */}
+        <Tabs.Screen name="how-to-pay" options={{ href: null }} />
+        <Tabs.Screen name="share-transfer-respond" options={{ href: null }} />
+        <Tabs.Screen name="deposit-protection" options={{ href: null }} />
+        <Tabs.Screen name="assistant" options={{ href: null }} />
+        <Tabs.Screen name="ussd-pin" options={{ href: null }} />
+        <Tabs.Screen name="ufaa-guidance" options={{ href: null }} />
+        <Tabs.Screen name="governance/recall" options={{ href: null }} />
+        <Tabs.Screen name="transfer" options={{ href: null }} />
+        <Tabs.Screen name="loan-offer" options={{ href: null }} />
+        <Tabs.Screen name="governance/meeting-checkin" options={{ href: null }} />
+        <Tabs.Screen name="governance/election" options={{ href: null }} />
+        <Tabs.Screen name="listing-dispute" options={{ href: null }} />
+        <Tabs.Screen name="credit-score" options={{ href: null }} />
+        <Tabs.Screen name="repayment-passport" options={{ href: null }} />
+        <Tabs.Screen name="guarantor-substitute" options={{ href: null }} />
+        <Tabs.Screen name="guarantor-reconsent" options={{ href: null }} />
+        <Tabs.Screen name="guarantor-respond" options={{ href: null }} />
+        <Tabs.Screen name="activity" options={{ href: null }} />
+        <Tabs.Screen name="standing-orders" options={{ href: null }} />
       </Tabs>
     </SafeAreaView>
   )
