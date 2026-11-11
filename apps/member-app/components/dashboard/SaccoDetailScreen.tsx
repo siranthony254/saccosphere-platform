@@ -179,6 +179,18 @@ export default function SaccoDetailScreen() {
             <Text className="text-xs font-medium" style={{ color: c.textMuted }}>Compare loans</Text>
           </TouchableOpacity>
         </View>
+
+        {/* Same transfer.tsx the Services tab's SACCO picker leads to -
+            skips the picker since this screen already knows which SACCO. */}
+        <View className="px-4 pb-2">
+          <TouchableOpacity
+            className="rounded-xl p-3.5 items-center"
+            style={{ backgroundColor: c.surface, borderWidth: 1, borderColor: c.border }}
+            onPress={() => router.push({ pathname: '/(member)/transfer', params: { slug } } as any)}
+          >
+            <Text className="text-xs font-medium" style={{ color: c.textMuted }}>Transfer between accounts / share capital</Text>
+          </TouchableOpacity>
+        </View>
       </ScrollView>
     </DeepSpaceBackground>
   )

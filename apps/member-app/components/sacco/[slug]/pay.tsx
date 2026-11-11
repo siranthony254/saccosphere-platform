@@ -322,6 +322,15 @@ export default function PayScreen() {
         >
           <Text style={{ color: c.onAccent, fontSize: 14, fontWeight: '800' }}>CONTINUE TO PAYMENT →</Text>
         </TouchableOpacity>
+
+        {!isRepayment ? (
+          <TouchableOpacity
+            style={{ alignItems: 'center', paddingVertical: 16 }}
+            onPress={() => router.push('/(member)/how-to-pay' as any)}
+          >
+            <Text style={{ color: c.accent, fontSize: 12, fontWeight: '600' }}>Prefer to pay from the M-Pesa menu? See how →</Text>
+          </TouchableOpacity>
+        ) : null}
       </KeyboardAwareScrollView>
     </DeepSpaceBackground>
   )
