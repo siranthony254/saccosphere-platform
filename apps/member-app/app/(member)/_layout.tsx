@@ -72,25 +72,35 @@ export default function MemberTabLayout() {
             tabBarIcon: ({ color, focused }) => <TabIcon icon="menu" color={color} focused={focused} />
           }} 
         />
-        <Tabs.Screen name="approved-dashboard" options={{ href: null }} />
-        <Tabs.Screen name="empty-dashboard" options={{ href: null }} />
-        <Tabs.Screen name="pending-dashboard" options={{ href: null }} />
-        <Tabs.Screen name="unified-potfolio-dashbord" options={{ href: null }} />
-        <Tabs.Screen name="discover-browse" options={{ href: null }} />
-        <Tabs.Screen name="guarantor-request" options={{ href: null }} />
-        <Tabs.Screen name="loan-repayment" options={{ href: null }} />
-        <Tabs.Screen name="loan-detail" options={{ href: null }} />
-        <Tabs.Screen name="transaction-detail" options={{ href: null }} />
-        <Tabs.Screen name="withdraw" options={{ href: null }} />
-        <Tabs.Screen name="privacy" options={{ href: null }} />
-        <Tabs.Screen name="appearance" options={{ href: null }} />
-        <Tabs.Screen name="dividends" options={{ href: null }} />
-        <Tabs.Screen name="guarantor-inbox" options={{ href: null }} />
-        <Tabs.Screen name="notifications" options={{ href: null }} />
-        <Tabs.Screen name="profile" options={{ href: null }} />
-        <Tabs.Screen name="settings" options={{ href: null }} />
-        <Tabs.Screen name="discover/[slug]" options={{ href: null }} />
-        <Tabs.Screen name="discover/[slug]/apply" options={{ href: null }} />
+        {/* href: null is expo-router's own "don't treat this as tab-navigable"
+            signal, but the actual bottom-tab-bar *button* is rendered by
+            React Navigation underneath it - on this build that translation
+            wasn't fully suppressing the button, so all ~19 of these screens
+            below were still rendering as real, tappable (just visually
+            collapsed to a sliver) tab items. tabBarButton: () => null is the
+            React-Navigation-level override that unconditionally renders no
+            button at all for a tab, regardless of how href: null gets
+            translated - belt and suspenders alongside href: null, not a
+            replacement for it (href: null still controls routing behavior). */}
+        <Tabs.Screen name="approved-dashboard" options={{ href: null, tabBarButton: () => null }} />
+        <Tabs.Screen name="empty-dashboard" options={{ href: null, tabBarButton: () => null }} />
+        <Tabs.Screen name="pending-dashboard" options={{ href: null, tabBarButton: () => null }} />
+        <Tabs.Screen name="unified-potfolio-dashbord" options={{ href: null, tabBarButton: () => null }} />
+        <Tabs.Screen name="discover-browse" options={{ href: null, tabBarButton: () => null }} />
+        <Tabs.Screen name="guarantor-request" options={{ href: null, tabBarButton: () => null }} />
+        <Tabs.Screen name="loan-repayment" options={{ href: null, tabBarButton: () => null }} />
+        <Tabs.Screen name="loan-detail" options={{ href: null, tabBarButton: () => null }} />
+        <Tabs.Screen name="transaction-detail" options={{ href: null, tabBarButton: () => null }} />
+        <Tabs.Screen name="withdraw" options={{ href: null, tabBarButton: () => null }} />
+        <Tabs.Screen name="privacy" options={{ href: null, tabBarButton: () => null }} />
+        <Tabs.Screen name="appearance" options={{ href: null, tabBarButton: () => null }} />
+        <Tabs.Screen name="dividends" options={{ href: null, tabBarButton: () => null }} />
+        <Tabs.Screen name="guarantor-inbox" options={{ href: null, tabBarButton: () => null }} />
+        <Tabs.Screen name="notifications" options={{ href: null, tabBarButton: () => null }} />
+        <Tabs.Screen name="profile" options={{ href: null, tabBarButton: () => null }} />
+        <Tabs.Screen name="settings" options={{ href: null, tabBarButton: () => null }} />
+        <Tabs.Screen name="discover/[slug]" options={{ href: null, tabBarButton: () => null }} />
+        <Tabs.Screen name="discover/[slug]/apply" options={{ href: null, tabBarButton: () => null }} />
       </Tabs>
     </SafeAreaView>
   )
